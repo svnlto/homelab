@@ -1,0 +1,18 @@
+{
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Bash(pre-commit run:*)"
+    ],
+    "deny": [
+      "Bash(terraform destroy:*)",
+      "Bash(terraform apply:*)",
+      "Bash(git reset:*)"
+    ]
+  },
+  "model": "claude-sonnet-4-5-20250929",
+  "enableAllProjectMcpServers": true,
+  "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
+  "BASH_MAX_OUTPUT_LENGTH": "10000",
+  "BASH_DEFAULT_TIMEOUT_MS": "300000"
+}

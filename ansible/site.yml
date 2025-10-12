@@ -1,0 +1,19 @@
+---
+# Main playbook for provisioning Raspberry Pi Kubernetes cluster
+- name: Prepare all nodes
+  hosts: k8s_cluster
+  gather_facts: True
+  roles:
+    - common
+
+- name: Initialize control plane
+  hosts: control_plane
+  gather_facts: False
+  roles:
+    - control-plane
+
+- name: Join worker nodes
+  hosts: workers
+  gather_facts: False
+  roles:
+    - worker

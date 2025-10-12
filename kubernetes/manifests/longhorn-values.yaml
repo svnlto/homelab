@@ -1,0 +1,127 @@
+---
+# Longhorn Helm Chart Values
+# Install with:
+# helm repo add longhorn https://charts.longhorn.io
+# helm repo update
+# helm install longhorn longhorn/longhorn \
+#   --namespace longhorn-system \
+#   --create-namespace \
+#   --version 1.7.2 \
+#   -f longhorn-values.yaml
+
+# Image settings for ARM64
+image:
+  longhorn:
+    engine:
+      repository: longhornio/longhorn-engine
+      tag: v1.7.2
+    manager:
+      repository: longhornio/longhorn-manager
+      tag: v1.7.2
+    ui:
+      repository: longhornio/longhorn-ui
+      tag: v1.7.2
+    instanceManager:
+      repository: longhornio/longhorn-instance-manager
+      tag: v1.7.2
+    shareManager:
+      repository: longhornio/longhorn-share-manager
+      tag: v1.7.2
+    backingImageManager:
+      repository: longhornio/backing-image-manager
+      tag: v1.7.2
+    supportBundleKit:
+      repository: longhornio/support-bundle-kit
+      tag: v0.0.42
+
+# Service configuration
+service:
+  ui:
+    type: ClusterIP
+    nodePort: null
+  manager:
+    type: ClusterIP
+    nodePort: null
+
+# Persistence settings
+persistence:
+  defaultClass: true
+  defaultFsType: ext4
+  defaultClassReplicaCount: 2 # Adjust based on number of worker nodes
+  reclaimPolicy: Retain
+  migratable: false
+  recurringJobSelector:
+    enable: false
+  backingImage:
+    enable: false
+
+# Default settings
+defaultSettings:
+  backupTarget: "" # Configure S3/NFS backup target if needed
+  backupTargetCredentialSecret: ""
+  createDefaultDiskLabeledNodes: true
+  defaultDataPath: "/var/lib/longhorn"
+  defaultDataLocality: "disabled"
+  replicaSoftAntiAffinity: true
+  replicaAutoBalance: "best-effort"
+  storageOverProvisioningPercentage: 100
+  storageMinimalAvailablePercentage: 10
+  upgradeChecker: true
+  defaultReplicaCount: 2 # Adjust based on number of nodes
+  defaultLonghornStaticStorageClass: longhorn
+  backupstorePollInterval: 300
+  taintToleration: ""
+  systemManagedComponentsNodeSelector: ""
+  priorityClass: ""
+  autoSalvage: true
+  autoDeletePodWhenVolumeDetachedUnexpectedly: true
+  disableSchedulingOnCordonedNode: true
+  replicaZoneSoftAntiAffinity: true
+  volumeAttachmentRecoveryPolicy: "wait"
+  nodeDownPodDeletionPolicy: "do-nothing"
+  guaranteedEngineManagerCPU: 12
+  guaranteedReplicaManagerCPU: 12
+
+# Ingress for Longhorn UI
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  host: longhorn.local # Update with your domain
+  tls: false
+  annotations:
+    # Add basic auth for security
+    traefik.ingress.kubernetes.io/router.middlewares: longhorn-system-basic-auth@kubernetescrd
+
+# Resource limits for ARM64 (Raspberry Pi)
+longhornManager:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+longhornDriver:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+longhornUI:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# Enable Prometheus monitoring
+enablePSP: false
+metrics:
+  serviceMonitor:
+    enabled: false

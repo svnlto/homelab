@@ -1,0 +1,27 @@
+---
+profile: production
+
+exclude_paths:
+  - .git/
+  - .github/
+  - .cache/
+  - venv/
+  - '*.retry'
+
+skip_list:
+  - yaml[line-length]
+  - name[casing]
+  - risky-file-permissions
+
+offline: true
+
+kinds:
+  - yaml: "**/*.{yaml,yml}"
+  - playbook: "**/site.yml"
+  - tasks: "**/tasks/*.yml"
+  - vars: "**/vars/*.yml"
+  - meta: "**/meta/*.yml"
+
+warn_list:
+  - experimental
+  - no-handler

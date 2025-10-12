@@ -1,0 +1,39 @@
+---
+all:
+  vars:
+    ansible_user: ubuntu
+    ansible_become: true
+    ansible_python_interpreter: /usr/bin/python3
+
+  children:
+    # Control plane node(s)
+    control_plane:
+      hosts:
+        rpi-control-01:
+          ansible_host: 192.168.1.101 # Update with your actual IP
+          node_ip: 192.168.1.101
+          node_name: rpi-control-01
+
+    # Worker nodes
+    workers:
+      hosts:
+        rpi-worker-01:
+          ansible_host: 192.168.1.102 # Update with your actual IP
+          node_ip: 192.168.1.102
+          node_name: rpi-worker-01
+
+        rpi-worker-02:
+          ansible_host: 192.168.1.103 # Update with your actual IP
+          node_ip: 192.168.1.103
+          node_name: rpi-worker-02
+
+        rpi-worker-03:
+          ansible_host: 192.168.1.104 # Update with your actual IP
+          node_ip: 192.168.1.104
+          node_name: rpi-worker-03
+
+    # All K8s nodes
+    k8s_cluster:
+      children:
+        control_plane:
+        workers:

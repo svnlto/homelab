@@ -1,0 +1,35 @@
+# Nix
+.direnv/
+result
+
+# Vagrant
+.vagrant/
+
+# Packer
+packer/output-*/
+packer/*.img
+packer/.packer_cache/
+*.box
+
+# Ansible
+ansible/*.retry
+ansible/.vault_pass
+ansible/files/secrets/
+
+# Kubernetes
+kubernetes/secrets/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+/tmp/
+*.log
+.cache/
