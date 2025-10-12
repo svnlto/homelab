@@ -1,0 +1,48 @@
+---
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^\.git/
+      - id: end-of-file-fixer
+        exclude: ^\.git/
+      - id: check-yaml
+        args: [--unsafe]
+      - id: check-json
+      - id: check-added-large-files
+        args: ["--maxkb=10240"]
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+      - id: detect-private-key
+
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.13.0
+    hooks:
+      - id: yamlfmt
+        args: ["-conf", ".yamlfmt.yaml"]
+        exclude: ^\.git/
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        args: [-x]
+        files: \.sh$
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.42.0
+    hooks:
+      - id: markdownlint
+        args: ["--fix", "--config", ".markdownlint.yaml"]
+        exclude: ^\.git/
+
+  - repo: local
+    hooks:
+      - id: packer-fmt
+        name: Format Packer HCL files
+        entry: bash -c 'command -v packer >/dev/null && packer fmt packer/ || true'
+        language: system
+        files: \.pkr\.hcl$
+        pass_filenames: false

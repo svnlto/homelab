@@ -1,0 +1,41 @@
+---
+# Global variables for all hosts
+
+# Kubernetes version
+k8s_version: "1.34"
+
+# Pod network CIDR (used by Flannel)
+pod_network_cidr: "10.244.0.0/16"
+
+# Service CIDR
+service_cidr: "10.96.0.0/12"
+
+# DNS domain for the cluster
+cluster_domain: "cluster.local"
+
+# Container runtime
+container_runtime: "containerd"
+
+# CNI plugin
+cni_plugin: "flannel"
+
+# Flannel version
+flannel_version: "v0.25.7"
+
+# MetalLB IP address pool (update based on your network)
+metallb_ip_range: "192.168.1.200-192.168.1.220"
+
+# Timezone
+timezone: "UTC"
+
+# SSH settings
+ssh_key_path: "~/.ssh/id_rsa.pub"
+
+# System packages
+system_packages:
+  - vim
+  - htop
+  - curl
+  - wget
+  - net-tools
+  - nfs-common # For Longhorn NFS support
