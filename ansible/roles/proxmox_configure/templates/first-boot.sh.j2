@@ -1,0 +1,105 @@
+#!/bin/bash
+# =============================================================================
+# Proxmox VE First Boot Configuration Script
+# {{ ansible_managed }}
+# =============================================================================
+# This script runs once on first boot to finalize the Proxmox installation.
+# It handles machine-specific configuration that can't be done during imaging.
+# =============================================================================
+
+set -euo pipefail
+
+MARKER_FILE="/var/lib/pve-first-boot-done"
+LOG_FILE="/var/log/pve-first-boot.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+}
+
+# Check if already run
+if [[ -f "$MARKER_FILE" ]]; then
+    log "First boot already completed. Exiting."
+    exit 0
+fi
+
+log "Starting Proxmox VE first boot configuration..."
+
+# =============================================================================
+# Regenerate SSH host keys
+# =============================================================================
+log "Regenerating SSH host keys..."
+rm -f /etc/ssh/ssh_host_*
+dpkg-reconfigure openssh-server
+systemctl restart sshd
+
+# =============================================================================
+# Regenerate machine-id
+# =============================================================================
+log "Regenerating machine-id..."
+rm -f /etc/machine-id /var/lib/dbus/machine-id
+systemd-machine-id-setup
+ln -sf /etc/machine-id /var/lib/dbus/machine-id
+
+# =============================================================================
+# Update hostname resolution
+# =============================================================================
+log "Updating hostname configuration..."
+HOSTNAME=$(hostname)
+PRIMARY_IP=$(ip -4 route get 8.8.8.8 | awk '{print $7; exit}')
+
+if [[ -n "$PRIMARY_IP" ]]; then
+    # Update /etc/hosts with actual IP
+    sed -i "s/^127.0.1.1.*/${PRIMARY_IP}    ${HOSTNAME}.{{ node_domain }} ${HOSTNAME}/" /etc/hosts
+    sed -i "s/^10\.0\.2\..*/${PRIMARY_IP}    ${HOSTNAME}.{{ node_domain }} ${HOSTNAME}/" /etc/hosts
+    log "Updated /etc/hosts with IP: $PRIMARY_IP"
+fi
+
+# =============================================================================
+# Configure network bridge (if not already configured)
+# =============================================================================
+if ! grep -q "vmbr0" /etc/network/interfaces; then
+    log "Note: Network bridge (vmbr0) not configured. Please configure manually."
+    log "Example configuration:"
+    log "  auto vmbr0"
+    log "  iface vmbr0 inet static"
+    log "      address <IP>/24"
+    log "      gateway <GATEWAY>"
+    log "      bridge-ports <INTERFACE>"
+    log "      bridge-stp off"
+    log "      bridge-fd 0"
+fi
+
+# =============================================================================
+# Wait for pveproxy to be available
+# =============================================================================
+log "Waiting for Proxmox services..."
+for i in {1..30}; do
+    if systemctl is-active --quiet pveproxy; then
+        log "pveproxy is running"
+        break
+    fi
+    sleep 2
+done
+
+# =============================================================================
+# Display access information
+# =============================================================================
+log "========================================"
+log "Proxmox VE first boot complete!"
+log "========================================"
+log "Access the web interface at:"
+log "  https://${PRIMARY_IP:-<IP>}:8006"
+log ""
+log "Default login: root (use your system password)"
+log ""
+log "IMPORTANT: Change the root password if using default!"
+log "========================================"
+
+# Mark as complete
+touch "$MARKER_FILE"
+log "First boot configuration complete."
+
+# Disable this service after first run
+systemctl disable pve-first-boot.service
+
+exit 0

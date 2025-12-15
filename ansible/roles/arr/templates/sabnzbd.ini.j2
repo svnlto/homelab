@@ -1,0 +1,38 @@
+[misc]
+# SABnzbd configuration
+# Managed by Ansible - DO NOT EDIT MANUALLY
+host = 0.0.0.0
+port = 8080
+download_dir = /data/downloads/incomplete
+complete_dir = /data/downloads/complete
+permissions = 0775
+auto_browser = 0
+replace_illegal = 1
+replace_spaces = 0
+fail_hopeless_jobs = 1
+auto_disconnect = 1
+pre_check = 1
+max_art_tries = 3
+top_only = 0
+history_retention = 30d
+
+[categories]
+[[*]]
+name = *
+dir = ""
+priority = 0
+
+[[movies]]
+name = movies
+dir = movies
+priority = -100
+
+[[tv]]
+name = tv
+dir = tv
+priority = -100
+
+[[music]]
+name = music
+dir = music
+priority = -100

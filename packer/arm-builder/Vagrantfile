@@ -1,0 +1,53 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-22.04"
+  config.vm.hostname = "arm-builder"
+
+  # VMware Fusion provider
+  config.vm.provider "vmware_desktop" do |v|
+    v.vmx["memsize"] = "4096"
+    v.vmx["numvcpus"] = "2"
+    v.gui = false
+
+    # Enable nested virtualization (required for Packer)
+    v.vmx["vhv.enable"] = "TRUE"
+  end
+
+  # Sync packer files
+  config.vm.synced_folder ".", "/vagrant", type: "rsync",
+    rsync__exclude: [".git/", "output/", ".packer_cache/"]
+
+  # Sync ansible directory (needed for playbooks and roles)
+  config.vm.synced_folder "../../ansible", "/ansible", type: "rsync",
+    rsync__exclude: [".git/"]
+
+  # Provision build environment
+  config.vm.provision "shell", inline: <<-SHELL
+    set -e
+
+    echo "==> Installing dependencies..."
+    apt-get update
+    apt-get install -y \
+      qemu-user-static \
+      qemu-system-arm \
+      binfmt-support \
+      docker.io \
+      git \
+      unzip \
+      wget
+
+    # Add vagrant user to docker group
+    usermod -aG docker vagrant
+
+    echo "==> Installing Packer..."
+    PACKER_VERSION="1.14.3"
+    wget -q https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip
+    unzip -o packer_${PACKER_VERSION}_linux_amd64.zip -d /usr/local/bin/
+    rm packer_${PACKER_VERSION}_linux_amd64.zip
+
+    echo "==> Setup complete!"
+    packer version
+  SHELL
+end

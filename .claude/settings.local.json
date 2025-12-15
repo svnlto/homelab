@@ -2,7 +2,8 @@
   "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
-      "Bash(pre-commit run:*)"
+      "Bash(pre-commit run:*)",
+      "WebSearch"
     ],
     "deny": [
       "Bash(terraform destroy:*)",

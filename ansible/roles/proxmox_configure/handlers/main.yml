@@ -1,0 +1,22 @@
+---
+# =============================================================================
+# Handlers: proxmox_configure
+# =============================================================================
+
+- name: Restart chrony
+  ansible.builtin.systemd:
+    name: chrony
+    state: restarted
+
+- name: Restart sshd
+  ansible.builtin.systemd:
+    name: ssh
+    state: restarted
+
+- name: Update GRUB
+  ansible.builtin.command: update-grub
+  changed_when: false
+
+- name: Update initramfs
+  ansible.builtin.command: update-initramfs -u -k all
+  changed_when: false

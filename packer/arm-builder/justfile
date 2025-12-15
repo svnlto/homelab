@@ -1,0 +1,189 @@
+# =============================================================================
+# Justfile for ARM Builder (Pi-hole Image)
+# =============================================================================
+#
+# This build environment uses VMware Fusion to create an x86_64 VM that can
+# build ARM images using QEMU and Docker with loop device support.
+#
+# =============================================================================
+
+set dotenv-load := true
+
+# Default recipe - show help
+default:
+    @just --list
+
+# =============================================================================
+# Vagrant VM Management
+# =============================================================================
+
+# Start the ARM build VM
+vm-up:
+    vagrant up
+
+# Stop the ARM build VM
+vm-down:
+    vagrant halt
+
+# Destroy the ARM build VM
+vm-destroy:
+    vagrant destroy -f
+
+# SSH into the ARM build VM
+vm-ssh:
+    vagrant ssh
+
+# Rebuild/reprovision the VM
+vm-provision:
+    vagrant provision
+
+# Show VM status
+vm-status:
+    vagrant status
+
+# =============================================================================
+# Image Building
+# =============================================================================
+
+# Build Pi-hole ARM image (in Vagrant VM)
+build: _ensure-vm
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "==> Preparing build environment..."
+    mkdir -p output
+    echo "==> Syncing files to build VM..."
+    vagrant rsync
+    echo ""
+    echo "==> Building Pi-hole ARM image..."
+    echo "    This will take 30-60 minutes..."
+    vagrant ssh -c "cd /vagrant && mkdir -p output && sudo docker run --rm --privileged \
+      --dns=1.1.1.1 --dns=8.8.8.8 \
+      -v /dev:/dev \
+      -v \$(pwd):/build:rw \
+      -v /ansible:/ansible:ro \
+      mkaczanowski/packer-builder-arm:1.0.9 \
+      build rpi-pihole.pkr.hcl"
+    echo ""
+    echo "✅ Build complete!"
+    just images
+
+# Build with debug output
+build-debug: _ensure-vm
+    #!/usr/bin/env bash
+    set -euo pipefail
+    vagrant rsync
+    echo "==> Building with PACKER_LOG=1..."
+    vagrant ssh -c "cd /vagrant && sudo docker run --rm --privileged \
+      --dns=1.1.1.1 --dns=8.8.8.8 \
+      -v /dev:/dev \
+      -v \$(pwd):/build:rw \
+      -v /ansible:/ansible:ro \
+      -e PACKER_LOG=1 \
+      mkaczanowski/packer-builder-arm:1.0.9 \
+      build rpi-pihole.pkr.hcl"
+    just images
+
+# =============================================================================
+# Deployment
+# =============================================================================
+
+# List available images
+images:
+    @echo "Available Pi-hole images:"
+    @echo ""
+    @ls -lh output/*.img 2>/dev/null || echo "  No images found. Run 'just build' first."
+
+# Flash image to SD card (interactive, with confirmation)
+flash disk:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    IMAGE=$(ls -t output/*.img 2>/dev/null | head -1)
+    if [ -z "$IMAGE" ]; then
+        echo "ERROR: No image found. Run 'just build' first."
+        exit 1
+    fi
+
+    echo "┌────────────────────────────────────────────┐"
+    echo "│  ⚠️  WARNING: DESTRUCTIVE OPERATION        │"
+    echo "└────────────────────────────────────────────┘"
+    echo ""
+    echo "Image:  $IMAGE"
+    echo "Target: {{disk}}"
+    echo ""
+    echo "This will ERASE ALL DATA on {{disk}}!"
+    echo ""
+    read -p "Type 'yes' to continue: " confirm
+    if [ "$confirm" != "yes" ]; then
+        echo "Aborted."
+        exit 1
+    fi
+
+    echo ""
+    echo "==> Flashing image to {{disk}}..."
+    sudo dd if="$IMAGE" of={{disk}} bs=4M status=progress conv=fdatasync
+    sudo sync
+    echo ""
+    echo "✅ Done! Insert SD card into Raspberry Pi and boot"
+
+# =============================================================================
+# Cleanup
+# =============================================================================
+
+# Clean build outputs
+clean:
+    rm -rf output/*.img
+    rm -rf .packer_cache
+
+# Full clean (including VM)
+clean-all: clean vm-destroy
+
+# =============================================================================
+# Info & Help
+# =============================================================================
+
+# Show environment info
+info:
+    @echo "ARM Builder for Pi-hole"
+    @echo "======================="
+    @echo ""
+    @echo "Build VM:"
+    @vagrant status 2>/dev/null | grep -E "^arm-builder" || echo "  not created"
+    @echo ""
+    @echo "Tools (in VM):"
+    @echo "  docker: $(vagrant ssh -c 'docker --version' 2>/dev/null || echo 'VM not running')"
+    @echo "  packer: $(vagrant ssh -c 'packer version' 2>/dev/null || echo 'VM not running')"
+
+# Show the complete workflow
+workflow:
+    @echo ""
+    @echo "┌─────────────────────────────────────────────────────────────────┐"
+    @echo "│              Pi-hole ARM Image Build Workflow                   │"
+    @echo "└─────────────────────────────────────────────────────────────────┘"
+    @echo ""
+    @echo "  ┌──────────┐     ┌──────────┐     ┌──────────┐"
+    @echo "  │  SETUP   │────▶│  BUILD   │────▶│  FLASH   │"
+    @echo "  └──────────┘     └──────────┘     └──────────┘"
+    @echo ""
+    @echo "1. SETUP (one time):"
+    @echo "   just vm-up          # Start VMware build VM"
+    @echo ""
+    @echo "2. BUILD (creates ARM image):"
+    @echo "   just build          # Build Pi-hole image (30-60 min)"
+    @echo ""
+    @echo "3. FLASH (write to SD card):"
+    @echo "   diskutil list       # Find SD card (e.g., /dev/disk4)"
+    @echo "   just flash disk=/dev/rdisk4"
+    @echo "   # Boot Raspberry Pi from SD card"
+    @echo ""
+    @echo "SSH to Pi-hole:"
+    @echo "   ssh ubuntu@192.168.1.2  # Default Pi-hole IP"
+    @echo ""
+
+# =============================================================================
+# Internal Recipes
+# =============================================================================
+
+# Ensure VM is running
+_ensure-vm:
+    @vagrant status | grep -q "running" || (echo "==> Starting build VM..." && vagrant up)

@@ -1,0 +1,67 @@
+---
+# =============================================================================
+# Playbook: Build Proxmox Node Image
+# =============================================================================
+# This playbook is used by Packer to provision the Proxmox VE image.
+# It installs and configures Proxmox VE on a minimal Debian installation.
+# =============================================================================
+
+- name: Build Proxmox VE Node Image
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    # Defaults (can be overridden by Packer extra-vars)
+    pve_repository: "pve-no-subscription"
+    pve_remove_subscription_warning: true
+    install_cloud_init: true
+    install_zfs: true
+    configure_pcie_passthrough: true
+    node_hostname: "pve-node"
+    node_domain: "local"
+
+  pre_tasks:
+    - name: Display build information
+      ansible.builtin.debug:
+        msg:
+          - "Building Proxmox VE 8 (Debian 12 Bookworm)"
+          - "Repository: {{ pve_repository }}"
+          - "Hostname: {{ node_hostname }}.{{ node_domain }}"
+
+    - name: Wait for apt lock to be released
+      ansible.builtin.shell: |
+        while fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do
+          sleep 1
+        done
+      changed_when: false
+
+  roles:
+    - role: base_system
+      tags: [base]
+
+    - role: proxmox_install
+      tags: [proxmox]
+
+    - role: proxmox_configure
+      tags: [configure]
+
+    - role: image_cleanup
+      tags: [cleanup]
+
+  post_tasks:
+    - name: Final initramfs update
+      ansible.builtin.command: update-initramfs -u -k all
+      changed_when: false
+      tags: [cleanup]
+
+    - name: Final GRUB update
+      ansible.builtin.command: update-grub
+      changed_when: false
+      tags: [cleanup]
+
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg:
+          - "Proxmox VE image build complete!"
+          - "Access the web UI at: https://<IP>:8006"

@@ -1,7 +1,7 @@
 ---
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         exclude: ^\.git/
@@ -18,25 +18,49 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/google/yamlfmt
-    rev: v0.13.0
+    rev: v0.20.0
     hooks:
       - id: yamlfmt
         args: ["-conf", ".yamlfmt.yaml"]
         exclude: ^\.git/
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+    rev: v0.11.0.1
     hooks:
       - id: shellcheck
         args: [-x]
         files: \.sh$
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.42.0
+    rev: v0.47.0
     hooks:
       - id: markdownlint
         args: ["--fix", "--config", ".markdownlint.yaml"]
-        exclude: ^\.git/
+        exclude: ^(\.git/|docs/)
+
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.104.0
+    hooks:
+      - id: terraform_fmt
+        args:
+          - --args=-recursive
+        files: ^terraform/
+      - id: terraform_validate
+        files: ^terraform/
+      - id: terraform_tflint
+        files: ^terraform/
+
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v25.12.1
+    hooks:
+      - id: ansible-lint
+        files: ^ansible/
+        args: ["-c", ".ansible-lint.yaml", "ansible/"]
+        pass_filenames: false
+        additional_dependencies:
+          - ansible-core>=2.12
+        require_serial: true
+        entry: env ANSIBLE_CONFIG=ansible/ansible.cfg ansible-lint
 
   - repo: local
     hooks:

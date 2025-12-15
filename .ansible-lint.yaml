@@ -1,0 +1,55 @@
+---
+# Ansible-lint configuration
+# https://ansible.readthedocs.io/projects/lint/
+
+# Set the project directory structure
+project_dir: ansible
+
+# Exclude paths from linting
+exclude_paths:
+  - .git/
+  - .cache/
+  - .pre-commit/
+  - venv/
+  - terraform/
+  - '*/templates/*.j2' # Jinja2 templates can have intentional spacing
+
+# Enable checking of specific files
+kinds:
+  - playbook: "*/playbooks/*.yml"
+  - tasks: "*/tasks/*.yml"
+  - handlers: "*/handlers/*.yml"
+  - vars: "*/vars/*.yml"
+  - defaults: "*/defaults/*.yml"
+  - meta: "*/meta/*.yml"
+
+# List of rules to skip
+skip_list:
+  - yaml[line-length] # Allow long lines (yamlfmt handles this)
+  - name[casing] # Allow flexible task naming conventions
+  - fqcn[action-core] # Allow non-FQCN for core modules (ansible.builtin.*)
+  - var-naming[no-role-prefix] # Allow variables without role prefix
+  - var-naming[no-reserved] # Allow reserved variable names when intentional
+  - schema[meta] # Skip schema validation for meta files
+
+# Warn about these rules instead of failing
+warn_list:
+  - experimental # Warn about experimental features
+  - role-name # Warn about role naming conventions
+  - no-changed-when # Warn when commands don't define changed_when
+  - command-instead-of-module # Warn when shell/command could use module
+  - package-latest # Warn when using state: latest
+  - yaml[commas] # Warn about spacing after commas
+
+# Offline mode (don't check for updates)
+offline: false
+
+# Use progressive mode for gradual adoption
+progressive: false
+
+# Write violations to file
+# write_list:
+#   - all
+
+# Profile to use (min, basic, moderate, safety, shared, production)
+profile: production

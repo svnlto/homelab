@@ -1,0 +1,38 @@
+global:
+  scrape_interval: {{ prometheus_scrape_interval | default('15s') }}
+  evaluation_interval: {{ prometheus_evaluation_interval | default('15s') }}
+  external_labels:
+    cluster: '{{ cluster_name | default("homelab") }}'
+    environment: '{{ cluster_environment | default("production") }}'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'alloy'
+    static_configs:
+      - targets: ['alloy:12345']
+
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+
+  # Docker container metrics (via cAdvisor)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: {{ cadvisor_targets | default("[]") }}
+
+  # Node exporter for system metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: {{ node_exporter_targets | default("[]") }}
+
+  # Exportarr for *arr app metrics
+  - job_name: 'exportarr'
+    static_configs:
+      - targets: {{ exportarr_targets | default("[]") }}

@@ -1,0 +1,74 @@
+# Buildarr config - infrastructure as code for *arr apps
+# Docs: https://buildarr.github.io/
+
+buildarr:
+  watch_config: false
+  update_days:
+    - monday
+  update_times:
+    - "03:00"
+
+radarr:
+  hostname: localhost
+  port: 7878
+  protocol: http
+  api_key: !env_var RADARR_API_KEY
+
+  settings:
+    media_management:
+      rename_movies: true
+      replace_illegal_characters: true
+      standard_movie_format: "{Movie Title} ({Release Year}) {Quality Full}"
+      movie_folder_format: "{Movie Title} ({Release Year})"
+
+    download_clients:
+      enable_completed_download_handling: true
+      redownload_failed: true
+
+sonarr:
+  hostname: localhost
+  port: 8989
+  protocol: http
+  api_key: !env_var SONARR_API_KEY
+
+  settings:
+    media_management:
+      rename_episodes: true
+      replace_illegal_characters: true
+      standard_episode_format: "{Series Title} - S{season:00}E{episode:00} - {Episode Title} {Quality Full}"
+      series_folder_format: "{Series Title}"
+      season_folder_format: "Season {season}"
+
+    download_clients:
+      enable_completed_download_handling: true
+      redownload_failed: true
+
+lidarr:
+  hostname: localhost
+  port: 8686
+  protocol: http
+  api_key: !env_var LIDARR_API_KEY
+
+  settings:
+    media_management:
+      rename_tracks: true
+      replace_illegal_characters: true
+      standard_track_format: "{Album Title} ({Release Year})/{Artist Name} - {Album Title} - {track:00} - {Track Title}"
+      multi_disc_track_format: "{Album Title} ({Release Year})/{Medium Format} {medium:00}/{Artist Name} - {Album Title} - {track:00} - {Track Title}"
+      artist_folder_format: "{Artist Name}"
+
+    download_clients:
+      enable_completed_download_handling: true
+      redownload_failed: true
+
+bazarr:
+  hostname: localhost
+  port: 6767
+  protocol: http
+  api_key: !env_var BAZARR_API_KEY
+
+prowlarr:
+  hostname: localhost
+  port: 9696
+  protocol: http
+  api_key: !env_var PROWLARR_API_KEY

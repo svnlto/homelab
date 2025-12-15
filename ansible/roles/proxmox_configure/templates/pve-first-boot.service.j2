@@ -1,0 +1,19 @@
+# /etc/systemd/system/pve-first-boot.service
+# {{ ansible_managed }}
+# Runs once on first boot to finalize Proxmox VE configuration
+
+[Unit]
+Description=Proxmox VE First Boot Configuration
+After=network-online.target sshd.service
+Wants=network-online.target
+ConditionPathExists=!/var/lib/pve-first-boot-done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pve-first-boot.sh
+RemainAfterExit=yes
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target
