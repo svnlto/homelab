@@ -1,157 +1,190 @@
 # Homelab Infrastructure
 
-Infrastructure as Code for a home lab built with Raspberry Pi and Proxmox VE.
+Infrastructure as Code for homelab built with Raspberry Pi and Proxmox VE using Packer, Terraform, and Ansible.
 
 ## Overview
 
-This repository contains configurations for:
+- **Raspberry Pi**: Immutable Pi-hole DNS image (ARM builder on macOS)
+- **Proxmox VE**: Template-based VM deployment with automated provisioning
+- **TrueNAS**: ZFS storage VM with Ansible automation
 
-- **Raspberry Pi**: Pi-hole DNS server (Packer + Ansible)
-- **Proxmox VE**: VM template building and deployment (Packer + Terraform + Ansible)
+**Critical Design**: Pi-hole runs on dedicated Raspberry Pi hardware (NOT Proxmox) to ensure DNS remains
+operational during Proxmox maintenance.
 
 ## Quick Start
 
 ```bash
-# Enter Nix development environment (loads all tools)
+# Enter Nix environment (auto-loads with direnv)
 nix develop
 
-# See all available commands
-just
-
-# Build Pi-hole image for Raspberry Pi
+# Build Pi-hole image (30-60 min)
 just packer-build-pihole
 
-# Build Proxmox Ubuntu template
+# Build Proxmox template (70-90 min on Apple Silicon)
 just packer-build-proxmox
 
-# Deploy VMs on Proxmox
+# Deploy VMs (2-3 min)
 just tf-apply
+
+# Deploy TrueNAS
+just truenas-deploy
+```
+
+## Architecture
+
+```text
+┌─────────────────────────────────────────────────┐
+│ Three-Phase Build System                        │
+├─────────────────────────────────────────────────┤
+│ 1. Packer Template (70-90 min)                  │
+│    → Ubuntu 24.04 + cloud-init + SSH hardening  │
+│    → Creates template VM 9000                   │
+│                                                  │
+│ 2. Terraform Clone (2-3 min)                    │
+│    → Clone VMs from template                    │
+│    → Inject SSH keys via cloud-init             │
+│                                                  │
+│ 3. Ansible Provision                            │
+│    → Deploy application stacks                  │
+│    → Configure services                         │
+└─────────────────────────────────────────────────┘
 ```
 
 ## Project Structure
 
 ```text
 homelab/
-├── packer/                # Packer image builders
-│   ├── ubuntu-template/   # Proxmox Ubuntu template
-│   └── rpi-pihole.pkr.hcl # Raspberry Pi Pi-hole image
+├── packer/
+│   ├── arm-builder/           # Pi-hole ARM image (VMware Fusion VM)
+│   ├── x86-builder/           # Bootable disk images (Vagrant VM)
+│   ├── proxmox-node/          # Proxmox node image (cloud-init based)
+│   └── proxmox-templates/     # Ubuntu template for VM cloning
 │
-├── terraform/             # Terraform configurations
-│   └── proxmox/           # Proxmox VM deployment
+├── terraform/
+│   ├── modules/ubuntu-vm/     # Reusable VM module (40+ parameters)
+│   └── proxmox/               # VM definitions (arr, observability, truenas)
 │
-├── ansible/               # Ansible playbooks
-│   └── playbooks/         # Base VM configuration
+├── ansible/
+│   ├── playbooks/             # Stack deployments (arr, observability, etc.)
+│   └── roles/                 # Reusable roles (pihole, proxmox_install, etc.)
 │
-├── raspberry-pi/          # Raspberry Pi documentation
-├── docs/                  # Additional documentation
-├── Vagrantfile           # VM for ARM image building
-├── justfile              # Command runner
-└── flake.nix             # Nix development environment
+├── docs/                      # Setup guides (TrueNAS, hardware planning)
+├── justfile                   # Command runner
+└── flake.nix                  # Nix dev environment
 ```
 
 ## Components
 
-### Raspberry Pi - Pi-hole DNS Server
+### Pi-hole DNS (Raspberry Pi)
 
+**Image Build** (macOS):
+
+```bash
+just arm-vm-up           # Start VMware Fusion VM
+just packer-build-pihole # Build ARM image (30-60 min)
+just pihole-flash disk=/dev/rdisk4
+```
+
+- **IP**: 192.168.1.2
 - **Purpose**: Network-wide DNS filtering and ad-blocking
-- **Build Time**: 30-60 minutes
-- **Location**: `raspberry-pi/`
-- **See**: [raspberry-pi/README.md](raspberry-pi/README.md)
+- **Builder**: VMware Fusion VM (Docker Desktop can't mount loop devices)
 
-**Build:**
+### Proxmox VMs
+
+**Template Build**:
 
 ```bash
-just packer-build-pihole
+just packer-build-proxmox  # 70-90 min on Apple Silicon (TCG emulation)
 ```
 
-### Proxmox VE - VM Infrastructure
-
-- **Purpose**: Template-based VM deployment
-- **Build Time**: 15-30 minutes (template), 2-3 minutes (clone)
-- **Location**: `proxmox/`
-- **See**: [proxmox/README.md](proxmox/README.md)
-
-**Workflow:**
+**VM Deployment**:
 
 ```bash
-# 1. Build Ubuntu template (one time)
-just packer-build-proxmox
-
-# 2. Deploy VMs from template
-just tf-apply
+just tf-apply    # Clone and provision VMs
+just tf-destroy  # Clean up
 ```
 
-## Prerequisites
+**Current VMs**:
 
-### Required Tools (via Nix)
+| VM | IP | Stack |
+| -- | -- | ----- |
+| arr-server | 192.168.1.50 | Sonarr, Radarr, Prowlarr, qBittorrent |
+| observability-server | 192.168.1.51 | Grafana, Prometheus, Loki, Alloy |
+| truenas | 192.168.1.76 | ZFS storage (NFS/SMB shares) |
+
+### TrueNAS Storage
 
 ```bash
-nix develop  # Loads: packer, ansible, terraform, just
+just truenas-deploy  # Create VM, manually install via console
+# Then automate with Ansible:
+ansible-playbook ansible/playbooks/truenas-setup.yml
 ```
 
-Or install manually:
+- **Storage**: 3x 100GB disks (RAIDZ1) = ~200GB usable
+- **Datasets**: media, kubernetes, backups, vms
+- **Automation**: `arensb.truenas` collection + `midclt` WebSocket API
 
-- Packer
-- Ansible
-- Terraform
-- Just (command runner)
+## Key Technologies
 
-### Hardware
+- **Packer**: Immutable infrastructure (image building)
+- **Terraform**: VM lifecycle management
+- **Ansible**: Configuration management and provisioning
+- **Cloud-Init**: VM initialization and SSH key injection
+- **Nix**: Reproducible development environment
+- **Just**: Command runner (replaces Makefiles)
 
-- **Proxmox Server**: Running at 192.168.1.37
-- **Raspberry Pi 4**: For Pi-hole (192.168.1.2)
+## Network Layout
 
-## Common Commands
-
-```bash
-# Raspberry Pi
-just packer-validate-pihole    # Validate Pi-hole config
-just packer-build-pihole       # Build Pi-hole image
-just ssh-pihole                # SSH to Pi-hole
-
-# Proxmox
-just packer-validate-proxmox   # Validate template config
-just packer-build-proxmox      # Build Ubuntu template
-just tf-plan                   # Preview VM changes
-just tf-apply                  # Deploy VMs
-just tf-destroy                # Destroy VMs
-
-# Development
-just vagrant-up                # Start build VM
-just vagrant-ssh               # SSH to build VM
-just clean                     # Clean build artifacts
+```text
+Router (192.168.1.1)
+├── Pi-hole DNS (192.168.1.2)       # Raspberry Pi #2
+├── Proxmox (192.168.1.37)          # Lenovo P520
+│   ├── Template (VM 9000)
+│   ├── arr-server (192.168.1.50)
+│   ├── observability (192.168.1.51)
+│   └── truenas (192.168.1.76)
+└── Tailscale (192.168.1.100)       # Raspberry Pi #1
 ```
 
 ## Documentation
 
-- **Raspberry Pi Setup**: [raspberry-pi/README.md](raspberry-pi/README.md)
-- **Packer Templates**: [packer/ubuntu-template/README.md](packer/ubuntu-template/README.md)
+- **Packer Templates**: [packer/proxmox-templates/README.md](packer/proxmox-templates/README.md)
 - **Terraform VMs**: [terraform/proxmox/README.md](terraform/proxmox/README.md)
+- **TrueNAS Setup**: [docs/truenas-setup.md](docs/truenas-setup.md)
+- **Hardware Planning**: [docs/hardware-planning.md](docs/hardware-planning.md)
+- **Project Guide**: [CLAUDE.md](CLAUDE.md)
 
-## Network Architecture
+## Development
 
-```text
-Internet
-    ↓
-Router/Gateway (192.168.1.1)
-    ↓
-    ├── Pi-hole DNS (192.168.1.2)
-    │       ↓
-    │   DNS Filtering
-    │
-    └── Proxmox VE (192.168.1.37)
-            ↓
-        VM Infrastructure
+```bash
+# Enter Nix shell (or use direnv)
+nix develop
+
+# View all commands
+just
+
+# Packer
+just packer-validate-proxmox
+just packer-build-proxmox
+
+# Terraform
+just tf-plan
+just tf-apply
+just tf-destroy
+
+# Ansible
+just ansible-lint
+just ansible-playbook stack-arr.yml
+
+# Cleanup
+just clean
 ```
 
-## Technologies
+## Authentication
 
-- **Packer**: Immutable infrastructure (image building)
-- **Ansible**: Configuration management
-- **Terraform**: VM provisioning and lifecycle
-- **Cloud-Init**: VM initialization
-- **Nix**: Reproducible development environment
-- **Just**: Command runner
+- **Proxmox API**: Token-based (via `.env`)
+- **SSH**: 1Password SSH agent with Touch ID
+- **VM Access**: Cloud-init injects SSH keys on clone
 
 ## License
 
