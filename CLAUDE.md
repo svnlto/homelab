@@ -4,371 +4,367 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Raspberry Pi 4 Kubernetes homelab using a **hybrid two-stage deployment approach**:
+Homelab infrastructure automation using Packer, Terraform, and Ansible:
 
-1. **Packer**: Builds immutable base OS image with Kubernetes binaries pre-installed
-2. **Ansible**: Orchestrates cluster initialization and node joining
+- **Raspberry Pi**: Immutable Pi-hole DNS server image (Packer + ARM builder)
+- **Proxmox VE**: Template-based VM deployment (Packer + Terraform + Ansible)
 
-This separation allows fast rebuilds for OS/K8s version updates while keeping cluster orchestration flexible.
+**Critical Design Principle**: Raspberry Pi runs critical network infrastructure (DNS) that must stay operational during
+Proxmox maintenance. Pi-hole runs on the Pi, NOT on Proxmox.
 
-## Hardware Specifications
+## Architecture
 
-- **Raspberry Pi 4 Model B**
-- **RAM**: 8GB per node
-- **Storage**: 128GB per node (SD card or SSD recommended)
+### Three-Phase Build System
 
-## Technology Stack
+1. **Packer Template Building** (15-30 min)
+   - Creates immutable base template (VM ID 9000)
+   - Ubuntu 24.04 with UEFI/OVMF, cloud-init enabled
+   - SSH hardening applied via Ansible (password auth disabled)
 
-- **OS**: Ubuntu 24.04 LTS ARM64
-- **Kubernetes**: v1.34 (full kubeadm, not k3s)
-- **Container Runtime**: containerd
-- **CNI**: Flannel v0.25.7
-- **LoadBalancer**: MetalLB v0.14.9 (Layer 2)
-- **Ingress**: Traefik v3
-- **Storage**: Longhorn v1.7.2
-- **Certificates**: cert-manager v1.16.2
-- **Development**: Nix flakes for reproducible tooling
+2. **Terraform VM Cloning** (2-3 min)
+   - Clones VMs from template
+   - Injects SSH keys via cloud-init
+   - Most settings baked into main.tf (not variables)
+
+3. **Ansible Provisioning**
+   - Runs during Packer build only
+   - Hardens template with SSH key-only authentication
+
+### Critical Configuration Requirements
+
+**Packer Template (packer/ubuntu-template/ubuntu-24.04-template.pkr.hcl)**:
+
+- `cloud_init = true` - MUST be enabled for SSH key injection in cloned VMs
+- `bios = "ovmf"` and `machine = "q35"` - UEFI boot required
+- `cloud_init_storage_pool` - Creates cloud-init drive for template
+
+**Terraform VMs (terraform/proxmox/main.tf)**:
+
+- MUST match template BIOS settings (`bios = "ovmf"`, `machine = "q35"`)
+- Requires `efidisk` block (UEFI boot)
+- Uses new `disks` block syntax with explicit cloud-init IDE drive
+- Settings are baked in (NOT variables) - edit main.tf directly to customize
+
+**Ansible Provisioning (runs in two contexts)**:
+
+1. **During Template Build** (`ansible/playbooks/base-template.yml`):
+   - SSH hardening: `PasswordAuthentication no`, `PubkeyAuthentication yes`
+   - Installs Docker, Docker Compose, Node Exporter
+   - `cloud-init clean --logs --seed` - Ensures cloud-init runs on cloned VMs
+
+2. **After VM Clone** (triggered by Terraform):
+   - `ansible/playbooks/arr.yml` - Deploys media automation stack
+   - `ansible/playbooks/observability.yml` - Deploys Grafana/Prometheus/Loki
+   - Uses `ansible_playbook` resource to trigger provisioning
+
+### Authentication Flow
+
+1. **Template Build**: Packer uses temporary `ubuntu/ubuntu` credentials
+2. **Template Hardening**: Ansible disables password auth, enables SSH keys only
+3. **VM Clone**: Terraform injects SSH public key via cloud-init
+4. **SSH Access**: Uses 1Password SSH agent with Touch ID
+   - Agent config: `~/.config/1Password/ssh/agent.toml`
+   - SSH key item name in 1Password: `"proxmox"` (in Personal vault)
+   - SSH config: `IdentityAgent "/Users/svenlito/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"`
 
 ## Essential Commands
 
 ### Development Environment
 
 ```bash
-# Enter Nix development shell (loads all tools)
+# Enter Nix shell (auto-loads with direnv)
 nix develop
 
-# Or use direnv for automatic activation
-direnv allow
-
-# Install pre-commit hooks
-just setup
+# All commands use direnv to load .env credentials
+just --list
 ```
 
-### Image Building
-
-**IMPORTANT**: ARM image building on macOS requires Vagrant + QEMU because macOS
-Docker Desktop cannot mount loop devices. The Vagrantfile creates an x86_64
-Ubuntu VM that runs the `mkaczanowski/packer-builder-arm` Docker container with privileged access.
+### Proxmox Workflow
 
 ```bash
-# Start Vagrant VM (first time ~5 min)
+# 1. Build template (one time, 15-30 min)
+just packer-build-proxmox
+
+# 2. Deploy VMs from template (2-3 min)
+just tf-apply
+
+# 3. Destroy VMs
+just tf-destroy
+```
+
+### Raspberry Pi Workflow
+
+```bash
+# Start Vagrant VM for ARM building (macOS requirement)
 just vagrant-up
 
-# Build Packer image inside VM (30-60 minutes)
-just packer-build
+# Build Pi-hole image (30-60 min)
+just packer-build-pihole
 
-# Output: packer/output-rpi-k8s/rpi-k8s-base.img
+# Flash to SD card
+sudo dd if=output/rpi-pihole.img of=/dev/rdiskX bs=4M status=progress
+
+# SSH to Pi-hole
+just ssh-pihole
 ```
-
-The build runs this Docker command inside Vagrant:
-
-```bash
-docker run --rm --privileged \
-  -v /dev:/dev \
-  -v $(pwd):/build \
-  mkaczanowski/packer-builder-arm:latest \
-  build /build/rpi-k8s-base.pkr.hcl
-```
-
-### Cluster Deployment
-
-```bash
-# Test Ansible connectivity
-just test-ansible
-
-# Deploy cluster (5-10 minutes)
-just ansible-deploy
-
-# Full deployment from scratch
-just deploy-full
-
-# Get kubeconfig from control plane
-just k8s-get-config
-export KUBECONFIG=~/.kube/homelab-config
-```
-
-### Kubernetes Components
-
-```bash
-# Install all components in order
-just k8s-install-all
-
-# Or install individually
-just k8s-install-metallb      # LoadBalancer (required first)
-just k8s-install-longhorn     # Storage
-just k8s-install-certmanager  # Certificates
-just k8s-install-traefik      # Ingress
-
-# Check cluster status
-just k8s-status
-just k9s
-```
-
-### Linting and Testing
-
-```bash
-# Run all pre-commit hooks manually
-pre-commit run --all-files
-
-# Test Ansible syntax
-just test-syntax
-
-# Test Ansible connectivity
-just test-ansible
-```
-
-## Architecture
-
-### Two-Stage Deployment Pipeline
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ Stage 1: Packer (Image Building)                            │
-│ ─────────────────────────────────────────────────────────── │
-│ 1. Download Ubuntu 24.04 ARM64 image                        │
-│ 2. Mount and chroot into image                              │
-│ 3. Run inline provisioning (defined in rpi-k8s-base.pkr.hcl):│
-│    - System setup: kernel params, cgroups, swap off         │
-│    - Container runtime: install containerd                  │
-│    - Kubernetes: install kubeadm, kubelet, kubectl          │
-│ 4. Output: rpi-k8s-base.img (8GB image)                     │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-                    Flash to SD cards
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│ Stage 2: Ansible (Cluster Orchestration)                    │
-│ ─────────────────────────────────────────────────────────── │
-│ Playbook execution order (site.yml):                        │
-│                                                              │
-│ 1. common role (all nodes):                                 │
-│    - Set hostnames and /etc/hosts                           │
-│    - Load kernel modules (br_netfilter, overlay)            │
-│    - Enable kubelet service                                 │
-│                                                              │
-│ 2. control-plane role:                                      │
-│    - Run: kubeadm init --pod-network-cidr=10.244.0.0/16     │
-│    - Install Flannel CNI                                    │
-│    - Generate worker join token                             │
-│    - Save join command to /tmp/kubeadm_join_command.sh      │
-│                                                              │
-│ 3. worker role (runs on all workers):                       │
-│    - Copy join command from control plane                   │
-│    - Run: kubeadm join <control-plane-ip>:6443 --token ...  │
-│    - Label nodes as workers                                 │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Why This Approach?
-
-- **Packer**: Ensures all nodes have identical base configuration, faster than provisioning from scratch
-- **Ansible**: Handles cluster-specific orchestration (token generation, join commands) that can't be baked into an image
-- **Separation**: Update OS/K8s versions via image rebuild, change cluster config via Ansible
-
-### Key Configuration Variables
-
-Located in `ansible/group_vars/`:
-
-- `all.yml`: Global settings (pod CIDR, service CIDR, MetalLB range)
-- `control_plane.yml`: Control plane specific settings
-
-Network configuration:
-
-- Pod network: `10.244.0.0/16` (Flannel default)
-- Service CIDR: `10.96.0.0/12` (Kubernetes default)
-- MetalLB pool: `192.168.1.200-192.168.1.220` (customize for your network)
-
-### Ansible Idempotency
-
-All roles check for existing state before making changes:
-
-- `control-plane`: Checks `/etc/kubernetes/admin.conf` exists before running `kubeadm init`
-- `worker`: Checks `/etc/kubernetes/kubelet.conf` exists before joining
-- Common: Checks if node already in cluster
-
-This allows safe re-runs of `just ansible-deploy`.
 
 ## File Structure
 
 ```text
 homelab/
-├── flake.nix                    # Nix dev environment (defines all tools)
-├── justfile                     # Command runner (all automation)
-├── Vagrantfile                  # Ubuntu VM for ARM image building
-├── .pre-commit-config.yaml      # Quality checks (ansible-lint, yamlfmt, markdownlint)
-│
 ├── packer/
-│   ├── rpi-k8s-base.pkr.hcl    # Main Packer config with inline provisioners
-│   └── output-rpi-k8s/         # Build output directory
+│   ├── ubuntu-template/
+│   │   ├── ubuntu-24.04-template.pkr.hcl  # Proxmox template builder
+│   │   └── http/                          # Autoinstall configs (user-data, meta-data)
+│   └── rpi-pihole.pkr.hcl                 # Pi-hole ARM image
+│
+├── terraform/
+│   ├── modules/ubuntu-vm/                 # Reusable VM module (40+ parameters)
+│   │   ├── main.tf                        # VM resource definition
+│   │   ├── variables.tf                   # Module inputs
+│   │   └── outputs.tf                     # VM metadata (IP, ID, MAC)
+│   └── proxmox/                           # Root module
+│       ├── providers.tf                   # bpg/proxmox provider 0.89.1
+│       ├── main.tf                        # Provider configuration
+│       ├── _arrstack.tf                   # Media server VM (192.168.1.50)
+│       ├── _observability.tf              # Monitoring VM (192.168.1.51)
+│       ├── variables.tf                   # Sensitive vars only
+│       └── terraform.tfvars               # SSH public key (GITIGNORED)
 │
 ├── ansible/
-│   ├── ansible.cfg             # Ansible configuration
-│   ├── inventory.yml           # Node IPs and hostnames (UPDATE THIS)
-│   ├── site.yml                # Main playbook (orchestrates roles)
-│   ├── group_vars/
-│   │   ├── all.yml            # Global vars (CIDR, versions, MetalLB)
-│   │   └── control_plane.yml  # Control plane specific vars
+│   ├── playbooks/
+│   │   ├── base-template.yml              # Template hardening (SSH, Docker)
+│   │   ├── pihole.yml                     # Pi-hole + Unbound deployment
+│   │   ├── arr.yml                        # Media automation stack
+│   │   └── observability.yml              # Grafana/Prometheus/Loki
 │   └── roles/
-│       ├── common/tasks/main.yml          # Setup all nodes
-│       ├── control-plane/tasks/main.yml   # Initialize cluster
-│       └── worker/tasks/main.yml          # Join workers
+│       ├── pihole/                        # Pi-hole + Unbound role
+│       ├── arr/                           # Media server role
+│       └── observability/                 # Monitoring stack role
 │
-└── kubernetes/manifests/
-    ├── metallb-config.yaml     # IP pool configuration
-    ├── traefik-values.yaml     # Traefik Helm values
-    ├── cert-manager.yaml       # Certificate issuers
-    └── longhorn-values.yaml    # Longhorn Helm values
+├── .envrc                                 # Loads .env and exports TF_VAR_*
+├── .env                                   # API tokens (GITIGNORED)
+├── flake.nix                              # Nix environment (pinned versions)
+├── Vagrantfile                            # ARM build VM (macOS workaround)
+└── justfile                               # Command runner
 ```
 
-## Configuration Required Before Deployment
+## Environment Variables
 
-### 1. Static IPs (Manual Step)
-
-After flashing SD cards, boot each Pi and configure static IPs via netplan:
+**Authentication** (stored in `.env`, auto-loaded by direnv):
 
 ```bash
-ssh ubuntu@<dhcp-ip>
-sudo nano /etc/netplan/50-cloud-init.yaml
+PROXMOX_TOKEN_ID="root@pam!terraform"
+PROXMOX_TOKEN_SECRET="<uuid>"
 ```
 
-Recommended IPs:
+**Auto-exported by .envrc**:
 
-- Control plane: `192.168.1.101`
-- Worker 1: `192.168.1.102`
-- Worker 2: `192.168.1.103`
-- Worker 3: `192.168.1.104`
+- `TF_VAR_proxmox_api_token_id` - For Terraform
+- `TF_VAR_proxmox_api_token_secret` - For Terraform
+- `PROXMOX_TOKEN_ID` - For Packer (via `env("PROXMOX_TOKEN_ID")`)
+- `PROXMOX_TOKEN_SECRET` - For Packer (via `env("PROXMOX_TOKEN_SECRET")`)
 
-### 2. Update Ansible Inventory
+## Tool Versions
 
-Edit `ansible/inventory.yml` with your actual IPs:
+Pinned via Nix flakes for reproducibility:
+
+- **Packer**: 1.14.3 (pinned nixpkgs commit)
+- **Terraform**: 1.14.1 (from nixpkgs-terraform)
+- **Proxmox Provider**: 3.0.2-rc06 (Telmate)
+- **Ansible**: Latest from nixpkgs-unstable
+
+## Common Issues
+
+### VM stuck at SeaBIOS boot screen
+
+- **Cause**: Terraform missing UEFI configuration
+- **Fix**: Ensure `bios = "ovmf"`, `machine = "q35"`, and `efidisk` block present
+
+### SSH key authentication not working
+
+- **Cause**: Cloud-init not enabled in template OR 1Password agent not loading key
+- **Fix**:
+  1. Verify `cloud_init = true` in Packer template
+  2. Check `ssh-add -l` shows Proxmox key
+  3. Update `~/.config/1Password/ssh/agent.toml` if needed
+
+### Cloud-init not running on cloned VMs
+
+- **Cause**: Template wasn't properly cleaned
+- **Fix**: Ansible must run `cloud-init clean --logs --seed` during template build
+
+## Network Architecture
+
+```text
+Internet → Router (192.168.1.1)
+              ↓
+    ┌─────────┼─────────┐
+    ↓                   ↓
+Pi-hole DNS         Proxmox VE
+192.168.1.2         192.168.1.37
+(Raspberry Pi)      (P520 Server)
+    ↓                   ↓
+Network-wide        VM Infrastructure
+DNS Filtering       (Cloned from Template)
+```
+
+**IP Assignments**:
+
+- Router/Gateway: 192.168.1.1
+- Pi-hole: 192.168.1.2 (Raspberry Pi #2)
+- Tailscale: 192.168.1.100 (Raspberry Pi #1, if configured)
+- Proxmox: 192.168.1.37
+- Template VM: ID 9000
+- arr-server: 192.168.1.50 (static, media automation)
+- monitoring-server: 192.168.1.51 (static, observability)
+
+## Terraform Module Pattern
+
+### Using the ubuntu-vm Module
+
+To add a new VM, create a new `.tf` file in `terraform/proxmox/` (e.g., `_newservice.tf`):
+
+```hcl
+module "newservice_server" {
+  source = "../modules/ubuntu-vm"
+
+  # Required settings
+  proxmox_node     = "pve"
+  template_vm_id   = 9000
+  vm_name          = "newservice-server"
+  vm_id            = 201
+
+  # Hardware
+  cpu_cores        = 2
+  memory_mb        = 4096
+  disk_size_gb     = 50
+
+  # Network
+  ipv4_address     = "192.168.1.52/24"
+  ipv4_gateway     = "192.168.1.1"
+
+  # SSH
+  ssh_public_key   = var.ssh_public_key
+
+  # Tags
+  tags             = ["ubuntu", "newservice", "production"]
+}
+
+# Trigger Ansible provisioning after VM is created
+resource "ansible_playbook" "newservice" {
+  playbook   = "${path.module}/../../ansible/playbooks/newservice.yml"
+  name       = module.newservice_server.ipv4_addresses[0][0]
+
+  extra_vars = {
+    ansible_user = "ubuntu"
+  }
+
+  depends_on = [module.newservice_server]
+}
+```
+
+**Module Benefits:**
+
+- DRY (Don't Repeat Yourself) - common config in one place
+- Consistent VM configuration across deployments
+- Easy to add new VMs without duplicating code
+- Centralized updates (fix once in module, applies everywhere)
+
+## Development Notes
+
+### Raspberry Pi ARM Building
+
+**macOS Limitation**: Docker Desktop cannot mount loop devices, so ARM image building requires Vagrant + QEMU:
+
+1. Vagrantfile creates Ubuntu 22.04 VM with privileged access
+2. VM runs `mkaczanowski/packer-builder-arm` Docker container
+3. Container builds ARM image with loop device access
+4. Image copied back to host via rsync
+
+### Terraform Variable Strategy
+
+Previously used extensive variables (vm_name, vm_cores, vm_memory, etc.). Now most settings are baked directly into
+`main.tf` to simplify template usage. Only sensitive values remain as variables:
+
+- `proxmox_api_token_id`
+- `proxmox_api_token_secret`
+- `ssh_public_key`
+
+To customize VMs, edit `main.tf` directly rather than managing variables.
+
+### SSH Key Management
+
+1Password SSH agent provides Touch ID authentication:
+
+- Private key stored in 1Password (item: "proxmox")
+- Public key in `terraform.tfvars` (injected via cloud-init)
+- Agent socket: `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`
+
+## References
+
+- Proxmox API: <https://192.168.1.37:8006/api2/json>
+- Packer Proxmox Builder: <https://developer.hashicorp.com/packer/plugins/builders/proxmox/iso>
+- Terraform Proxmox Provider: <https://github.com/bpg/terraform-provider-proxmox>
+- Packer ARM Builder: <https://github.com/mkaczanowski/packer-builder-arm>
+
+## Important Implementation Details
+
+### Ansible Chroot Provisioning (Pi-hole)
+
+When building the Pi-hole image, Ansible runs **inside a chroot environment** (no running systemd or Docker daemon).
+Tasks must be chroot-aware:
+
+**Problem**: Can't use `systemd` or `docker` modules in chroot
+**Solution**: Use `packer_build` variable to conditionally skip/modify tasks
 
 ```yaml
-control_plane:
-  hosts:
-    rpi-control-01:
-      ansible_host: 192.168.1.101  # <- Your IP
-      node_ip: 192.168.1.101
+# Skip during Packer build (chroot)
+- name: Enable systemd-timesyncd
+  ansible.builtin.systemd:
+    name: systemd-timesyncd
+    enabled: true
+    state: started
+  when: not packer_build | default(false)
+
+# Manual service enabling for Packer build
+- name: Enable node_exporter (packer build)
+  ansible.builtin.file:
+    src: /usr/lib/systemd/system/prometheus-node-exporter.service
+    dest: /etc/systemd/system/multi-user.target.wants/prometheus-node-exporter.service
+    state: link
+  when: packer_build | default(false)
 ```
 
-### 3. Update MetalLB Range
+**Key Constraints in Chroot:**
 
-Edit `ansible/group_vars/all.yml`:
+- ❌ Cannot run `systemctl` commands
+- ❌ Cannot start/stop services
+- ❌ Cannot run Docker containers
+- ✅ Can install packages via `apt`
+- ✅ Can create files and directories
+- ✅ Can create systemd unit files
+- ✅ Can manually create symlinks in `/etc/systemd/system/multi-user.target.wants/`
 
-```yaml
-metallb_ip_range: "192.168.1.200-192.168.1.220"  # Adjust for your network
+**Packer passes the flag:**
+
+```hcl
+provisioner "shell" {
+  inline = [
+    "ansible-playbook pihole.yml --extra-vars 'packer_build=true'"
+  ]
+}
 ```
 
-Also update `kubernetes/manifests/metallb-config.yaml` to match.
+### Memory Usage (Linux Cache Behavior)
 
-## Common Workflows
+When checking VM memory in Proxmox, you may see high usage (e.g., 3.8GB of 4GB). This is **normal Linux behavior**:
 
-### Updating Kubernetes Version
-
-```bash
-# 1. Update version in packer/rpi-k8s-base.pkr.hcl
-# variable "k8s_version" { default = "1.35" }
-
-# 2. Update checksum (download new Ubuntu image and get sha256)
-
-# 3. Rebuild image
-just packer-build
-
-# 4. Flash new image to SD cards
-
-# 5. Reconfigure static IPs (netplan)
-
-# 6. Redeploy cluster
-just ansible-deploy
+```text
+Total: 3.8GB
+Used:  859MB  ← Actual application usage
+Cache: 3.0GB  ← File system cache (automatically freed when needed)
 ```
 
-### Adding a Worker Node
-
-```bash
-# 1. Flash SD card with base image
-# 2. Configure static IP via netplan
-# 3. Add to ansible/inventory.yml under workers:
-# 4. Run deployment limited to new node
-cd ansible
-ansible-playbook -i inventory.yml site.yml --limit new-worker-hostname
-```
-
-### Troubleshooting Failed Node Join
-
-```bash
-# On control plane, regenerate join token
-ssh ubuntu@192.168.1.101
-sudo kubeadm token create --print-join-command
-
-# On worker, reset and rejoin
-ssh ubuntu@192.168.1.102
-sudo kubeadm reset -f
-sudo <paste-join-command>
-```
-
-### Backup etcd
-
-```bash
-just backup-etcd
-# Saves to: etcd-backup-YYYYMMDD-HHMMSS.db
-```
-
-## Testing
-
-```bash
-# Deploy test nginx with LoadBalancer
-just test-deploy
-kubectl get svc nginx-test  # Get external IP
-curl http://<EXTERNAL-IP>
-
-# Cleanup
-just test-cleanup
-```
-
-## Important Notes
-
-### Packer Build Requirements
-
-- **macOS**: Must use Vagrant + QEMU (loop device limitation)
-- **Linux**: Can run Packer directly with `--privileged` Docker
-- **Build time**: 30-60 minutes depending on network and CPU
-- **Provisioning**: Uses inline shell commands (not external scripts) to avoid chroot upload issues with packer-builder-arm
-- **Cache**: Automatically cleaned before each build to prevent corrupt download issues
-
-### ARM64 Image Availability
-
-Not all container images support ARM64. Before deploying applications:
-
-```bash
-docker manifest inspect <image:tag> | grep arm64
-```
-
-### Storage Considerations
-
-**Hardware**: 128GB storage per node (SD card or SSD)
-
-- Use A2-rated SD cards for better IOPS
-- Limited write cycles on SD cards: expect quarterly replacement
-- **Recommended**: Use USB3 SSDs instead of SD cards for better performance and longevity
-- Longhorn benefits significantly from SSD storage
-
-### Resource Limits
-
-**Hardware**: 8GB RAM per Raspberry Pi 4 node
-
-- Set resource requests/limits on pods to prevent memory exhaustion
-- Monitor resource usage: `kubectl top nodes` and `just k9s`
-- Consider pod priority classes for critical workloads
-
-## Version Information
-
-See `VERSIONS.md` for detailed compatibility matrix and upgrade paths.
-
-Current stable versions:
-
-- Kubernetes: v1.34
-- Ubuntu: 24.04.1 LTS
-- Flannel: v0.25.7
-- MetalLB: v0.14.9
-- Longhorn: v1.7.2
-- Traefik: v3.x
-- cert-manager: v1.16.2
+**Key insight**: Linux uses "free" RAM for caching to improve performance. This cache is immediately released if
+applications need memory. Check `available` column, not `used`, to see true memory pressure.

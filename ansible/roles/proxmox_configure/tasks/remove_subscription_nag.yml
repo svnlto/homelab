@@ -1,0 +1,27 @@
+---
+# =============================================================================
+# Task: Remove Proxmox Subscription Warning
+# =============================================================================
+
+- name: Check if proxmoxlib.js exists
+  ansible.builtin.stat:
+    path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+  register: proxmoxlib_stat
+
+- name: Remove subscription warning from web UI
+  ansible.builtin.replace:
+    path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+    regexp: "(Ext.Msg.show\\(\\{[^}]*title:\\s*gettext\\('No valid subscription'\\))"
+    replace: "void({ //\\1"
+    backup: true
+  when: proxmoxlib_stat.stat.exists
+  failed_when: false
+
+- name: Alternative method - patch subscription check
+  ansible.builtin.replace:
+    path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+    regexp: "res.data.status.toLowerCase\\(\\) !== 'active'"
+    replace: "false"
+    backup: false
+  when: proxmoxlib_stat.stat.exists
+  failed_when: false

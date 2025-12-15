@@ -1,0 +1,76 @@
+---
+# =============================================================================
+# Role: proxmox_configure
+# Configures Proxmox VE after installation
+# =============================================================================
+
+- name: Remove subscription nag
+  ansible.builtin.include_tasks: remove_subscription_nag.yml
+  when: pve_remove_subscription_warning | default(true)
+
+- name: Configure PCIe passthrough
+  ansible.builtin.include_tasks: pcie_passthrough.yml
+  when: configure_pcie_passthrough | default(false)
+
+- name: Configure basic datacenter settings
+  ansible.builtin.template:
+    src: datacenter.cfg.j2
+    dest: /etc/pve/datacenter.cfg
+    owner: root
+    group: www-data
+    mode: "0640"
+  when: false # /etc/pve doesn't exist until first boot
+  failed_when: false
+
+- name: Configure NTP with chrony
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: /etc/chrony/chrony.conf
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  notify: Restart chrony
+
+- name: Enable and start chrony
+  ansible.builtin.systemd:
+    name: chrony
+    enabled: true
+    state: started
+
+- name: Ensure .ssh directory exists for root
+  ansible.builtin.file:
+    path: /root/.ssh
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Add SSH public key to root authorized_keys
+  ansible.posix.authorized_key:
+    user: root
+    key: "{{ proxmox_ssh_public_key }}"
+    state: present
+  when: proxmox_ssh_public_key is defined
+
+- name: Create first-boot script for final configuration
+  ansible.builtin.template:
+    src: first-boot.sh.j2
+    dest: /usr/local/bin/pve-first-boot.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create first-boot systemd service
+  ansible.builtin.template:
+    src: pve-first-boot.service.j2
+    dest: /etc/systemd/system/pve-first-boot.service
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Enable first-boot service
+  ansible.builtin.systemd:
+    name: pve-first-boot
+    enabled: true
+    daemon_reload: true

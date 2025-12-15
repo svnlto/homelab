@@ -2,22 +2,36 @@
 .direnv/
 result
 
+# Environment variables (contains secrets)
+.env
+
 # Vagrant
 .vagrant/
 
 # Packer
-packer/output-*/
-packer/*.img
 packer/.packer_cache/
+packer/output/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+*.auto.tfvars
+*.auto.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+*.tfplan
+
+# Build outputs
+output/
 *.box
-
-# Ansible
-ansible/*.retry
-ansible/.vault_pass
-ansible/files/secrets/
-
-# Kubernetes
-kubernetes/secrets/
 
 # macOS
 .DS_Store
@@ -29,7 +43,13 @@ kubernetes/secrets/
 *.swo
 *~
 
+# Logs
+*.log
+crash.log
+crash.*.log
+packer-debug.log
+terraform-plugin-proxmox.log
+
 # Temporary files
 /tmp/
-*.log
 .cache/

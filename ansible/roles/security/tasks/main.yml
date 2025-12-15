@@ -1,0 +1,61 @@
+---
+# =============================================================================
+# Role: security
+# Post-deployment security hardening
+# =============================================================================
+
+- name: Ensure SSH directory exists
+  ansible.builtin.file:
+    path: /root/.ssh
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Deploy authorized SSH keys
+  ansible.posix.authorized_key:
+    user: root
+    key: "{{ item }}"
+    state: present
+  loop: "{{ ssh_authorized_keys | default([]) }}"
+  when: ssh_authorized_keys is defined and ssh_authorized_keys | length > 0
+
+- name: Configure SSH security settings
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    backup: true
+    validate: 'sshd -t -f %s'
+  loop:
+    - {regexp: '^#?PermitRootLogin', line: 'PermitRootLogin prohibit-password'}
+    - {regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no'}
+    - {regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication yes'}
+    - {regexp: '^#?X11Forwarding', line: 'X11Forwarding no'}
+    - {regexp: '^#?MaxAuthTries', line: 'MaxAuthTries 3'}
+    - {regexp: '^#?PermitEmptyPasswords', line: 'PermitEmptyPasswords no'}
+    - {regexp: '^#?ChallengeResponseAuthentication', line: 'ChallengeResponseAuthentication no'}
+  notify: Restart sshd
+  when: harden_ssh | default(true)
+
+- name: Set secure permissions on SSH config
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Configure firewall (if enabled)
+  when: configure_firewall | default(false)
+  block:
+    - name: Install pve-firewall
+      ansible.builtin.apt:
+        name: pve-firewall
+        state: present
+
+    - name: Enable pve-firewall service
+      ansible.builtin.systemd:
+        name: pve-firewall
+        enabled: true
+        state: started

@@ -1,0 +1,63 @@
+---
+# =============================================================================
+# Task: Configure PCIe Passthrough (IOMMU)
+# =============================================================================
+
+- name: Detect CPU vendor
+  ansible.builtin.command: grep -m1 vendor_id /proc/cpuinfo
+  register: cpu_vendor
+  changed_when: false
+
+- name: Set IOMMU parameter based on CPU vendor
+  ansible.builtin.set_fact:
+    iommu_param: "{{ 'intel_iommu=on' if 'Intel' in cpu_vendor.stdout else 'amd_iommu=on' }}"
+
+- name: Configure GRUB for IOMMU
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="quiet {{ iommu_param }} iommu=pt"'
+    backup: true
+  notify: Update GRUB
+
+- name: Configure VFIO modules
+  ansible.builtin.lineinfile:
+    path: /etc/modules
+    line: "{{ item }}"
+    create: true
+    mode: '0644'
+  loop:
+    - vfio
+    - vfio_iommu_type1
+    - vfio_pci
+    - vfio_virqfd
+
+- name: Configure VFIO early loading
+  ansible.builtin.copy:
+    content: |
+      # Load VFIO modules early for PCIe passthrough
+      softdep drm pre: vfio-pci
+      options vfio-pci ids={{ pci_device_ids | default('') }}
+    dest: /etc/modprobe.d/vfio.conf
+    owner: root
+    group: root
+    mode: "0644"
+  when: pci_device_ids is defined and pci_device_ids | length > 0
+
+- name: Blacklist GPU drivers (if specified)
+  ansible.builtin.copy:
+    content: |
+      # Blacklist drivers for PCIe passthrough
+      {% for driver in vfio_blacklist_drivers | default([]) %}
+      blacklist {{ driver }}
+      {% endfor %}
+    dest: /etc/modprobe.d/blacklist-gpu.conf
+    owner: root
+    group: root
+    mode: "0644"
+  when: vfio_blacklist_drivers is defined and vfio_blacklist_drivers | length > 0
+
+- name: Update initramfs
+  ansible.builtin.command: update-initramfs -u -k all
+  changed_when: false
+  when: false # Deferred to playbook post_tasks

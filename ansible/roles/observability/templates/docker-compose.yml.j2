@@ -1,0 +1,76 @@
+---
+services:
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time={{ prometheus_retention | default("30d") }}'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    volumes:
+      - {{ data_location }}/prometheus/config:/etc/prometheus
+      - {{ data_location }}/prometheus/data:/prometheus
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.4.1
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - {{ data_location }}/loki/config:/etc/loki
+      - {{ data_location }}/loki/data:/loki
+    ports:
+      - 3100:3100
+    restart: unless-stopped
+
+  alloy:
+    image: grafana/alloy:v1.11.3
+    container_name: alloy
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+    volumes:
+      - {{ data_location }}/alloy:/etc/alloy
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log:/var/log:ro
+    ports:
+      - 12345:12345
+    environment:
+      - HOSTNAME={{ ansible_hostname }}
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+      - loki
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER={{ grafana_admin_user | default('admin') }}
+      - GF_SECURITY_ADMIN_PASSWORD={{ grafana_admin_password }}
+      - GF_INSTALL_PLUGINS={{ grafana_plugins | default('') }}
+      - GF_SERVER_ROOT_URL={{ grafana_root_url | default('http://localhost:3000') }}
+    volumes:
+      - {{ data_location }}/grafana:/var/lib/grafana
+      - {{ data_location }}/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+      - loki
+
+{% if enable_traefik | default(false) %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.{{ traefik_domain }}`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+{% endif %}

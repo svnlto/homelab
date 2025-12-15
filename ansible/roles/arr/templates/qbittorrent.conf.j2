@@ -1,0 +1,31 @@
+[Preferences]
+# qBittorrent configuration
+# Managed by Ansible - DO NOT EDIT MANUALLY
+
+[LegalNotice]
+Accepted=true
+
+[BitTorrent]
+Session\DefaultSavePath=/data/downloads/complete
+Session\TempPath=/data/downloads/incomplete
+Session\TempPathEnabled=true
+Session\Port={{ qbittorrent_port | default(6881) }}
+Session\QueueingSystemEnabled=true
+Session\MaxActiveDownloads={{ qbittorrent_max_active_downloads | default(5) }}
+Session\MaxActiveTorrents={{ qbittorrent_max_active_torrents | default(10) }}
+Session\MaxActiveUploads={{ qbittorrent_max_active_uploads | default(5) }}
+Session\GlobalMaxSeedingMinutes={{ qbittorrent_max_seeding_minutes | default(10080) }}
+
+[Network]
+Proxy\OnlyForTorrents=false
+
+[WebUI]
+Port={{ qbittorrent_webui_port | default(8701) }}
+Address=*
+LocalHostAuth=false
+AuthSubnetWhitelistEnabled=false
+CSRFProtection=true
+ClickjackingProtection=true
+HostHeaderValidation=true
+SecureCookie=true
+Username={{ qbittorrent_username | default('admin') }}

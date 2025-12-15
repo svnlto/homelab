@@ -1,0 +1,32 @@
+---
+- name: Deploy Observability Stack
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Ensure Docker is running
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+  roles:
+    - observability
+
+  post_tasks:
+    - name: Wait for Grafana to be ready
+      ansible.builtin.uri:
+        url: "http://localhost:3000/api/health"
+        status_code: 200
+      register: grafana_health
+      until: grafana_health.status == 200
+      retries: 30
+      delay: 2
+
+    - name: Display service URLs
+      ansible.builtin.debug:
+        msg:
+          - "Grafana:    http://{{ ansible_host }}:3000 (admin/{{ grafana_admin_password }})"
+          - "Prometheus: http://{{ ansible_host }}:9090"
+          - "Loki:       http://{{ ansible_host }}:3100"
+          - "Alloy:      http://{{ ansible_host }}:12345"

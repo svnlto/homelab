@@ -1,0 +1,47 @@
+---
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:{{ pihole_version }}
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "80:80/tcp"
+    environment:
+      TZ: "{{ pihole_timezone }}"
+      WEBPASSWORD: "{{ pihole_webpassword }}"
+      FTLCONF_LOCAL_IPV4: "{{ pihole_ipv4_address }}"
+{% if enable_unbound %}
+      PIHOLE_DNS_: "unbound#5335"
+{% else %}
+      PIHOLE_DNS_: "{{ pihole_upstream_dns }}"
+{% endif %}
+      DNSMASQ_LISTENING: "all"
+    volumes:
+      - ./etc-pihole:/etc/pihole
+      - ./etc-dnsmasq.d:/etc/dnsmasq.d
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    networks:
+      - pihole_net
+{% if enable_unbound %}
+    depends_on:
+      - unbound
+{% endif %}
+
+{% if enable_unbound %}
+  unbound:
+    container_name: unbound
+    image: mvance/unbound:{{ unbound_version }}
+    ports:
+      - "5335:53/tcp"
+      - "5335:53/udp"
+    restart: unless-stopped
+    networks:
+      - pihole_net
+{% endif %}
+
+networks:
+  pihole_net:
+    driver: bridge

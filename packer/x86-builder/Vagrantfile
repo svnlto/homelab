@@ -1,0 +1,155 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#
+# x86_64 Bootable Disk Image Builder VM
+# ======================================
+# This VM provides an x86_64 environment with KVM for building bootable disk images.
+#
+# Usage:
+#   just x86-vm-up    # Start VM
+#   just x86-build    # Build disk image
+#
+# The VM syncs the current directory and runs Packer builds inside.
+
+# Build VM configuration
+BUILD_VM_MEMORY = ENV.fetch('BUILD_VM_MEMORY', '8192')
+BUILD_VM_CPUS = ENV.fetch('BUILD_VM_CPUS', '4')
+
+Vagrant.configure("2") do |config|
+  config.vm.define "x86-builder" do |builder|
+    builder.vm.box = "bento/ubuntu-22.04"
+    builder.vm.hostname = "x86-builder"
+    builder.vm.boot_timeout = 600
+
+    # Network
+    builder.vm.network "private_network", type: "dhcp"
+
+    # Forward VNC port for viewing Packer builds
+    builder.vm.network "forwarded_port", guest: 5900, host: 5900, host_ip: "127.0.0.1"
+
+    # SSH configuration
+    builder.ssh.insert_key = true
+    builder.ssh.forward_agent = true
+
+    # Synced folders
+    builder.vm.synced_folder ".", "/vagrant",
+      type: "rsync",
+      rsync__auto: true,
+      rsync__exclude: [
+        '.git/',
+        '.packer_cache/',
+        'output*/',
+        '*.raw',
+        '*.raw.gz',
+        '*.qcow2',
+        '*.img',
+        'packer_cache/'
+      ]
+
+    # Sync ansible directory (needed for playbooks and roles)
+    builder.vm.synced_folder "../../ansible", "/ansible",
+      type: "rsync",
+      rsync__exclude: ['.git/']
+
+    # Output folder - for retrieving built images
+    builder.vm.synced_folder ".", "/vagrant/output",
+      type: "rsync",
+      rsync__auto: false,
+      create: true
+
+    # VMware Fusion provider
+    builder.vm.provider "vmware_desktop" do |v|
+      v.vmx["memsize"] = BUILD_VM_MEMORY
+      v.vmx["numvcpus"] = BUILD_VM_CPUS
+      v.gui = false
+
+      # Enable nested virtualization (required for KVM/QEMU)
+      v.vmx["vhv.enable"] = "TRUE"
+      v.vmx["vpmc.enable"] = "TRUE"
+
+      # Network adapter PCI slot assignments (suppress warnings)
+      v.vmx["ethernet0.pcislotnumber"] = "160"
+      v.vmx["ethernet1.pcislotnumber"] = "224"
+    end
+
+    # Provision build environment
+    builder.vm.provision "shell", name: "install-dependencies", inline: <<-SHELL
+      set -euo pipefail
+
+      echo "==> Installing build dependencies..."
+
+      # Update and install packages
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update
+      apt-get install -y \
+        qemu-kvm \
+        qemu-system-x86 \
+        qemu-utils \
+        libvirt-daemon-system \
+        libvirt-clients \
+        ovmf \
+        bridge-utils \
+        cpu-checker \
+        cloud-image-utils \
+        genisoimage \
+        curl \
+        wget \
+        unzip \
+        jq \
+        rsync \
+        git \
+        ansible
+
+      # Add vagrant user to required groups
+      usermod -aG libvirt vagrant
+      usermod -aG kvm vagrant
+
+      # Install Packer
+      PACKER_VERSION="1.14.3"
+      if ! command -v packer &> /dev/null; then
+        echo "==> Installing Packer ${PACKER_VERSION}..."
+        ARCH=$(uname -m)
+        if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+          PACKER_ARCH="arm64"
+        else
+          PACKER_ARCH="amd64"
+        fi
+        curl -fsSL "https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_${PACKER_ARCH}.zip" -o /tmp/packer.zip
+        unzip -o /tmp/packer.zip -d /usr/local/bin/
+        rm /tmp/packer.zip
+      fi
+
+      # Verify KVM is available
+      echo "==> Checking KVM support..."
+      if kvm-ok; then
+        echo "✓ KVM is available!"
+      else
+        echo "⚠ WARNING: KVM acceleration not available. Builds will be slow."
+      fi
+
+      # Create output directory
+      mkdir -p /vagrant/output
+      chown vagrant:vagrant /vagrant/output
+
+      # Initialize Packer plugins if .pkr.hcl files exist
+      if ls /vagrant/*.pkr.hcl &> /dev/null; then
+        echo "==> Initializing Packer plugins..."
+        cd /vagrant
+        su - vagrant -c "cd /vagrant && packer init ." || true
+      fi
+
+      echo ""
+      echo "========================================"
+      echo "x86 Build VM ready!"
+      echo "========================================"
+      echo ""
+      echo "To build an image:"
+      echo "  vagrant ssh"
+      echo "  cd /vagrant && packer build ."
+      echo ""
+      echo "Or from host:"
+      echo "  just build"
+      echo ""
+    SHELL
+  end
+end

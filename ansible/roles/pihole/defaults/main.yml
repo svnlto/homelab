@@ -1,0 +1,26 @@
+---
+# Pi-hole Docker image version
+pihole_version: "2025.10.3"
+
+# Pi-hole configuration
+pihole_timezone: "Europe/Berlin"
+pihole_webpassword: "changeme" # Change this!
+pihole_ipv4_address: "192.168.1.2"
+pihole_upstream_dns: "1.1.1.1;8.8.8.8"
+
+# Installation paths
+pihole_base_dir: "/opt/pihole"
+pihole_config_dir: "{{ pihole_base_dir }}/etc-pihole"
+pihole_dnsmasq_dir: "{{ pihole_base_dir }}/etc-dnsmasq.d"
+
+# Service user
+pihole_user: "pihole-service"
+pihole_group: "docker"
+
+enable_unbound: true
+unbound_version: "1.24.2"
+
+# Backup configuration
+enable_backups: true
+backup_location: "/var/backups/pihole"
+backup_retention_days: 7
