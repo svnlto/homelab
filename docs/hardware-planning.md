@@ -98,7 +98,7 @@ Internet → Router (192.168.1.1)
 ### Cluster Configuration
 
 **2-Node Proxmox Cluster:**
-- **r630** (Node 1): Compute-focused, 8x SFF local storage
+- **r630** (Node 1): Compute-focused, uses shared TrueNAS storage (no local VM storage)
 - **r730xd** (Node 2): Storage + compute, TrueNAS VM pinned
 - **Quorum:** 2-node cluster (manual failover acceptable for homelab)
   - Optional: Add Raspberry Pi as external quorum device
@@ -245,7 +245,7 @@ Connection options:
 - **CPUs:** 2x E5-2699 v3 (18C/36T each = 36C/72T total, 2.3 GHz, 145W TDP)
 - **RAM:** 64-128GB DDR4 ECC (pre-installed)
 - **GPU:** Intel Arc A310 Eco (low-profile, AV1 encode/decode)
-- **Storage:** Local 8x SFF for boot + VM scratch
+- **Storage:** 1x SATA SSD in optical bay (Proxmox boot only), VM storage via TrueNAS network shares
 - **Role:** Compute + GPU transcoding workloads
 
 **Workload Examples:**
