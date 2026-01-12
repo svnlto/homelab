@@ -57,15 +57,85 @@ Proxmox maintenance. Pi-hole runs on the Pi, NOT on Proxmox.
    - `ansible/playbooks/observability.yml` - Deploys Grafana/Prometheus/Loki
    - Uses `ansible_playbook` resource to trigger provisioning
 
+### LXC Containers vs VMs
+
+**When to use LXC containers:**
+
+- Lightweight services (arr stack, single-purpose apps)
+- Don't need full OS isolation
+- Want faster boot times and lower memory overhead
+- Share kernel with host (more efficient)
+
+**When to use VMs:**
+
+- Need full OS isolation
+- Running different OS than host
+- Require kernel modules or specific kernel versions
+- Need UEFI/SecureBoot
+
+**LXC Container Configuration:**
+
+```hcl
+resource "proxmox_virtual_environment_container" "example" {
+  node_name    = "pve"
+  vm_id        = 201
+  unprivileged = true  # Always use unprivileged for security
+
+  features {
+    nesting = true  # Required for Docker inside LXC
+  }
+
+  mount_point {
+    volume = "/mnt/pve/storage"  # Proxmox host path
+    path   = "/data"             # Container path
+    shared = true
+  }
+}
+```
+
+**Key Differences from VMs:**
+
+- ✓ No cloud-init (use `initialization` block for network config)
+- ✓ Direct SSH to root (configure SSH keys in `user_account`)
+- ✓ Instant boot (no BIOS/bootloader)
+- ✓ Shared kernel with host (lower overhead)
+- ✗ Can't run different OS kernel version
+- ✗ Less isolation than VMs
+
+**LXC Template Management:**
+
+```bash
+# List available templates
+pveam available
+
+# Download Debian 12 template
+pveam download local debian-12-standard_12.2-1_amd64.tar.zst
+
+# Template path in Terraform
+template_file_id = "local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst"
+```
+
 ### Authentication Flow
+
+**For VMs (cloud-init):**
 
 1. **Template Build**: Packer uses temporary `ubuntu/ubuntu` credentials
 2. **Template Hardening**: Ansible disables password auth, enables SSH keys only
 3. **VM Clone**: Terraform injects SSH public key via cloud-init
 4. **SSH Access**: Uses 1Password SSH agent with Touch ID
-   - Agent config: `~/.config/1Password/ssh/agent.toml`
-   - SSH key item name in 1Password: `"proxmox"` (in Personal vault)
-   - SSH config: `IdentityAgent "/Users/svenlito/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"`
+
+**For LXC Containers:**
+
+1. **Container Creation**: Terraform creates container from Debian template
+2. **SSH Key Injection**: `user_account.keys` in `initialization` block
+3. **Root SSH**: Direct root access (containers don't have sudo user by default)
+4. **Provisioning**: Ansible connects as root to install Docker and apps
+
+**SSH Agent Configuration** (both VMs and containers):
+
+- Agent config: `~/.config/1Password/ssh/agent.toml`
+- SSH key item name in 1Password: `"proxmox"` (in Personal vault)
+- SSH config: `IdentityAgent "/Users/svenlito/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"`
 
 ## Essential Commands
 
@@ -126,8 +196,8 @@ homelab/
 │   └── proxmox/                           # Root module
 │       ├── providers.tf                   # bpg/proxmox provider 0.89.1
 │       ├── main.tf                        # Provider configuration
-│       ├── _arrstack.tf                   # Media server VM (192.168.1.50)
-│       ├── _observability.tf              # Monitoring VM (192.168.1.51)
+│       ├── _arrstack.tf                   # Arr LXC container (192.168.1.50)
+│       ├── _observability.tf              # Monitoring VM (192.168.1.60)
 │       ├── variables.tf                   # Sensitive vars only
 │       └── terraform.tfvars               # SSH public key (GITIGNORED)
 │
@@ -135,11 +205,11 @@ homelab/
 │   ├── playbooks/
 │   │   ├── base-template.yml              # Template hardening (SSH, Docker)
 │   │   ├── pihole.yml                     # Pi-hole + Unbound deployment
-│   │   ├── arr.yml                        # Media automation stack
+│   │   ├── stack-arr.yml                  # Full arr media stack
 │   │   └── observability.yml              # Grafana/Prometheus/Loki
 │   └── roles/
 │       ├── pihole/                        # Pi-hole + Unbound role
-│       ├── arr/                           # Media server role
+│       ├── arr/                           # Full media automation stack role
 │       └── observability/                 # Monitoring stack role
 │
 ├── .envrc                                 # Loads .env and exports TF_VAR_*
@@ -201,12 +271,25 @@ Internet → Router (192.168.1.1)
               ↓
     ┌─────────┼─────────┐
     ↓                   ↓
-Pi-hole DNS         Proxmox VE
-192.168.1.2         192.168.1.37
-(Raspberry Pi)      (P520 Server)
-    ↓                   ↓
-Network-wide        VM Infrastructure
-DNS Filtering       (Cloned from Template)
+Pi-hole DNS      Proxmox Cluster
+192.168.1.2      r630 + r730xd
+(Raspberry Pi)        ↓
+    ↓           ┌─────┴─────┐
+Network-wide    ↓           ↓
+DNS Filtering  r630        r730xd
+            (Compute)  (Storage+Compute)
+           192.168.1.XX  192.168.1.76
+                ↓           ↓
+                └── 10GbE ──┘
+                   DAC Cable
+                   10.0.0.0/30
+
+                   r730xd
+                      ↓
+                   DS2246
+                 Disk Shelf
+                (24x SFF)
+             SFF-8088 SAS Cables
 ```
 
 **IP Assignments**:
@@ -214,10 +297,37 @@ DNS Filtering       (Cloned from Template)
 - Router/Gateway: 192.168.1.1
 - Pi-hole: 192.168.1.2 (Raspberry Pi #2)
 - Tailscale: 192.168.1.100 (Raspberry Pi #1, if configured)
-- Proxmox: 192.168.1.37
+- r730xd (Proxmox + TrueNAS VM): 192.168.1.76 (mgmt), 10.0.0.1/30 (storage)
+- r630 (Proxmox): 192.168.1.XX (mgmt), 10.0.0.2/30 (storage/cluster)
 - Template VM: ID 9000
-- arr-server: 192.168.1.50 (static, media automation)
-- monitoring-server: 192.168.1.51 (static, observability)
+
+**LXC Containers:**
+
+- arr-stack: 192.168.1.50 (VMID 200) - Full media automation suite
+
+**VMs:**
+
+- monitoring-server: 192.168.1.60 (static, observability)
+- truenas: 192.168.1.76 (VMID 300) - Storage VM on r730xd
+
+**Hardware:**
+
+- r730xd: Dell PowerEdge R730xd (2U, 16x LFF + 2x SFF)
+  - CPUs: 2x E5-2680 v3 (12C/24T each = 24C/48T total)
+  - Boot: 2x SATA SSD in rear SFF slots (Proxmox + TrueNAS VM)
+  - Dell H330 Mini (IT mode) → 5x 8TB LFF drives (internal)
+  - LSI 9201-8e → DS2246 disk shelf (24x SFF drives)
+  - 10GbE SFP+ → Direct connection to r630
+- r630: Dell PowerEdge R630 (1U, 8x SFF, 3x low-profile PCIe)
+  - CPUs: 2x E5-2699 v3 (18C/36T each = 36C/72T total)
+  - Boot: 1x SATA drive in optical bay (Proxmox)
+  - GPU: Intel Arc A310 Eco (low-profile, Jellyfin transcoding)
+  - 2x 10GbE SFP+ (onboard NDC) → Direct connection to r730xd
+- DS2246: NetApp disk shelf with 24x 2.5" SFF bays
+  - 2x IOM6 modules for SAS connectivity
+  - Dual SFF-8088 cables to r730xd (redundant paths)
+
+**Total Cluster:** 60C/120T, 192-320GB RAM, Intel Arc A310 GPU
 
 ## Terraform Module Pattern
 
