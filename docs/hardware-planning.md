@@ -1,102 +1,119 @@
-# Homelab Hardware Planning - December 2025
+# Homelab Hardware Planning - January 2026
 
 ## Overview
 
-This document captures hardware research and decisions for a homelab build targeting:
+This document captures the final hardware configuration for a 2-node Proxmox cluster:
 
-- Proxmox virtualization cluster
-- TrueNAS storage
-- Kubernetes/OpenShift learning environments
-- Karpenter node scaling simulation
-- Jellyfin media server with hardware transcoding
-- Occasional LLM inference
+- **r630**: Pure compute node (Proxmox)
+- **r730xd**: Storage + compute node (Proxmox + TrueNAS VM)
+- **DS2246**: External disk shelf (24x 2.5" SFF)
+- **Use cases**: Kubernetes/OpenShift learning, Karpenter simulation, Jellyfin transcoding, LLM inference
 
-## Platform Comparison: Workstation vs Server
+## Final Architecture
 
-### Lenovo ThinkStation P500/P510 (Workstation Path)
+### Hardware Acquired
 
-#### Platform Specifications
+**Dell R730xd (Storage + Compute)**
+- **Price:** €270 (barebone from eBay.de)
+- **Form Factor:** 2U rack server
+- **Drive Bays:** 16x LFF + 2x SFF (rear)
+- **Boot Drives:** 2x SATA SSD in rear SFF slots (Proxmox + TrueNAS VM boot)
+- **Data Storage:** 5x 8TB 3.5" LFF drives (TrueNAS data pool)
+- **CPUs:** 2x E5-2680 v3 (12C/24T each = 24C/48T total, 2.5 GHz base, 120W TDP)
+- **RAM:** To be installed (DDR4 ECC)
+- **HBA Controllers:**
+  - Dell H330 Mini (flashed to IT mode) → passthrough to TrueNAS VM for internal drives
+  - LSI 9201-8e PCIe card → external connection to DS2246 shelf
+- **Network:** 10GbE SFP+ (onboard or add-in card)
 
-| Feature | P500 | P510 |
-|---------|------|------|
-| Socket | LGA 2011-3 | LGA 2011-3 |
-| CPU Support | E5-1600/2600 v3 | E5-1600/2600 v3/v4 |
-| RAM Type | DDR4 ECC RDIMM | DDR4 ECC RDIMM |
-| RAM Slots | 8 | 8 |
-| Max RAM | 256GB (8x32GB) | 256GB (8x32GB) |
-| PCIe Slots | 2x x16, 1x x4, 1x x1 | 2x x16, 1x x4, 1x x1 |
-| **PCIe Bifurcation** | **No** (needs PLX card) | **Yes** (BIOS option) |
-| Native M.2 | Yes (1 slot on motherboard) | Yes (1 slot on motherboard) |
-| Internal Drive Bays | 4x 3.5" + 1x 5.25" | 4x 3.5" + 1x 5.25" |
-| Max Drives | 6-8 with adapters/5.25" cage | 6-8 with adapters/5.25" cage |
-| Form Factor | Tower | Tower |
-| Noise Level | Quiet (25-35 dB) | Quiet (25-35 dB) |
-| Idle Power | ~60-80W | ~60-80W |
-| Typical Power | ~90-120W | ~90-120W |
+**Dell R630 (Pure Compute)**
+- **Price:** €100 (acquired from eBay.de)
+- **Form Factor:** 1U rack server
+- **Drive Bays:** 8x 2.5" SFF (local storage)
+- **Boot Drive:** 1x SATA drive in optical bay (Proxmox boot)
+- **PCIe Slots:** 3x low-profile slots
+- **CPUs:** 2x E5-2699 v3 (18C/36T each = 36C/72T total, pre-installed)
+- **RAM:** DDR4 ECC (pre-installed)
+- **Network:** 2x 10GbE SFP+ ports (onboard daughter card/NDC)
+- **GPU:** Sparkle Arc A310 Eco (low-profile, for Jellyfin transcoding)
 
-#### P500 vs P510 Key Difference
+**NetApp DS2246 Disk Shelf**
+- **Price:** €149-199 (eBay.de)
+- **Capacity:** 24x 2.5" SFF bays
+- **Current:** 24x 2.5" SFF drives
+- **Connection:** SFF-8088 SAS cables to r730xd's LSI 9201-8e HBA
+- **IOM Modules:** 2x IOM6 (dual SAS ports per module)
+- **Power:** Dual PSU (redundant)
 
-**PCIe Bifurcation:**
+### Network Topology
 
-- **P510:** Native BIOS support - can split x16 slot to 4x4 for quad NVMe cards
-- **P500:** No native bifurcation - requires PLX switch card (~€50-80) for NVMe expansion
+```text
+Internet → Router (192.168.1.1)
+              ↓
+         Pi-hole DNS
+         192.168.1.2
+         (Raspberry Pi)
+              ↓
+    ┌─────────┼─────────┐
+    ↓                   ↓
+  r630               r730xd
+  Proxmox            Proxmox + TrueNAS VM
+  10.0.0.2           10.0.0.1
+    ↓                   ↓
+    └───── 10GbE DAC ───┘
+         (Direct Connection)
+              ↓
+         r730xd → DS2246
+         (SFF-8088 SAS)
+         24x SFF drives
+```
 
-**CPU Support:**
+**10GbE Direct Connection:**
+- r630 ↔ r730xd via Cisco DAC cables
+- Cluster communication (Corosync)
+- Storage traffic (NFS/iSCSI from TrueNAS)
+- No switch required (point-to-point)
 
-- **P510:** Supports both v3 AND v4 Xeons (Broadwell = more efficient)
-- **P500:** v3 only (Haswell)
+**Storage Architecture:**
+- **r730xd internal:** 5x 8TB LFF → TrueNAS VM (H330 passthrough)
+- **DS2246 external:** 24x SFF → TrueNAS VM (9201-8e passthrough)
+- **r630:** Mounts storage via 10GbE NFS/iSCSI
 
-**Recommendation:** P510 if available at similar price; P500 perfectly adequate if not doing heavy NVMe expansion.
+### TrueNAS VM Configuration
 
-#### P500/P510 Pricing (eBay.de/Kleinanzeigen - December 2025)
+**VM Specifications:**
+- **Host:** r730xd (pinned, cannot migrate due to passthrough)
+- **vCPUs:** 4-6 cores
+- **RAM:** 32-48GB (1GB per TB of storage for ZFS ARC)
+- **Boot Disk:** 32GB virtual disk
+- **Storage Controllers (passthrough):**
+  - Dell H330 (IT mode) → 5x 8TB LFF drives
+  - LSI 9201-8e → DS2246 with 24x SFF drives
+- **Network:** 10GbE virtio NIC (or passthrough)
 
-| Configuration | Price Range |
-|---------------|-------------|
-| P500 barebones (no CPU/RAM) | €80-150 |
-| P500 with E5-1620 v3, 16GB | €150-200 |
-| P500 with E5-2680 v3, 32GB | €200-300 |
-| P510 (generally €30-50 more) | €150-350 |
+**Storage Pools:**
+- Pool 1 (LFF): 5x 8TB drives → media, backups
+- Pool 2 (SFF): 24x drives → VMs, containers, databases
 
-#### P500/P510 Advantages
+### Cluster Configuration
 
-- ✓ Tower form factor = desk-friendly, no rack needed
-- ✓ Quiet operation (25-35 dB) - designed for office use
-- ✓ Native M.2 NVMe boot slot
-- ✓ DDR4 ECC support (same as servers)
-- ✓ E5 v3/v4 CPU compatibility (same as servers)
-- ✓ Lower power consumption than 2U servers
-- ✓ All components transfer to server hardware later
+**2-Node Proxmox Cluster:**
+- **r630** (Node 1): Compute-focused, 8x SFF local storage
+- **r730xd** (Node 2): Storage + compute, TrueNAS VM pinned
+- **Quorum:** 2-node cluster (manual failover acceptable for homelab)
+  - Optional: Add Raspberry Pi as external quorum device
+- **Shared Storage:** TrueNAS VM on r730xd via NFS/iSCSI
+- **10GbE:** Direct connection via DAC cables
 
-#### P500/P510 Limitations
+**Cluster Benefits:**
+- Single Proxmox web UI for both nodes
+- VM migration (non-storage VMs)
+- Unified management
+- HA foundation (with external quorum device)
 
-- ✗ P500 lacks PCIe bifurcation (P510 has it)
-- ✗ Limited to 4-6 internal drive bays (vs 12+ in servers)
-- ✗ No hot-swap capability
-- ✗ No remote management (no iDRAC/iLO equivalent)
-- ✗ No redundant PSU
-- ✗ 10GbE requires add-in NIC
+## Dell Server Specifications
 
-#### Three-Node P500 HA Cluster (Original Design)
-
-Early in research, a 3-node P500 HA cluster was evaluated:
-
-| Node | Role | Config |
-|------|------|--------|
-| Node 1 | Proxmox + Compute | E5-2699 v3, 64GB, NVMe boot |
-| Node 2 | Proxmox + Compute | E5-2699 v3, 64GB, NVMe boot |
-| Node 3 | TrueNAS + Quorum | E5-2660 v3, 64GB, 4x HDD |
-
-**10GbE Networking:** 3x Intel X520 or Mellanox ConnectX-3
-
-**Total Cost Estimate:** €1,000-1,400 for 3 nodes
-
-**Why this was set aside:** Server hardware (R730xd) proved cheaper with more features (hot-swap, iDRAC, 10GbE included).
-
----
-
-### Dell R730/R730xd (Server Path)
-
-#### Platform Specifications
+### R730 vs R730xd
 
 | Feature | R730 | R730xd |
 |---------|------|--------|
@@ -116,170 +133,165 @@ Early in research, a 3-node P500 HA cluster was evaluated:
 | Idle Power | 100-150W | 120-180W |
 | Depth | ~750mm | ~750mm |
 
-#### Server Advantages
+### R630 (1U Compute Node)
 
-- ✓ 12 or 24 hot-swap drive bays
-- ✓ iDRAC 8 Enterprise (remote console, power, monitoring)
-- ✓ Redundant PSUs included
-- ✓ ReadyRails for proper rack mounting
-- ✓ PCIe bifurcation native in BIOS
-- ✓ Some R730xd include 10GbE onboard
-- ✓ Higher density (2x nodes in 4U)
-- ✓ Often cheaper than workstations at equivalent specs
+| Feature | Specification |
+|---------|---------------|
+| Form Factor | 1U Rack |
+| Sockets | 2x LGA 2011-3 |
+| CPU Support | E5-2600 v3/v4 |
+| RAM Type | DDR4 ECC RDIMM/LRDIMM |
+| RAM Slots | 24 |
+| Max RAM | 768GB |
+| Drive Bays | 8x or 10x SFF (2.5") |
+| Hot-Swap | Yes |
+| PCIe Bifurcation | Yes (native) |
+| Remote Management | iDRAC 8 Enterprise |
+| Redundant PSU | Yes (optional, some come with 1x) |
+| Onboard Network | 4x 1GbE (some have 2x 10GbE SFP+) |
+| GPU Support | **Low-profile only** (1U height limit) |
+| Noise Level | Higher (40-55 dB - smaller fans) |
+| Idle Power | ~80-120W |
+| Best For | Compute-dense nodes without GPU |
 
-#### Server Disadvantages
+**R630 Advantages:**
+- ✓ 1U = higher density (4 nodes in 4U vs 2 in R730xd)
+- ✓ Full dual-socket capability
+- ✓ Lower cost than R730/R730xd
+- ✓ Same CPU/RAM as R730 series
+- ✓ Onboard 2x 10GbE SFP+ (no add-in card needed)
+- ✓ Low-profile GPU support (Arc A310 for transcoding)
 
-- ✗ 20-50W higher idle power (~€500/year extra at Munich rates)
-- ✗ Louder (35-50 dB vs 25-35 dB)
-- ✗ Requires rack or sturdy shelf
-- ✗ Deep chassis (750mm+) needs proper rack depth
-- ✗ Not suitable for noise-sensitive living spaces
+**R630 Limitations:**
+- ✗ **3x low-profile PCIe slots only** (limits expansion cards)
+- ✗ Louder than 2U (smaller fans = higher RPM)
+- ✗ Limited to 8x SFF drives (no LFF support)
 
----
+## HBA Controllers for TrueNAS
 
-## Phased Acquisition Strategy
+### Dell H330 Mini (Internal Drives)
 
-### Phase 1: Munich Studio (6+ months)
+**Purpose:** Passthrough to TrueNAS VM for r730xd internal drives
 
-**Constraint:** Noise-sensitive shared living space (studio apartment)
+**Specifications:**
+- **Interface:** 12Gb/s SAS
+- **Ports:** 8 internal (mini-SAS HD SFF-8643)
+- **Mode:** Must flash to IT/HBA mode (no RAID)
+- **Drives Supported:** Up to 8x SATA/SAS drives
+- **Form Factor:** Dell Mini PERC slot
 
-**Hardware:** 1-2x Lenovo P500/P510 workstations
+**IT Mode Flashing:**
+```bash
+# Boot from DOS USB with Dell firmware tools
+# Flash to IT firmware (removes RAID functionality)
+# Allows direct disk access for ZFS
+```
 
-**Why P500/P510 for studio:**
+### LSI 9201-8e (External Shelf Connection)
 
-- Tower form factor sits on/under desk
-- Quiet operation (25-35 dB) won't disturb flatmates/neighbors
-- No rack infrastructure needed
-- Lower power = lower electricity bill during tight budget period
-- Can run full Proxmox + K8s learning environment
+**Purpose:** Connect to NetApp DS2246 disk shelf
 
-**P500 Economics (essentially "renting"):**
+**Specifications:**
+- **Interface:** 6Gb/s SAS (compatible with DS2246 IOM6 modules)
+- **Ports:** 2x external (SFF-8088)
+- **Drives Supported:** Up to 8 drives per port = 16 total
+- **Form Factor:** PCIe x8 low-profile card
+- **Cable:** SFF-8088 to SFF-8088 (4x SAS lanes per cable)
 
-| | Cost |
-|--|------|
-| Buy P500 with basic config | €150-250 |
-| Sell after 6-12 months | €100-180 |
-| **Net "rental" cost** | **€50-100** |
+**Connection to DS2246:**
+- Cable 1: r730xd LSI 9201-8e port A → DS2246 IOM6 module A
+- Cable 2: r730xd LSI 9201-8e port B → DS2246 IOM6 module B
+- Redundant paths for reliability
 
-### Phase 2: Own Apartment
+## NetApp DS2246 Disk Shelf
 
-**Hardware:** Dell R730xd + R730 rack servers
+### Specifications
 
-**Why servers for own space:**
+- **Capacity:** 24x 2.5" SFF hot-swap bays
+- **Interface:** 6Gb/s SAS (IOM6 modules)
+- **Ports:** 2x IOM6 modules, 2x SFF-8088 ports each
+- **Power:** Dual PSU (redundant, hot-swap)
+- **Cooling:** 4x fans (redundant)
+- **Weight:** ~25kg (55 lbs)
+- **Depth:** 550mm / 21.7"
 
-- Can isolate noise in separate room/closet
-- Hot-swap bays for easy drive management
-- iDRAC for remote management
-- Higher density in proper 12U+ rack
-- Better value per compute/storage unit
+### IOM6 Module Connectivity
 
-### Component Transferability
+```text
+DS2246 Rear:
+┌─────────────────────────────┐
+│   IOM6-A         IOM6-B     │
+│  [0] [1]        [0] [1]     │ ← SFF-8088 ports
+└─────────────────────────────┘
 
-**Critical insight:** All major components transfer between P500 and R730 platforms with zero waste.
+Connection options:
+- Single-path: Cable from IOM6-A[0] to HBA
+- Dual-path (recommended): Cable from IOM6-A[0] + IOM6-B[0] to HBA
+```
 
-| Component | P500 → R730 | Notes |
-|-----------|-------------|-------|
-| DDR4 ECC RAM | ✓ | Same RDIMM spec |
-| E5 v3/v4 CPUs | ✓ | Same LGA 2011-3 socket |
-| 10GbE NIC (PCIe) | ✓ | Standard PCIe x8 card |
-| GPU (PCIe) | ✓ | Standard PCIe x16 card |
-| SATA drives | ✓ | Same interface |
-| SAS drives | ✓ | Need HBA/RAID controller |
-| NVMe drives | ✓ | PCIe-based, universal |
+### Pricing (eBay.de - January 2026)
 
-**Strategy:** Buy CPU, RAM, GPU, NIC now → use in P500 → transfer to R730 later.
+| Configuration | Price |
+|---------------|-------|
+| Empty shelf + IOM6 modules | €80-120 |
+| With 12-24x trays (empty) | €120-180 |
+| With drives (varies by capacity) | €200-400+ |
 
-### What to Buy When
+## Cluster Resource Planning
 
-**Buy Now (deals expire, use in P500):**
+### r630 (Compute Node)
 
-- [ ] R730xd 12LFF @ €179 (Compicool) - store until apartment
-- [ ] E5-2699 v3 @ €36-40 (Poland seller) - use in P500
-- [ ] Arc A380 @ €120 - use in P500
-- [ ] 10GbE NIC @ €30-50 - use in P500
+**Configuration:**
+- **CPUs:** 2x E5-2699 v3 (18C/36T each = 36C/72T total, 2.3 GHz, 145W TDP)
+- **RAM:** 64-128GB DDR4 ECC (pre-installed)
+- **GPU:** Intel Arc A310 Eco (low-profile, AV1 encode/decode)
+- **Storage:** Local 8x SFF for boot + VM scratch
+- **Role:** Compute + GPU transcoding workloads
 
-**Buy for Studio Phase:**
+**Workload Examples:**
+- Jellyfin VM with Arc A310 GPU passthrough (hardware transcoding)
+- Kubernetes control plane + worker nodes
+- OpenShift SNO
+- Arr stack containers
+- Development/test VMs
 
-- [ ] P500/P510 workstation (€150-250)
-- [ ] RAM if not included (€60-100 for 64GB)
-- [ ] NVMe boot drive (€30-50)
+### r730xd (Storage + Compute Node)
 
-**Buy When Moving to Apartment:**
+**Configuration:**
+- **CPUs:** 2x E5-2680 v3 (12C/24T each = 24C/48T total, 2.5 GHz, 120W TDP)
+- **RAM:** 128-192GB DDR4 ECC
+  - 32-48GB allocated to TrueNAS VM
+  - Remaining for Proxmox + other VMs
+- **Storage:**
+  - Internal: 5x 8TB LFF (TrueNAS, H330 passthrough)
+  - External: 24x SFF in DS2246 (TrueNAS, 9201-8e passthrough)
+  - Local NVMe for Proxmox boot
+- **Role:** TrueNAS VM (pinned) + compute workloads
 
-- [ ] R730 8SFF barebones (~€200)
-- [ ] Drives (prices drop, no point storing spinning rust)
-- [ ] DAC cables for 10GbE
-- [ ] Rack + accessories
+**Workload Examples:**
+- TrueNAS VM (storage for cluster)
+- Jellyfin (media server with transcoding)
+- Backup VMs
+- Secondary K8s nodes
 
-**Sell When Moving:**
+### Total Cluster Capacity
 
-- [ ] P500/P510 (recoup €100-180)
+**Compute:**
+- **r630:** 36C/72T (2x E5-2699 v3 @ 2.3 GHz)
+- **r730xd:** 24C/48T (2x E5-2680 v3 @ 2.5 GHz)
+- **Total vCPU:** 60 cores / 120 threads
+- **RAM:** 192-320GB DDR4 ECC total (64-128GB r630 + 128-192GB r730xd)
+- **Storage:** 5x 8TB LFF + 24x SFF via TrueNAS (DS2246)
+- **GPU:** Intel Arc A310 Eco (4GB, AV1 transcode)
 
-### Prep Work During Studio Phase
+**Use Cases Supported:**
+- Multiple K8s clusters simultaneously
+- OpenShift + K8s + spare capacity
+- Karpenter node scaling simulations
+- Jellyfin + hardware transcoding (Arc A310)
+- Light LLM inference (4GB VRAM)
 
-If storing R730xd while using P500:
-
-- Flash H730P to IT mode (if using ZFS direct disk access)
-- Update iDRAC and BIOS firmware
-- Noctua fan swap for noise reduction (€80-100)
-- Test POST with RAM/CPU before storing
-- Benchmark idle power consumption
-- Configure iDRAC networking
-
----
-
-## Final Server Stack (Phase 2)
-
-### Configuration: 4U Total
-
-| Role | Hardware | Specs | Cost |
-|------|----------|-------|------|
-| **TrueNAS** | R730xd 12LFF | E5-2660 v4 (14C/28T), 64GB RAM | €179 |
-| **Proxmox** | R730 8SFF | E5-2699 v3 (18C/36T), 64GB RAM | ~€235-290 |
-| **GPU** | Intel Arc A380 | 6GB, AV1 encode/decode | €120 |
-| **NIC** | Intel X520 / Mellanox ConnectX-3 | 10GbE SFP+ | €30-50 |
-| **Total** | | | **€564-639** |
-
-### Aggregate Resources
-
-- **CPU:** 32 cores / 64 threads
-- **RAM:** 128GB DDR4 ECC
-- **Storage:** 12x 3.5" LFF hot-swap bays (TrueNAS) + 8x 2.5" SFF (Proxmox local)
-- **Network:** 10GbE between nodes (R730xd has 2x 10GbE SFP+ onboard)
-- **GPU:** 6GB VRAM for transcoding + light inference
-
----
-
-## Reference Server Deal: R730xd 12LFF
-
-**Source:** eBay.de - Compicool (professional refurbisher)
-**Price:** €179
-**Verified:** December 2025
-
-### Included in €179
-
-| Component | Spec | Standalone Value |
-|-----------|------|------------------|
-| Chassis | R730xd 12x 3.5" LFF | €150-250 |
-| CPU | E5-2660 v4 (14C/28T, 2.0GHz) | €25-40 |
-| RAID Controller | H730P Mini (2GB cache) | €40-80 |
-| Network | 2x 10GbE SFP+ onboard | €50-80 |
-| PSU | 2x 750W redundant | €20-40 |
-| Rails | Dell ReadyRails | €40-80 |
-| Caddies | 12x LFF (per images) | €60-120 |
-| Management | iDRAC 8 Enterprise | included |
-| **Total Value** | | **€385-690** |
-| **Actual Price** | | **€179** |
-
-### To Add
-
-- RAM: Reuse existing 64GB DDR4 ECC
-- Drives: 12x LFF SATA/SAS (as needed)
-- DAC cables: €15-30 for 10GbE connectivity
-
----
-
-## E5-2600 v3 CPU Pricing (December 2025)
+## E5-2600 v3 CPU Pricing (January 2026)
 
 German market via eBay.de including international sellers shipping to Germany.
 
@@ -309,19 +321,21 @@ German market via eBay.de including international sellers shipping to Germany.
 
 ## GPU Options
 
-| GPU | VRAM | Jellyfin | Inference | Price | Notes |
-|-----|------|----------|-----------|-------|-------|
-| Intel Arc A380 | 6GB | Excellent (AV1) | Light | €120 | **Recommended** |
-| Nvidia P2000 | 5GB | Great | Light | €80-100 | No power connector |
-| Nvidia P400 | 2GB | Good | Minimal | €30-40 | Low profile |
-| GTX 1070 | 8GB | Great | Medium | €80-100 | More VRAM |
-| RTX 3060 | 12GB | Excellent | Good (7B models) | €150-200 | Auction pricing |
+| GPU | VRAM | Jellyfin | Inference | Price | Form Factor | Notes |
+|-----|------|----------|-----------|-------|-------------|-------|
+| **Intel Arc A310 Eco** | **4GB** | **Excellent (AV1)** | **Light** | **€90-120** | **Low-profile** | **Selected for r630** |
+| Intel Arc A380 | 6GB | Excellent (AV1) | Light | €120 | Full-height | Needs 2U |
+| Nvidia P2000 | 5GB | Great | Light | €80-100 | Full-height | No power connector |
+| Nvidia P400 | 2GB | Good | Minimal | €30-40 | Low profile | Older, no AV1 |
+| GTX 1070 | 8GB | Great | Medium | €80-100 | Full-height | More VRAM |
 
-**Selected:** Intel Arc A380 @ €120
+**Selected:** Intel Arc A310 Eco @ €90-120
 
+- **Low-profile form factor** (fits r630's 3x low-profile PCIe slots)
 - AV1 hardware encode/decode (future-proof for Jellyfin)
-- 6GB sufficient for light inference
-- Low power (~75W)
+- 4GB sufficient for transcoding workloads
+- Single-slot, low power (~75W)
+- PCIe 4.0 x8 interface
 
 ---
 
@@ -331,9 +345,19 @@ German market via eBay.de including international sellers shipping to Germany.
 |-----|-------|-------|-------|
 | Intel X520-DA2 | 2x SFP+ | €30-50 | Widely compatible |
 | Mellanox ConnectX-3 | 2x SFP+ | €25-40 | Excellent Linux support |
-| Intel X710-DA2 | 2x SFP+ | €50-80 | Newer, better features |
+| **Intel X710-DA2** | **2x SFP+** | **€50-80** | **Recommended for r630/r730xd cluster** |
 
-**Note:** R730xd already includes 2x 10GbE SFP+ onboard - only need NIC for R730 Proxmox node.
+**Selected Configuration:**
+- **r630:** Onboard 2x 10GbE SFP+ (daughter card) - no add-in NIC needed
+- **r730xd:** Onboard 2x 10GbE SFP+ (or add-in Intel X710-DA2)
+- Direct connection using Cisco DAC cables (SFP+ direct attach copper)
+- 10GbE point-to-point link: r630 ↔ r730xd
+
+**Benefits:**
+- r630 already has onboard 2x SFP+ (saves €50-80 for add-in NIC)
+- Dual ports per node enable future LACP bonding for 20Gbps aggregate
+- Direct connection eliminates need for 10GbE switch (saves €150-300)
+- Both ports available: one for cluster traffic, one for storage traffic (or bonded)
 
 ---
 
@@ -344,29 +368,27 @@ German market via eBay.de including international sellers shipping to Germany.
 - **Residential rate:** €0.35-0.40/kWh (all-in with taxes)
 - **Used for calculations:** €0.38/kWh
 
-### Server Power Draw
+### Server Power Draw (Estimated)
 
 | Node | Idle | Typical | Max |
 |------|------|---------|-----|
-| R730xd (TrueNAS, 12 HDDs) | 120W | 150W | 300W |
-| R730 (Proxmox, GPU) | 100W | 180W | 400W |
-| **Total** | **220W** | **330W** | **700W** |
+| r730xd (2x SSD boot, 16 LFF, TrueNAS VM, 5x drives) | 120W | 160W | 350W |
+| r630 (1x SATA boot, 8 SFF, Arc A310, compute) | 100W | 150W | 320W |
+| DS2246 (24x SFF drives) | 60W | 80W | 150W |
+| **Total** | **280W** | **390W** | **820W** |
 
 ### Monthly Electricity Cost
 
-| Scenario | Watts | kWh/month | €/month |
-|----------|-------|-----------|---------|
-| Idle 24/7 | 220W | 158 kWh | €60 |
-| **Typical use** | **330W** | **238 kWh** | **€90** |
-| Heavy load | 500W | 360 kWh | €137 |
+| Scenario | Watts | kWh/month | €/month | €/year |
+|----------|-------|-----------|---------|--------|
+| Idle 24/7 | 280W | 202 kWh | €77 | €924 |
+| **Typical use** | **390W** | **281 kWh** | **€107** | **€1,284** |
+| Heavy load | 600W | 432 kWh | €164 | €1,968 |
 
-### Comparison: Servers vs Workstations
-
-| Setup | Typical Power | €/month | €/year |
-|-------|---------------|---------|--------|
-| 2x R730/R730xd | 330W | €90 | €1,080 |
-| 2x P500 | 180W | €49 | €588 |
-| **Difference** | +150W | +€41 | **+€492** |
+**Notes:**
+- DS2246 power includes 24x populated SFF drives
+- Typical use assumes ~40% average load
+- Heavy load includes GPU transcoding, multiple VMs under load
 
 ---
 
@@ -381,12 +403,13 @@ German market via eBay.de including international sellers shipping to Germany.
 | OpenShift control plane | 4 vCPU, 8GB RAM |
 | OpenShift worker | 2 vCPU, 4-8GB RAM |
 
-### What 32C/64T + 128GB RAM Can Run
+### What 60C/120T + 192-320GB RAM Can Run
 
-- 4-6 full K8s clusters simultaneously
-- OpenShift + K8s + spare capacity
-- Karpenter node scaling simulations
-- Multiple learning environments in parallel
+- 6-10 full K8s clusters simultaneously
+- Multiple OpenShift clusters + K8s + spare capacity
+- Karpenter node scaling simulations with realistic worker node counts
+- Dozens of learning environments in parallel
+- Heavy nested virtualization workloads
 
 ### Use Cases Supported
 
@@ -396,144 +419,83 @@ German market via eBay.de including international sellers shipping to Germany.
 | K8s multi-cluster | ✓ |
 | OpenShift learning | ✓ |
 | Karpenter simulation | ✓ |
-| Jellyfin + transcoding | ✓ (Arc A380) |
-| Light LLM inference | ✓ (6GB VRAM) |
-| TrueNAS storage | ✓ (12 LFF bays, 10GbE) |
+| Jellyfin + transcoding | ✓ (Arc A310 Eco low-profile) |
+| Light LLM inference | ✓ (4GB VRAM) |
+| TrueNAS storage | ✓ (16 LFF + 24 SFF via DS2246, 10GbE) |
 
 ---
 
 ## HA Cluster & Quorum Considerations
 
-### Original Thought: M920q Tiny for Quorum
-
-Initially considered adding Lenovo M920q Tiny nodes (€80-150 each) as lightweight Proxmox quorum voters for proper HA.
-
-**Problem:** At €149, you can buy an R630 with 2x E5-2618L + 32GB RAM - actual compute capacity, same price as a "tiebreaker" Tiny.
-
-### Quorum Options Evaluated
-
-| Option | Cost | Pros | Cons |
-|--------|------|------|------|
-| 2x M920q Tiny | €160-300 | Small, quiet | Overpaying for just tiebreaker |
-| 3rd R630/R730 | €100-180 | Full compute node | Overkill for quorum only |
-| Raspberry Pi 4/5 | €50-80 | External Corosync voter | Requires separate network config |
-| **2-node, no quorum** | **€0** | Simple, cheap | Manual failover required |
-
-### Decision: 2-Node Without Quorum
-
 For homelab/learning purposes, 2-node Proxmox cluster without quorum is acceptable:
 
 - Not running production SLAs
 - If a node dies, manually start VMs on surviving node
-- Can add external Pi quorum voter later if desired (user has 4x Pis available)
+- Can add external Raspberry Pi as quorum voter later if desired
 - Saves €80-300 vs adding dedicated quorum hardware
 
 **What matters more:** Capacity for nested virtualization (K8s, OpenShift, Karpenter learning) rather than production-grade HA.
 
 ---
 
-## Acquisition Strategy
-
-### Buy Now (deals don't last)
-
-- [ ] R730xd 12LFF @ €179 (Compicool)
-- [ ] E5-2699 v3 @ €36-40 (Poland seller)
-- [ ] Arc A380 @ €120
-
-### Buy When Moving to Own Space
-
-- [ ] R730 8SFF barebones
-- [ ] 10GbE NIC
-- [ ] Drives (prices drop, no point storing)
-- [ ] DAC cables
-- [ ] Rack + accessories
-
-### Prep Work While in Studio
-
-If storing R730xd during studio phase:
-
-- Flash H730P to IT mode (if using ZFS direct)
-- Update iDRAC/BIOS firmware
-- Noctua fan swap for noise reduction
-- Test POST with RAM/CPU
-- Benchmark idle power consumption
-- Configure iDRAC networking
-
----
-
-## Additional Server Options
-
-### Dell R630 (1U Alternative)
-
-| Feature | R630 |
-|---------|------|
-| Form Factor | 1U Rack |
-| Sockets | 2x LGA 2011-3 |
-| Drive Bays | 8x or 10x SFF (2.5") |
-| Hot-Swap | Yes |
-| Noise | Louder than 2U (smaller fans = higher RPM) |
-| GPU Support | **Low-profile only** (no full-height cards) |
-| Best For | Compute-dense nodes without GPU |
-
-**R630 Deal Found (December 2025):** €149 from eBay.de
-
-- Included: 2x E5-2618L v3 (8C each = 16C/32T total), 32GB RAM, H330 Mini
-- Missing: 6 of 8 drive caddies (~€30-50 to complete)
-- PSU: 1x only (no redundancy)
-
-**Use Case:** Good for additional Proxmox compute node if GPU not needed in that node.
-
----
-
 ## Cost Summary
 
-### P500 Studio Build (Phase 1)
+### r730xd (Storage + Compute)
 
-| Component | Cost |
-|-----------|------|
-| P500 workstation (basic config) | €150-250 |
-| CPU upgrade: E5-2699 v3 | €36-40 |
-| RAM: 64GB DDR4 ECC (if needed) | €60-100 |
-| GPU: Intel Arc A380 | €120 |
-| 10GbE NIC: X520/ConnectX-3 | €30-50 |
-| Boot: NVMe M.2 (256GB+) | €30-50 |
-| **P500 Total** | **€426-590** |
+| Component | Status | Estimated Cost |
+|-----------|--------|----------------|
+| R730xd chassis (16 LFF + 2 SFF) | Acquired @ €270 | €270 |
+| CPUs: 2x E5-2680 v3 (12C/24T each) | To be installed | €36 (2x €18) |
+| RAM: 128-192GB DDR4 ECC | To be installed | €150-250 |
+| Dell H330 Mini (IT mode) | Likely included | €0-50 |
+| LSI 9201-8e HBA card | To be acquired | €30-60 |
+| SFF-8088 SAS cables (2x) | To be acquired | €20-40 |
+| 10GbE NIC (if not onboard) | Optional | €0-80 |
+| 2x SATA SSD boot drives (rear) | To be acquired | €40-80 |
+| **r730xd Total** | | **€546-866** |
 
-### Server Stack (Phase 2)
+### r630 (Compute)
 
-| Item | Cost |
-|------|------|
-| R730xd 12LFF (TrueNAS) | €179 |
-| R730 8SFF barebones (Proxmox) | €199-229 |
-| E5-2699 v3 (already purchased) | (transfers from P500) |
-| Intel Arc A380 (already purchased) | (transfers from P500) |
-| 10GbE NIC (already purchased) | (transfers from P500) |
-| DAC cables | €15-30 |
-| **Server Hardware Total** | **€393-438** |
-| Monthly power (typical) | €90 |
-| **Year 1 Server Operating Cost** | **€1,080** |
+| Component | Status | Estimated Cost |
+|-----------|--------|----------------|
+| R630 chassis (8 SFF) | Acquired @ €100 | €100 |
+| 2x E5-2699 v3 CPUs (18C/36T each) | Included in chassis | €0 |
+| 64-128GB DDR4 ECC RAM | Included in chassis | €0 |
+| Onboard 2x 10GbE SFP+ (NDC) | Included in chassis | €0 |
+| SATA boot drive (optical bay) | To be acquired | €15-25 |
+| Intel Arc A310 Eco (low-profile) | To be acquired | €90-120 |
+| **r630 Total** | | **€205-245** |
 
-### Total Investment Path
+### DS2246 Disk Shelf
 
-| Phase | Item | Cost |
-|-------|------|------|
-| Now | P500 + transferable components | €426-590 |
-| Now | R730xd (buy & store) | €179 |
-| **Subtotal (upfront)** | | **€605-769** |
-| Later | R730 barebones | €199-229 |
-| Later | DAC cables, drives, rack | varies |
-| Recoup | Sell P500 | -€100-180 |
-| **Net Hardware Investment** | | **€704-818 + drives/rack** |
+| Component | Status | Estimated Cost |
+|-----------|--------|----------------|
+| DS2246 + IOM6 modules | To be acquired | €150-200 |
+| 24x SFF drive trays | Likely included | €0-50 |
+| 24x SFF drives | Already owned | €0 |
+| **DS2246 Total** | | **€150-250** |
 
-### P500 Bridge Economics
+### Networking & Accessories
 
-| | Amount |
-|--|--------|
-| P500 purchase | €150-250 |
-| P500 resale (6-12 months later) | -€100-180 |
-| **Net "rental" cost** | **€50-100** |
+| Item | Status | Cost |
+|------|--------|------|
+| 2x Cisco DAC cables (SFP+, r630 ↔ r730xd) | To be acquired | €30-60 |
+| Rack or shelving | To be acquired | €100-300 |
+| Power strips / UPS | To be acquired | €100-250 |
+| **Accessories Total** | | **€230-610** |
 
-The P500 effectively costs €50-100 to "rent" for the studio period, then all purchased components (CPU, GPU, NIC, drives) transfer to server hardware.
+### Total Investment
+
+| Category | Cost Range |
+|----------|------------|
+| r730xd (storage + compute) | €546-866 |
+| r630 (compute) | €205-245 |
+| DS2246 (disk shelf) | €150-250 |
+| Accessories | €230-610 |
+| **Total Hardware** | **€1,131-1,971** |
+
+**Already Paid:** €370 (r730xd €270 + r630 €100)
+**Remaining:** €761-1,601
 
 ---
 
@@ -541,7 +503,7 @@ The P500 effectively costs €50-100 to "rent" for the studio period, then all p
 
 ### Verified Sellers
 
-- **Compicool** (eBay.de) - Professional server refurbisher, R730xd source
+- **eBay.de** - Dell server sources (Compicool, professional refurbishers)
 - **Bytestock UK** - CPUs with 5-year warranty
 
 ### eBay.de Search Tips
@@ -552,68 +514,61 @@ The P500 effectively costs €50-100 to "rent" for the studio period, then all p
 
 ### Key Searches
 
-- `R730xd 12LFF` - Storage chassis
-- `R730 8SFF barebones` - Compute chassis
+- `R730xd 16LFF` - Storage chassis
+- `R630` - Compute node
+- `DS2246` or `NetApp disk shelf` - External storage
 - `E5-2699 v3` - Flagship 18C CPU
-- `Intel Arc A380` - GPU
-- `Mellanox ConnectX-3` or `Intel X520` - 10GbE NIC
-
----
-
-## Pricing Research Lessons Learned
-
-During this research, initial price estimates were corrected based on user-provided screenshots and verification:
-
-| Item | Initial Estimate | Actual Price | Error Source |
-|------|------------------|--------------|--------------|
-| E5-2699 v3 | €60-110 | **€36-40** | Missed Poland/intl sellers |
-| R730xd complete | €229-350 | **€149-179** | Missed Compicool deals |
-| R730 barebones | €179-229 | €179-199 | Close estimate |
-
-### Key Sourcing Insights
-
-1. **Include international sellers** - Poland, UK, Netherlands ship to Germany with free or cheap shipping
-2. **Sort eBay.de correctly** - "Niedrigster Preis inkl. Versand" (lowest total price including shipping)
-3. **Avoid German B2B sellers** - Often 2-3x markup for VAT invoice + warranty
-4. **Check listing images carefully** - Caddies, rails, cables often visible even if not mentioned in text
-5. **Professional refurbishers** (Compicool, Bytestock, ServerDomain) often have best complete deals
-6. **Coupon codes exist** - eBay.de often has €5-10 off coupons for registered users
+- `LSI 9201-8e` - External HBA card
+- `Intel X710-DA2` or `Mellanox ConnectX-3` - 10GbE NIC
 
 ---
 
 ## Document Info
 
-- **Generated:** December 2025
-- **Source:** Claude conversation with user
-- **Purpose:** Reference for Claude Code agent homelab configuration
-- **Status:** Hardware research complete, ready for acquisition
+- **Last Updated:** January 2026
+- **Purpose:** r630/r730xd cluster planning reference
+- **Status:** r730xd acquired (€270), remaining components to be sourced
 
 ---
 
-## Next Steps for Claude Code Agent
+## Next Steps
 
-1. **Network Configuration**
-   - 10GbE between nodes (DAC cables)
-   - VLAN setup for management/storage/VM traffic
-   - iDRAC network configuration
+### Hardware Acquisition
 
-2. **TrueNAS Setup**
-   - ZFS pool configuration (RAIDZ1/RAIDZ2 based on drive count)
-   - NFS/SMB shares for Proxmox
-   - Replication/snapshot policies
+1. **r630** - Source 1U compute node with CPUs/RAM (€310-660)
+2. **DS2246** - Acquire disk shelf with IOM6 modules (€150-200)
+3. **LSI 9201-8e** - External HBA for DS2246 connection (€30-60)
+4. **SFF-8088 cables** - 2x for redundant paths to shelf (€20-40)
+5. **10GbE connectivity** - DAC cables or verify onboard SFP+ (€0-140)
 
-3. **Proxmox Setup**
-   - Cluster configuration (2-node)
-   - Storage backends (local NVMe + TrueNAS NFS)
-   - GPU passthrough for Arc A380
-   - Network bridge configuration
+### Initial Setup
 
-4. **Container/VM Templates**
-   - K8s node template (lightweight)
-   - OpenShift node template
-   - Jellyfin LXC with GPU passthrough
+1. **r730xd Configuration:**
+   - Flash H330 Mini to IT mode
+   - Install LSI 9201-8e HBA
+   - Update iDRAC/BIOS firmware
+   - Install CPUs and RAM
+   - Configure boot NVMe
 
-5. **Kubernetes/OpenShift**
-   - K3s or RKE2 for lightweight K8s
-   - OpenShift SNO or minimal cluster
-   - Karpenter configuration for node scaling simulation
+2. **r630 Configuration:**
+   - Update iDRAC/BIOS firmware
+   - Install CPUs and RAM
+   - Configure boot NVMe
+   - Install 10GbE NIC if needed
+
+3. **Network Setup:**
+   - Connect r630 ↔ r730xd via 10GbE DAC
+   - Configure static IPs (10.0.0.1/30 ↔ 10.0.0.2/30)
+   - Connect DS2246 to r730xd via SFF-8088 cables
+
+4. **Proxmox Cluster:**
+   - Install Proxmox on both nodes
+   - Create 2-node cluster
+   - Enable IOMMU on r730xd for HBA passthrough
+   - Deploy TrueNAS VM on r730xd (pinned)
+   - Pass through H330 + LSI 9201-8e to TrueNAS VM
+
+5. **Storage Configuration:**
+   - Create ZFS pools in TrueNAS (LFF + SFF)
+   - Configure NFS/iSCSI exports for Proxmox
+   - Add NUT server to Pi 4b for UPS monitoring
