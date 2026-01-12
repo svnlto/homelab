@@ -113,25 +113,26 @@ Internet → Router (192.168.1.1)
 
 ## Dell Server Specifications
 
-### R730 vs R730xd
+### R730xd (2U Storage + Compute Node)
 
-| Feature | R730 | R730xd |
-|---------|------|--------|
-| Form Factor | 2U Rack | 2U Rack |
-| Sockets | 2x LGA 2011-3 | 2x LGA 2011-3 |
-| CPU Support | E5-2600 v3/v4 | E5-2600 v3/v4 |
-| RAM Type | DDR4 ECC RDIMM/LRDIMM | DDR4 ECC RDIMM/LRDIMM |
-| RAM Slots | 24 | 24 |
-| Max RAM | 768GB | 768GB |
-| Drive Bays | 8x SFF or 8x LFF | **12x LFF** or 24x SFF (+2 rear) |
-| Hot-Swap | Yes | Yes |
-| PCIe Bifurcation | Yes (native) | Yes (native) |
-| Remote Management | iDRAC 8 Enterprise | iDRAC 8 Enterprise |
-| Redundant PSU | Yes | Yes |
-| Onboard Network | 4x 1GbE | 4x 1GbE (some have **2x 10GbE SFP+**) |
-| Noise Level | 35-50 dB | 35-50 dB |
-| Idle Power | 100-150W | 120-180W |
-| Depth | ~750mm | ~750mm |
+| Feature | Specification |
+|---------|---------------|
+| Form Factor | 2U Rack |
+| Sockets | 2x LGA 2011-3 |
+| CPU Support | E5-2600 v3/v4 |
+| RAM Type | DDR4 ECC RDIMM/LRDIMM |
+| RAM Slots | 24 |
+| Max RAM | 768GB |
+| Drive Bays | **16x LFF** (12 front + 4 mid) or 24x SFF + 2x rear SFF |
+| Hot-Swap | Yes |
+| PCIe Bifurcation | Yes (native) |
+| Remote Management | iDRAC 8 Enterprise |
+| Redundant PSU | Yes |
+| Onboard Network | 4x 1GbE (some have **2x 10GbE SFP+**) |
+| Noise Level | 35-50 dB |
+| Idle Power | 120-180W |
+| Depth | ~750mm |
+| Best For | TrueNAS storage VM + compute workloads |
 
 ### R630 (1U Compute Node)
 
@@ -157,8 +158,8 @@ Internet → Router (192.168.1.1)
 **R630 Advantages:**
 - ✓ 1U = higher density (4 nodes in 4U vs 2 in R730xd)
 - ✓ Full dual-socket capability
-- ✓ Lower cost than R730/R730xd
-- ✓ Same CPU/RAM as R730 series
+- ✓ Lower cost than R730xd
+- ✓ Same CPU/RAM as R730xd
 - ✓ Onboard 2x 10GbE SFP+ (no add-in card needed)
 - ✓ Low-profile GPU support (Arc A310 for transcoding)
 
