@@ -112,37 +112,42 @@ qm set 300 -hostpci1 03:00.0,pcie=1  # LSI 9201-8e (DS2246)
 - Simplified network topology
 - Cost savings (no 10GbE switch needed)
 
-**Optional: LACP Bonding**
+**Dual 10GbE Port Configuration (Recommended)**
 
-If both nodes have dual-port 10GbE NICs, configure LACP bond for 20Gbps aggregate:
+Both r630 and r730xd have onboard 2x 10GbE SFP+ ports. Use them separately for better performance and isolation:
 
 ```bash
-# On Proxmox r730xd
-auto bond0
-iface bond0 inet static
-    address 10.0.0.1/24
-    slaves enp1s0f0 enp1s0f1
-    bond-mode 802.3ad
-    bond-miimon 100
-    bond-downdelay 200
-    bond-updelay 200
-    bond-lacp-rate fast
-    bond-xmit-hash-policy layer3+4
+# r730xd (Proxmox + TrueNAS VM)
+auto enp1s0f0
+iface enp1s0f0 inet static
+    address 10.0.0.1/30
+    # Storage network (NFS/iSCSI to TrueNAS VM)
 
-# On Proxmox r630
-auto bond0
-iface bond0 inet static
-    address 10.0.0.2/24
-    slaves enp2s0f0 enp2s0f1
-    bond-mode 802.3ad
-    bond-miimon 100
-    bond-downdelay 200
-    bond-updelay 200
-    bond-lacp-rate fast
-    bond-xmit-hash-policy layer3+4
+auto enp1s0f1
+iface enp1s0f1 inet static
+    address 10.0.1.1/30
+    # Cluster network (Proxmox corosync, VM migrations)
+
+# r630 (Proxmox)
+auto enp2s0f0
+iface enp2s0f0 inet static
+    address 10.0.0.2/30
+    # Storage network (mount TrueNAS shares)
+
+auto enp2s0f1
+iface enp2s0f1 inet static
+    address 10.0.1.2/30
+    # Cluster network (Proxmox corosync, VM migrations)
 ```
 
-**Note:** Many R730xd come with 2x 10GbE SFP+ onboard, making LACP bonding straightforward without add-in NICs.
+**Why Separate Networks Instead of LACP Bonding:**
+
+- ✓ Full 10Gbps dedicated to storage (no sharing with cluster traffic)
+- ✓ Full 10Gbps dedicated to cluster operations (VM migrations, corosync)
+- ✓ Better isolation (storage failures don't affect cluster heartbeat)
+- ✓ Simpler configuration (no bonding complexity)
+- ✓ More performant for single-flow workloads (10Gbps > LACP for one VM)
+- ✓ Proper network segmentation (storage vs management)
 
 ## Dataset Hierarchy
 

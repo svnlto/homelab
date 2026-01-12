@@ -352,13 +352,15 @@ German market via eBay.de including international sellers shipping to Germany.
 - **r630:** Onboard 2x 10GbE SFP+ (daughter card) - no add-in NIC needed
 - **r730xd:** Onboard 2x 10GbE SFP+ (or add-in Intel X710-DA2)
 - Direct connection using Cisco DAC cables (SFP+ direct attach copper)
-- 10GbE point-to-point link: r630 ↔ r730xd
+- Dual point-to-point links: r630 ↔ r730xd
 
 **Benefits:**
 - r630 already has onboard 2x SFP+ (saves €50-80 for add-in NIC)
-- Dual ports per node enable future LACP bonding for 20Gbps aggregate
+- Dual ports used as separate networks for better isolation:
+  - Port 1: Storage network (10.0.0.0/30) - NFS/iSCSI to TrueNAS
+  - Port 2: Cluster network (10.0.1.0/30) - Proxmox corosync, VM migrations
 - Direct connection eliminates need for 10GbE switch (saves €150-300)
-- Both ports available: one for cluster traffic, one for storage traffic (or bonded)
+- Full 10Gbps dedicated to each network (no sharing between storage and cluster)
 
 ---
 
