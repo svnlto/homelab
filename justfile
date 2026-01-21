@@ -1,64 +1,84 @@
 default:
     @just --list
 
-# ARM Builder (Pi-hole)
+# =============================================================================
+# Bare-Metal Proxmox Node (bootable images for physical servers)
+# =============================================================================
 
-arm-vm-up:
-    cd packer/arm-builder && just vm-up
+bare-metal-vm-up:
+    cd packer/bare-metal && vagrant up
 
-arm-vm-down:
-    cd packer/arm-builder && just vm-down
+bare-metal-vm-down:
+    cd packer/bare-metal && vagrant halt
 
-arm-vm-destroy:
-    cd packer/arm-builder && just vm-destroy
+bare-metal-vm-destroy:
+    cd packer/bare-metal && vagrant destroy -f
 
-arm-vm-ssh:
-    cd packer/arm-builder && just vm-ssh
+bare-metal-vm-ssh:
+    cd packer/bare-metal && vagrant ssh
+
+packer-build-bare-metal:
+    @echo "Building bare-metal Proxmox VE image (15-20 min)..."
+    cd packer/bare-metal && vagrant ssh -c "cd /vagrant && packer build -var 'output_format=raw' ."
+
+bare-metal-images:
+    @echo "Available bare-metal images:"
+    @ls -lh packer/bare-metal/output/*/*.raw* 2>/dev/null || echo "No images found"
+
+bare-metal-flash disk:
+    @echo "Flashing bare-metal image to {{disk}}..."
+    @IMAGE=$$(ls -t packer/bare-metal/output/*/*.raw.gz 2>/dev/null | head -1) && \
+      if [ -z "$$IMAGE" ]; then echo "Error: No image found"; exit 1; fi && \
+      echo "Using: $$IMAGE" && \
+      gunzip -c "$$IMAGE" | sudo dd of={{disk}} bs=4M status=progress conv=fsync && \
+      echo "✅ Done! Boot your server from {{disk}}"
+
+# =============================================================================
+# Pi-hole (Raspberry Pi ARM images)
+# =============================================================================
+
+pihole-vm-up:
+    cd packer/pihole && vagrant up
+
+pihole-vm-down:
+    cd packer/pihole && vagrant halt
+
+pihole-vm-destroy:
+    cd packer/pihole && vagrant destroy -f
+
+pihole-vm-ssh:
+    cd packer/pihole && vagrant ssh
 
 packer-build-pihole:
-    cd packer/arm-builder && just build
+    @echo "Building Pi-hole image (30-60 min)..."
+    cd packer/pihole && vagrant ssh -c "cd /vagrant && packer build ."
 
 pihole-images:
-    cd packer/arm-builder && just images
+    @ls -lh packer/pihole/output/*.img 2>/dev/null || echo "No images found"
 
 pihole-flash disk:
-    cd packer/arm-builder && just flash {{disk}}
+    @IMAGE=$$(ls -t packer/pihole/output/*.img 2>/dev/null | head -1) && \
+      if [ -z "$$IMAGE" ]; then echo "Error: No image found"; exit 1; fi && \
+      sudo dd if="$$IMAGE" of={{disk}} bs=4M status=progress
 
-# x86 Builder (Bootable Disk Images)
+# =============================================================================
+# Proxmox VM Template (builds templates inside Proxmox for Terraform cloning)
+# =============================================================================
 
-x86-vm-up:
-    cd packer/x86-builder && just vm-up
-
-x86-vm-down:
-    cd packer/x86-builder && just vm-down
-
-x86-vm-destroy:
-    cd packer/x86-builder && just vm-destroy
-
-x86-vm-ssh:
-    cd packer/x86-builder && just vm-ssh
-
-x86-build:
-    cd packer/x86-builder && just build
-
-x86-images:
-    cd packer/x86-builder && just images
-
-x86-deploy disk:
-    cd packer/x86-builder && just deploy {{disk}}
-
-# Proxmox Template Building
-
-packer-init-proxmox:
+packer-init-vm-template:
     cd packer/proxmox-templates && packer init ubuntu-24.04-template.pkr.hcl
 
-packer-validate-proxmox:
+packer-validate-vm-template:
     cd packer/proxmox-templates && packer validate ubuntu-24.04-template.pkr.hcl
 
-packer-build-proxmox:
+packer-build-vm-template:
+    @echo "Building Ubuntu VM template inside Proxmox (15-30 min)..."
     cd packer/proxmox-templates && packer init ubuntu-24.04-template.pkr.hcl && packer build ubuntu-24.04-template.pkr.hcl
 
-# Terraform VM Deployment
+# =============================================================================
+# Terraform VM Deployment (clones from VM template)
+# =============================================================================
+
 tf-init:
     cd terraform/proxmox && terraform init -upgrade
 
@@ -74,7 +94,9 @@ tf-apply:
 tf-destroy:
     cd terraform/proxmox && terraform destroy -auto-approve
 
+# =============================================================================
 # TrueNAS Management
+# =============================================================================
 
 truenas-deploy:
     cd terraform/proxmox && terraform apply -target=proxmox_virtual_environment_download_file.truenas_iso -target=proxmox_virtual_environment_vm.truenas -auto-approve
@@ -85,13 +107,20 @@ truenas-deploy:
 truenas-destroy:
     cd terraform/proxmox && terraform destroy -target=proxmox_virtual_environment_vm.truenas -auto-approve
 
+# =============================================================================
 # Ansible
+# =============================================================================
+
 ansible-lint:
     ANSIBLE_CONFIG=ansible/ansible.cfg ansible-lint -c .ansible-lint.yaml ansible/
 
 ansible-playbook PLAYBOOK:
     cd ansible && ansible-playbook playbooks/{{PLAYBOOK}}
 
+# =============================================================================
 # Utilities
+# =============================================================================
+
 clean:
-    rm -rf output/
+    rm -rf packer/*/output/
+    rm -rf packer/*/.packer_cache/

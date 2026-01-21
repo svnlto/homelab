@@ -14,10 +14,33 @@ Proxmox maintenance. Pi-hole runs on the Pi, NOT on Proxmox.
 
 ## Architecture
 
-### Three-Phase Build System
+### Two Infrastructure Paths
+
+#### Path 1: Bare-Metal Proxmox Installation
+
+1. **Build Bootable Image** (`packer/bare-metal/`)
+   - Downloads Debian cloud image
+   - Provisions with Ansible (installs Proxmox VE)
+   - Creates bootable raw disk image
+   - Build time: 15-20 min (Apple Silicon)
+
+2. **Flash to Physical Disk**
+
+   ```bash
+   just packer-build-bare-metal
+   just bare-metal-flash /dev/rdiskX
+   ```
+
+3. **Boot Dell Server**
+   - Boot r630/r730xd from USB/SSD
+   - Proxmox VE ready immediately (no installation wizard)
+
+4. **Use Case**: Initial Proxmox cluster setup on bare metal
+
+#### Path 2: VM Template in Proxmox
 
 1. **Packer Template Building** (15-30 min)
-   - Creates immutable base template (VM ID 9000)
+   - Creates VM template inside Proxmox (VM ID 9000)
    - Ubuntu 24.04 with UEFI/OVMF, cloud-init enabled
    - SSH hardening applied via Ansible (password auth disabled)
 
@@ -27,8 +50,23 @@ Proxmox maintenance. Pi-hole runs on the Pi, NOT on Proxmox.
    - Most settings baked into main.tf (not variables)
 
 3. **Ansible Provisioning**
-   - Runs during Packer build only
-   - Hardens template with SSH key-only authentication
+   - Deploys applications (arr stack, observability)
+
+4. **Use Case**: Rapid VM deployment for services
+
+### Bare-Metal vs VM Template Workflows
+
+**Common Confusion**: This project has TWO distinct Packer workflows:
+
+| Workflow        | Purpose                      | Output                     | Deploy Method    | Command                         |
+| --------------- | ---------------------------- | -------------------------- | ---------------- | ------------------------------- |
+| **Bare-Metal**  | Install Proxmox on servers   | `.raw.gz` image            | Flash to USB/SSD | `just packer-build-bare-metal`  |
+| **VM Template** | Create reusable VM templates | Proxmox template (ID 9000) | Terraform clone  | `just packer-build-vm-template` |
+
+**Key Difference:**
+
+- Bare-metal = Build **Proxmox itself** (the hypervisor)
+- VM template = Build **VMs to run on Proxmox** (services like arr stack)
 
 ### Critical Configuration Requirements
 
@@ -149,11 +187,27 @@ nix develop
 just --list
 ```
 
-### Proxmox Workflow
+### Bare-Metal Proxmox Node Workflow
 
 ```bash
-# 1. Build template (one time, 15-30 min)
-just packer-build-proxmox
+# 1. Start build VM (one time)
+just bare-metal-vm-up
+
+# 2. Build bootable image (15-20 min)
+just packer-build-bare-metal
+
+# 3. Flash to USB/SSD
+just bare-metal-flash /dev/rdiskX
+
+# 4. Boot Dell server from USB/SSD
+# Proxmox VE ready immediately!
+```
+
+### Proxmox VM Template Workflow
+
+```bash
+# 1. Build VM template inside Proxmox (15-30 min)
+just packer-build-vm-template
 
 # 2. Deploy VMs from template (2-3 min)
 just tf-apply
@@ -165,17 +219,14 @@ just tf-destroy
 ### Raspberry Pi Workflow
 
 ```bash
-# Start Vagrant VM for ARM building (macOS requirement)
-just vagrant-up
+# 1. Start build VM (one time)
+just pihole-vm-up
 
-# Build Pi-hole image (30-60 min)
+# 2. Build Pi-hole image (30-60 min)
 just packer-build-pihole
 
-# Flash to SD card
-sudo dd if=output/rpi-pihole.img of=/dev/rdiskX bs=4M status=progress
-
-# SSH to Pi-hole
-just ssh-pihole
+# 3. Flash to SD card
+just pihole-flash /dev/rdiskX
 ```
 
 ## File Structure
@@ -183,10 +234,23 @@ just ssh-pihole
 ```text
 homelab/
 ├── packer/
-│   ├── ubuntu-template/
-│   │   ├── ubuntu-24.04-template.pkr.hcl  # Proxmox template builder
+│   ├── bare-metal/                        # Bare-metal Proxmox installer (bootable images)
+│   │   ├── proxmox-node.pkr.hcl          # Cloud image-based builder
+│   │   ├── variables.pkr.hcl              # Build configuration
+│   │   ├── cloud-init/                    # Cloud-init for initial boot
+│   │   ├── Vagrantfile                    # Apple Silicon build VM
+│   │   └── README.md
+│   │
+│   ├── pihole/                            # Pi-hole for Raspberry Pi
+│   │   ├── rpi-pihole.pkr.hcl
+│   │   └── ...
+│   │
+│   ├── proxmox-templates/                 # VM templates (built inside Proxmox)
+│   │   ├── ubuntu-24.04-template.pkr.hcl # Proxmox template builder
 │   │   └── http/                          # Autoinstall configs (user-data, meta-data)
-│   └── rpi-pihole.pkr.hcl                 # Pi-hole ARM image
+│   │
+│   └── _archive/                          # Historical reference
+│       └── x86-builder/                   # Preseed installer approach (archived)
 │
 ├── terraform/
 │   ├── modules/ubuntu-vm/                 # Reusable VM module (40+ parameters)
@@ -204,7 +268,8 @@ homelab/
 ├── ansible/
 │   ├── playbooks/
 │   │   ├── base-template.yml              # Template hardening (SSH, Docker)
-│   │   ├── pihole.yml                     # Pi-hole + Unbound deployment
+│   │   ├── packer-proxmox-node.yml        # Bare-metal Proxmox (installs PVE)
+│   │   ├── packer-pihole.yml              # Pi-hole + Unbound deployment
 │   │   ├── stack-arr.yml                  # Full arr media stack
 │   │   └── observability.yml              # Grafana/Prometheus/Loki
 │   └── roles/
@@ -215,7 +280,6 @@ homelab/
 ├── .envrc                                 # Loads .env and exports TF_VAR_*
 ├── .env                                   # API tokens (GITIGNORED)
 ├── flake.nix                              # Nix environment (pinned versions)
-├── Vagrantfile                            # ARM build VM (macOS workaround)
 └── justfile                               # Command runner
 ```
 
