@@ -7,7 +7,7 @@
 # -----------------------------------------------------------------------------
 variable "pve_version" {
   type        = string
-  default     = "8"
+  default     = "9"
   description = "Proxmox VE major version"
 }
 
@@ -49,8 +49,8 @@ variable "disk_size" {
 # -----------------------------------------------------------------------------
 variable "output_format" {
   type        = string
-  default     = "qcow2"
-  description = "Output format: qcow2 or raw"
+  default     = "raw"
+  description = "Output format: raw (for bare-metal USB/SSD) or qcow2 (for testing in VMs)"
 
   validation {
     condition     = contains(["qcow2", "raw"], var.output_format)
