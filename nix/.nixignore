@@ -1,0 +1,5 @@
+.vagrant/
+result
+result-*
+*.img
+*.img.zst

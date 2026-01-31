@@ -1,0 +1,10 @@
+# Nix build artifacts
+result
+result-*
+
+# Vagrant
+.vagrant/
+
+# SD card images
+*.img
+*.img.zst

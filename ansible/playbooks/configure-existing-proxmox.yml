@@ -1,0 +1,125 @@
+---
+# =============================================================================
+# Playbook: Configure Existing Proxmox Nodes
+# =============================================================================
+# Run this on Proxmox nodes that were installed from the official ISO
+# to apply common configuration (subscription nag removal, SSH keys, etc.)
+# =============================================================================
+#
+# Usage:
+#   # Configure all nodes
+#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml
+#
+#   # Configure specific node
+#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml -l grogu
+#
+#   # Only remove subscription nag
+#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags nag
+#
+#   # Configure PCIe passthrough
+#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags passthrough
+# =============================================================================
+
+- name: Configure Existing Proxmox Nodes
+  hosts: proxmox
+  become: true
+  gather_facts: true
+
+  vars:
+    # Configuration options
+    pve_remove_subscription_warning: true
+    configure_pcie_passthrough: true
+
+    # Optional: Add your SSH public key
+    # proxmox_ssh_public_key: "ssh-ed25519 AAAA..."
+
+    # Optional: For PCIe passthrough (GPU, network cards, etc.)
+    # pci_device_ids: "10de:1c03,10de:10f1"  # Comma-separated PCI IDs
+    # vfio_blacklist_drivers: [nouveau, nvidia]
+
+  pre_tasks:
+    - name: Display node information
+      ansible.builtin.debug:
+        msg:
+          - "Configuring: {{ inventory_hostname }}"
+          - "IP: {{ ansible_host }}"
+          - "Proxmox Web UI: https://{{ ansible_host }}:8006"
+
+    - name: Verify Proxmox VE is installed
+      ansible.builtin.stat:
+        path: /usr/bin/pvesh
+      register: pvesh_stat
+      failed_when: not pvesh_stat.stat.exists
+
+  tasks:
+    - name: Remove subscription nag
+      ansible.builtin.include_role:
+        name: proxmox_configure
+        tasks_from: remove_subscription_nag.yml
+      when: pve_remove_subscription_warning | default(true)
+      tags: [nag]
+
+    - name: Configure PCIe passthrough
+      ansible.builtin.include_role:
+        name: proxmox_configure
+        tasks_from: pcie_passthrough.yml
+      when: configure_pcie_passthrough | default(false)
+      tags: [passthrough]
+
+    - name: Configure NTP with chrony
+      ansible.builtin.template:
+        src: ../roles/proxmox_configure/templates/chrony.conf.j2
+        dest: /etc/chrony/chrony.conf
+        owner: root
+        group: root
+        mode: "0644"
+        backup: true
+      notify: Restart chrony
+      tags: [ntp]
+
+    - name: Enable and start chrony
+      ansible.builtin.systemd:
+        name: chrony
+        enabled: true
+        state: started
+      tags: [ntp]
+
+    - name: Ensure .ssh directory exists for root
+      ansible.builtin.file:
+        path: /root/.ssh
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+      tags: [ssh]
+
+    - name: Add SSH public key to root authorized_keys
+      ansible.posix.authorized_key:
+        user: root
+        key: "{{ proxmox_ssh_public_key }}"
+        state: present
+      when: proxmox_ssh_public_key is defined
+      tags: [ssh]
+
+  handlers:
+    - name: Restart chrony
+      ansible.builtin.systemd:
+        name: chrony
+        state: restarted
+
+    - name: Update GRUB
+      ansible.builtin.command: update-grub
+      changed_when: true
+
+  post_tasks:
+    - name: Update initramfs (if passthrough configured)
+      ansible.builtin.command: update-initramfs -u -k all
+      changed_when: true
+      when: configure_pcie_passthrough | default(false)
+
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg:
+          - "✓ Configuration complete for {{ inventory_hostname }}"
+          - "Access: https://{{ ansible_host }}:8006"
+          - "{% if configure_pcie_passthrough %}⚠ REBOOT REQUIRED for PCIe passthrough changes{% endif %}"

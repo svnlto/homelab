@@ -259,30 +259,6 @@ services:
       - gluetun
     restart: unless-stopped
 
-  sonobarr:
-    image: ghcr.io/dodelidoo-labs/sonobarr:0.10.0
-    container_name: sonobarr
-    env_file:
-      - .env
-    environment:
-      - secret_key=${SONOBARR_SECRET_KEY:-}
-      - lidarr_address=http://gluetun:8686
-      - lidarr_api_key=${LIDARR_API_KEY:-}
-      - root_folder_path=/data/media/music/
-    volumes:
-      - {{ data_location }}/sonobarr:/config
-    ports:
-      - 5001:5000
-{% if enable_traefik | default(false) %}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.sonobarr.rule=Host(`sonobarr.{{ traefik_domain }}`)"
-      - "traefik.http.routers.sonobarr.entrypoints=websecure"
-      - "traefik.http.routers.sonobarr.tls.certresolver=letsencrypt"
-      - "traefik.http.services.sonobarr.loadbalancer.server.port=5000"
-{% endif %}
-    restart: unless-stopped
-
 {% if enable_observability | default(false) %}
   exportarr-radarr:
     image: ghcr.io/onedr0p/exportarr:v2.3.0

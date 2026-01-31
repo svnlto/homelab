@@ -1,7 +1,0 @@
----
-- name: Deploy Pi-hole DNS Server
-  hosts: all
-  become: true
-
-  roles:
-    - pihole

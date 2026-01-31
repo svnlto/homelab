@@ -14,59 +14,31 @@ Proxmox maintenance. Pi-hole runs on the Pi, NOT on Proxmox.
 
 ## Architecture
 
-### Two Infrastructure Paths
+### Infrastructure Stack
 
-#### Path 1: Bare-Metal Proxmox Installation
+**Proxmox Nodes** (installed from official ISO):
 
-1. **Build Bootable Image** (`packer/bare-metal/`)
-   - Downloads Debian cloud image
-   - Provisions with Ansible (installs Proxmox VE)
-   - Creates bootable raw disk image
-   - Build time: 15-20 min (Apple Silicon)
+- `grogu` (r630): 192.168.0.10 - Compute-focused node
+- `din` (r730xd): 192.168.0.11 - Storage + compute node
+- Configured via Ansible (`ansible/playbooks/configure-existing-proxmox.yml`)
 
-2. **Flash to Physical Disk**
-
-   ```bash
-   just packer-build-bare-metal
-   just bare-metal-flash /dev/rdiskX
-   ```
-
-3. **Boot Dell Server**
-   - Boot r630/r730xd from USB/SSD
-   - Proxmox VE ready immediately (no installation wizard)
-
-4. **Use Case**: Initial Proxmox cluster setup on bare metal
-
-#### Path 2: VM Template in Proxmox
+**VM/Container Deployment Workflow**:
 
 1. **Packer Template Building** (15-30 min)
    - Creates VM template inside Proxmox (VM ID 9000)
    - Ubuntu 24.04 with UEFI/OVMF, cloud-init enabled
    - SSH hardening applied via Ansible (password auth disabled)
+   - Command: `just packer-build-vm-template`
 
-2. **Terraform VM Cloning** (2-3 min)
-   - Clones VMs from template
-   - Injects SSH keys via cloud-init
+2. **Terraform VM/Container Cloning** (2-3 min)
+   - Clones VMs from template or creates LXC containers
+   - Injects SSH keys via cloud-init (VMs) or initialization block (LXC)
    - Most settings baked into main.tf (not variables)
+   - Commands: `just tf-apply` / `just tf-destroy`
 
-3. **Ansible Provisioning**
+3. **Ansible Provisioning** (triggered by Terraform)
    - Deploys applications (arr stack, observability)
-
-4. **Use Case**: Rapid VM deployment for services
-
-### Bare-Metal vs VM Template Workflows
-
-**Common Confusion**: This project has TWO distinct Packer workflows:
-
-| Workflow        | Purpose                      | Output                     | Deploy Method    | Command                         |
-| --------------- | ---------------------------- | -------------------------- | ---------------- | ------------------------------- |
-| **Bare-Metal**  | Install Proxmox on servers   | `.raw.gz` image            | Flash to USB/SSD | `just packer-build-bare-metal`  |
-| **VM Template** | Create reusable VM templates | Proxmox template (ID 9000) | Terraform clone  | `just packer-build-vm-template` |
-
-**Key Difference:**
-
-- Bare-metal = Build **Proxmox itself** (the hypervisor)
-- VM template = Build **VMs to run on Proxmox** (services like arr stack)
+   - Playbooks: `stack-arr.yml`, `stack-observability.yml`
 
 ### Critical Configuration Requirements
 
@@ -187,23 +159,23 @@ nix develop
 just --list
 ```
 
-### Bare-Metal Proxmox Node Workflow
+### Proxmox Node Configuration (after ISO install)
 
 ```bash
-# 1. Start build VM (one time)
-just bare-metal-vm-up
+# Test connectivity to nodes
+just ansible-ping
 
-# 2. Build bootable image (15-20 min)
-just packer-build-bare-metal
+# Configure all Proxmox nodes (grogu + din)
+just ansible-configure-all
 
-# 3. Flash to USB/SSD
-just bare-metal-flash /dev/rdiskX
+# Configure specific node
+just ansible-configure grogu
+just ansible-configure din
 
-# 4. Boot Dell server from USB/SSD
-# Proxmox VE ready immediately!
+# Note: Reboot required after configuration for PCIe passthrough
 ```
 
-### Proxmox VM Template Workflow
+### VM/Container Deployment Workflow
 
 ```bash
 # 1. Build VM template inside Proxmox (15-30 min)
@@ -216,41 +188,36 @@ just tf-apply
 just tf-destroy
 ```
 
-### Raspberry Pi Workflow
+### Raspberry Pi Workflow (NixOS)
 
 ```bash
-# 1. Start build VM (one time)
-just pihole-vm-up
+# 1. Build NixOS SD image (15-20 min first, 2-5 min incremental)
+just nixos-build-pihole
 
-# 2. Build Pi-hole image (30-60 min)
-just packer-build-pihole
+# 2. Flash to SD card
+just nixos-flash-pihole /dev/rdiskX
 
-# 3. Flash to SD card
-just pihole-flash /dev/rdiskX
+# 3. Update flake to latest packages (optional)
+just nixos-update-pihole
 ```
 
 ## File Structure
 
 ```text
 homelab/
+├── nix/                                   # NixOS configurations
+│   ├── flake.nix                          # NixOS flake (SD image builder)
+│   ├── rpi-pihole/                        # Pi-hole NixOS config
+│   │   ├── configuration.nix              # System config
+│   │   ├── hardware.nix                   # Raspberry Pi hardware
+│   │   └── pihole.nix                     # Pi-hole + Unbound services
+│   └── common/
+│       └── constants.nix                  # Shared constants
+│
 ├── packer/
-│   ├── bare-metal/                        # Bare-metal Proxmox installer (bootable images)
-│   │   ├── proxmox-node.pkr.hcl          # Cloud image-based builder
-│   │   ├── variables.pkr.hcl              # Build configuration
-│   │   ├── cloud-init/                    # Cloud-init for initial boot
-│   │   ├── Vagrantfile                    # Apple Silicon build VM
-│   │   └── README.md
-│   │
-│   ├── pihole/                            # Pi-hole for Raspberry Pi
-│   │   ├── rpi-pihole.pkr.hcl
-│   │   └── ...
-│   │
-│   ├── proxmox-templates/                 # VM templates (built inside Proxmox)
-│   │   ├── ubuntu-24.04-template.pkr.hcl # Proxmox template builder
-│   │   └── http/                          # Autoinstall configs (user-data, meta-data)
-│   │
-│   └── _archive/                          # Historical reference
-│       └── x86-builder/                   # Preseed installer approach (archived)
+│   └── proxmox-templates/                 # VM templates (built inside Proxmox)
+│       ├── ubuntu-24.04-template.pkr.hcl  # Proxmox template builder
+│       └── http/                          # Autoinstall configs (user-data, meta-data)
 │
 ├── terraform/
 │   ├── modules/ubuntu-vm/                 # Reusable VM module (40+ parameters)
@@ -260,22 +227,23 @@ homelab/
 │   └── proxmox/                           # Root module
 │       ├── providers.tf                   # bpg/proxmox provider 0.89.1
 │       ├── main.tf                        # Provider configuration
-│       ├── _arrstack.tf                   # Arr LXC container (192.168.1.50)
-│       ├── _observability.tf              # Monitoring VM (192.168.1.60)
+│       ├── _arrstack.tf                   # Arr LXC container (192.168.0.200)
+│       ├── _observability.tf              # Monitoring VM (192.168.0.201)
 │       ├── variables.tf                   # Sensitive vars only
 │       └── terraform.tfvars               # SSH public key (GITIGNORED)
 │
 ├── ansible/
+│   ├── inventory.ini                      # Proxmox node inventory (grogu, din)
 │   ├── playbooks/
-│   │   ├── base-template.yml              # Template hardening (SSH, Docker)
-│   │   ├── packer-proxmox-node.yml        # Bare-metal Proxmox (installs PVE)
-│   │   ├── packer-pihole.yml              # Pi-hole + Unbound deployment
+│   │   ├── configure-existing-proxmox.yml # Configure installed Proxmox nodes
+│   │   ├── packer-base-vm.yml             # Template provisioning (SSH, Docker)
 │   │   ├── stack-arr.yml                  # Full arr media stack
-│   │   └── observability.yml              # Grafana/Prometheus/Loki
+│   │   └── stack-observability.yml        # Grafana/Prometheus/Loki
 │   └── roles/
-│       ├── pihole/                        # Pi-hole + Unbound role
 │       ├── arr/                           # Full media automation stack role
-│       └── observability/                 # Monitoring stack role
+│       ├── observability/                 # Monitoring stack role
+│       ├── proxmox_configure/             # Proxmox configuration (nag removal, PCIe)
+│       └── security/                      # SSH hardening
 │
 ├── .envrc                                 # Loads .env and exports TF_VAR_*
 ├── .env                                   # API tokens (GITIGNORED)
@@ -330,27 +298,30 @@ Pinned via Nix flakes for reproducibility:
 
 ## Network Architecture
 
+See [docs/network-layout.md](docs/network-layout.md) for detailed network topology, VLAN configuration, and traffic flows.
+
 ```text
-Internet → Router (192.168.1.1)
+Internet → Router (192.168.0.1)
               ↓
     ┌─────────┼─────────┐
     ↓                   ↓
 Pi-hole DNS      Proxmox Cluster
-192.168.1.2      r630 + r730xd
+192.168.0.53     grogu (r630) + din (r730xd)
 (Raspberry Pi)        ↓
     ↓           ┌─────┴─────┐
 Network-wide    ↓           ↓
-DNS Filtering  r630        r730xd
+DNS Filtering  grogu       din
             (Compute)  (Storage+Compute)
-           192.168.1.XX  192.168.1.76
+          192.168.0.10   192.168.0.11
                 ↓           ↓
                 └── 10GbE ──┘
-                   DAC Cable
-                   10.0.0.0/30
+               VLAN 10 Storage
+              10.10.10.10/24
 
-                   r730xd
+                    din
+                 (r730xd)
                       ↓
-                   DS2246
+                   MD1220
                  Disk Shelf
                 (24x SFF)
              SFF-8088 SAS Cables
@@ -358,21 +329,27 @@ DNS Filtering  r630        r730xd
 
 **IP Assignments**:
 
-- Router/Gateway: 192.168.1.1
-- Pi-hole: 192.168.1.2 (Raspberry Pi #2)
-- Tailscale: 192.168.1.100 (Raspberry Pi #1, if configured)
-- r730xd (Proxmox + TrueNAS VM): 192.168.1.76 (mgmt), 10.0.0.1/30 (storage)
-- r630 (Proxmox): 192.168.1.XX (mgmt), 10.0.0.2/30 (storage/cluster)
+- Router/Gateway (VLAN 20): 192.168.0.1
+- Pi-hole DNS: 192.168.0.53 (Raspberry Pi)
+- grogu (r630): 192.168.0.10 (VLAN 20 mgmt), 10.10.10.10 (VLAN 10 storage)
+- din (r730xd): 192.168.0.11 (VLAN 20 mgmt), 10.10.10.11 (VLAN 10 storage)
 - Template VM: ID 9000
+
+**Network Architecture**:
+
+- VLAN 1 (Management): 10.10.1.0/24 - iDRAC, switch management
+- VLAN 10 (Storage): 10.10.10.0/24 - NFS/iSCSI, high-bandwidth storage traffic
+- VLAN 20 (LAN): 192.168.0.0/24 - VMs, services, clients
+- Kubernetes Network: 10.0.1.0/24 - Dedicated Talos cluster network (separate from VLAN 10)
 
 **LXC Containers:**
 
-- arr-stack: 192.168.1.50 (VMID 200) - Full media automation suite
+- arr-stack: 192.168.0.200 (VMID 200) - Full media automation suite
 
 **VMs:**
 
-- monitoring-server: 192.168.1.60 (static, observability)
-- truenas: 192.168.1.76 (VMID 300) - Storage VM on r730xd
+- monitoring-server: 192.168.0.201 (VMID 101, static, observability)
+- TrueNAS SCALE: 192.168.0.13 (VMID 300, VLAN 20), 10.10.10.13 (VLAN 10 storage)
 
 **Hardware:**
 
@@ -415,8 +392,8 @@ module "newservice_server" {
   disk_size_gb     = 50
 
   # Network
-  ipv4_address     = "192.168.1.52/24"
-  ipv4_gateway     = "192.168.1.1"
+  ipv4_address     = "192.168.0.202/24"
+  ipv4_gateway     = "192.168.0.1"
 
   # SSH
   ssh_public_key   = var.ssh_public_key
@@ -477,58 +454,12 @@ To customize VMs, edit `main.tf` directly rather than managing variables.
 
 ## References
 
-- Proxmox API: <https://192.168.1.37:8006/api2/json>
+- Proxmox API: <https://192.168.0.10:8006/api2/json> (grogu - primary node)
 - Packer Proxmox Builder: <https://developer.hashicorp.com/packer/plugins/builders/proxmox/iso>
 - Terraform Proxmox Provider: <https://github.com/bpg/terraform-provider-proxmox>
 - Packer ARM Builder: <https://github.com/mkaczanowski/packer-builder-arm>
 
 ## Important Implementation Details
-
-### Ansible Chroot Provisioning (Pi-hole)
-
-When building the Pi-hole image, Ansible runs **inside a chroot environment** (no running systemd or Docker daemon).
-Tasks must be chroot-aware:
-
-**Problem**: Can't use `systemd` or `docker` modules in chroot
-**Solution**: Use `packer_build` variable to conditionally skip/modify tasks
-
-```yaml
-# Skip during Packer build (chroot)
-- name: Enable systemd-timesyncd
-  ansible.builtin.systemd:
-    name: systemd-timesyncd
-    enabled: true
-    state: started
-  when: not packer_build | default(false)
-
-# Manual service enabling for Packer build
-- name: Enable node_exporter (packer build)
-  ansible.builtin.file:
-    src: /usr/lib/systemd/system/prometheus-node-exporter.service
-    dest: /etc/systemd/system/multi-user.target.wants/prometheus-node-exporter.service
-    state: link
-  when: packer_build | default(false)
-```
-
-**Key Constraints in Chroot:**
-
-- ❌ Cannot run `systemctl` commands
-- ❌ Cannot start/stop services
-- ❌ Cannot run Docker containers
-- ✅ Can install packages via `apt`
-- ✅ Can create files and directories
-- ✅ Can create systemd unit files
-- ✅ Can manually create symlinks in `/etc/systemd/system/multi-user.target.wants/`
-
-**Packer passes the flag:**
-
-```hcl
-provisioner "shell" {
-  inline = [
-    "ansible-playbook pihole.yml --extra-vars 'packer_build=true'"
-  ]
-}
-```
 
 ### Memory Usage (Linux Cache Behavior)
 
