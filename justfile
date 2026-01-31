@@ -29,10 +29,10 @@ nixos-vm-ssh:
 # Build NixOS SD image for Pi-hole inside Linux VM (15-20 min first build, 2-5 min incremental)
 nixos-build-pihole:
     @echo "Building NixOS SD image for Pi-hole in Linux VM..."
-    cd nix && vagrant ssh -c "cd /vagrant && nix build .#nixosConfigurations.rpi-pihole.config.system.build.sdImage"
+    cd nix && vagrant ssh -c "cd /vagrant && nix build .#nixosConfigurations.rpi-pihole.config.system.build.sdImage && cp -L result/sd-image/*.img pihole-nixos.img"
     @echo ""
     @echo "✓ Image built successfully!"
-    @ls -lh nix/result/sd-image/*.img 2>/dev/null || echo "Image will be in nix/result/sd-image/"
+    @ls -lh nix/pihole-nixos.img
 
 # Flash NixOS image to SD card
 nixos-flash-pihole disk:
