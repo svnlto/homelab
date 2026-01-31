@@ -13,10 +13,9 @@ Vagrant.configure("2") do |config|
     v.vmx["ide0:0.size"] = "100000"  # 100GB
   end
 
-  # Share the nix directory with the VM using NFS
-  # Note: Ensure /sbin/nfsd has Full Disk Access in macOS System Settings
-  config.vm.synced_folder ".", "/vagrant", type: "nfs",
-    nfs_udp: false  # Use TCP instead of UDP (UDP can cause mount failures)
+  # Share the nix directory with the VM using VMware's native shared folders
+  # More reliable than NFS on macOS (uses VMware Tools instead of macOS NFS server)
+  config.vm.synced_folder ".", "/vagrant"
 
   # Provision: Install Nix if not already present (for Ubuntu fallback)
   config.vm.provision "shell", inline: <<-SHELL
