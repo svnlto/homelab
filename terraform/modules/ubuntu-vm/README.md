@@ -32,8 +32,8 @@ module "db_server" {
 
   vm_name       = "db-server-01"
   ssh_keys      = [var.ssh_public_key]
-  ipv4_address  = "192.168.1.50/24"
-  ipv4_gateway  = "192.168.1.1"
+  ipv4_address  = "192.168.0.200/24"
+  ipv4_gateway  = "192.168.0.1"
   memory_mb     = 8192
   cpu_cores     = 4
   disk_size_gb  = 100
@@ -96,7 +96,7 @@ module "web_server" {
 | vm_user | VM username | string | "ubuntu" | no |
 | ipv4_address | IPv4 address or "dhcp" | string | "dhcp" | no |
 | ipv4_gateway | IPv4 gateway | string | null | no |
-| dns_servers | DNS servers | list(string) | ["192.168.1.1"] | no |
+| dns_servers | DNS servers | list(string) | ["192.168.0.53"] | no |
 | gpu_passthrough_enabled | Enable GPU passthrough | bool | false | no |
 | gpu_mapping_id | GPU resource mapping ID | string | "intel-igpu" | no |
 
@@ -120,7 +120,7 @@ The module uses these sensible defaults:
 - **Network**: DHCP on vmbr0, no firewall
 - **Storage**: local-lvm
 - **User**: ubuntu
-- **DNS**: 192.168.1.1 (Pi-hole)
+- **DNS**: 192.168.0.53 (Pi-hole)
 - **Boot**: Don't start on Proxmox boot
 - **Tags**: ubuntu, terraform (always added)
 

@@ -19,7 +19,6 @@
     - "{{ data_location }}/jellyseerr"
     - "{{ data_location }}/recyclarr"
     - "{{ data_location }}/buildarr"
-    - "{{ data_location }}/sonobarr"
     - "{{ data_location }}/traefik/letsencrypt"
 
 - name: Create media directories
@@ -142,7 +141,6 @@
     sonarr_api_key: "{{ api_keys_raw.results[1].stdout | default('') }}"
     lidarr_api_key: "{{ api_keys_raw.results[2].stdout | default('') }}"
     prowlarr_api_key: "{{ api_keys_raw.results[3].stdout | default('') }}"
-    sonobarr_secret_key: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') }}"
 
 - name: Display extracted API keys
   ansible.builtin.debug:
@@ -175,7 +173,6 @@
       - exportarr-lidarr
       - exportarr-prowlarr
       - buildarr
-      - sonobarr
       - recyclarr
     state: restarted
   when: radarr_api_key != "" and sonarr_api_key != ""

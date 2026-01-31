@@ -22,7 +22,6 @@ sonarr_api_key: ""
 prowlarr_api_key: ""
 lidarr_api_key: ""
 bazarr_api_key: ""
-sonobarr_secret_key: ""
 
 # qBittorrent Configuration
 qbittorrent_port: 6881

@@ -1,0 +1,53 @@
+# Vagrant box for building NixOS images on macOS
+# Provides a Linux VM that can actually execute Linux binaries during builds
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-22.04"
+
+  config.vm.provider "vmware_desktop" do |v|
+    v.memory = 8192
+    v.cpus = 4
+    v.gui = false
+
+    # Increase disk size for NixOS builds (default is often only 10-20GB)
+    v.vmx["ide0:0.size"] = "100000"  # 100GB
+  end
+
+  # Share the nix directory with the VM using NFS
+  # Note: Ensure /sbin/nfsd has Full Disk Access in macOS System Settings
+  config.vm.synced_folder ".", "/vagrant", type: "nfs",
+    nfs_udp: false  # Use TCP instead of UDP (UDP can cause mount failures)
+
+  # Provision: Install Nix if not already present (for Ubuntu fallback)
+  config.vm.provision "shell", inline: <<-SHELL
+    # Fix locale warnings
+    if ! locale -a | grep -q "en_GB.utf8"; then
+      echo "Generating en_GB.UTF-8 locale..."
+      locale-gen en_GB.UTF-8
+      update-locale LANG=en_GB.UTF-8
+    fi
+
+    if ! command -v nix &> /dev/null; then
+      echo "Installing Nix..."
+      sh <(curl -L https://nixos.org/nix/install) --daemon --yes
+      source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    fi
+
+    # Enable experimental features
+    mkdir -p /etc/nix
+    if ! grep -q "experimental-features" /etc/nix/nix.conf 2>/dev/null; then
+      echo "experimental-features = nix-command flakes" | tee -a /etc/nix/nix.conf
+    fi
+
+    echo "Nix build environment ready!"
+    nix --version
+  SHELL
+
+  # Always run: Clean up old build artifacts to free space
+  config.vm.provision "shell", run: "always", inline: <<-SHELL
+    echo "Cleaning up Nix store to free disk space..."
+    nix-collect-garbage -d 2>/dev/null || true
+    echo "Disk space available:"
+    df -h / | tail -1
+  SHELL
+end

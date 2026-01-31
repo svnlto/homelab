@@ -85,7 +85,7 @@ just packer-build-pihole # Build ARM image (30-60 min)
 just pihole-flash disk=/dev/rdisk4
 ```
 
-- **IP**: 192.168.1.2
+- **IP**: 192.168.0.53
 - **Purpose**: Network-wide DNS filtering and ad-blocking
 - **Builder**: VMware Fusion VM (Docker Desktop can't mount loop devices)
 
@@ -104,25 +104,20 @@ just tf-apply    # Clone and provision VMs
 just tf-destroy  # Clean up
 ```
 
-**Current VMs**:
+**Current VMs/Containers**:
 
-| VM | IP | Stack |
-| -- | -- | ----- |
-| arr-server | 192.168.1.50 | Sonarr, Radarr, Prowlarr, qBittorrent |
-| observability-server | 192.168.1.51 | Grafana, Prometheus, Loki, Alloy |
-| truenas | 192.168.1.76 | ZFS storage (NFS/SMB shares) |
+| VM/Container | IP | Stack |
+| ------------ | -- | ----- |
+| arr-stack (LXC) | 192.168.0.200 | Sonarr, Radarr, Prowlarr, qBittorrent |
+| monitoring-server (VM) | 192.168.0.201 | Grafana, Prometheus, Loki, Alloy |
+| TrueNAS SCALE (VM) | 192.168.0.13 (mgmt), 10.10.10.13 (storage) | ZFS storage (NFS/iSCSI) |
 
 ### TrueNAS Storage
 
-```bash
-just truenas-deploy  # Create VM, manually install via console
-# Then automate with Ansible:
-ansible-playbook ansible/playbooks/truenas-setup.yml
-```
-
-- **Storage**: 3x 100GB disks (RAIDZ1) = ~200GB usable
-- **Datasets**: media, kubernetes, backups, vms
-- **Automation**: `arensb.truenas` collection + `midclt` WebSocket API
+- **Management IP**: 192.168.0.13 (VLAN 20 LAN)
+- **Storage IP**: 10.10.10.13 (VLAN 10 dedicated storage network)
+- **Hardware**: Dell MD1220 disk shelf (24x 2.5" SFF) connected via SAS to din (R730xd)
+- **Purpose**: Primary NFS/iSCSI storage for Proxmox VMs and containers
 
 ## Key Technologies
 
@@ -135,16 +130,43 @@ ansible-playbook ansible/playbooks/truenas-setup.yml
 
 ## Network Layout
 
+> **Detailed network documentation**: [docs/network-layout.md](docs/network-layout.md)
+
 ```text
-Router (192.168.1.1)
-├── Pi-hole DNS (192.168.1.2)       # Raspberry Pi #2
-├── Proxmox (192.168.1.37)          # Lenovo P520
-│   ├── Template (VM 9000)
-│   ├── arr-server (192.168.1.50)
-│   ├── observability (192.168.1.51)
-│   └── truenas (192.168.1.76)
-└── Tailscale (192.168.1.100)       # Raspberry Pi #1
+Internet → Beryl AX Router (192.168.0.1)
+              ↓
+    ┌─────────┼─────────────────────┐
+    │         │                     │
+    ↓         ↓                     ↓
+Pi-hole    Proxmox Cluster    MikroTik Switches
+192.168.0.53  (grogu + din)    (L3 Core + 10G Agg)
+              ↓
+    ┌─────────┴─────────┐
+    ↓                   ↓
+grogu (R630)        din (R730xd)
+192.168.0.10        192.168.0.11
+10.10.10.10         10.10.10.11
+    │                   │
+    └─── 10GbE Fiber ───┘
+         (Storage VLAN 10)
+              ↓
+         TrueNAS SCALE
+         192.168.0.13 (mgmt)
+         10.10.10.13 (storage)
 ```
+
+**VLAN Architecture**:
+
+- **VLAN 1 (Management)**: 10.10.1.0/24 - iDRAC, switch management
+- **VLAN 10 (Storage)**: 10.10.10.0/24 - NFS/iSCSI, 10GbE high-bandwidth traffic
+- **VLAN 20 (LAN)**: 192.168.0.0/24 - VMs, services, clients
+
+**Hardware**:
+
+- **grogu** (Dell R630): 36C/72T, Intel Arc A310 GPU, 10GbE storage
+- **din** (Dell R730xd): 24C/48T, Dell MD1220 disk shelf (24x SFF), 10GbE storage
+- **Switches**: MikroTik CRS310-8G+2S+IN (L3 Core) + CRS310-1G-5S-4S+IN (10G Agg)
+- **Pi-hole**: Raspberry Pi 4B - Critical DNS infrastructure (independent of Proxmox)
 
 ## Documentation
 

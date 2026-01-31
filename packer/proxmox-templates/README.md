@@ -82,7 +82,7 @@ export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"
 wget https://releases.ubuntu.com/noble/ubuntu-24.04.3-live-server-amd64.iso
 
 # Upload to Proxmox
-scp ubuntu-24.04.3-live-server-amd64.iso root@192.168.1.37:/var/lib/vz/template/iso/
+scp ubuntu-24.04.3-live-server-amd64.iso root@192.168.0.10:/var/lib/vz/template/iso/
 ```
 
 ### 4. Install Packer and Ansible
@@ -176,8 +176,8 @@ vm_disk_size     = "50G"
 # Cloud-Init configuration
 # Get your public key from 1Password: ssh-add -L | head -1
 ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA..."
-vm_ipconfig    = "ip=192.168.1.150/24,gw=192.168.1.1"
-vm_nameserver  = "192.168.1.2"
+vm_ipconfig    = "ip=192.168.0.150/24,gw=192.168.0.1"
+vm_nameserver  = "192.168.0.53"
 ```
 
 ### Option 2: Proxmox CLI
@@ -187,8 +187,8 @@ vm_nameserver  = "192.168.1.2"
 qm clone 9000 100 --name my-vm --full
 
 # Configure cloud-init
-qm set 100 --ipconfig0 ip=192.168.1.100/24,gw=192.168.1.1
-qm set 100 --nameserver 192.168.1.2
+qm set 100 --ipconfig0 ip=192.168.0.100/24,gw=192.168.0.1
+qm set 100 --nameserver 192.168.0.53
 qm set 100 --sshkey ~/.ssh/id_rsa.pub
 
 # Start VM
@@ -219,7 +219,7 @@ cat > inventory.yml <<EOF
 all:
   hosts:
     test-vm:
-      ansible_host: 192.168.1.150
+      ansible_host: 192.168.0.150
       ansible_user: ubuntu
 EOF
 
@@ -381,9 +381,9 @@ variable "template_name" {
 
 This template integrates with your existing homelab:
 
-**DNS:** Pre-configured to use Pi-hole (`192.168.1.2`)
-**VPN:** Access via Tailscale through subnet router (`192.168.1.100`)
-**Storage:** Ready to mount Unraid shares (`192.168.1.20`)
+**DNS:** Pre-configured to use Pi-hole (`192.168.0.53`)
+**Network:** VLAN 20 (LAN) with gateway at `192.168.0.1`
+**Storage:** Ready to mount TrueNAS NFS shares via VLAN 10 storage network
 
 ## Next Steps
 

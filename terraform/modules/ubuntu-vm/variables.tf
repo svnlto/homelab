@@ -101,7 +101,7 @@ variable "ipv4_gateway" {
 variable "dns_servers" {
   description = "DNS servers"
   type        = list(string)
-  default     = ["192.168.1.1"]
+  default     = ["192.168.0.53"] # Pi-hole DNS
 }
 
 variable "gpu_passthrough_enabled" {
