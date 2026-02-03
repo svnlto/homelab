@@ -41,14 +41,20 @@ repos:
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.104.0
     hooks:
+      # Terragrunt infrastructure
       - id: terraform_fmt
+        name: Terraform fmt (infrastructure)
         args:
           - --args=-recursive
-        files: ^terraform/
-      - id: terraform_validate
-        files: ^terraform/
-      - id: terraform_tflint
-        files: ^terraform/
+        files: ^infrastructure/.*\.tf$
+        exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
+        # NOTE: Terragrunt hooks disabled - use direnv environment instead
+        # - id: terragrunt_fmt
+        #   files: ^infrastructure/
+        #   exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
+        # - id: terragrunt_validate
+        #   files: ^infrastructure/
+        #   exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
 
   - repo: https://github.com/ansible/ansible-lint
     rev: v25.12.1
