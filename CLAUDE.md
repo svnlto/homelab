@@ -472,20 +472,80 @@ module "truenas_primary" {
 - Centralized HBA passthrough logic
 - Environment separation (prod/dev)
 
-## Authentication Flow
+## Authentication and Credential Management
 
-**SSH Agent Configuration** (1Password):
+### 1Password Integration
 
-- Agent config: `~/.config/1Password/ssh/agent.toml`
-- SSH key item name in 1Password: `"proxmox"` (in Personal vault)
-- SSH config: `IdentityAgent "/Users/svenlito/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"`
+**All secrets are managed via 1Password** for secure credential storage and biometric authentication.
 
-**Proxmox API Tokens** (stored in `.env`, auto-loaded by direnv):
+**Architecture**:
+
+- **Local Development**: 1Password CLI fetches secrets using Touch ID (via `.envrc`)
+- **CI/CD** (future): Service account tokens for GitHub Actions automation
+- **Fallback**: `.env` file still works if 1Password CLI unavailable
+
+**Setup**: See `docs/1password-setup.md` for complete migration guide.
+
+**1Password Items** (Personal vault):
+
+```text
+Proxmox API Token
+  - token_id: terraform@pam!terraform
+  - token_secret: <uuid>
+
+MikroTik Router
+  - username: admin
+  - password: <router-password>
+
+Backblaze B2
+  - key_id: <b2-key-id>
+  - application_key: <b2-application-key>
+
+OpenVPN
+  - username: <vpn-username>
+  - password: <vpn-password>
+
+Soulseek
+  - username: <soulseek-username>
+  - password: <soulseek-password>
+```
+
+**How it works** (`.envrc`):
 
 ```bash
-PROXMOX_TOKEN_ID="root@pam!terraform"
-PROXMOX_TOKEN_SECRET="<uuid>"
+# If 1Password CLI available, fetch secrets from vault
+if command -v op >/dev/null 2>&1; then
+  export PROXMOX_TOKEN_ID=$(op read "op://Personal/Proxmox API Token/token_id")
+  export PROXMOX_TOKEN_SECRET=$(op read "op://Personal/Proxmox API Token/token_secret")
+  # ... other secrets
+else
+  # Fallback to .env file
+  dotenv_if_exists
+fi
 ```
+
+**Benefits**:
+
+- Touch ID authentication for local development
+- Secrets encrypted in 1Password vault (never in plaintext files)
+- Audit trail of all secret access
+- Easy rotation (update once in 1Password, applies everywhere)
+- Team-ready (share vault instead of copying .env files)
+
+### SSH Agent Configuration
+
+**1Password SSH Agent** (for VM/container access):
+
+- Agent config: `~/.config/1Password/ssh/agent.toml`
+- SSH key item name: `"proxmox"` (in Personal vault)
+- SSH config: `IdentityAgent "/Users/svenlito/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"`
+
+**Authentication Flow**:
+
+1. SSH to VM/container triggers 1Password SSH agent
+2. Touch ID prompt for authentication
+3. 1Password provides private key to SSH client
+4. Connection established with public key authentication
 
 ## References
 
