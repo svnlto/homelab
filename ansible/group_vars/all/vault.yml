@@ -1,0 +1,8 @@
+---
+# BEGIN PROXMOX TERRAFORM TOKEN - DIN
+# Proxmox API Token for din (Terraform)
+vault_proxmox_token_id_din: "terraform@pam!terraform"
+vault_proxmox_token_secret_din: "e51413ca-18cd-461c-86c8-e1d8f3cb690f"
+
+# Generated: 2026-02-03T10:07:49Z
+# END PROXMOX TERRAFORM TOKEN - DIN

@@ -4,42 +4,102 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Homelab infrastructure automation using NixOS, Terraform, and Ansible:
+Homelab infrastructure automation using NixOS, Terragrunt, and Ansible:
 
 - **Raspberry Pi**: Immutable Pi-hole DNS server (NixOS declarative config)
-- **Proxmox VE**: Template-based VM deployment (Packer + Terraform + Ansible)
-- **TrueNAS SCALE**: ZFS-based network storage (Terraform VMs + Ansible configuration)
+- **Proxmox VE**: Terragrunt-based VM deployment with environment separation
+- **TrueNAS SCALE**: ZFS-based network storage (Terragrunt VMs + Ansible configuration)
+- **MikroTik**: Router configuration via Terragrunt (VLANs, firewall, DHCP)
 
-**Critical Design Principle**: Raspberry Pi runs critical network infrastructure (DNS) that must stay operational during
-Proxmox maintenance. Pi-hole runs on the Pi, NOT on Proxmox.
+**Critical Design Principle**: Raspberry Pi runs critical network infrastructure (DNS) that must stay
+operational during Proxmox maintenance. Pi-hole runs on the Pi, NOT on Proxmox.
 
 ## Architecture
 
-### Infrastructure Stack
+### Infrastructure Stack (Terragrunt)
+
+**Migration Status**: Migrated from Terraform to Terragrunt on 2026-02-03
+
+- Old code archived in `archive/terraform-legacy-20260203/`
+- New structure uses Terragrunt for DRY configuration and environment separation
+- See `infrastructure/MIGRATION_COMPLETE.md` for details
+
+**Directory Structure**:
+
+```text
+infrastructure/
+├── globals.hcl                    # Single source of truth (VLANs, IPs, versions)
+├── root.hcl                       # Backend + provider config (local state)
+├── modules/                       # Reusable Terraform modules
+│   ├── truenas-vm/               # DRY TrueNAS module (with HBA passthrough support)
+│   └── talos-cluster/            # Talos Kubernetes cluster module
+├── prod/                          # Production environment
+│   ├── provider.hcl              # Proxmox provider config
+│   ├── resource-pools/           # Proxmox pool management (prod-storage, prod-compute)
+│   ├── iso-images/               # Centralized ISO downloads (TrueNAS)
+│   ├── storage/
+│   │   ├── truenas-primary/      # TrueNAS Primary (VMID 300, din)
+│   │   └── truenas-backup/       # TrueNAS Backup (VMID 301, grogu)
+│   └── mikrotik/                 # Router configuration (VLANs, firewall, DHCP, DNS)
+│       ├── provider.hcl
+│       ├── base/                 # Bridge, VLANs, IPs, routing
+│       ├── dhcp/                 # Per-VLAN DHCP servers (4 VLANs)
+│       ├── firewall/             # Zone-based firewall rules
+│       └── dns/                  # DNS forwarding to Pi-hole
+└── dev/                           # Development environment
+    ├── provider.hcl
+    └── resource-pools/
+```
 
 **Proxmox Nodes** (installed from official ISO):
 
-- `grogu` (r630): 192.168.0.10 - Compute-focused node
-- `din` (r730xd): 192.168.0.11 - Storage + compute node
+- `grogu` (r630): 192.168.0.10 - Compute-focused node (currently offline, awaits MikroTik switch)
+- `din` (r730xd): 192.168.0.11 - Storage + compute node (primary)
 - Configured via Ansible (`ansible/playbooks/configure-existing-proxmox.yml`)
 
-**VM/Container Deployment Workflow**:
+### Terragrunt Deployment Pattern
 
-1. **Packer Template Building** (15-30 min)
-   - Creates VM template inside Proxmox (VM ID 9000)
-   - Ubuntu 24.04 with UEFI/OVMF, cloud-init enabled
-   - SSH hardening applied via Ansible (password auth disabled)
-   - Command: `just packer-build-vm-template`
+**Standard Structure** (every deployment):
 
-2. **Terraform VM/Container Cloning** (2-3 min)
-   - Clones VMs from template or creates LXC containers
-   - Injects SSH keys via cloud-init (VMs) or initialization block (LXC)
-   - Most settings baked into main.tf (not variables)
-   - Commands: `just tf-apply` / `just tf-destroy`
+```text
+infrastructure/<env>/<category>/<module>/
+├── terragrunt.hcl     # Loads globals.hcl, includes provider, sets inputs
+├── main.tf            # Calls module or defines resources
+├── variables.tf       # Variable declarations (including provider credentials)
+├── outputs.tf         # Output definitions
+```
 
-3. **Ansible Provisioning** (triggered by Terraform)
-   - Deploys applications (arr stack, observability)
-   - Playbooks: `stack-arr.yml`, `stack-observability.yml`
+**Key Files**:
+
+- **globals.hcl**: Single source of truth (VLANs, IPs, versions, resource mappings)
+- **root.hcl**: Backend configuration (currently local, B2 remote planned)
+- **provider.hcl**: Provider configuration with credentials from .env
+
+**Deployment Commands**:
+
+```bash
+# Apply single module
+cd infrastructure/prod/storage/truenas-primary
+terragrunt apply
+
+# Apply all modules in directory
+cd infrastructure/prod
+terragrunt run-all apply
+
+# Plan changes
+terragrunt plan
+
+# Destroy resources
+terragrunt destroy
+```
+
+**Environment Variables** (auto-loaded via direnv from `.env`):
+
+- `PROXMOX_TOKEN_ID` - Proxmox API token ID
+- `PROXMOX_TOKEN_SECRET` - Proxmox API token secret
+- `MIKROTIK_HOST` - MikroTik router IP
+- `MIKROTIK_USERNAME` - MikroTik username
+- `MIKROTIK_PASSWORD` - MikroTik password
 
 ### NixOS Pi-hole (Raspberry Pi)
 
@@ -53,19 +113,11 @@ Pi-hole runs on NixOS for true immutability and atomic updates. Build process:
    just nixos-vm-up
    ```
 
-   - Ubuntu 22.04 VM with Nix installed
-   - VMware native shared folders (nix/ directory)
-   - Auto garbage collection on boot
-
 2. **Build SD image** (15-20 min first build, 2-5 min incremental):
 
    ```bash
    just nixos-build-pihole
    ```
-
-   - Copies source files (excludes .vagrant/) to VM's /tmp, builds there
-   - Final image copied back to nix/pihole-nixos.img
-   - Includes Pi-hole + Unbound in Docker (host networking)
 
 3. **Flash to SD card**:
 
@@ -84,123 +136,11 @@ Pi-hole runs on NixOS for true immutability and atomic updates. Build process:
 
 - True immutability (entire OS, not just containers)
 - 30-second rollback (reboot to previous generation)
-- No chroot complexity (Packer required 15+ conditionals)
 - Faster incremental builds (Nix cache)
 
 **See**: nix/README.md for complete documentation (460 lines).
 
-**Note**: Packer configs in packer/pihole/ are archived (not used).
-
-### Critical Configuration Requirements
-
-**Packer Template (packer/ubuntu-template/ubuntu-24.04-template.pkr.hcl)**:
-
-- `cloud_init = true` - MUST be enabled for SSH key injection in cloned VMs
-- `bios = "ovmf"` and `machine = "q35"` - UEFI boot required
-- `cloud_init_storage_pool` - Creates cloud-init drive for template
-
-**Terraform VMs (terraform/proxmox/main.tf)**:
-
-- MUST match template BIOS settings (`bios = "ovmf"`, `machine = "q35"`)
-- Requires `efidisk` block (UEFI boot)
-- Uses new `disks` block syntax with explicit cloud-init IDE drive
-- Settings are baked in (NOT variables) - edit main.tf directly to customize
-
-**Ansible Provisioning (runs in two contexts)**:
-
-1. **During Template Build** (`ansible/playbooks/base-template.yml`):
-   - SSH hardening: `PasswordAuthentication no`, `PubkeyAuthentication yes`
-   - Installs Docker, Docker Compose, Node Exporter
-   - `cloud-init clean --logs --seed` - Ensures cloud-init runs on cloned VMs
-
-2. **After VM Clone** (triggered by Terraform):
-   - `ansible/playbooks/arr.yml` - Deploys media automation stack
-   - `ansible/playbooks/observability.yml` - Deploys Grafana/Prometheus/Loki
-   - Uses `ansible_playbook` resource to trigger provisioning
-
-### LXC Containers vs VMs
-
-**When to use LXC containers:**
-
-- Lightweight services (arr stack, single-purpose apps)
-- Don't need full OS isolation
-- Want faster boot times and lower memory overhead
-- Share kernel with host (more efficient)
-
-**When to use VMs:**
-
-- Need full OS isolation
-- Running different OS than host
-- Require kernel modules or specific kernel versions
-- Need UEFI/SecureBoot
-
-**LXC Container Configuration:**
-
-```hcl
-resource "proxmox_virtual_environment_container" "example" {
-  node_name    = "pve"
-  vm_id        = 201
-  unprivileged = true  # Always use unprivileged for security
-
-  features {
-    nesting = true  # Required for Docker inside LXC
-  }
-
-  mount_point {
-    volume = "/mnt/pve/storage"  # Proxmox host path
-    path   = "/data"             # Container path
-    shared = true
-  }
-}
-```
-
-**Key Differences from VMs:**
-
-- ✓ No cloud-init (use `initialization` block for network config)
-- ✓ Direct SSH to root (configure SSH keys in `user_account`)
-- ✓ Instant boot (no BIOS/bootloader)
-- ✓ Shared kernel with host (lower overhead)
-- ✗ Can't run different OS kernel version
-- ✗ Less isolation than VMs
-
-**LXC Template Management:**
-
-```bash
-# List available templates
-pveam available
-
-# Download Debian 12 template
-pveam download local debian-12-standard_12.2-1_amd64.tar.zst
-
-# Template path in Terraform
-template_file_id = "local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst"
-```
-
-### Authentication Flow
-
-**For VMs (cloud-init):**
-
-1. **Template Build**: Packer uses temporary `ubuntu/ubuntu` credentials
-2. **Template Hardening**: Ansible disables password auth, enables SSH keys only
-3. **VM Clone**: Terraform injects SSH public key via cloud-init
-4. **SSH Access**: Uses 1Password SSH agent with Touch ID
-
-**For LXC Containers:**
-
-1. **Container Creation**: Terraform creates container from Debian template
-2. **SSH Key Injection**: `user_account.keys` in `initialization` block
-3. **Root SSH**: Direct root access (containers don't have sudo user by default)
-4. **Provisioning**: Ansible connects as root to install Docker and apps
-
-**SSH Agent Configuration** (both VMs and containers):
-
-- Agent config: `~/.config/1Password/ssh/agent.toml`
-- SSH key item name in 1Password: `"proxmox"` (in Personal vault)
-- SSH config: `IdentityAgent "/Users/svenlito/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"`
-
 ### TrueNAS Infrastructure
-
-**Purpose**: Network storage for Kubernetes PVs, media library, backups
 
 **Architecture**:
 
@@ -210,53 +150,49 @@ template_file_id = "local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst"
 
 **Deployment is 3-phase** (not fully automated):
 
-#### Phase 1: Deploy VM Shells (Terraform)
+#### Phase 1: Deploy VM Shells (Terragrunt)
 
 ```bash
-just tf-apply  # Creates VMID 300 + 301
+cd infrastructure/prod/storage/truenas-primary
+terragrunt apply  # Creates VMID 300
+
+cd infrastructure/prod/storage/truenas-backup
+terragrunt apply  # Creates VMID 301 (when grogu is online)
 ```
 
-Terraform creates:
+Terragrunt creates:
 
-- Empty VMs with 32GB boot disk + scratch disks
-- Network configuration
-- **Does NOT** connect real storage (manual next)
+- Empty VMs with 32GB boot disk
+- Network configuration (dual-homed for backup)
+- **Primary**: H330 HBA passthrough via resource mapping (`truenas-h330`)
+- **Backup**: Manual HBA passthrough needed (MD1200 controller)
 
-#### Phase 2: Storage Passthrough (Manual via Proxmox UI)
+**HBA Passthrough** is configured via Proxmox resource mappings in `globals.hcl`:
 
-TrueNAS needs access to physical disks. Via Proxmox UI:
+```hcl
+resource_mappings = {
+  truenas_h330 = "truenas-h330"  # Dell H330 Mini on din (5×8TB)
+  truenas_lsi  = "truenas-lsi"   # LSI 9201-8e on din (MD1220, 24×900GB)
+  md1200_hba   = "md1200-hba"    # MD1200 controller on grogu (8×3TB)
+}
+```
 
-1. **Primary (VMID 300 on din)**:
-   - Hardware → Add → PCI Device
-   - Pass through H330 Mini (5×8TB internal drives)
-   - Pass through LSI 9201-8e (MD1220 shelf, 24×900GB)
+Primary VM uses `enable_hostpci = true` with `truenas-h330` mapping.
+Additional HBAs must be added manually via Proxmox UI.
 
-2. **Backup (VMID 301 on grogu)**:
-   - Hardware → Add → PCI Device
-   - Pass through MD1200 controller (8×3TB)
-
-**Why manual**: Terraform can't automate PCIe passthrough reliably.
-
-#### Phase 3: Pool Creation (Manual via midclt)
+#### Phase 2: Pool Creation (Manual via midclt)
 
 SSH into TrueNAS and create ZFS pools:
 
 ```bash
-# Primary TrueNAS
-ssh admin@192.168.0.13
-
-# Create bulk pool (5×8TB RAIDZ2 + SLOG mirror)
+ssh admin@192.168.0.13  # Primary TrueNAS
 midclt call pool.create '{...}'  # See docs/truenas-ansible-setup.md Part 5
-
-# Create fast pool (4×6-wide RAIDZ2)
-midclt call pool.create '{...}'
 ```
 
-**Why manual**: arensb.truenas collection doesn't support pool creation.
+**Why manual**: arensb.truenas collection doesn't support pool
+creation.
 
-#### Phase 4: Configure Datasets/Shares (Ansible)
-
-Once pools exist, Ansible configures everything else:
+#### Phase 3: Configure Datasets/Shares (Ansible)
 
 ```bash
 # Create datasets, shares, users, snapshots, scrubs, SMART
@@ -266,16 +202,22 @@ ansible-playbook ansible/playbooks/truenas-setup.yml
 ansible-playbook ansible/playbooks/truenas-replication.yml
 ```
 
-**Ansible creates:**
+**Ansible creates**:
 
-- Datasets: bulk/media, fast/kubernetes, fast/databases, etc.
+- Datasets: bulk/media, fast/kubernetes, fast/databases
 - NFS shares: for Kubernetes (democratic-csi), Jellyfin
 - SMB shares: Time Machine backups
 - Snapshot tasks: hourly (databases), daily (media)
-- Scrub tasks: weekly pool validation
 - Replication: din → grogu over 10G
 
 **See**: docs/truenas-ansible-setup.md for complete design (1200+ lines).
+
+### Packer Template (Legacy - Not Currently Used)
+
+**Note**: VM template building was part of old Terraform workflow. Current
+Terragrunt setup recreates VMs from scratch without templates.
+
+Packer template code archived in `packer/proxmox-templates/` for reference if needed in future.
 
 ## Essential Commands
 
@@ -322,12 +264,33 @@ just proxmox-view-tokens
 just proxmox-rotate-api-tokens
 ```
 
+### Terragrunt Deployment
+
+```bash
+# Resource pools (run first)
+cd infrastructure/prod/resource-pools
+terragrunt apply
+
+# ISO images (centralized downloads)
+cd infrastructure/prod/iso-images
+terragrunt apply
+
+# TrueNAS VMs
+cd infrastructure/prod/storage/truenas-primary
+terragrunt apply
+
+# Apply all prod infrastructure
+cd infrastructure/prod
+terragrunt run-all apply
+
+# Destroy specific resource
+cd infrastructure/prod/storage/truenas-primary
+terragrunt destroy
+```
+
 ### TrueNAS Configuration
 
 ```bash
-# Deploy TrueNAS VMs (creates empty shells)
-just tf-apply
-
 # After manual HBA passthrough + pool creation:
 
 # Configure datasets, shares, snapshots (dry run)
@@ -344,22 +307,6 @@ ansible-playbook ansible/playbooks/truenas-replication.yml
 
 # Verify configuration
 ansible-playbook ansible/playbooks/truenas-setup.yml --tags=verify
-
-# Manual pool creation (SSH into TrueNAS first)
-# See: docs/truenas-ansible-setup.md Part 5
-```
-
-### VM/Container Deployment Workflow
-
-```bash
-# 1. Build VM template inside Proxmox (15-30 min)
-just packer-build-vm-template
-
-# 2. Deploy VMs from template (2-3 min)
-just tf-apply
-
-# 3. Destroy VMs
-just tf-destroy
 ```
 
 ### Raspberry Pi Workflow (NixOS)
@@ -375,154 +322,53 @@ just nixos-flash-pihole /dev/rdiskX
 just nixos-update-pihole
 ```
 
-## File Structure
-
-```text
-homelab/
-├── nix/                                   # NixOS configurations
-│   ├── Vagrantfile                        # Ubuntu VM for building (macOS requirement)
-│   ├── flake.nix                          # NixOS flake (SD image builder)
-│   ├── rpi-pihole/                        # Pi-hole NixOS config
-│   │   ├── configuration.nix              # System config
-│   │   ├── hardware.nix                   # Raspberry Pi hardware
-│   │   └── pihole.nix                     # Pi-hole + Unbound services
-│   └── common/
-│       └── constants.nix                  # Shared constants (versions, timezone)
-│
-├── packer/
-│   └── proxmox-templates/                 # VM templates (built inside Proxmox)
-│       ├── ubuntu-24.04-template.pkr.hcl  # Proxmox template builder
-│       └── http/                          # Autoinstall configs (user-data, meta-data)
-│
-├── terraform/
-│   ├── modules/ubuntu-vm/                 # Reusable VM module (40+ parameters)
-│   │   ├── main.tf                        # VM resource definition
-│   │   ├── variables.tf                   # Module inputs
-│   │   └── outputs.tf                     # VM metadata (IP, ID, MAC)
-│   └── proxmox/                           # Root module
-│       ├── providers.tf                   # bpg/proxmox provider 0.89.1
-│       ├── main.tf                        # Provider configuration
-│       ├── locals.tf                      # Network ranges, IPs, node names
-│       ├── _truenas.tf                    # TrueNAS Primary VM (VMID 300)
-│       ├── _truenas-backup.tf             # TrueNAS Backup VM (VMID 301)
-│       ├── _talos-homelab-cluster.tf      # Kubernetes cluster config
-│       ├── variables.tf                   # Sensitive vars only
-│       └── terraform.tfvars               # SSH public key (GITIGNORED)
-│
-├── ansible/
-│   ├── inventory.ini                      # Proxmox node inventory (grogu, din)
-│   ├── playbooks/
-│   │   ├── configure-existing-proxmox.yml # Configure installed Proxmox nodes
-│   │   ├── packer-base-vm.yml             # Template provisioning (SSH, Docker)
-│   │   ├── stack-arr.yml                  # Full arr media stack
-│   │   └── stack-observability.yml        # Grafana/Prometheus/Loki
-│   └── roles/
-│       ├── arr/                           # Full media automation stack role
-│       ├── observability/                 # Monitoring stack role
-│       ├── proxmox_configure/             # Proxmox configuration (nag removal, PCIe)
-│       └── security/                      # SSH hardening
-│
-├── .envrc                                 # Loads .env and exports TF_VAR_*
-├── .env                                   # API tokens (GITIGNORED)
-├── flake.nix                              # Nix environment (pinned versions)
-└── justfile                               # Command runner
-```
-
-## Environment Variables
-
-**Authentication** (stored in `.env`, auto-loaded by direnv):
-
-```bash
-PROXMOX_TOKEN_ID="root@pam!terraform"
-PROXMOX_TOKEN_SECRET="<uuid>"
-```
-
-**Auto-exported by .envrc**:
-
-- `TF_VAR_proxmox_api_token_id` - For Terraform
-- `TF_VAR_proxmox_api_token_secret` - For Terraform
-- `PROXMOX_TOKEN_ID` - For Packer (via `env("PROXMOX_TOKEN_ID")`)
-- `PROXMOX_TOKEN_SECRET` - For Packer (via `env("PROXMOX_TOKEN_SECRET")`)
-
 ## Tool Versions
 
 Pinned via Nix flakes for reproducibility:
 
 - **Packer**: 1.14.3 (pinned nixpkgs commit)
 - **Terraform**: 1.14.1 (from nixpkgs-terraform)
-- **Proxmox Provider**: 3.0.2-rc06 (Telmate)
+- **Terragrunt**: 0.71.6 (from nixpkgs)
+- **Proxmox Provider**: 0.93.0 (bpg/proxmox)
 - **Ansible**: Latest from nixpkgs-unstable
 
 ## Common Issues
 
+### Terragrunt command not found in pre-commit
+
+- **Cause**: Pre-commit hooks run outside direnv environment
+- **Fix**: Terragrunt hooks disabled in `.pre-commit-config.yaml` - use direnv environment for manual runs
+- **Verify**: `pre-commit run --all-files` should pass without terragrunt hooks
+
 ### VM stuck at SeaBIOS boot screen
 
-- **Cause**: Terraform missing UEFI configuration
-- **Fix**: Ensure `bios = "ovmf"`, `machine = "q35"`, and `efidisk` block present
-
-### SSH key authentication not working
-
-- **Cause**: Cloud-init not enabled in template OR 1Password agent not loading key
-- **Fix**:
-  1. Verify `cloud_init = true` in Packer template
-  2. Check `ssh-add -l` shows Proxmox key
-  3. Update `~/.config/1Password/ssh/agent.toml` if needed
-
-### Cloud-init not running on cloned VMs
-
-- **Cause**: Template wasn't properly cleaned
-- **Fix**: Ansible must run `cloud-init clean --logs --seed` during template build
+- **Cause**: Missing UEFI configuration
+- **Fix**: Ensure `bios = "ovmf"`, `machine = "q35"`, and `efi_disk` block present in module
 
 ### TrueNAS pools not visible after VM creation
-
-- **Cause**: Terraform creates VM shell but doesn't connect physical storage
-- **Fix**: Manual HBA passthrough via Proxmox UI (Hardware → Add → PCI Device)
-- **Then**: SSH into TrueNAS and create pools via midclt commands
-- **See**: docs/truenas-ansible-setup.md Part 5 for pool creation
-
-### Ansible TrueNAS playbook fails with dataset errors
 
 - **Cause**: Pools don't exist yet (arensb.truenas can't create pools)
 - **Fix**: Create pools manually via midclt before running ansible playbooks
 - **Verify pools exist**: `midclt call pool.query` on TrueNAS
 
+### Resource pool assignment not working
+
+- **Cause**: Pool assignment happens during VM creation, not visible until refresh
+- **Fix**: Run `terragrunt refresh` in resource-pools to see current members
+- **Verify**: Check `pool_id` in VM state: `terragrunt state show 'module.truenas_primary.proxmox_virtual_environment_vm.truenas'`
+
+### HBA passthrough not applied
+
+- **Cause**: Resource mapping doesn't exist in Proxmox or module not configured
+- **Fix**:
+  1. Verify mapping in `globals.hcl` matches Proxmox UI (Datacenter → Resource Mappings)
+  2. Check module has `enable_hostpci = true` and `hostpci_mapping` set
+  3. Additional HBAs beyond first must be added manually in Proxmox UI
+- **Lifecycle**: Module uses `lifecycle.ignore_changes = [hostpci]` to allow manual additions
+
 ## Network Architecture
 
-See [docs/network-architecture.md](docs/network-architecture.md) for comprehensive network documentation including:
-
-- VLAN architecture (Infrastructure + Kubernetes VLANs 30-32)
-- Current single-router setup and future two-switch expansion
-- Inter-VLAN routing rules and firewall policies
-- Kubernetes multi-cluster network design
-- Proxmox bridge configuration
-- Traffic flow examples
-
-```text
-Internet → Router (192.168.0.1)
-              ↓
-    ┌─────────┼─────────┐
-    ↓                   ↓
-Pi-hole DNS      Proxmox Cluster
-192.168.0.53     grogu (r630) + din (r730xd)
-(Raspberry Pi)        ↓
-    ↓           ┌─────┴─────┐
-Network-wide    ↓           ↓
-DNS Filtering  grogu       din
-            (Compute)  (Storage+Compute)
-          192.168.0.10   192.168.0.11
-                ↓           ↓
-                └── 10GbE ──┘
-               VLAN 10 Storage
-              10.10.10.10/24
-
-                    din
-                 (r730xd)
-                      ↓
-                   MD1220
-                 Disk Shelf
-                (24x SFF)
-             SFF-8088 SAS Cables
-```
+See [docs/network-architecture.md](docs/network-architecture.md) for comprehensive network documentation.
 
 **IP Assignments**:
 
@@ -530,147 +376,120 @@ DNS Filtering  grogu       din
 - Pi-hole DNS: 192.168.0.53 (Raspberry Pi)
 - grogu (r630): 192.168.0.10 (VLAN 20 mgmt), 10.10.10.10 (VLAN 10 storage)
 - din (r730xd): 192.168.0.11 (VLAN 20 mgmt), 10.10.10.11 (VLAN 10 storage)
-- Template VM: ID 9000
+- TrueNAS Primary: 192.168.0.13 (VLAN 20), 10.10.10.13 (VLAN 10)
+- TrueNAS Backup: 192.168.0.14 (VLAN 20), 10.10.10.14 (VLAN 10)
 
-**Network Architecture**:
+**VLANs**:
 
 - VLAN 1 (Management): 10.10.1.0/24 - iDRAC, switch management
 - VLAN 10 (Storage): 10.10.10.0/24 - NFS/iSCSI, high-bandwidth storage traffic
 - VLAN 20 (LAN): 192.168.0.0/24 - Infrastructure VMs, clients
-- VLAN 30 (K8s Shared Services): 10.0.1.0/24 - Infrastructure cluster (SigNoz, ingress, ArgoCD)
-- VLAN 31 (K8s Apps): 10.0.2.0/24 - Production apps cluster (Jellyfin, Immich, etc.)
+- VLAN 30 (K8s Shared Services): 10.0.1.0/24 - Infrastructure cluster
+- VLAN 31 (K8s Apps): 10.0.2.0/24 - Production apps cluster
 - VLAN 32 (K8s Test): 10.0.3.0/24 - Testing/staging cluster
 
-**Infrastructure VMs:**
+**Proxmox Host Networking** (configured via Ansible, NOT Terragrunt):
 
-- TrueNAS Primary: 192.168.0.13 (VMID 300, on din), 10.10.10.13 (VLAN 10 storage)
-- TrueNAS Backup: 192.168.0.14 (VMID 301, on grogu), 10.10.10.14 (VLAN 10 storage)
+```bash
+# One-time per-host configuration
+just ansible-configure-all
+```
 
-**Kubernetes Workloads** (K8s-first approach - all production on K8s):
+Bridges: vmbr10 (Storage), vmbr20 (LAN), vmbr30/31/32 (K8s VLANs)
 
-- Shared Services (VLAN 30): SigNoz, Nginx Ingress, ArgoCD, cert-manager, Vault
-- Apps (VLAN 31): Jellyfin, Sonarr, Radarr, Prowlarr, Immich, Nextcloud, Home Assistant
-- Test (VLAN 32): Staging and experimental deployments
+**Hardware**:
 
-**Hardware:**
+- r730xd: Dell PowerEdge R730xd (2U) - 24C/48T, Dell H330 Mini, LSI 9201-8e, 10GbE
+- r630: Dell PowerEdge R630 (1U) - 36C/72T, Intel Arc A310 GPU, 10GbE
+- DS2246: NetApp disk shelf with 24× 2.5" SFF bays
+- **Total Cluster:** 60C/120T, 192-320GB RAM, Intel Arc A310 GPU
 
-- r730xd: Dell PowerEdge R730xd (2U, 16x LFF + 2x SFF)
-  - CPUs: 2x E5-2680 v3 (12C/24T each = 24C/48T total)
-  - Boot: 2x SATA SSD in rear SFF slots (Proxmox + TrueNAS VM)
-  - Dell H330 Mini (IT mode) → 5x 8TB LFF drives (internal)
-  - LSI 9201-8e → DS2246 disk shelf (24x SFF drives)
-  - 10GbE SFP+ → Direct connection to r630
-- r630: Dell PowerEdge R630 (1U, 8x SFF, 3x low-profile PCIe)
-  - CPUs: 2x E5-2699 v3 (18C/36T each = 36C/72T total)
-  - Boot: 1x SATA drive in optical bay (Proxmox)
-  - GPU: Intel Arc A310 Eco (low-profile, Jellyfin transcoding)
-  - 2x 10GbE SFP+ (onboard NDC) → Direct connection to r730xd
-- DS2246: NetApp disk shelf with 24x 2.5" SFF bays
-  - 2x IOM6 modules for SAS connectivity
-  - Dual SFF-8088 cables to r730xd (redundant paths)
+## Terragrunt Module Pattern
 
-**Total Cluster:** 60C/120T, 192-320GB RAM, Intel Arc A310 GPU
+### Creating New Deployments
 
-## Terraform Module Pattern
-
-### Using the ubuntu-vm Module
-
-To add a new VM, create a new `.tf` file in `terraform/proxmox/` (e.g., `_newservice.tf`):
+Each deployment follows the standard pattern:
 
 ```hcl
-module "newservice_server" {
-  source = "../modules/ubuntu-vm"
-
-  # Required settings
-  proxmox_node     = "pve"
-  template_vm_id   = 9000
-  vm_name          = "newservice-server"
-  vm_id            = 201
-
-  # Hardware
-  cpu_cores        = 2
-  memory_mb        = 4096
-  disk_size_gb     = 50
-
-  # Network
-  ipv4_address     = "192.168.0.202/24"
-  ipv4_gateway     = "192.168.0.1"
-
-  # SSH
-  ssh_public_key   = var.ssh_public_key
-
-  # Tags
-  tags             = ["ubuntu", "newservice", "production"]
+# infrastructure/prod/<category>/<module>/terragrunt.hcl
+include "root" {
+  path = find_in_parent_folders("root.hcl")
 }
 
-# Trigger Ansible provisioning after VM is created
-resource "ansible_playbook" "newservice" {
-  playbook   = "${path.module}/../../ansible/playbooks/newservice.yml"
-  name       = module.newservice_server.ipv4_addresses[0][0]
+include "provider" {
+  path = find_in_parent_folders("provider.hcl")
+}
 
-  extra_vars = {
-    ansible_user = "ubuntu"
-  }
+# Dependencies (if needed)
+dependencies {
+  paths = ["../../resource-pools", "../../iso-images"]
+}
 
-  depends_on = [module.newservice_server]
+# Load globals
+locals {
+  global_vars = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
+  # Extract needed values
+  ips = local.global_vars.locals.infrastructure_ips
+}
+
+# Pass inputs to module
+inputs = {
+  node_name = "din"
+  vm_id     = 300
+  # ... other inputs from globals
 }
 ```
 
-**Module Benefits:**
+### Using the truenas-vm Module
 
-- DRY (Don't Repeat Yourself) - common config in one place
-- Consistent VM configuration across deployments
-- Easy to add new VMs without duplicating code
-- Centralized updates (fix once in module, applies everywhere)
+Example deployment configuration:
 
-## Development Notes
+```hcl
+# main.tf
+module "truenas_primary" {
+  source = "../../../modules/truenas-vm"
 
-### Raspberry Pi ARM Building
+  # All inputs from terragrunt.hcl
+  node_name           = var.node_name
+  vm_id               = var.vm_id
+  vm_name             = var.vm_name
+  truenas_version     = var.truenas_version
+  iso_id              = var.iso_id
+  cpu_cores           = var.cpu_cores
+  memory_mb           = var.memory_mb
+  boot_disk_size_gb   = var.boot_disk_size_gb
+  mac_address         = var.mac_address
+  pool_id             = var.pool_id
+  enable_hostpci      = var.enable_hostpci
+  hostpci_mapping     = var.hostpci_mapping
+}
+```
 
-**macOS Limitation**: Docker Desktop cannot mount loop devices, so ARM image building requires Vagrant + QEMU:
+**Module Benefits**:
 
-1. Vagrantfile creates Ubuntu 22.04 VM with privileged access
-2. VM runs `mkaczanowski/packer-builder-arm` Docker container
-3. Container builds ARM image with loop device access
-4. Image copied back to host via rsync
+- DRY configuration (no duplication between Primary/Backup)
+- Consistent VM configuration
+- Centralized HBA passthrough logic
+- Environment separation (prod/dev)
 
-### Terraform Variable Strategy
+## Authentication Flow
 
-Previously used extensive variables (vm_name, vm_cores, vm_memory, etc.). Now most settings are baked directly into
-`main.tf` to simplify template usage. Only sensitive values remain as variables:
+**SSH Agent Configuration** (1Password):
 
-- `proxmox_api_token_id`
-- `proxmox_api_token_secret`
-- `ssh_public_key`
+- Agent config: `~/.config/1Password/ssh/agent.toml`
+- SSH key item name in 1Password: `"proxmox"` (in Personal vault)
+- SSH config: `IdentityAgent "/Users/svenlito/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"`
 
-To customize VMs, edit `main.tf` directly rather than managing variables.
+**Proxmox API Tokens** (stored in `.env`, auto-loaded by direnv):
 
-### SSH Key Management
-
-1Password SSH agent provides Touch ID authentication:
-
-- Private key stored in 1Password (item: "proxmox")
-- Public key in `terraform.tfvars` (injected via cloud-init)
-- Agent socket: `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`
+```bash
+PROXMOX_TOKEN_ID="root@pam!terraform"
+PROXMOX_TOKEN_SECRET="<uuid>"
+```
 
 ## References
 
-- Proxmox API: <https://192.168.0.10:8006/api2/json> (grogu - primary node)
-- Packer Proxmox Builder: <https://developer.hashicorp.com/packer/plugins/builders/proxmox/iso>
+- Proxmox API: <https://192.168.0.11:8006/api2/json> (din - primary node)
 - Terraform Proxmox Provider: <https://github.com/bpg/terraform-provider-proxmox>
+- Terragrunt: <https://terragrunt.gruntwork.io/>
 - Packer ARM Builder: <https://github.com/mkaczanowski/packer-builder-arm>
-
-## Important Implementation Details
-
-### Memory Usage (Linux Cache Behavior)
-
-When checking VM memory in Proxmox, you may see high usage (e.g., 3.8GB of 4GB). This is **normal Linux behavior**:
-
-```text
-Total: 3.8GB
-Used:  859MB  ← Actual application usage
-Cache: 3.0GB  ← File system cache (automatically freed when needed)
-```
-
-**Key insight**: Linux uses "free" RAM for caching to improve performance. This cache is immediately released if
-applications need memory. Check `available` column, not `used`, to see true memory pressure.

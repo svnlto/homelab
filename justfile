@@ -76,20 +76,6 @@ nixos-clean:
     @echo "✓ Cleanup complete"
 
 # =============================================================================
-# Proxmox VM Template (builds templates inside Proxmox for Terraform cloning)
-# =============================================================================
-
-packer-init-vm-template:
-    cd packer/proxmox-templates && packer init ubuntu-24.04-template.pkr.hcl
-
-packer-validate-vm-template:
-    cd packer/proxmox-templates && packer validate ubuntu-24.04-template.pkr.hcl
-
-packer-build-vm-template:
-    @echo "Building Ubuntu VM template inside Proxmox (15-30 min)..."
-    cd packer/proxmox-templates && packer init ubuntu-24.04-template.pkr.hcl && packer build ubuntu-24.04-template.pkr.hcl
-
-# =============================================================================
 # Ansible
 # =============================================================================
 
@@ -307,7 +293,7 @@ restic-check:
     ssh root@192.168.0.13 "source /root/.restic-env && restic check --read-data"
 
 # =============================================================================
-# Terraform
+# Terraform (Legacy - will be deprecated after Terragrunt migration)
 # =============================================================================
 
 # Terraform init
@@ -333,6 +319,68 @@ tf-validate:
 # Terraform fmt
 tf-fmt:
     cd terraform && terraform fmt -recursive
+
+# =============================================================================
+# Terragrunt (New Infrastructure Management)
+# =============================================================================
+
+# Initialize all Terragrunt modules
+tg-init:
+    cd infrastructure && terragrunt run-all init
+
+# Plan all Terragrunt modules
+tg-plan:
+    cd infrastructure && terragrunt run-all plan
+
+# Apply all Terragrunt modules
+tg-apply:
+    cd infrastructure && terragrunt run-all apply
+
+# Destroy all Terragrunt modules
+tg-destroy:
+    cd infrastructure && terragrunt run-all destroy
+
+# Validate all Terragrunt configurations
+tg-validate:
+    cd infrastructure && terragrunt run-all validate
+
+# Format all Terragrunt/Terraform files
+tg-fmt:
+    cd infrastructure && terragrunt run-all fmt
+
+# Apply a specific module (e.g., just tg-apply-module proxmox/truenas-primary)
+tg-apply-module MODULE:
+    cd infrastructure/{{MODULE}} && terragrunt apply
+
+# Plan a specific module
+tg-plan-module MODULE:
+    cd infrastructure/{{MODULE}} && terragrunt plan
+
+# Destroy a specific module
+tg-destroy-module MODULE:
+    cd infrastructure/{{MODULE}} && terragrunt destroy
+
+# Show Terragrunt module dependencies
+tg-graph:
+    cd infrastructure && terragrunt graph-dependencies
+
+# Backup Terragrunt state files
+tg-backup:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    BACKUP_DIR="infrastructure/.backups/$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "$BACKUP_DIR"
+    if [ -d ".terraform-state" ]; then
+      cp -r .terraform-state "$BACKUP_DIR/"
+      echo "✓ State backed up to $BACKUP_DIR"
+    else
+      echo "No state directory found (.terraform-state/)"
+    fi
+
+# List all Terragrunt modules
+tg-list:
+    @echo "=== Terragrunt Modules ==="
+    @find infrastructure -name "terragrunt.hcl" -not -path "*/.terragrunt-cache/*" | sed 's|infrastructure/||g' | sed 's|/terragrunt.hcl||g' | sort
 
 # =============================================================================
 # Utilities

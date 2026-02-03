@@ -33,7 +33,7 @@
       in {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs;
-            [ ansible ansible-lint tflint vagrant qemu jq yq-go sshpass just ]
+            [ ansible ansible-lint tflint vagrant qemu jq yq-go sshpass just terragrunt ]
             ++ [ pkgs-packer.packer terraform ];
 
           shellHook = ''
@@ -43,6 +43,7 @@
             echo "Homelab Development Environment"
             packer version | head -1
             terraform version | head -1
+            terragrunt --version | head -1
             ansible --version | head -1
           '';
         };
