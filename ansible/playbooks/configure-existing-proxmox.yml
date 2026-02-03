@@ -18,6 +18,13 @@
 #
 #   # Configure PCIe passthrough
 #   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags passthrough
+#
+#   # Configure Dell fan control only
+#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags fan
+#
+#   # Create/rotate Terraform API tokens
+#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags api-tokens
+#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags api-tokens -e rotate_tokens=true
 # =============================================================================
 
 - name: Configure Existing Proxmox Nodes
@@ -26,16 +33,8 @@
   gather_facts: true
 
   vars:
-    # Configuration options
     pve_remove_subscription_warning: true
     configure_pcie_passthrough: true
-
-    # Optional: Add your SSH public key
-    # proxmox_ssh_public_key: "ssh-ed25519 AAAA..."
-
-    # Optional: For PCIe passthrough (GPU, network cards, etc.)
-    # pci_device_ids: "10de:1c03,10de:10f1"  # Comma-separated PCI IDs
-    # vfio_blacklist_drivers: [nouveau, nvidia]
 
   pre_tasks:
     - name: Display node information
@@ -52,6 +51,12 @@
       failed_when: not pvesh_stat.stat.exists
 
   tasks:
+    - name: Fix locale settings
+      ansible.builtin.include_role:
+        name: proxmox_configure
+        tasks_from: fix_locales.yml
+      tags: [locales]
+
     - name: Remove subscription nag
       ansible.builtin.include_role:
         name: proxmox_configure
@@ -101,6 +106,19 @@
       when: proxmox_ssh_public_key is defined
       tags: [ssh]
 
+    - name: Configure Dell fan control
+      ansible.builtin.include_role:
+        name: proxmox_configure
+        tasks_from: dell_fan_control.yml
+      tags: [fan]
+
+    - name: Create Terraform API tokens
+      ansible.builtin.include_role:
+        name: proxmox_api_tokens
+        apply:
+          tags: [api-tokens]
+      tags: [api-tokens]
+
   handlers:
     - name: Restart chrony
       ansible.builtin.systemd:
@@ -123,3 +141,22 @@
           - "✓ Configuration complete for {{ inventory_hostname }}"
           - "Access: https://{{ ansible_host }}:8006"
           - "{% if configure_pcie_passthrough %}⚠ REBOOT REQUIRED for PCIe passthrough changes{% endif %}"
+
+    - name: Reminder to encrypt vault.yml and update .env
+      ansible.builtin.debug:
+        msg:
+          - "========================================="
+          - "IMPORTANT: API Tokens Generated"
+          - "========================================="
+          - ""
+          - "1. Encrypt vault.yml (if not encrypted):"
+          - "   ansible-vault encrypt ansible/group_vars/all/vault.yml"
+          - ""
+          - "2. Add tokens to your .env file:"
+          - "   ansible-vault view ansible/group_vars/all/vault.yml"
+          - ""
+          - "3. Reload direnv:"
+          - "   direnv allow"
+          - ""
+      run_once: true
+      tags: [api-tokens]

@@ -1,0 +1,515 @@
+---
+# ==============================================================================
+# TrueNAS SCALE Setup - Primary Storage (din)
+# ==============================================================================
+# Based on: docs/truenas-ansible-setup.md
+# Target: TrueNAS SCALE 25.04+ running on din (r730xd)
+#
+# Prerequisites:
+# - TrueNAS VM deployed and accessible at 192.168.0.13
+# - Pools created manually: bulk (5×8TB RAIDZ2), fast (4×6-wide RAIDZ2)
+# - ansible-galaxy collection install arensb.truenas
+#
+# Usage:
+#   ansible-playbook playbooks/truenas-setup.yml --check  # Dry run
+#   ansible-playbook playbooks/truenas-setup.yml          # Apply
+
+- name: Configure TrueNAS SCALE on din (primary)
+  hosts: truenas_primary
+  become: true
+
+  vars_files:
+    - ../vars/datasets.yml
+    - ../vars/snapshots.yml
+    - ../vars/shares.yml
+
+  environment:
+    middleware_method: client
+
+  tasks:
+    # ==========================================================================
+    # BULK POOL DATASETS (8TB HGST drives)
+    # ==========================================================================
+
+    - name: Create bulk media datasets
+      arensb.truenas.filesystem:
+        name: "bulk/media/{{ item }}"
+        state: present
+        compression: lz4
+        atime: "off"
+      loop:
+        - music
+        - movies
+        - tv
+        - downloads
+        - downloads/incomplete
+        - downloads/complete
+        - downloads/usenet
+      tags: [datasets, bulk]
+
+    - name: Create bulk backup datasets
+      arensb.truenas.filesystem:
+        name: "bulk/backups/{{ item }}"
+        state: present
+        compression: zstd
+      loop:
+        - timemachine
+        - proxmox
+        - arr-configs
+        - restic-repo
+      tags: [datasets, bulk]
+
+    - name: Create bulk archive dataset
+      arensb.truenas.filesystem:
+        name: "bulk/archive"
+        state: present
+        compression: lz4
+      tags: [datasets, bulk]
+
+    - name: Create bulk photos dataset (for Immich)
+      arensb.truenas.filesystem:
+        name: "bulk/photos"
+        state: present
+        compression: lz4
+        atime: "off"
+      tags: [datasets, bulk, photos]
+
+    # ==========================================================================
+    # FAST POOL DATASETS (10K SAS drives)
+    # ==========================================================================
+
+    - name: Create fast kubernetes datasets
+      arensb.truenas.filesystem:
+        name: "fast/kubernetes/{{ item }}"
+        state: present
+        compression: lz4
+      loop:
+        - nfs-dynamic
+        - nfs-static
+      tags: [datasets, fast]
+
+    - name: Create fast databases dataset
+      arensb.truenas.filesystem:
+        name: "fast/databases"
+        state: present
+        compression: lz4
+      tags: [datasets, fast]
+
+    - name: Create fast vms dataset
+      arensb.truenas.filesystem:
+        name: "fast/vms"
+        state: present
+        compression: lz4
+      tags: [datasets, fast]
+
+    - name: Create fast app-configs datasets
+      arensb.truenas.filesystem:
+        name: "fast/app-configs/{{ item }}"
+        state: present
+        compression: lz4
+      loop:
+        - arr-stack
+        - observability
+      tags: [datasets, fast]
+
+    # ==========================================================================
+    # ADVANCED ZFS PROPERTIES (via midclt)
+    # ==========================================================================
+
+    - name: Set bulk/media recordsize to 1M
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'bulk/media'
+          '{"recordsize": "1M"}'
+      changed_when: false
+      tags: [properties, bulk]
+
+    - name: Set downloads/incomplete for torrent random writes
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'bulk/media/downloads/incomplete'
+          '{"recordsize": "16K", "compression": "OFF", "sync": "DISABLED"}'
+      changed_when: false
+      tags: [properties, bulk]
+
+    - name: Set bulk/media/downloads/usenet for SABnzbd
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'bulk/media/downloads/usenet'
+          '{"recordsize": "128K", "compression": "OFF", "sync": "DISABLED"}'
+      changed_when: false
+      tags: [properties, bulk]
+
+    - name: Set bulk/backups/arr-configs properties
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'bulk/backups/arr-configs'
+          '{"recordsize": "128K", "compression": "ZSTD", "quota": 10737418240}'
+      changed_when: false
+      tags: [properties, bulk]
+
+    - name: Set bulk/photos for large image files
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'bulk/photos'
+          '{"recordsize": "1M"}'
+      changed_when: false
+      tags: [properties, bulk, photos]
+
+    - name: Set fast/kubernetes/nfs-dynamic for mixed workloads
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'fast/kubernetes/nfs-dynamic'
+          '{"recordsize": "16K", "quota": 107374182400}'
+      changed_when: false
+      tags: [properties, fast]
+
+    - name: Set fast/databases for PostgreSQL
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'fast/databases'
+          '{"recordsize": "8K", "sync": "ALWAYS"}'
+      changed_when: false
+      tags: [properties, fast]
+
+    - name: Set fast/app-configs/observability for Prometheus/Loki
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'fast/app-configs/observability'
+          '{"recordsize": "16K", "quota": 53687091200}'
+      changed_when: false
+      tags: [properties, fast]
+
+    # ==========================================================================
+    # NFS SHARES (for Kubernetes and arr-stack)
+    # ==========================================================================
+
+    - name: Configure NFS service
+      arensb.truenas.nfs:
+        servers: 4
+        protocols:
+          - NFSV4
+      tags: [nfs, services]
+
+    - name: Enable NFS service
+      arensb.truenas.service:
+        name: nfs
+        state: started
+        enabled: true
+      tags: [nfs, services]
+
+    - name: Create NFS share for media (ReadOnlyMany)
+      arensb.truenas.sharing_nfs:
+        path: /mnt/bulk/media
+        comment: "Media for Jellyfin on arr-stack"
+        mapall_user: media
+        mapall_group: media
+        networks:
+          - 10.10.10.0/24 # Storage VLAN (primary)
+          - 192.168.0.0/24 # LAN (arr-stack)
+        state: present
+      tags: [nfs, shares]
+
+    - name: Create NFS share for photos (Immich)
+      arensb.truenas.sharing_nfs:
+        path: /mnt/bulk/photos
+        comment: "Photos for Immich"
+        mapall_user: immich
+        mapall_group: immich
+        networks:
+          - 10.10.10.0/24 # Storage VLAN (primary)
+          - 192.168.0.0/24 # LAN (Immich)
+          - 10.0.1.0/24 # Kubernetes cluster network
+        state: present
+      tags: [nfs, shares, photos]
+
+    - name: Create NFS share for kubernetes dynamic
+      arensb.truenas.sharing_nfs:
+        path: /mnt/fast/kubernetes/nfs-dynamic
+        comment: "democratic-csi dynamic provisioning"
+        maproot_user: root
+        maproot_group: wheel
+        networks:
+          - 10.10.10.0/24 # Storage VLAN
+          - 10.0.1.0/24 # Kubernetes cluster network
+        state: present
+      tags: [nfs, shares]
+
+    - name: Create NFS share for kubernetes static
+      arensb.truenas.sharing_nfs:
+        path: /mnt/fast/kubernetes/nfs-static
+        comment: "Static PVs for configs"
+        maproot_user: root
+        maproot_group: wheel
+        networks:
+          - 10.10.10.0/24 # Storage VLAN
+          - 10.0.1.0/24 # Kubernetes cluster network
+        state: present
+      tags: [nfs, shares]
+
+    - name: Create NFS share for arr-stack configs
+      arensb.truenas.sharing_nfs:
+        path: /mnt/fast/app-configs/arr-stack
+        comment: "arr-stack persistent configs"
+        maproot_user: root
+        maproot_group: wheel
+        networks:
+          - 10.10.10.0/24 # Storage VLAN
+          - 192.168.0.0/24 # LAN
+        state: present
+      tags: [nfs, shares]
+
+    # ==========================================================================
+    # SMB SHARES (for Time Machine from Mac)
+    # ==========================================================================
+
+    - name: Enable SMB service
+      arensb.truenas.service:
+        name: cifs
+        state: started
+        enabled: true
+      tags: [smb, services]
+
+    - name: Create Time Machine SMB share
+      arensb.truenas.sharing_smb:
+        name: TimeMachine
+        path: /mnt/bulk/backups/timemachine
+        purpose: ENHANCED_TIMEMACHINE
+        comment: "macOS Time Machine backups"
+        state: present
+      tags: [smb, shares]
+
+    # ==========================================================================
+    # USERS & GROUPS
+    # ==========================================================================
+
+    - name: Create media group
+      arensb.truenas.group:
+        name: media
+        gid: 1000
+      tags: [users]
+
+    - name: Create media user
+      arensb.truenas.user:
+        name: media
+        uid: 1000
+        group: media
+        home: /nonexistent
+        shell: /usr/sbin/nologin
+      tags: [users]
+
+    - name: Create immich group
+      arensb.truenas.group:
+        name: immich
+        gid: 1001
+      tags: [users, photos]
+
+    - name: Create immich user
+      arensb.truenas.user:
+        name: immich
+        uid: 1001
+        group: immich
+        home: /nonexistent
+        shell: /usr/sbin/nologin
+      tags: [users, photos]
+
+    # ==========================================================================
+    # SNAPSHOT TASKS
+    # ==========================================================================
+
+    - name: Create snapshot task for fast/kubernetes (hourly, keep 24)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.snapshottask.create '{
+            "dataset": "fast/kubernetes",
+            "recursive": true,
+            "lifetime_value": 24,
+            "lifetime_unit": "HOUR",
+            "naming_schema": "auto-%Y-%m-%d_%H-%M",
+            "schedule": {
+              "minute": "0",
+              "hour": "*",
+              "dom": "*",
+              "month": "*",
+              "dow": "*"
+            },
+            "enabled": true
+          }'
+      register: snapshot_k8s
+      changed_when: "'id' in snapshot_k8s.stdout"
+      failed_when: false
+      tags: [snapshots]
+
+    - name: Create snapshot task for fast/databases (hourly, keep 48)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.snapshottask.create '{
+            "dataset": "fast/databases",
+            "recursive": true,
+            "lifetime_value": 48,
+            "lifetime_unit": "HOUR",
+            "naming_schema": "auto-%Y-%m-%d_%H-%M",
+            "schedule": {
+              "minute": "0",
+              "hour": "*",
+              "dom": "*",
+              "month": "*",
+              "dow": "*"
+            },
+            "enabled": true
+          }'
+      register: snapshot_db
+      changed_when: "'id' in snapshot_db.stdout"
+      failed_when: false
+      tags: [snapshots]
+
+    - name: Create snapshot task for bulk/media (daily, keep 7)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.snapshottask.create '{
+            "dataset": "bulk/media",
+            "recursive": true,
+            "lifetime_value": 7,
+            "lifetime_unit": "DAY",
+            "naming_schema": "daily-%Y-%m-%d",
+            "schedule": {
+              "minute": "0",
+              "hour": "2",
+              "dom": "*",
+              "month": "*",
+              "dow": "*"
+            },
+            "enabled": true
+          }'
+      register: snapshot_media
+      changed_when: "'id' in snapshot_media.stdout"
+      failed_when: false
+      tags: [snapshots]
+
+    - name: Create snapshot task for bulk/photos (daily, keep 30)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.snapshottask.create '{
+            "dataset": "bulk/photos",
+            "recursive": true,
+            "lifetime_value": 30,
+            "lifetime_unit": "DAY",
+            "naming_schema": "daily-%Y-%m-%d",
+            "schedule": {
+              "minute": "0",
+              "hour": "3",
+              "dom": "*",
+              "month": "*",
+              "dow": "*"
+            },
+            "enabled": true
+          }'
+      register: snapshot_photos
+      changed_when: "'id' in snapshot_photos.stdout"
+      failed_when: false
+      tags: [snapshots, photos]
+
+    - name: Create snapshot task for fast/app-configs (hourly, keep 24)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.snapshottask.create '{
+            "dataset": "fast/app-configs",
+            "recursive": true,
+            "lifetime_value": 24,
+            "lifetime_unit": "HOUR",
+            "naming_schema": "auto-%Y-%m-%d_%H-%M",
+            "schedule": {
+              "minute": "0",
+              "hour": "*",
+              "dom": "*",
+              "month": "*",
+              "dow": "*"
+            },
+            "enabled": true
+          }'
+      register: snapshot_configs
+      changed_when: "'id' in snapshot_configs.stdout"
+      failed_when: false
+      tags: [snapshots]
+
+    # ==========================================================================
+    # SCRUB TASKS
+    # ==========================================================================
+
+    - name: Configure weekly scrub for bulk pool
+      arensb.truenas.pool_scrub_task:
+        pool: bulk
+        threshold: 35
+        description: "Weekly scrub - bulk"
+        minute: "0"
+        hour: "0"
+        day: "*"
+        month: "*"
+        weekday: "sun"
+        enabled: true
+      tags: [scrub]
+      failed_when: false
+
+    - name: Configure weekly scrub for fast pool
+      arensb.truenas.pool_scrub_task:
+        pool: fast
+        threshold: 35
+        description: "Weekly scrub - fast"
+        minute: "0"
+        hour: "3"
+        day: "*"
+        month: "*"
+        weekday: "sun"
+        enabled: true
+      tags: [scrub]
+      failed_when: false
+
+    # ==========================================================================
+    # S.M.A.R.T. MONITORING
+    # ==========================================================================
+
+    - name: Enable SMART service
+      arensb.truenas.service:
+        name: smartd
+        state: started
+        enabled: true
+      tags: [smart]
+
+    - name: Configure SMART
+      arensb.truenas.smart:
+        interval: 30
+        power_mode: never
+        temp_crit: 10
+        temp_difference: 20
+        temp_info: 35
+      tags: [smart]
+
+    - name: Schedule weekly SMART short test
+      arensb.truenas.smart_test_task:
+        name: "Weekly SMART short test"
+        test: SHORT
+        disks: []
+        hour: "2"
+        day: "*"
+        month: "*"
+        weekday: "sat"
+      tags: [smart]
+
+    - name: Schedule monthly SMART long test
+      arensb.truenas.smart_test_task:
+        name: "Monthly SMART long test"
+        test: LONG
+        disks: []
+        hour: "3"
+        day: "1"
+        month: "*"
+        weekday: "*"
+      tags: [smart]

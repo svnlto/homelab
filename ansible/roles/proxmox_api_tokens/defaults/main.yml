@@ -1,0 +1,11 @@
+---
+# ==============================================================================
+# Proxmox API Tokens Role - Defaults
+# ==============================================================================
+
+# Whether to rotate existing tokens
+rotate_tokens: false
+
+# Token configuration
+terraform_user: "terraform@pam"
+terraform_token_name: "terraform"

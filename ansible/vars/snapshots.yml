@@ -1,0 +1,73 @@
+---
+# TrueNAS Snapshot Policies
+# Based on: docs/truenas-ansible-setup.md
+
+snapshot_policies:
+  # Bulk pool - media is replaceable, backups less frequent
+  bulk_media:
+    hourly: 0
+    daily: 7
+    weekly: 4
+    monthly: 3
+
+  bulk_photos:
+    hourly: 0
+    daily: 30 # Keep 30 days of daily snapshots (photos are valuable)
+    weekly: 8
+    monthly: 12
+
+  bulk_backups:
+    daily: 7
+    weekly: 4
+    monthly: 6
+
+  # Fast pool - critical data, aggressive snapshots
+  fast_kubernetes:
+    hourly: 24
+    daily: 7
+    weekly: 4
+    monthly: 6
+
+  fast_databases:
+    hourly: 48 # 2 days of hourly
+    daily: 14
+    weekly: 8
+    monthly: 12
+
+# Replication tasks (din → grogu)
+replication_tasks:
+  - source: bulk/media
+    destination: backup/media
+    schedule: daily 02:00
+    recursive: true
+    priority: low
+
+  - source: bulk/photos
+    destination: backup/photos
+    schedule: daily 04:00
+    recursive: true
+    priority: high
+
+  - source: fast/kubernetes
+    destination: backup/kubernetes
+    schedule: hourly
+    recursive: true
+    priority: high
+
+  - source: fast/databases
+    destination: backup/databases
+    schedule: "*/15 * * * *" # Every 15 min
+    recursive: true
+    priority: critical
+
+  - source: fast/app-configs
+    destination: backup/app-configs
+    schedule: hourly
+    recursive: true
+    priority: high
+
+  - source: bulk/backups
+    destination: backup/backups
+    schedule: daily 03:00
+    recursive: true
+    priority: low

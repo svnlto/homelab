@@ -1,0 +1,78 @@
+# ==============================================================================
+# Proxmox Network Configuration - {{ inventory_hostname }}
+# ==============================================================================
+# Managed by Ansible - DO NOT EDIT MANUALLY
+# Generated: {{ ansible_date_time.iso8601 }}
+
+auto lo
+iface lo inet loopback
+
+# ==============================================================================
+# Physical Interfaces
+# ==============================================================================
+# Intel X520 10GbE (primary interface: {{ primary_interface }})
+# All VLANs trunked over this interface
+
+# X520 10GbE - Primary (all VLANs trunked)
+auto {{ primary_interface }}
+iface {{ primary_interface }} inet manual
+    mtu {{ storage_mtu }}
+
+# ==============================================================================
+# VLAN 10 - Storage (10GbE, Jumbo Frames)
+# ==============================================================================
+auto vmbr10
+iface vmbr10 inet static
+    address {{ storage_ip }}/24
+    bridge-ports {{ primary_interface }}.10
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware no
+    mtu 9000
+    # No gateway - storage VLAN is L2 only for server-to-server
+
+# ==============================================================================
+# VLAN 20 - LAN (Proxmox Management + Infrastructure VMs)
+# ==============================================================================
+auto vmbr20
+iface vmbr20 inet static
+    address {{ management_ip }}/24
+    gateway {{ gateway_ip }}
+    bridge-ports {{ primary_interface }}.20
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware no
+    # This is how you reach Proxmox web UI
+
+# ==============================================================================
+# VLAN 30 - K8s Shared Services Cluster
+# ==============================================================================
+auto vmbr30
+iface vmbr30 inet manual
+    bridge-ports {{ primary_interface }}.30
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware no
+    # No IP - VMs only
+
+# ==============================================================================
+# VLAN 31 - K8s Apps Cluster
+# ==============================================================================
+auto vmbr31
+iface vmbr31 inet manual
+    bridge-ports {{ primary_interface }}.31
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware no
+    # No IP - VMs only
+
+# ==============================================================================
+# VLAN 32 - K8s Test Cluster
+# ==============================================================================
+auto vmbr32
+iface vmbr32 inet manual
+    bridge-ports {{ primary_interface }}.32
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware no
+    # No IP - VMs only

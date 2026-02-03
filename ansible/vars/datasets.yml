@@ -1,0 +1,101 @@
+---
+# TrueNAS ZFS Dataset Properties
+# Based on: docs/truenas-ansible-setup.md
+
+datasets:
+  # ===========================================================================
+  # BULK POOL (8TB HGST) - Large sequential files
+  # ===========================================================================
+
+  bulk_media:
+    recordsize: "1M" # Large sequential reads
+    compression: "lz4"
+    sync: "standard"
+    atime: "off"
+    children:
+      - music
+      - movies
+      - tv
+      - downloads/incomplete
+      - downloads/complete
+      - downloads/usenet
+
+  bulk_downloads_incomplete:
+    recordsize: "16K" # Torrent random writes
+    compression: "off"
+    sync: "disabled"
+
+  bulk_media_downloads_usenet:
+    recordsize: "128K" # SABnzbd par2/unrar operations
+    compression: "off" # Already compressed data
+    sync: "disabled" # Temporary staging, performance critical
+
+  bulk_photos:
+    recordsize: "1M" # Large image files (RAW, JPEG)
+    compression: "lz4" # Light compression (photos already compressed)
+    sync: "standard"
+    atime: "off" # Immich manages metadata
+
+  bulk_backups_timemachine:
+    recordsize: "1M"
+    compression: "zstd"
+    sync: "standard"
+    quota: "2T" # Per-Mac via SMB
+
+  bulk_backups_proxmox:
+    recordsize: "1M"
+    compression: "zstd"
+    sync: "standard"
+
+  bulk_backups_restic:
+    recordsize: "128K"
+    compression: "off" # Restic handles own compression
+    sync: "standard"
+
+  bulk_backups_arr_configs:
+    recordsize: "128K"
+    compression: "zstd"
+    sync: "standard"
+    quota: "10G" # Configs are small
+
+  # ===========================================================================
+  # FAST POOL (10K SAS) - Hot data, databases, VMs
+  # ===========================================================================
+
+  fast_kubernetes_dynamic:
+    recordsize: "16K" # Mixed workloads, DBs
+    compression: "lz4"
+    sync: "standard"
+    quota: "100G"
+
+  fast_kubernetes_static:
+    recordsize: "128K"
+    compression: "lz4"
+    sync: "standard"
+
+  fast_databases:
+    recordsize: "8K" # PostgreSQL/MySQL optimal
+    compression: "lz4"
+    sync: "always" # Data integrity critical
+    logbias: "latency"
+
+  fast_vms:
+    recordsize: "64K" # VM disk images
+    compression: "lz4"
+    sync: "standard"
+
+  fast_app_configs:
+    recordsize: "128K" # Mixed small files
+    compression: "lz4"
+    sync: "standard"
+
+  fast_app_configs_arr_stack:
+    recordsize: "128K" # arr-stack configs
+    compression: "lz4"
+    sync: "standard"
+
+  fast_app_configs_observability:
+    recordsize: "16K" # Prometheus TSDB, Loki chunks
+    compression: "lz4"
+    sync: "standard"
+    quota: "50G" # Prevent runaway growth

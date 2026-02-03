@@ -60,6 +60,7 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
 
   memory {
     dedicated = each.value.memory_mb
+    floating  = each.value.memory_mb
   }
 
   agent {
@@ -69,8 +70,8 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
   }
 
   vga {
-    type   = "serial0"
-    memory = 4
+    type   = "virtio"
+    memory = 32
   }
 
   serial_device {}
@@ -149,6 +150,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
 
   memory {
     dedicated = each.value.memory_mb
+    floating  = each.value.memory_mb
   }
 
   agent {
@@ -158,8 +160,8 @@ resource "proxmox_virtual_environment_vm" "worker" {
   }
 
   vga {
-    type   = "serial0"
-    memory = 4
+    type   = "virtio"
+    memory = 32
   }
 
   serial_device {}

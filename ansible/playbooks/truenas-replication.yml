@@ -1,0 +1,228 @@
+---
+# ==============================================================================
+# TrueNAS Replication Setup - din → grogu backup
+# ==============================================================================
+# Based on: docs/truenas-ansible-setup.md
+# Purpose: Configure ZFS send/recv replication from primary to backup TrueNAS
+#
+# Prerequisites:
+# - Primary TrueNAS (din) configured and accessible at 192.168.0.13
+# - Backup TrueNAS (grogu) configured and accessible at 192.168.0.14
+# - Backup pool created on grogu with datasets: backup/media, backup/kubernetes, etc.
+#
+# Usage:
+#   ansible-playbook playbooks/truenas-replication.yml
+
+- name: Setup ZFS replication from din to grogu
+  hosts: truenas_primary
+  become: true
+
+  vars_files:
+    - ../vars/snapshots.yml
+
+  tasks:
+    # ==========================================================================
+    # SSH KEY SETUP
+    # ==========================================================================
+
+    - name: Generate SSH keypair for replication
+      ansible.builtin.command:
+        cmd: >
+          midclt call keychaincredential.create '{
+            "name": "replication-to-grogu",
+            "type": "SSH_KEY_PAIR",
+            "attributes": {}
+          }'
+      register: keypair_result
+      changed_when: "'id' in keypair_result.stdout"
+      failed_when: false
+      tags: [ssh, setup]
+
+    - name: Extract keypair ID
+      ansible.builtin.set_fact:
+        keypair_id: "{{ (keypair_result.stdout | from_json).id }}"
+      when: "'id' in keypair_result.stdout"
+      tags: [ssh, setup]
+
+    - name: Get public key for manual setup on grogu
+      ansible.builtin.command:
+        cmd: >
+          midclt call keychaincredential.query '[["id", "=", {{ keypair_id }}]]'
+      register: keypair_info
+      when: keypair_id is defined
+      changed_when: false
+      tags: [ssh, setup]
+
+    - name: Display public key
+      ansible.builtin.debug:
+        msg: |
+          =======================================================================
+          MANUAL STEP REQUIRED:
+          Copy this public key to grogu backup TrueNAS (192.168.0.14)
+          and add it to /root/.ssh/authorized_keys
+          =======================================================================
+          {{ (keypair_info.stdout | from_json)[0].attributes.public_key }}
+          =======================================================================
+      when: keypair_info is defined and keypair_info.stdout is defined
+      tags: [ssh, setup]
+
+    # Note: SSH connection creation requires manual host key verification
+    # Run this on din after setting up SSH key on grogu:
+    # ssh-keyscan -H 192.168.0.14 | tee -a ~/.ssh/known_hosts
+
+    # ==========================================================================
+    # REPLICATION TASKS
+    # ==========================================================================
+    # Note: These tasks should be created via TrueNAS GUI or manually via midclt
+    # after SSH credentials are fully configured, as the arensb.truenas
+    # collection doesn't have replication task support yet.
+    #
+    # Example midclt commands (run on din after SSH setup):
+    #
+    # 1. Create SSH credential pointing to grogu:
+    #    midclt call keychaincredential.create '{
+    #      "name": "grogu-backup",
+    #      "type": "SSH_CREDENTIALS",
+    #      "attributes": {
+    #        "host": "192.168.0.14",
+    #        "port": 22,
+    #        "username": "root",
+    #        "private_key": <keypair_id>,
+    #        "remote_host_key": "<grogu_host_key>"
+    #      }
+    #    }'
+    #
+    # 2. Create replication task (fast/kubernetes → hourly):
+    #    midclt call replication.create '{
+    #      "name": "kubernetes-to-grogu",
+    #      "direction": "PUSH",
+    #      "transport": "SSH",
+    #      "ssh_credentials": <ssh_credential_id>,
+    #      "source_datasets": ["fast/kubernetes"],
+    #      "target_dataset": "backup/kubernetes",
+    #      "recursive": true,
+    #      "auto": true,
+    #      "schedule": {"minute": "0", "hour": "*", "dom": "*", "month": "*", "dow": "*"},
+    #      "retention_policy": "SOURCE",
+    #      "readonly": "SET"
+    #    }'
+    #
+    # 3. Create replication task (fast/databases → every 15 min):
+    #    midclt call replication.create '{
+    #      "name": "databases-to-grogu",
+    #      "direction": "PUSH",
+    #      "transport": "SSH",
+    #      "ssh_credentials": <ssh_credential_id>,
+    #      "source_datasets": ["fast/databases"],
+    #      "target_dataset": "backup/databases",
+    #      "recursive": true,
+    #      "auto": true,
+    #      "schedule": {"minute": "*/15", "hour": "*", "dom": "*", "month": "*", "dow": "*"},
+    #      "retention_policy": "SOURCE",
+    #      "readonly": "SET"
+    #    }'
+    #
+    # 4. Create replication task (bulk/media → daily):
+    #    midclt call replication.create '{
+    #      "name": "media-to-grogu",
+    #      "direction": "PUSH",
+    #      "transport": "SSH",
+    #      "ssh_credentials": <ssh_credential_id>,
+    #      "source_datasets": ["bulk/media"],
+    #      "target_dataset": "backup/media",
+    #      "recursive": true,
+    #      "auto": true,
+    #      "schedule": {"minute": "0", "hour": "2", "dom": "*", "month": "*", "dow": "*"},
+    #      "retention_policy": "SOURCE",
+    #      "readonly": "SET"
+    #    }'
+    #
+    # 5. Create replication task (bulk/photos → daily):
+    #    midclt call replication.create '{
+    #      "name": "photos-to-grogu",
+    #      "direction": "PUSH",
+    #      "transport": "SSH",
+    #      "ssh_credentials": <ssh_credential_id>,
+    #      "source_datasets": ["bulk/photos"],
+    #      "target_dataset": "backup/photos",
+    #      "recursive": true,
+    #      "auto": true,
+    #      "schedule": {"minute": "0", "hour": "4", "dom": "*", "month": "*", "dow": "*"},
+    #      "retention_policy": "SOURCE",
+    #      "readonly": "SET"
+    #    }'
+    #
+    # 6. Create replication task (fast/app-configs → hourly):
+    #    midclt call replication.create '{
+    #      "name": "app-configs-to-grogu",
+    #      "direction": "PUSH",
+    #      "transport": "SSH",
+    #      "ssh_credentials": <ssh_credential_id>,
+    #      "source_datasets": ["fast/app-configs"],
+    #      "target_dataset": "backup/app-configs",
+    #      "recursive": true,
+    #      "auto": true,
+    #      "schedule": {"minute": "0", "hour": "*", "dom": "*", "month": "*", "dow": "*"},
+    #      "retention_policy": "SOURCE",
+    #      "readonly": "SET"
+    #    }'
+
+    - name: Display replication setup instructions
+      ansible.builtin.debug:
+        msg: |
+          =======================================================================
+          REPLICATION SETUP INSTRUCTIONS
+          =======================================================================
+          1. Ensure backup TrueNAS (grogu) has 'backup' pool created
+          2. SSH to din (192.168.0.13) as root
+          3. Get grogu's host key: ssh-keyscan -H 192.168.0.14
+          4. Create SSH credential via midclt (see comments in playbook)
+          5. Create replication tasks via midclt (see examples above)
+          6. Verify: midclt call replication.query
+          =======================================================================
+      tags: [info]
+
+- name: Verify backup TrueNAS (grogu) readiness
+  hosts: truenas_backup
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Check if backup pool exists
+      ansible.builtin.command:
+        cmd: midclt call pool.query '[["name", "=", "backup"]]'
+      register: backup_pool
+      changed_when: false
+      failed_when: false
+      tags: [verify]
+
+    - name: Display backup pool status
+      ansible.builtin.debug:
+        msg: |
+          {% if backup_pool.stdout | from_json | length > 0 %}
+          ✓ Backup pool 'backup' exists on grogu
+          {% else %}
+          ✗ Backup pool 'backup' NOT FOUND on grogu
+          ACTION REQUIRED: Create pool manually before replication
+          {% endif %}
+      when: backup_pool.rc == 0
+      tags: [verify]
+
+    - name: Create backup datasets if pool exists
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.create '{
+            "name": "backup/{{ item }}",
+            "type": "FILESYSTEM"
+          }'
+      loop:
+        - media
+        - kubernetes
+        - databases
+        - app-configs
+        - backups
+      when: backup_pool.stdout | from_json | length > 0
+      register: dataset_creation
+      changed_when: "'id' in dataset_creation.stdout"
+      failed_when: false
+      tags: [verify, datasets]

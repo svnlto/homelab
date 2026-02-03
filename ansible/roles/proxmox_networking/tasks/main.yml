@@ -1,0 +1,52 @@
+---
+# ==============================================================================
+# Proxmox Network Bridge Configuration
+# ==============================================================================
+# Configures VLAN bridges on Proxmox hosts for Kubernetes clusters
+# Requires reboot or `ifreload -a` to apply changes
+
+- name: Backup current network configuration
+  copy:
+    src: /etc/network/interfaces
+    dest: "/etc/network/interfaces.backup.{{ ansible_date_time.iso8601_basic_short }}"
+    remote_src: true
+    mode: '0644'
+  tags:
+    - backup
+
+- name: Check if primary interface exists
+  stat:
+    path: "/sys/class/net/{{ primary_interface }}"
+  register: primary_interface_check
+  tags:
+    - check
+
+- name: Fail if primary interface not found
+  fail:
+    msg: "Interface {{ primary_interface }} not found. Please verify the interface name for this host."
+  when: not primary_interface_check.stat.exists
+  tags:
+    - check
+
+- name: Configure Proxmox network interfaces with K8s VLANs
+  template:
+    src: interfaces.j2
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify:
+    - test network config
+    - apply network config
+  tags:
+    - config
+
+- name: Display warning about network changes
+  debug:
+    msg: |
+      Network configuration has been updated.
+      Changes will be applied via 'ifreload -a' if config test passes.
+      If SSH connection is lost, use iDRAC to troubleshoot.
+  tags:
+    - config

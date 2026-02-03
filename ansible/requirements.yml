@@ -1,0 +1,7 @@
+---
+# Ansible Collections Requirements
+# Install with: ansible-galaxy collection install -r requirements.yml
+
+collections:
+  - name: arensb.truenas
+    version: ">=1.0.0"

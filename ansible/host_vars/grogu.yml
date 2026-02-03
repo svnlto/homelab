@@ -1,0 +1,20 @@
+---
+# Host-specific configuration for grogu (r630)
+
+# PCIe Devices for Passthrough
+# Note: Passthrough is configured manually via Proxmox UI (Hardware → Add → PCI Device)
+
+# GPU (for Jellyfin transcoding in K8s)
+# - TBD: Intel Arc A310 Eco (low-profile)
+
+# Storage Controllers (for TrueNAS Backup VM 301)
+# - TBD: MD1200 controller (grogu) → 8×3TB backup storage
+
+# Network Interfaces
+# - TBD: Intel X520 10GbE ports (interface names to be determined)
+# - Onboard: 2×10GbE SFP+ NDC → Direct connection to din
+
+# PCIe passthrough configuration
+# Uncomment when Arc A310 is installed and you want to blacklist Intel GPU drivers
+# pci_device_ids: "8086:56a5"  # Intel Arc A310 PCI ID
+# vfio_blacklist_drivers: [i915]  # Blacklist Intel GPU driver for passthrough

@@ -32,14 +32,33 @@ Vagrant.configure("2") do |config|
       source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
     fi
 
-    # Enable experimental features
+    # Enable x86_64 emulation for cross-compilation (Apple Silicon → Intel)
+    if [ "$(uname -m)" = "aarch64" ]; then
+      echo "Setting up x86_64 emulation via binfmt_misc..."
+      apt-get update -qq
+      apt-get install -y -qq qemu-user-static binfmt-support
+      systemctl restart systemd-binfmt.service
+      echo "x86_64 emulation enabled"
+    fi
+
+    # Enable experimental features and trusted users
     mkdir -p /etc/nix
     if ! grep -q "experimental-features" /etc/nix/nix.conf 2>/dev/null; then
       echo "experimental-features = nix-command flakes" | tee -a /etc/nix/nix.conf
     fi
+    if ! grep -q "trusted-users" /etc/nix/nix.conf 2>/dev/null; then
+      echo "trusted-users = root vagrant" | tee -a /etc/nix/nix.conf
+    fi
+    if ! grep -q "extra-platforms" /etc/nix/nix.conf 2>/dev/null; then
+      echo "extra-platforms = x86_64-linux" | tee -a /etc/nix/nix.conf
+    fi
+
+    # Restart nix-daemon to apply all changes
+    systemctl restart nix-daemon.service
 
     echo "Nix build environment ready!"
     nix --version
+    echo "Supported platforms: $(nix eval --impure --expr 'builtins.currentSystem') + extra-platforms"
   SHELL
 
   # Always run: Clean up old build artifacts to free space

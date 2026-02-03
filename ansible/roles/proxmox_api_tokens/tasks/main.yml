@@ -1,0 +1,122 @@
+---
+# ==============================================================================
+# Proxmox API Tokens - Main Tasks
+# ==============================================================================
+# Creates Terraform API tokens for Proxmox automation
+
+- name: Check if terraform user exists
+  ansible.builtin.command: pveum user list
+  register: user_list
+  changed_when: false
+
+- name: Create terraform user if not exists
+  ansible.builtin.command: >
+    pveum user add {{ terraform_user }}
+    --comment "Terraform automation user"
+  when: "terraform_user not in user_list.stdout"
+  register: user_created
+  changed_when: user_created.rc == 0
+
+- name: Check if TerraformProv role exists
+  ansible.builtin.shell: |
+    set -o pipefail
+    pveum role list | grep -q "TerraformProv"
+  register: terraform_role_exists
+  changed_when: false
+  failed_when: false
+
+- name: Create TerraformProv role with Sys.AccessNetwork
+  ansible.builtin.command: >
+    pveum role add TerraformProv
+    -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit
+    Mapping.Modify Mapping.Use Mapping.Audit
+    Pool.Allocate Pool.Audit
+    Sys.Audit Sys.AccessNetwork Sys.Console
+    VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk
+    VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate
+    VM.PowerMgmt SDN.Use"
+  when: terraform_role_exists.rc != 0
+  changed_when: true
+
+- name: Update TerraformProv role to add Mapping permissions
+  ansible.builtin.command: >
+    pveum role modify TerraformProv
+    -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit
+    Mapping.Modify Mapping.Use Mapping.Audit
+    Pool.Allocate Pool.Audit
+    Sys.Audit Sys.AccessNetwork Sys.Console
+    VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk
+    VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate
+    VM.PowerMgmt SDN.Use"
+  when: terraform_role_exists.rc == 0
+  changed_when: true
+
+- name: Assign roles to terraform user
+  ansible.builtin.command: >
+    pveum aclmod / -user {{ terraform_user }} -role TerraformProv
+  changed_when: false
+
+- name: Check if token already exists
+  ansible.builtin.shell: |
+    set -o pipefail
+    pveum user token list {{ terraform_user }} | grep -q "{{ terraform_token_name }}"
+  register: token_exists
+  changed_when: false
+  failed_when: false
+
+- name: Delete existing terraform token (if rotating)
+  ansible.builtin.command: >
+    pveum user token remove {{ terraform_user }} {{ terraform_token_name }}
+  when:
+    - rotate_tokens | bool
+    - token_exists.rc == 0
+  changed_when: true
+
+- name: Generate new API token
+  ansible.builtin.command: >
+    pveum user token add {{ terraform_user }} {{ terraform_token_name }}
+    --privsep 0
+    --output-format json
+  register: token_output
+  when: (rotate_tokens | bool) or (token_exists.rc != 0)
+  changed_when: true
+
+- name: Parse token from output # noqa no-handler
+  ansible.builtin.set_fact:
+    api_token_id: "{{ terraform_user }}!{{ terraform_token_name }}"
+    api_token_secret: "{{ (token_output.stdout | from_json).value }}"
+  when: token_output.changed
+
+- name: Display token information # noqa no-handler
+  ansible.builtin.debug:
+    msg: |
+      ========================================
+      Proxmox API Token Created: {{ inventory_hostname }}
+      ========================================
+
+      Add this to your .env file:
+
+      PROXMOX_TOKEN_ID="{{ terraform_user }}!{{ terraform_token_name }}"
+      PROXMOX_TOKEN_SECRET="{{ api_token_secret }}"
+
+      ========================================
+      Token also saved to ansible/group_vars/all/vault.yml
+      View with: ansible-vault view ansible/group_vars/all/vault.yml
+      ========================================
+  when: token_output.changed
+
+- name: Save token to localhost vault file # noqa no-handler
+  delegate_to: localhost
+  become: false
+  ansible.builtin.blockinfile:
+    path: "{{ playbook_dir }}/../group_vars/all/vault.yml"
+    create: true
+    mode: '0600'
+    block: |
+      # Proxmox API Token for {{ inventory_hostname }} (Terraform)
+      vault_proxmox_token_id_{{ inventory_hostname }}: "{{ terraform_user }}!{{ terraform_token_name }}"
+      vault_proxmox_token_secret_{{ inventory_hostname }}: "{{ api_token_secret }}"
+
+      # Generated: {{ ansible_date_time.iso8601 }}
+    marker: "# {mark} PROXMOX TERRAFORM TOKEN - {{ inventory_hostname | upper }}"
+  when: token_output.changed

@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Homelab infrastructure automation using Packer, Terraform, and Ansible:
+Homelab infrastructure automation using NixOS, Terraform, and Ansible:
 
-- **Raspberry Pi**: Immutable Pi-hole DNS server image (Packer + ARM builder)
+- **Raspberry Pi**: Immutable Pi-hole DNS server (NixOS declarative config)
 - **Proxmox VE**: Template-based VM deployment (Packer + Terraform + Ansible)
+- **TrueNAS SCALE**: ZFS-based network storage (Terraform VMs + Ansible configuration)
 
 **Critical Design Principle**: Raspberry Pi runs critical network infrastructure (DNS) that must stay operational during
 Proxmox maintenance. Pi-hole runs on the Pi, NOT on Proxmox.
@@ -39,6 +40,56 @@ Proxmox maintenance. Pi-hole runs on the Pi, NOT on Proxmox.
 3. **Ansible Provisioning** (triggered by Terraform)
    - Deploys applications (arr stack, observability)
    - Playbooks: `stack-arr.yml`, `stack-observability.yml`
+
+### NixOS Pi-hole (Raspberry Pi)
+
+**Build Environment**: Vagrant + VMware (macOS limitation)
+
+Pi-hole runs on NixOS for true immutability and atomic updates. Build process:
+
+1. **Start Vagrant VM** (one-time setup):
+
+   ```bash
+   just nixos-vm-up
+   ```
+
+   - Ubuntu 22.04 VM with Nix installed
+   - VMware native shared folders (nix/ directory)
+   - Auto garbage collection on boot
+
+2. **Build SD image** (15-20 min first build, 2-5 min incremental):
+
+   ```bash
+   just nixos-build-pihole
+   ```
+
+   - Copies source files (excludes .vagrant/) to VM's /tmp, builds there
+   - Final image copied back to nix/pihole-nixos.img
+   - Includes Pi-hole + Unbound in Docker (host networking)
+
+3. **Flash to SD card**:
+
+   ```bash
+   just nixos-flash-pihole /dev/rdiskX
+   ```
+
+4. **Boot and configure**:
+
+   ```bash
+   ssh svenlito@192.168.0.53
+   docker exec pihole pihole setpassword 'your-password'
+   ```
+
+**Why NixOS over Packer**:
+
+- True immutability (entire OS, not just containers)
+- 30-second rollback (reboot to previous generation)
+- No chroot complexity (Packer required 15+ conditionals)
+- Faster incremental builds (Nix cache)
+
+**See**: nix/README.md for complete documentation (460 lines).
+
+**Note**: Packer configs in packer/pihole/ are archived (not used).
 
 ### Critical Configuration Requirements
 
@@ -147,6 +198,85 @@ template_file_id = "local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst"
 - SSH key item name in 1Password: `"proxmox"` (in Personal vault)
 - SSH config: `IdentityAgent "/Users/svenlito/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"`
 
+### TrueNAS Infrastructure
+
+**Purpose**: Network storage for Kubernetes PVs, media library, backups
+
+**Architecture**:
+
+- Primary (VMID 300): VM on din (r730xd) with 5×8TB + 24×900GB storage
+- Backup (VMID 301): VM on grogu (r630) with 8×3TB storage via MD1200
+- Replication: ZFS send/recv over 10G DAC (VLAN 10)
+
+**Deployment is 3-phase** (not fully automated):
+
+#### Phase 1: Deploy VM Shells (Terraform)
+
+```bash
+just tf-apply  # Creates VMID 300 + 301
+```
+
+Terraform creates:
+
+- Empty VMs with 32GB boot disk + scratch disks
+- Network configuration
+- **Does NOT** connect real storage (manual next)
+
+#### Phase 2: Storage Passthrough (Manual via Proxmox UI)
+
+TrueNAS needs access to physical disks. Via Proxmox UI:
+
+1. **Primary (VMID 300 on din)**:
+   - Hardware → Add → PCI Device
+   - Pass through H330 Mini (5×8TB internal drives)
+   - Pass through LSI 9201-8e (MD1220 shelf, 24×900GB)
+
+2. **Backup (VMID 301 on grogu)**:
+   - Hardware → Add → PCI Device
+   - Pass through MD1200 controller (8×3TB)
+
+**Why manual**: Terraform can't automate PCIe passthrough reliably.
+
+#### Phase 3: Pool Creation (Manual via midclt)
+
+SSH into TrueNAS and create ZFS pools:
+
+```bash
+# Primary TrueNAS
+ssh admin@192.168.0.13
+
+# Create bulk pool (5×8TB RAIDZ2 + SLOG mirror)
+midclt call pool.create '{...}'  # See docs/truenas-ansible-setup.md Part 5
+
+# Create fast pool (4×6-wide RAIDZ2)
+midclt call pool.create '{...}'
+```
+
+**Why manual**: arensb.truenas collection doesn't support pool creation.
+
+#### Phase 4: Configure Datasets/Shares (Ansible)
+
+Once pools exist, Ansible configures everything else:
+
+```bash
+# Create datasets, shares, users, snapshots, scrubs, SMART
+ansible-playbook ansible/playbooks/truenas-setup.yml
+
+# Setup ZFS replication (SSH keys + tasks)
+ansible-playbook ansible/playbooks/truenas-replication.yml
+```
+
+**Ansible creates:**
+
+- Datasets: bulk/media, fast/kubernetes, fast/databases, etc.
+- NFS shares: for Kubernetes (democratic-csi), Jellyfin
+- SMB shares: Time Machine backups
+- Snapshot tasks: hourly (databases), daily (media)
+- Scrub tasks: weekly pool validation
+- Replication: din → grogu over 10G
+
+**See**: docs/truenas-ansible-setup.md for complete design (1200+ lines).
+
 ## Essential Commands
 
 ### Development Environment
@@ -173,6 +303,50 @@ just ansible-configure grogu
 just ansible-configure din
 
 # Note: Reboot required after configuration for PCIe passthrough
+```
+
+### Proxmox API Token Management
+
+```bash
+# Create Terraform API tokens (run after initial node setup)
+just proxmox-create-api-tokens
+
+# Tokens are displayed and saved to ansible/group_vars/all/vault.yml
+# Add tokens to .env file, then reload direnv:
+direnv allow
+
+# View stored tokens (requires vault password)
+just proxmox-view-tokens
+
+# Rotate tokens (recommended every 90 days)
+just proxmox-rotate-api-tokens
+```
+
+### TrueNAS Configuration
+
+```bash
+# Deploy TrueNAS VMs (creates empty shells)
+just tf-apply
+
+# After manual HBA passthrough + pool creation:
+
+# Configure datasets, shares, snapshots (dry run)
+ansible-playbook ansible/playbooks/truenas-setup.yml --check
+
+# Apply configuration
+ansible-playbook ansible/playbooks/truenas-setup.yml
+
+# Run specific tags only
+ansible-playbook ansible/playbooks/truenas-setup.yml --tags=nfs,shares
+
+# Setup replication din → grogu
+ansible-playbook ansible/playbooks/truenas-replication.yml
+
+# Verify configuration
+ansible-playbook ansible/playbooks/truenas-setup.yml --tags=verify
+
+# Manual pool creation (SSH into TrueNAS first)
+# See: docs/truenas-ansible-setup.md Part 5
 ```
 
 ### VM/Container Deployment Workflow
@@ -206,13 +380,14 @@ just nixos-update-pihole
 ```text
 homelab/
 ├── nix/                                   # NixOS configurations
+│   ├── Vagrantfile                        # Ubuntu VM for building (macOS requirement)
 │   ├── flake.nix                          # NixOS flake (SD image builder)
 │   ├── rpi-pihole/                        # Pi-hole NixOS config
 │   │   ├── configuration.nix              # System config
 │   │   ├── hardware.nix                   # Raspberry Pi hardware
 │   │   └── pihole.nix                     # Pi-hole + Unbound services
 │   └── common/
-│       └── constants.nix                  # Shared constants
+│       └── constants.nix                  # Shared constants (versions, timezone)
 │
 ├── packer/
 │   └── proxmox-templates/                 # VM templates (built inside Proxmox)
@@ -227,8 +402,10 @@ homelab/
 │   └── proxmox/                           # Root module
 │       ├── providers.tf                   # bpg/proxmox provider 0.89.1
 │       ├── main.tf                        # Provider configuration
-│       ├── _arrstack.tf                   # Arr LXC container (192.168.0.200)
-│       ├── _observability.tf              # Monitoring VM (192.168.0.201)
+│       ├── locals.tf                      # Network ranges, IPs, node names
+│       ├── _truenas.tf                    # TrueNAS Primary VM (VMID 300)
+│       ├── _truenas-backup.tf             # TrueNAS Backup VM (VMID 301)
+│       ├── _talos-homelab-cluster.tf      # Kubernetes cluster config
 │       ├── variables.tf                   # Sensitive vars only
 │       └── terraform.tfvars               # SSH public key (GITIGNORED)
 │
@@ -296,9 +473,29 @@ Pinned via Nix flakes for reproducibility:
 - **Cause**: Template wasn't properly cleaned
 - **Fix**: Ansible must run `cloud-init clean --logs --seed` during template build
 
+### TrueNAS pools not visible after VM creation
+
+- **Cause**: Terraform creates VM shell but doesn't connect physical storage
+- **Fix**: Manual HBA passthrough via Proxmox UI (Hardware → Add → PCI Device)
+- **Then**: SSH into TrueNAS and create pools via midclt commands
+- **See**: docs/truenas-ansible-setup.md Part 5 for pool creation
+
+### Ansible TrueNAS playbook fails with dataset errors
+
+- **Cause**: Pools don't exist yet (arensb.truenas can't create pools)
+- **Fix**: Create pools manually via midclt before running ansible playbooks
+- **Verify pools exist**: `midclt call pool.query` on TrueNAS
+
 ## Network Architecture
 
-See [docs/network-layout.md](docs/network-layout.md) for detailed network topology, VLAN configuration, and traffic flows.
+See [docs/network-architecture.md](docs/network-architecture.md) for comprehensive network documentation including:
+
+- VLAN architecture (Infrastructure + Kubernetes VLANs 30-32)
+- Current single-router setup and future two-switch expansion
+- Inter-VLAN routing rules and firewall policies
+- Kubernetes multi-cluster network design
+- Proxmox bridge configuration
+- Traffic flow examples
 
 ```text
 Internet → Router (192.168.0.1)
@@ -339,17 +536,21 @@ DNS Filtering  grogu       din
 
 - VLAN 1 (Management): 10.10.1.0/24 - iDRAC, switch management
 - VLAN 10 (Storage): 10.10.10.0/24 - NFS/iSCSI, high-bandwidth storage traffic
-- VLAN 20 (LAN): 192.168.0.0/24 - VMs, services, clients
-- Kubernetes Network: 10.0.1.0/24 - Dedicated Talos cluster network (separate from VLAN 10)
+- VLAN 20 (LAN): 192.168.0.0/24 - Infrastructure VMs, clients
+- VLAN 30 (K8s Shared Services): 10.0.1.0/24 - Infrastructure cluster (SigNoz, ingress, ArgoCD)
+- VLAN 31 (K8s Apps): 10.0.2.0/24 - Production apps cluster (Jellyfin, Immich, etc.)
+- VLAN 32 (K8s Test): 10.0.3.0/24 - Testing/staging cluster
 
-**LXC Containers:**
+**Infrastructure VMs:**
 
-- arr-stack: 192.168.0.200 (VMID 200) - Full media automation suite
+- TrueNAS Primary: 192.168.0.13 (VMID 300, on din), 10.10.10.13 (VLAN 10 storage)
+- TrueNAS Backup: 192.168.0.14 (VMID 301, on grogu), 10.10.10.14 (VLAN 10 storage)
 
-**VMs:**
+**Kubernetes Workloads** (K8s-first approach - all production on K8s):
 
-- monitoring-server: 192.168.0.201 (VMID 101, static, observability)
-- TrueNAS SCALE: 192.168.0.13 (VMID 300, VLAN 20), 10.10.10.13 (VLAN 10 storage)
+- Shared Services (VLAN 30): SigNoz, Nginx Ingress, ArgoCD, cert-manager, Vault
+- Apps (VLAN 31): Jellyfin, Sonarr, Radarr, Prowlarr, Immich, Nextcloud, Home Assistant
+- Test (VLAN 32): Staging and experimental deployments
 
 **Hardware:**
 

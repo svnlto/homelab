@@ -1,0 +1,594 @@
+---
+# ==============================================================================
+# Restic Backup to Backblaze B2 - TrueNAS Primary (din)
+# ==============================================================================
+# Purpose: Backup critical data to Backblaze B2 cloud storage
+# Target: TrueNAS SCALE on din (192.168.0.13)
+#
+# Backup Profile 2: Everything Except Movies/TV (~1.5TB)
+# - fast/* (all Kubernetes, databases, app configs)
+# - bulk/photos (all photos)
+# - bulk/music (entire library)
+# - bulk/backups/* (Proxmox, arr-configs, TimeMachine)
+# - bulk/archive
+#
+# Estimated Cost: $7.50/month ($90/year) at $5/TB/month
+#
+# Prerequisites:
+# - Backblaze B2 account created
+# - B2 bucket created (e.g., "homelab-truenas-backup")
+# - B2 application key generated
+# - Variables defined in group_vars/all/vault.yml (encrypted):
+#   - vault_b2_account_id
+#   - vault_b2_account_key
+#   - vault_restic_password
+#
+# Usage:
+#   ansible-playbook playbooks/truenas-restic-backup.yml
+
+- name: Setup Restic backup to Backblaze B2
+  hosts: truenas_primary
+  become: true
+
+  vars:
+    restic_repo: "b2:homelab-truenas-backup:/"
+    restic_password: "{{ vault_restic_password }}"
+    b2_account_id: "{{ vault_b2_account_id }}"
+    b2_account_key: "{{ vault_b2_account_key }}"
+
+  tasks:
+    # ==========================================================================
+    # INSTALL RESTIC
+    # ==========================================================================
+
+    - name: Install required packages
+      ansible.builtin.apt:
+        name:
+          - restic
+          - curl
+          - jq
+        state: present
+        update_cache: true
+      tags: [install]
+
+    - name: Create scripts directory
+      ansible.builtin.file:
+        path: /root/scripts
+        state: directory
+        mode: '0700'
+      tags: [install]
+
+    # ==========================================================================
+    # B2 CREDENTIALS
+    # ==========================================================================
+
+    - name: Create Restic environment file (B2 credentials)
+      ansible.builtin.copy:
+        dest: /root/.restic-env
+        mode: '0600'
+        content: |
+          export RESTIC_REPOSITORY="{{ restic_repo }}"
+          export RESTIC_PASSWORD="{{ restic_password }}"
+          export B2_ACCOUNT_ID="{{ b2_account_id }}"
+          export B2_ACCOUNT_KEY="{{ b2_account_key }}"
+        no_log: true
+      tags: [config]
+
+    # ==========================================================================
+    # INITIALIZE REPOSITORY
+    # ==========================================================================
+
+    - name: Check if Restic repository exists
+      ansible.builtin.shell: |
+        set -o pipefail
+        source /root/.restic-env
+        restic snapshots --json 2>/dev/null | jq -r 'length'
+      register: restic_check
+      changed_when: false
+      failed_when: false
+      tags: [init]
+
+    - name: Initialize Restic repository on B2
+      ansible.builtin.shell: |
+        source /root/.restic-env
+        restic init
+      when: restic_check.rc != 0
+      register: restic_init
+      changed_when: "'created restic repository' in restic_init.stdout"
+      tags: [init]
+
+    # ==========================================================================
+    # BACKUP SCRIPTS
+    # ==========================================================================
+
+    - name: Create critical data backup script (hourly)
+      ansible.builtin.copy:
+        dest: /root/scripts/restic-backup-critical.sh
+        mode: '0700'
+        content: |
+          #!/bin/bash
+          # Restic Backup: Critical Data (Hourly)
+          # - Kubernetes configs
+          # - Databases
+          # - App configs
+
+          set -e
+          source /root/.restic-env
+
+          echo "=== Restic Backup: Critical Data ($(date)) ==="
+
+          # Backup critical datasets
+          restic backup \
+            /mnt/fast/kubernetes \
+            /mnt/fast/databases \
+            /mnt/fast/app-configs \
+            --tag critical \
+            --tag hourly \
+            --tag din \
+            --exclude="*.log" \
+            --exclude="*.tmp" \
+            --exclude="lost+found" \
+            --exclude=".cache" \
+            --verbose
+
+          # Prune old snapshots (aggressive retention for critical data)
+          restic forget \
+            --tag critical \
+            --keep-hourly 48 \
+            --keep-daily 30 \
+            --keep-weekly 8 \
+            --keep-monthly 12 \
+            --keep-yearly 3 \
+            --prune
+
+          # Check repository integrity (weekly)
+          if [ "$(date +%u)" -eq 7 ]; then
+            echo "Running weekly integrity check..."
+            restic check --read-data-subset=5%
+          fi
+
+          echo "=== Backup completed successfully ==="
+      tags: [scripts]
+
+    - name: Create photos backup script (daily)
+      ansible.builtin.copy:
+        dest: /root/scripts/restic-backup-photos.sh
+        mode: '0700'
+        content: |
+          #!/bin/bash
+          # Restic Backup: Photos (Daily)
+          # - All photos from bulk/photos
+
+          set -e
+          source /root/.restic-env
+
+          echo "=== Restic Backup: Photos ($(date)) ==="
+
+          # Backup photos
+          restic backup \
+            /mnt/bulk/photos \
+            --tag photos \
+            --tag daily \
+            --tag din \
+            --exclude="*.tmp" \
+            --exclude="lost+found" \
+            --exclude=".DS_Store" \
+            --exclude="Thumbs.db" \
+            --verbose
+
+          # Prune old snapshots (keep more history for photos)
+          restic forget \
+            --tag photos \
+            --keep-daily 30 \
+            --keep-weekly 12 \
+            --keep-monthly 24 \
+            --keep-yearly 10 \
+            --prune
+
+          echo "=== Photos backup completed ==="
+      tags: [scripts]
+
+    - name: Create bulk data backup script (daily)
+      ansible.builtin.copy:
+        dest: /root/scripts/restic-backup-bulk.sh
+        mode: '0700'
+        content: |
+          #!/bin/bash
+          # Restic Backup: Bulk Data (Daily)
+          # - Music library
+          # - Proxmox backups
+          # - arr-stack configs
+
+          set -e
+          source /root/.restic-env
+
+          echo "=== Restic Backup: Bulk Data ($(date)) ==="
+
+          # Backup music
+          restic backup \
+            /mnt/bulk/music \
+            --tag music \
+            --tag daily \
+            --tag din \
+            --exclude="*.log" \
+            --exclude="lost+found" \
+            --verbose
+
+          # Backup Proxmox backups
+          restic backup \
+            /mnt/bulk/backups/proxmox \
+            --tag proxmox \
+            --tag daily \
+            --tag din \
+            --exclude="*.tmp" \
+            --verbose
+
+          # Backup arr-configs
+          restic backup \
+            /mnt/bulk/backups/arr-configs \
+            --tag arr-configs \
+            --tag daily \
+            --tag din \
+            --verbose
+
+          # Prune old snapshots
+          restic forget \
+            --tag music \
+            --keep-daily 7 \
+            --keep-weekly 8 \
+            --keep-monthly 6 \
+            --prune
+
+          restic forget \
+            --tag proxmox \
+            --keep-daily 7 \
+            --keep-weekly 4 \
+            --keep-monthly 3 \
+            --prune
+
+          restic forget \
+            --tag arr-configs \
+            --keep-daily 30 \
+            --keep-weekly 12 \
+            --keep-monthly 12 \
+            --prune
+
+          echo "=== Bulk backup completed ==="
+      tags: [scripts]
+
+    - name: Create archive backup script (weekly)
+      ansible.builtin.copy:
+        dest: /root/scripts/restic-backup-archive.sh
+        mode: '0700'
+        content: |
+          #!/bin/bash
+          # Restic Backup: Archive Data (Weekly)
+          # - TimeMachine backups
+          # - Archive folder
+
+          set -e
+          source /root/.restic-env
+
+          echo "=== Restic Backup: Archive ($(date)) ==="
+
+          # Backup TimeMachine (large, weekly)
+          if [ -d /mnt/bulk/backups/timemachine ]; then
+            restic backup \
+              /mnt/bulk/backups/timemachine \
+              --tag timemachine \
+              --tag weekly \
+              --tag din \
+              --exclude="*.tmp" \
+              --exclude=".Spotlight-*" \
+              --exclude=".fseventsd" \
+              --verbose
+          fi
+
+          # Backup archive
+          if [ -d /mnt/bulk/archive ]; then
+            restic backup \
+              /mnt/bulk/archive \
+              --tag archive \
+              --tag weekly \
+              --tag din \
+              --exclude="*.tmp" \
+              --verbose
+          fi
+
+          # Prune old snapshots (less frequent for large data)
+          restic forget \
+            --tag timemachine \
+            --keep-weekly 4 \
+            --keep-monthly 6 \
+            --keep-yearly 2 \
+            --prune
+
+          restic forget \
+            --tag archive \
+            --keep-weekly 8 \
+            --keep-monthly 12 \
+            --keep-yearly 5 \
+            --prune
+
+          echo "=== Archive backup completed ==="
+      tags: [scripts]
+
+    # ==========================================================================
+    # SYSTEMD SERVICES
+    # ==========================================================================
+
+    - name: Create systemd service for critical backups
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/restic-backup-critical.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Restic Backup - Critical Data
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=oneshot
+          ExecStart=/root/scripts/restic-backup-critical.sh
+          StandardOutput=journal
+          StandardError=journal
+          SyslogIdentifier=restic-critical
+
+          [Install]
+          WantedBy=multi-user.target
+      tags: [systemd]
+
+    - name: Create systemd timer for critical backups (hourly)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/restic-backup-critical.timer
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Restic Backup Timer - Critical Data (Hourly)
+
+          [Timer]
+          OnCalendar=hourly
+          Persistent=true
+          RandomizedDelaySec=5min
+
+          [Install]
+          WantedBy=timers.target
+      tags: [systemd]
+
+    - name: Create systemd service for photos backups
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/restic-backup-photos.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Restic Backup - Photos
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=oneshot
+          ExecStart=/root/scripts/restic-backup-photos.sh
+          StandardOutput=journal
+          StandardError=journal
+          SyslogIdentifier=restic-photos
+
+          [Install]
+          WantedBy=multi-user.target
+      tags: [systemd]
+
+    - name: Create systemd timer for photos backups (daily)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/restic-backup-photos.timer
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Restic Backup Timer - Photos (Daily)
+
+          [Timer]
+          OnCalendar=*-*-* 01:00:00
+          Persistent=true
+          RandomizedDelaySec=30min
+
+          [Install]
+          WantedBy=timers.target
+      tags: [systemd]
+
+    - name: Create systemd service for bulk backups
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/restic-backup-bulk.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Restic Backup - Bulk Data
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=oneshot
+          ExecStart=/root/scripts/restic-backup-bulk.sh
+          StandardOutput=journal
+          StandardError=journal
+          SyslogIdentifier=restic-bulk
+
+          [Install]
+          WantedBy=multi-user.target
+      tags: [systemd]
+
+    - name: Create systemd timer for bulk backups (daily)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/restic-backup-bulk.timer
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Restic Backup Timer - Bulk Data (Daily)
+
+          [Timer]
+          OnCalendar=*-*-* 02:00:00
+          Persistent=true
+          RandomizedDelaySec=30min
+
+          [Install]
+          WantedBy=timers.target
+      tags: [systemd]
+
+    - name: Create systemd service for archive backups
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/restic-backup-archive.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Restic Backup - Archive Data
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=oneshot
+          ExecStart=/root/scripts/restic-backup-archive.sh
+          StandardOutput=journal
+          StandardError=journal
+          SyslogIdentifier=restic-archive
+
+          [Install]
+          WantedBy=multi-user.target
+      tags: [systemd]
+
+    - name: Create systemd timer for archive backups (weekly)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/restic-backup-archive.timer
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Restic Backup Timer - Archive (Weekly)
+
+          [Timer]
+          OnCalendar=Sun *-*-* 03:00:00
+          Persistent=true
+          RandomizedDelaySec=1h
+
+          [Install]
+          WantedBy=timers.target
+      tags: [systemd]
+
+    # ==========================================================================
+    # ENABLE TIMERS
+    # ==========================================================================
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+      tags: [systemd]
+
+    - name: Enable and start Restic backup timers
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+      loop:
+        - restic-backup-critical.timer
+        - restic-backup-photos.timer
+        - restic-backup-bulk.timer
+        - restic-backup-archive.timer
+      tags: [systemd]
+
+    # ==========================================================================
+    # MONITORING & VERIFICATION
+    # ==========================================================================
+
+    - name: Create Restic status check script
+      ansible.builtin.copy:
+        dest: /root/scripts/restic-status.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          # Restic Status Check
+          source /root/.restic-env
+
+          echo "=== Restic Repository Status ==="
+          restic stats --mode raw-data
+
+          echo ""
+          echo "=== Recent Snapshots by Tag ==="
+          echo "Critical:"
+          restic snapshots --tag critical --last
+
+          echo ""
+          echo "Photos:"
+          restic snapshots --tag photos --last
+
+          echo ""
+          echo "Music:"
+          restic snapshots --tag music --last
+
+          echo ""
+          echo "Proxmox:"
+          restic snapshots --tag proxmox --last
+
+          echo ""
+          echo "=== Timer Status ==="
+          systemctl status restic-backup-*.timer --no-pager
+
+          echo ""
+          echo "=== Recent Backup Logs ==="
+          journalctl -u restic-backup-*.service -n 20 --no-pager
+      tags: [scripts]
+
+    # ==========================================================================
+    # SUMMARY
+    # ==========================================================================
+
+    - name: Display Restic backup configuration summary
+      ansible.builtin.debug:
+        msg: |
+          =======================================================================
+          RESTIC BACKUP TO BACKBLAZE B2 - CONFIGURATION COMPLETE
+          =======================================================================
+          Repository: {{ restic_repo }}
+          Target: TrueNAS Primary (din) - 192.168.0.13
+
+          Backup Schedule:
+          ─────────────────────────────────────────────────────────────────────
+          HOURLY (Critical Data):
+            - /mnt/fast/kubernetes
+            - /mnt/fast/databases
+            - /mnt/fast/app-configs
+            Retention: 48h hourly, 30d daily, 8w weekly, 12m monthly, 3y yearly
+
+          DAILY @ 01:00 (Photos):
+            - /mnt/bulk/photos
+            Retention: 30d daily, 12w weekly, 24m monthly, 10y yearly
+
+          DAILY @ 02:00 (Bulk Data):
+            - /mnt/bulk/music
+            - /mnt/bulk/backups/proxmox
+            - /mnt/bulk/backups/arr-configs
+            Retention: 7d daily, 8w weekly, 6m monthly
+
+          WEEKLY @ Sun 03:00 (Archive):
+            - /mnt/bulk/backups/timemachine
+            - /mnt/bulk/archive
+            Retention: 4w weekly, 6m monthly, 2y yearly
+
+          Excluded:
+            - bulk/media/movies (replaceable)
+            - bulk/media/tv (replaceable)
+            - bulk/media/downloads (temporary)
+
+          Estimated Total: ~1.5TB
+          Monthly Cost: ~$7.50
+          Annual Cost: ~$90
+
+          Useful Commands:
+          ─────────────────────────────────────────────────────────────────────
+          Check status:         just restic-status
+          Manual backup:        just restic-backup-now
+          List snapshots:       just restic-snapshots
+          Restore files:        just restic-restore
+          Check timers:         systemctl list-timers restic-*
+
+          Next Steps:
+          1. Verify B2 credentials are correct
+          2. Wait for initial backup to complete (~hours depending on upload speed)
+          3. Monitor logs: journalctl -u restic-backup-* -f
+          4. Check B2 console for storage usage
+          =======================================================================
+      tags: [info]

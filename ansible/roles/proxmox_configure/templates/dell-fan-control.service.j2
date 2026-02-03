@@ -1,0 +1,13 @@
+[Unit]
+Description=Dell Fan Control
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/dell-fan-control.sh
+ExecStop=/usr/bin/ipmitool raw 0x30 0x30 0x01 0x01
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
