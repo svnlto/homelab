@@ -71,9 +71,9 @@ infrastructure/<env>/<category>/<module>/
 
 **Key Files**:
 
-- **globals.hcl**: Single source of truth (VLANs, IPs, versions, resource mappings)
-- **root.hcl**: Backend configuration (currently local, B2 remote planned)
-- **provider.hcl**: Provider configuration with credentials from .env
+- **globals.hcl**: Single source of truth (VLANs, IPs, versions, resource mappings, B2 backend config)
+- **root.hcl**: S3-compatible backend configuration (Backblaze B2 in Amsterdam)
+- **provider.hcl**: Provider configuration with credentials from 1Password
 
 **Deployment Commands**:
 
@@ -93,13 +93,23 @@ terragrunt plan
 terragrunt destroy
 ```
 
-**Environment Variables** (auto-loaded via direnv from `.env`):
+**Environment Variables** (auto-loaded via direnv from 1Password):
 
-- `PROXMOX_TOKEN_ID` - Proxmox API token ID
-- `PROXMOX_TOKEN_SECRET` - Proxmox API token secret
-- `MIKROTIK_HOST` - MikroTik router IP
-- `MIKROTIK_USERNAME` - MikroTik username
-- `MIKROTIK_PASSWORD` - MikroTik password
+- `PROXMOX_TOKEN_ID` / `PROXMOX_TOKEN_SECRET` - Proxmox API credentials
+- `MIKROTIK_USERNAME` / `MIKROTIK_PASSWORD` - MikroTik router credentials
+- `B2_KEY_ID` / `B2_APPLICATION_KEY` - Backblaze B2 for remote state
+- `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` - B2 S3-compatible credentials
+
+**Remote State Backend** (Backblaze B2):
+
+```hcl
+# Configured in globals.hcl and root.hcl
+bucket_name = "svnlto-homelab-terraform-state"
+region      = "eu-central-003"  # Amsterdam datacenter
+endpoint    = "s3.eu-central-003.backblazeb2.com"
+```
+
+State files stored with encryption, versioning, and geo-redundancy. Migrated from local state on 2026-02-03.
 
 ### NixOS Pi-hole (Raspberry Pi)
 

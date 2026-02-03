@@ -40,21 +40,22 @@ Single source of truth containing:
 
 ### root.hcl
 
-Remote state configuration. Currently using local backend:
+Remote state configuration using Backblaze B2 (S3-compatible backend):
 
 ```text
-.terraform-state/
-├── proxmox/
-│   ├── truenas-primary/terraform.tfstate
-│   ├── truenas-backup/terraform.tfstate
-│   └── arr-stack/terraform.tfstate
-└── mikrotik/
-    ├── base/terraform.tfstate
-    ├── dhcp/vlan-20-lan/terraform.tfstate
-    └── ...
+Bucket: svnlto-homelab-terraform-state
+Region: eu-central-003 (Amsterdam datacenter)
+Endpoint: s3.eu-central-003.backblazeb2.com
+
+State files:
+├── prod/resource-pools/terraform.tfstate
+├── prod/iso-images/terraform.tfstate
+├── prod/storage/truenas-primary/terraform.tfstate
+├── prod/storage/truenas-backup/terraform.tfstate
+└── prod/mikrotik/.../terraform.tfstate (when deployed)
 ```
 
-Later will migrate to BackBlaze B2 for remote state.
+**Benefits**: Geo-redundant storage, version history, team collaboration, encrypted at rest.
 
 ## Module Structure
 
@@ -166,7 +167,7 @@ just tg-backup
 **Phase 1**: ✅ Complete - Setup and foundation
 **Phase 2**: ✅ Complete - Proxmox migration (VMs recreated, no state import)
 **Phase 3**: ⏳ Setup complete - MikroTik integration (awaiting router setup)
-**Phase 4**: 🔜 Not started - B2 remote state migration
+**Phase 4**: ✅ Complete - B2 remote state migration (2026-02-03)
 **Phase 5**: 🔜 Not started - Documentation and cleanup
 
 See `PHASE_STATUS.md` for detailed status.

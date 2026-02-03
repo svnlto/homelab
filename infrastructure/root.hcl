@@ -1,12 +1,31 @@
 locals {
-  repo_root = get_repo_root()
+  repo_root   = get_repo_root()
+  global_vars = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
+  backend     = local.global_vars.locals.backend
 }
 
 remote_state {
-  backend = "local"
+  backend = "s3"
 
   config = {
-    path = "${get_parent_terragrunt_dir()}/.terraform-state/${path_relative_to_include()}/terraform.tfstate"
+    bucket = local.backend.bucket_name
+    key    = "${path_relative_to_include()}/terraform.tfstate"
+    region = local.backend.region
+
+    # S3-compatible endpoint for Backblaze B2
+    endpoints = {
+      s3 = "https://${local.backend.endpoint}"
+    }
+
+    # S3-compatible settings for Backblaze B2
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    skip_region_validation      = true
+    skip_requesting_account_id  = true
+    use_path_style              = true
+
+    # Encryption at rest
+    encrypt = true
   }
 
   generate = {
