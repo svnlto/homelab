@@ -29,26 +29,19 @@
       pihole:
         image: pihole/pihole:${constants.piholeVersion}
         container_name: pihole
-        ports:
-          - "53:53/tcp"
-          - "53:53/udp"
-          - "80:80/tcp"
+        network_mode: host
         environment:
           TZ: "${constants.timezone}"
           WEBPASSWORD: "changeme"
           FTLCONF_LOCAL_IPV4: "192.168.0.53"
-          PIHOLE_DNS_: "unbound#5335"
+          PIHOLE_DNS_: "127.0.0.1#5335"
           DNSMASQ_LISTENING: "all"
         volumes:
-          - ./etc-pihole:/etc/pihole
-          - ./etc-dnsmasq.d:/etc/dnsmasq.d
+          - /opt/pihole/etc-pihole:/etc/pihole
+          - /opt/pihole/etc-dnsmasq.d:/etc/dnsmasq.d
         cap_add:
           - NET_ADMIN
         restart: unless-stopped
-        networks:
-          - pihole_net
-        depends_on:
-          - unbound
         healthcheck:
           test: ["CMD", "dig", "+norecurse", "+retry=0", "@127.0.0.1", "pi.hole"]
           interval: 30s
@@ -56,31 +49,52 @@
           retries: 3
 
       unbound:
-        image: mvance/unbound:${constants.unboundVersion}
+        image: ${constants.unboundImage}
         container_name: unbound
-        ports:
-          - "5335:5335/tcp"
-          - "5335:5335/udp"
+        network_mode: host
+        volumes:
+          - /opt/unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf:ro
         restart: unless-stopped
-        networks:
-          - pihole_net
         healthcheck:
           test: ["CMD", "drill", "@127.0.0.1", "-p", "5335", "cloudflare.com"]
           interval: 30s
           timeout: 10s
           retries: 3
-
-    networks:
-      pihole_net:
-        driver: bridge
   '';
 
-  # Copy docker-compose.yml to working directory
+  # Create Unbound configuration file (port 5335 for host networking)
+  environment.etc."unbound/unbound.conf".text = ''
+    server:
+      verbosity: 0
+      interface: 0.0.0.0@5335
+      port: 5335
+      do-ip4: yes
+      do-udp: yes
+      do-tcp: yes
+      do-ip6: no
+      prefer-ip6: no
+      harden-glue: yes
+      harden-dnssec-stripped: yes
+      use-caps-for-id: no
+      edns-buffer-size: 1232
+      prefetch: yes
+      num-threads: 1
+      so-rcvbuf: 1m
+      private-address: 192.168.0.0/16
+      private-address: 172.16.0.0/12
+      private-address: 10.0.0.0/8
+      private-address: fd00::/8
+      private-address: fe80::/10
+  '';
+
+  # Copy docker-compose.yml and configs to working directory
   systemd.tmpfiles.rules = [
     "d /opt/pihole 0755 root root -"
     "d /opt/pihole/etc-pihole 0755 root root -"
     "d /opt/pihole/etc-dnsmasq.d 0755 root root -"
+    "d /opt/unbound 0755 root root -"
     "L+ /opt/pihole/docker-compose.yml - - - - /etc/pihole/docker-compose.yml"
+    "L+ /opt/unbound/unbound.conf - - - - /etc/unbound/unbound.conf"
   ];
 
   # Prometheus node exporter for monitoring

@@ -1,0 +1,85 @@
+---
+# ==============================================================================
+# Configure Proxmox Network Bridges for Kubernetes
+# ==============================================================================
+# This playbook configures VLAN bridges on Proxmox hosts for K8s clusters
+#
+# Usage:
+#   ansible-playbook playbooks/configure-proxmox-networking.yml
+#   ansible-playbook playbooks/configure-proxmox-networking.yml --limit grogu
+#   ansible-playbook playbooks/configure-proxmox-networking.yml --check  # Dry run
+#
+# What it does:
+#   - Backs up /etc/network/interfaces
+#   - Configures vmbr10 (VLAN 10 - Storage)
+#   - Configures vmbr20 (VLAN 20 - LAN/Management)
+#   - Configures vmbr30 (VLAN 30 - K8s Shared Services)
+#   - Configures vmbr31 (VLAN 31 - K8s Apps)
+#   - Configures vmbr32 (VLAN 32 - K8s Test)
+#   - Tests config with 'ifreload -a -s'
+#   - Applies config with 'ifreload -a' if test passes
+#
+# IMPORTANT: If SSH connection is lost, use iDRAC to troubleshoot
+# ==============================================================================
+
+- name: Configure Proxmox Network Bridges
+  hosts: proxmox
+  become: true
+  gather_facts: true
+
+  vars:
+    # These can be overridden via --extra-vars
+    gateway_ip: "192.168.0.1"
+
+  tasks:
+    - name: Set host-specific IPs for grogu
+      set_fact:
+        storage_ip: "10.10.10.10"
+        management_ip: "192.168.0.10"
+      when: inventory_hostname == 'grogu'
+
+    - name: Set host-specific IPs for din
+      set_fact:
+        storage_ip: "10.10.10.11"
+        management_ip: "192.168.0.11"
+      when: inventory_hostname == 'din'
+
+    - name: Display configuration summary
+      debug:
+        msg: |
+          Configuring {{ inventory_hostname }}:
+            - Management (vmbr20): {{ management_ip }}/24
+            - Storage (vmbr10): {{ storage_ip }}/24
+            - K8s Shared (vmbr30): No IP (VMs only)
+            - K8s Apps (vmbr31): No IP (VMs only)
+            - K8s Test (vmbr32): No IP (VMs only)
+            - Gateway: {{ gateway_ip }}
+
+    - name: Apply proxmox_networking role
+      include_role:
+        name: proxmox_networking
+
+  post_tasks:
+    - name: Verify bridges are configured
+      command: ip addr show
+      register: ip_addr_output
+      changed_when: false
+
+    - name: Check for new bridges
+      debug:
+        msg: "Bridges configured: {{ ip_addr_output.stdout | regex_findall('vmbr\\d+') | unique | sort }}"
+
+    - name: Display next steps
+      debug:
+        msg: |
+          Network configuration applied successfully!
+
+          Next steps:
+          1. Verify Proxmox web UI is accessible: https://{{ management_ip }}:8006
+          2. Test inter-VLAN routing from Proxmox host
+          3. Deploy Kubernetes clusters using Terraform
+
+          If issues occur:
+          - Use iDRAC: https://{{ storage_ip | replace('10.10.10', '10.10.1') }}
+          - Restore backup: /etc/network/interfaces.backup.*
+          - Reboot if needed

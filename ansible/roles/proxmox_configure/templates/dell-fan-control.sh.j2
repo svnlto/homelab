@@ -1,0 +1,48 @@
+#!/bin/bash
+# Dell Fan Control Script
+# Automatically adjusts fan speed based on inlet temperature
+
+IPMI_HOST=localhost
+
+enable_manual() {
+    ipmitool raw 0x30 0x30 0x01 0x00
+}
+
+enable_auto() {
+    ipmitool raw 0x30 0x30 0x01 0x01
+}
+
+set_fan_speed() {
+    ipmitool raw 0x30 0x30 0x02 0xff "$1"
+}
+
+get_temp() {
+    ipmitool sdr type temperature | grep -i "inlet\|ambient" | head -1 | awk -F'|' '{print $5}' | grep -oP '\d+'
+}
+
+# Fail safe on exit
+trap 'enable_auto; exit' SIGTERM SIGINT
+
+enable_manual
+
+while true; do
+    TEMP=$(get_temp)
+
+    if [[ -z "$TEMP" ]]; then
+        enable_auto
+        sleep 30
+        continue
+    fi
+
+    if (( TEMP >= 35 )); then
+        set_fan_speed 0x32  # 50%
+    elif (( TEMP >= 30 )); then
+        set_fan_speed 0x1e  # 30%
+    elif (( TEMP >= 25 )); then
+        set_fan_speed 0x14  # 20%
+    else
+        set_fan_speed 0x0f  # 15%
+    fi
+
+    sleep 30
+done

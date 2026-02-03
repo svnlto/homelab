@@ -27,6 +27,7 @@ output "truenas_info" {
   }
 }
 
+/*
 output "talos_cluster" {
   description = "Talos Kubernetes cluster information"
   value = {
@@ -48,3 +49,4 @@ output "talos_cluster" {
     bootstrap_deployed = module.homelab_k8s.bootstrap_deployed
   }
 }
+*/

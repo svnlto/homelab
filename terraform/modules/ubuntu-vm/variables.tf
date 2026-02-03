@@ -53,7 +53,7 @@ variable "disk_size_gb" {
 variable "datastore_id" {
   description = "Proxmox datastore ID"
   type        = string
-  default     = "local-lvm"
+  default     = "local-zfs"
 }
 
 variable "network_bridge" {
@@ -141,7 +141,7 @@ variable "ansible_extra_vars" {
 variable "vga_type" {
   description = "VGA adapter type (std, qxl, virtio, serial0, etc.)"
   type        = string
-  default     = null
+  default     = "virtio"
   validation {
     condition     = var.vga_type == null || contains(["std", "qxl", "qxl2", "qxl3", "qxl4", "virtio", "virtio-gl", "serial0", "serial1", "serial2", "serial3", "vmware", "cirrus", "none"], var.vga_type)
     error_message = "vga_type must be one of: std, qxl, qxl2, qxl3, qxl4, virtio, virtio-gl, serial0-3, vmware, cirrus, none"
@@ -149,9 +149,9 @@ variable "vga_type" {
 }
 
 variable "vga_memory" {
-  description = "VGA memory in MB (4-512, default is 16MB)"
+  description = "VGA memory in MB (4-512, default is 32MB)"
   type        = number
-  default     = null
+  default     = 32
   validation {
     condition     = var.vga_memory == null || (var.vga_memory >= 4 && var.vga_memory <= 512)
     error_message = "vga_memory must be between 4 and 512 MB"

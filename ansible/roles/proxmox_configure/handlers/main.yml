@@ -20,3 +20,9 @@
 - name: Update initramfs
   ansible.builtin.command: update-initramfs -u -k all
   changed_when: false
+
+- name: Restart dell-fan-control
+  ansible.builtin.systemd:
+    name: dell-fan-control
+    state: restarted
+    daemon_reload: true

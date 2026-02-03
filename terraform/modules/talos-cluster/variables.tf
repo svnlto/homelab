@@ -41,9 +41,8 @@ variable "talos_extensions" {
 
 # Network Configuration
 variable "network_bridge" {
-  description = "Proxmox bridge for cluster network"
+  description = "Proxmox bridge for cluster network (e.g., vmbr30 for K8s Shared Services)"
   type        = string
-  default     = "vmbr1"
 }
 
 variable "network_gateway" {
@@ -66,13 +65,12 @@ variable "vip_ip" {
 variable "proxmox_node_storage" {
   description = "Proxmox node to download Talos image to"
   type        = string
-  default     = "grogu"
 }
 
 variable "datastore_id" {
   description = "Proxmox datastore for VM disks"
   type        = string
-  default     = "local-lvm"
+  default     = "local-zfs"
 }
 
 variable "iso_datastore_id" {

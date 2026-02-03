@@ -1,0 +1,5 @@
+---
+# SSH Configuration for Proxmox hosts
+# Public key stored in 1Password (item: "proxmox" in Personal vault)
+
+proxmox_ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGAfz+KUctvSo0azvIQhHY2eBvKhT3pHRE0vpNtvpjMY"

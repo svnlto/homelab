@@ -1,0 +1,305 @@
+---
+# ==============================================================================
+# TrueNAS SCALE Backup Setup - Replication Target (grogu)
+# ==============================================================================
+# Based on: docs/truenas-ansible-setup.md
+# Target: TrueNAS SCALE 25.04+ running on grogu (r630)
+#
+# Prerequisites:
+# - TrueNAS VM deployed and accessible at 192.168.0.14
+# - Pool created manually: backup (8×3TB RAIDZ2, ~18TB)
+# - ansible-galaxy collection install arensb.truenas
+#
+# Purpose:
+# - Create backup datasets to receive replication from din
+# - Configure SSH for receiving ZFS send/recv
+# - Setup basic snapshots and scrubs
+# - NO NFS/SMB shares needed (replication target only)
+#
+# Usage:
+#   ansible-playbook playbooks/truenas-backup-setup.yml --check  # Dry run
+#   ansible-playbook playbooks/truenas-backup-setup.yml          # Apply
+
+- name: Configure TrueNAS SCALE on grogu (backup)
+  hosts: truenas_secondary
+  become: true
+
+  environment:
+    middleware_method: client
+
+  tasks:
+    # ==========================================================================
+    # VERIFY BACKUP POOL EXISTS
+    # ==========================================================================
+
+    - name: Check if backup pool exists
+      ansible.builtin.command:
+        cmd: midclt call pool.query '[["name", "=", "backup"]]'
+      register: backup_pool_check
+      changed_when: false
+      failed_when: false
+      tags: [verify]
+
+    - name: Display backup pool status
+      ansible.builtin.debug:
+        msg: |
+          {% if backup_pool_check.stdout | from_json | length > 0 %}
+          ✓ Backup pool 'backup' exists on grogu
+          {% else %}
+          ✗ ERROR: Backup pool 'backup' NOT FOUND
+          ACTION REQUIRED: Create pool manually before running this playbook
+          {% endif %}
+      tags: [verify]
+
+    - name: Fail if backup pool does not exist
+      ansible.builtin.fail:
+        msg: "Backup pool 'backup' must be created manually before running this playbook"
+      when: backup_pool_check.stdout | from_json | length == 0
+      tags: [verify]
+
+    # ==========================================================================
+    # BACKUP POOL DATASETS (replication targets)
+    # ==========================================================================
+
+    - name: Create backup datasets for replication
+      arensb.truenas.filesystem:
+        name: "backup/{{ item }}"
+        state: present
+        compression: lz4
+      loop:
+        - media
+        - photos
+        - kubernetes
+        - databases
+        - app-configs
+        - backups
+      tags: [datasets]
+
+    - name: Set backup datasets as read-only (will be overridden by replication)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'backup/{{ item }}'
+          '{"readonly": "ON"}'
+      loop:
+        - media
+        - photos
+        - kubernetes
+        - databases
+        - app-configs
+        - backups
+      register: readonly_result
+      changed_when: false
+      failed_when: false
+      tags: [datasets, properties]
+
+    # ==========================================================================
+    # SSH CONFIGURATION (for receiving replication)
+    # ==========================================================================
+
+    - name: Ensure SSH service is enabled and running
+      arensb.truenas.service:
+        name: ssh
+        state: started
+        enabled: true
+      tags: [ssh]
+
+    - name: Configure SSH to allow root login (required for replication)
+      ansible.builtin.command:
+        cmd: >
+          midclt call system.general.update '{
+            "ui_allowlist": ["0.0.0.0/0"]
+          }'
+      changed_when: false
+      failed_when: false
+      tags: [ssh]
+
+    - name: Display SSH key setup instructions
+      ansible.builtin.debug:
+        msg: |
+          =======================================================================
+          SSH CONFIGURATION FOR REPLICATION
+          =======================================================================
+          1. On primary TrueNAS (din), generate SSH key:
+             ssh-keygen -t ed25519 -f /root/.ssh/id_replication -N ""
+
+          2. Copy public key from din to grogu:
+             ssh-copy-id -i /root/.ssh/id_replication.pub root@192.168.0.14
+
+          3. Test SSH connection from din:
+             ssh -i /root/.ssh/id_replication root@192.168.0.14
+
+          4. Configure replication tasks on din via:
+             just truenas-replication
+          =======================================================================
+      tags: [ssh, info]
+
+    # ==========================================================================
+    # SNAPSHOT TASKS (for replicated data)
+    # ==========================================================================
+
+    - name: Create snapshot task for backup/kubernetes (daily, keep 7)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.snapshottask.create '{
+            "dataset": "backup/kubernetes",
+            "recursive": true,
+            "lifetime_value": 7,
+            "lifetime_unit": "DAY",
+            "naming_schema": "backup-%Y-%m-%d",
+            "schedule": {
+              "minute": "30",
+              "hour": "2",
+              "dom": "*",
+              "month": "*",
+              "dow": "*"
+            },
+            "enabled": true
+          }'
+      register: snapshot_k8s_backup
+      changed_when: "'id' in snapshot_k8s_backup.stdout"
+      failed_when: false
+      tags: [snapshots]
+
+    - name: Create snapshot task for backup/databases (daily, keep 14)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.snapshottask.create '{
+            "dataset": "backup/databases",
+            "recursive": true,
+            "lifetime_value": 14,
+            "lifetime_unit": "DAY",
+            "naming_schema": "backup-%Y-%m-%d",
+            "schedule": {
+              "minute": "30",
+              "hour": "3",
+              "dom": "*",
+              "month": "*",
+              "dow": "*"
+            },
+            "enabled": true
+          }'
+      register: snapshot_db_backup
+      changed_when: "'id' in snapshot_db_backup.stdout"
+      failed_when: false
+      tags: [snapshots]
+
+    - name: Create snapshot task for backup/media (weekly, keep 4)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.snapshottask.create '{
+            "dataset": "backup/media",
+            "recursive": true,
+            "lifetime_value": 4,
+            "lifetime_unit": "WEEK",
+            "naming_schema": "backup-%Y-%m-%d",
+            "schedule": {
+              "minute": "0",
+              "hour": "4",
+              "dom": "*",
+              "month": "*",
+              "dow": "sun"
+            },
+            "enabled": true
+          }'
+      register: snapshot_media_backup
+      changed_when: "'id' in snapshot_media_backup.stdout"
+      failed_when: false
+      tags: [snapshots]
+
+    # ==========================================================================
+    # SCRUB TASKS
+    # ==========================================================================
+
+    - name: Configure weekly scrub for backup pool
+      arensb.truenas.pool_scrub_task:
+        pool: backup
+        threshold: 35
+        description: "Weekly scrub - backup"
+        schedule:
+          minute: "0"
+          hour: "1"
+          dom: "*"
+          month: "*"
+          dow: "mon"
+        enabled: true
+      tags: [scrub]
+
+    # ==========================================================================
+    # S.M.A.R.T. MONITORING
+    # ==========================================================================
+
+    - name: Enable SMART service
+      arensb.truenas.service:
+        name: smartd
+        state: started
+        enabled: true
+      tags: [smart]
+
+    - name: Configure SMART
+      arensb.truenas.smart:
+        interval: 30
+        powermode: NEVER
+        critical: 10
+        difference: 20
+        informational: 35
+      tags: [smart]
+
+    - name: Schedule weekly SMART short test (different day than primary)
+      arensb.truenas.smart_test_task:
+        type: SHORT
+        disks: []
+        schedule:
+          hour: "2"
+          dom: "*"
+          month: "*"
+          dow: "sun"
+      tags: [smart]
+
+    - name: Schedule monthly SMART long test (different day than primary)
+      arensb.truenas.smart_test_task:
+        type: LONG
+        disks: []
+        schedule:
+          hour: "3"
+          dom: "15"
+          month: "*"
+          dow: "*"
+      tags: [smart]
+
+    # ==========================================================================
+    # VERIFICATION & SUMMARY
+    # ==========================================================================
+
+    - name: Query backup datasets
+      ansible.builtin.command:
+        cmd: midclt call pool.dataset.query '[["id", "^", "backup/"]]'
+      register: backup_datasets
+      changed_when: false
+      tags: [verify]
+
+    - name: Display backup configuration summary
+      ansible.builtin.debug:
+        msg: |
+          =======================================================================
+          BACKUP TRUENAS CONFIGURATION SUMMARY
+          =======================================================================
+          Host: grogu (r630) - 192.168.0.14
+          Pool: backup (8×3TB RAIDZ2, ~18TB)
+
+          Datasets created:
+          {% for dataset in (backup_datasets.stdout | from_json) %}
+            - {{ dataset.name }}
+          {% endfor %}
+
+          Next steps:
+          1. Configure SSH key on din (primary TrueNAS)
+          2. Run: just truenas-replication
+          3. Verify replication: just truenas-replication-status
+
+          Monitoring:
+          - Weekly scrub: Mondays at 01:00
+          - SMART short test: Sundays at 02:00
+          - SMART long test: 15th of month at 03:00
+          =======================================================================
+      tags: [verify, info]

@@ -2,7 +2,7 @@
 # Provisions with ansible/roles/arr for complete orchestration
 
 resource "proxmox_virtual_environment_container" "arr_stack" {
-  node_name     = var.proxmox_node
+  node_name     = local.proxmox_primary
   vm_id         = 200
   description   = "Arr Media Stack - Full automation suite (Terraform managed)"
   tags          = ["arr", "media", "terraform"]
@@ -19,7 +19,7 @@ resource "proxmox_virtual_environment_container" "arr_stack" {
   }
 
   disk {
-    datastore_id = "local-lvm"
+    datastore_id = "local-zfs"
     size         = 50 # Config and temporary data
   }
 

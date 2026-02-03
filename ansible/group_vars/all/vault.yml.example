@@ -1,0 +1,56 @@
+---
+# Ansible Vault - Encrypted Secrets
+# ====================================
+# This is an EXAMPLE file. Create the actual vault file:
+#
+#   cp vault.yml.example vault.yml
+#   ansible-vault encrypt vault.yml
+#
+# Edit encrypted vault:
+#   ansible-vault edit vault.yml
+#
+# Run playbook with vault:
+#   ansible-playbook playbooks/truenas-restic-backup.yml --ask-vault-pass
+
+# ==============================================================================
+# Backblaze B2 Credentials
+# ==============================================================================
+# Get these from: https://secure.backblaze.com/app_keys.htm
+# 1. Create application key with access to your bucket
+# 2. Copy the keyID and applicationKey
+
+vault_b2_account_id: "your_b2_key_id_here"
+vault_b2_account_key: "your_b2_application_key_here"
+
+# ==============================================================================
+# Restic Repository Password
+# ==============================================================================
+# Generate a strong random password:
+#   openssl rand -base64 32
+
+vault_restic_password: "your_restic_password_here"
+
+# ==============================================================================
+# Proxmox API Tokens (Terraform)
+# ==============================================================================
+# Generated automatically by: just proxmox-create-api-tokens
+# These tokens are created on each Proxmox node for Terraform automation
+
+# BEGIN PROXMOX TERRAFORM TOKEN - GROGU
+# Proxmox API Token for grogu (Terraform)
+vault_proxmox_token_id_grogu: "terraform@pam!terraform"
+vault_proxmox_token_secret_grogu: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# Generated: 2026-02-03T00:00:00Z
+# END PROXMOX TERRAFORM TOKEN - GROGU
+
+# BEGIN PROXMOX TERRAFORM TOKEN - DIN
+# Proxmox API Token for din (Terraform)
+vault_proxmox_token_id_din: "terraform@pam!terraform"
+vault_proxmox_token_secret_din: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# Generated: 2026-02-03T00:00:00Z
+# END PROXMOX TERRAFORM TOKEN - DIN
+
+# ==============================================================================
+# Other Secrets (for future use)
+# ==============================================================================
+# vault_truenas_api_key: "your_truenas_api_key"

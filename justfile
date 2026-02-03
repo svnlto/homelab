@@ -29,7 +29,7 @@ nixos-vm-ssh:
 # Build NixOS SD image for Pi-hole inside Linux VM (15-20 min first build, 2-5 min incremental)
 nixos-build-pihole:
     @echo "Building NixOS SD image for Pi-hole in Linux VM..."
-    cd nix && vagrant ssh -c "cd /vagrant && nix build .#nixosConfigurations.rpi-pihole.config.system.build.sdImage && cp -L result/sd-image/*.img pihole-nixos.img"
+    cd nix && vagrant ssh -c 'cd /tmp && rm -rf nix-build && mkdir nix-build && cd nix-build && rsync -a --exclude=".vagrant" --exclude="result*" --exclude="*.img" --exclude="*.qcow2" --exclude="*.vma.zst" /vagrant/ . && nix build .#nixosConfigurations.rpi-pihole.config.system.build.sdImage && cp -L result/sd-image/*.img /vagrant/pihole-nixos.img'
     @echo ""
     @echo "✓ Image built successfully!"
     @ls -lh nix/pihole-nixos.img
@@ -38,17 +38,20 @@ nixos-build-pihole:
 nixos-flash-pihole disk:
     #!/usr/bin/env bash
     set -euo pipefail
-    IMAGE=$$(ls nix/result/sd-image/*.img 2>/dev/null | head -n1)
-    if [ -z "$$IMAGE" ]; then
+    IMAGE="nix/pihole-nixos.img"
+    if [ ! -f "$IMAGE" ]; then
       echo "Error: No NixOS image found. Run 'just nixos-build-pihole' first."
       exit 1
     fi
-    echo "Flashing $$IMAGE to {{disk}}"
+    echo "Flashing $IMAGE to {{disk}}"
     echo "⚠️  This will DESTROY all data on {{disk}}!"
     read -p "Continue? (y/N) " -n 1 -r
     echo
-    if [[ $$REPLY =~ ^[Yy]$$ ]]; then
-      sudo dd if="$$IMAGE" of={{disk}} bs=4M status=progress conv=fsync
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      echo "Unmounting {{disk}}..."
+      diskutil unmountDisk {{disk}}
+      echo "Flashing image (this will take ~5 minutes)..."
+      sudo dd if="$IMAGE" of={{disk}} bs=1048576
       diskutil eject {{disk}}
       echo "✓ Done! SD card ejected."
     else
@@ -65,6 +68,12 @@ nixos-update-pihole:
 nixos-check-pihole:
     @echo "Checking NixOS configuration in VM..."
     cd nix && vagrant ssh -c "cd /vagrant && nix flake check"
+
+# Clean up NixOS build artifacts in VM (frees space)
+nixos-clean:
+    @echo "Cleaning up NixOS build artifacts in VM..."
+    cd nix && vagrant ssh -c "sudo rm -rf /tmp/nix-* /tmp/nixos-build /tmp/tmp.* && nix-collect-garbage -d && df -h /"
+    @echo "✓ Cleanup complete"
 
 # =============================================================================
 # Proxmox VM Template (builds templates inside Proxmox for Terraform cloning)
@@ -101,6 +110,33 @@ ansible-configure HOST:
 # Test connectivity to Proxmox nodes
 ansible-ping:
     cd ansible && ansible -i inventory.ini proxmox -m ping
+
+# Configure Proxmox network bridges (VLAN 10, 20, 30-32 for K8s)
+proxmox-configure-networking:
+    cd ansible && ansible-playbook -i inventory.ini playbooks/configure-proxmox-networking.yml
+
+# Configure Proxmox networking on specific host only
+proxmox-configure-networking-host HOST:
+    cd ansible && ansible-playbook -i inventory.ini playbooks/configure-proxmox-networking.yml --limit {{HOST}}
+
+# Test Proxmox network configuration (dry-run)
+proxmox-configure-networking-check:
+    cd ansible && ansible-playbook -i inventory.ini playbooks/configure-proxmox-networking.yml --check
+
+# Create Terraform API tokens on all Proxmox nodes
+proxmox-create-api-tokens:
+    @echo "Creating Terraform API tokens on all Proxmox nodes..."
+    cd ansible && ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags api-tokens
+
+# Rotate Terraform API tokens on all Proxmox nodes
+proxmox-rotate-api-tokens:
+    @echo "Rotating Terraform API tokens on all Proxmox nodes..."
+    cd ansible && ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags api-tokens -e rotate_tokens=true
+
+# View stored API tokens (requires vault password)
+proxmox-view-tokens:
+    @echo "=== Proxmox API Tokens ==="
+    @ansible-vault view ansible/group_vars/all/vault.yml 2>/dev/null | grep -A 2 "PROXMOX TERRAFORM TOKEN" || echo "No tokens found or vault.yml not encrypted"
 
 # =============================================================================
 # TrueNAS (Storage)

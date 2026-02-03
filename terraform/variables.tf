@@ -1,7 +1,7 @@
 variable "proxmox_api_url" {
   description = "Proxmox API URL"
   type        = string
-  default     = "https://192.168.0.10:8006/api2/json"
+  default     = "https://192.168.0.175:8006/api2/json"
 }
 
 variable "proxmox_tls_insecure" {
@@ -56,12 +56,6 @@ variable "soulseek_password" {
   default     = ""
 }
 
-variable "proxmox_node" {
-  description = "Proxmox node name"
-  type        = string
-  default     = "pve"
-}
-
 variable "puid" {
   description = "User ID for Docker containers (file permissions)"
   type        = string
@@ -77,7 +71,9 @@ variable "pgid" {
 # =============================================================================
 # Talos Kubernetes Cluster Variables
 # =============================================================================
+# TODO: Uncomment when Talos module is ready
 
+/*
 variable "talos_version" {
   description = "Talos Linux version"
   type        = string
@@ -126,3 +122,4 @@ variable "truenas_iscsi_portal" {
   type        = string
   default     = "192.168.0.13:3260"
 }
+*/
