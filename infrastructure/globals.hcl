@@ -248,4 +248,12 @@ locals {
     project    = "homelab"
     backup     = "restic-b2"
   }
+
+  # Backblaze B2 Remote State Configuration
+  # S3-compatible backend for Terragrunt state storage
+  backend = {
+    bucket_name = "svnlto-homelab-terraform-state"
+    region      = "eu-central-003"
+    endpoint    = "s3.eu-central-003.backblazeb2.com"
+  }
 }

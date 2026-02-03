@@ -151,26 +151,54 @@ terragrunt apply  # Forward to Pi-hole
 
 ---
 
-## Phase 4: B2 Remote State Migration 🔜 NOT STARTED
+## Phase 4: B2 Remote State Migration ✅ COMPLETE
 
-**Duration**: Estimated 1-2 hours
+**Duration**: 30 minutes
 **Risk**: Medium
-**Status**: Not started
+**Status**: Complete
+**Date Completed**: 2026-02-03
 
 ### Prerequisites
 
 - Backblaze B2 account (✅ created)
-- B2 bucket: `homelab-terraform-state` (⏳ needs creation)
-- B2 application key (⏳ needs creation)
+- B2 bucket: `svnlto-homelab-terraform-state` (✅ created in EU Central/Amsterdam)
+- B2 application key (✅ stored in 1Password)
 
-### Phase 4: Planned Tasks
+### Phase 4: Completed Tasks
 
-1. Create B2 bucket with versioning/lifecycle
-2. Create restricted application key
-3. Add B2 credentials to .env
-4. Update root.hcl to use S3 backend
-5. Migrate state: `terragrunt run-all init -migrate-state`
-6. Verify remote state working
+1. ✅ Created B2 bucket in Amsterdam datacenter (eu-central-003)
+   - Bucket: `svnlto-homelab-terraform-state`
+   - Type: Private
+   - Lifecycle: Keep all versions
+   - Endpoint: `s3.eu-central-003.backblazeb2.com`
+
+2. ✅ Added B2 credentials to 1Password
+   - Stored in "Backblaze B2" item
+   - Auto-loaded via .envrc
+
+3. ✅ Updated root.hcl to use S3-compatible backend
+   - Configured B2 endpoint with S3 compatibility flags
+   - Added encryption at rest
+
+4. ✅ Migrated state for all modules:
+   - prod/resource-pools
+   - prod/iso-images
+   - prod/storage/truenas-primary
+   - prod/storage/truenas-backup
+
+5. ✅ Verified remote state working (terragrunt plan successful)
+
+6. ✅ Archived and removed local state
+   - Backup: `archive/terraform-state-local-backup-20260203.tar.gz`
+   - Deleted: `infrastructure/.terraform-state/`
+
+### Benefits Achieved
+
+- **Disaster Recovery**: State stored in geo-redundant B2 bucket (Amsterdam)
+- **Team Collaboration**: Remote state enables multi-user workflows
+- **Version History**: B2 keeps all state versions for rollback
+- **Security**: Encrypted state with 1Password credential management
+- **Cost Efficient**: B2 pricing cheaper than AWS S3 for storage
 
 ---
 
@@ -198,12 +226,12 @@ terragrunt apply  # Forward to Pi-hole
 | 1. Setup | ✅ Complete | 2h | Low | 100% |
 | 2. Proxmox Migration | ✅ Complete | 15m | Low | 100% |
 | 3. MikroTik Integration | ⏳ Setup Complete | 5-7h | High | 75% |
-| 4. B2 State Migration | 🔜 Not Started | 1-2h | Medium | 0% |
+| 4. B2 State Migration | ✅ Complete | 30m | Medium | 100% |
 | 5. Documentation | 🔜 Not Started | 1-2h | Low | 0% |
 
 **Total Estimated Time**: 2-3 weeks (part-time)
-**Time Invested**: ~4.5 hours
-**Completion**: ~60% (setup/code)
+**Time Invested**: ~5 hours
+**Completion**: ~75% (setup/code)
 
 ---
 
