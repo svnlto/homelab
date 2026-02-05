@@ -1,8 +1,7 @@
 # ==============================================================================
-# ISO Image Management - Production
+# Image Management - Production
 # ==============================================================================
-# Centralized management of ISO images used by VMs
-# This prevents conflicts when multiple VMs reference the same ISO
+# Centralized management of images (ISO, disk images) used by VMs
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -18,12 +17,11 @@ locals {
 }
 
 inputs = {
-  iso_images = {
-    truenas = {
-      node_name    = "din" # Download to din node
-      datastore_id = "local"
-      url          = local.truenas.url
-      filename     = local.truenas.filename
-    }
-  }
+  # TrueNAS ISO
+  truenas_url      = local.truenas.url
+  truenas_filename = local.truenas.filename
+
+  # Proxmox Storage
+  proxmox_node = "din"
+  datastore_id = "local"
 }

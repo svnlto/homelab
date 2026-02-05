@@ -62,6 +62,7 @@ terraform-plugin-proxmox.log
 /tmp/
 .cache/
 
-# Kubernetes/Talos credentials
+# Kubernetes/Talos credentials (sensitive)
 kubeconfig
 talosconfig
+infrastructure/**/configs/

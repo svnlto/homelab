@@ -4,13 +4,6 @@ data "talos_client_configuration" "talosconfig" {
   endpoints            = [split("/", values(var.control_plane_nodes)[0].ip_address)[0]]
 }
 
-data "talos_image_factory_extensions_versions" "this" {
-  talos_version = var.talos_version
-  filters = {
-    names = var.talos_extensions
-  }
-}
-
 # ==============================================================================
 # Talos Machine Configurations
 # ==============================================================================
@@ -29,23 +22,23 @@ data "talos_machine_configuration" "control_plane" {
     yamlencode({
       machine = {
         network = {
-          hostname = each.value.hostname
-          interfaces = [{
-            interface = "eth0"
-            addresses = [each.value.ip_address]
-            routes = [{
-              network = "0.0.0.0/0"
-              gateway = var.network_gateway
-            }]
-            vip = {
-              ip = var.vip_ip
+          interfaces = [
+            {
+              interface = "eth0"
+              addresses = [each.value.ip_address]
+              routes = [
+                {
+                  network = "0.0.0.0/0"
+                  gateway = var.network_gateway
+                }
+              ]
             }
-          }]
+          ]
           nameservers = var.dns_servers
         }
         install = {
           disk  = "/dev/sda"
-          image = "factory.talos.dev/installer/${talos_image_factory_schematic.this.id}:${var.talos_version}"
+          image = "factory.talos.dev/nocloud-installer/dc7b152cb3ea99b821fcb7340ce7168313ce393d663740b791c36f6e95fc8586:${var.talos_version}"
         }
         features = {
           kubernetesTalosAPIAccess = {
@@ -64,6 +57,12 @@ data "talos_machine_configuration" "control_plane" {
         discovery = {
           enabled = true
         }
+        inlineManifests = var.deploy_bootstrap ? [
+          {
+            name     = "cilium"
+            contents = data.helm_template.cilium[0].manifest
+          }
+        ] : []
       }
     })
   ]
@@ -84,20 +83,23 @@ data "talos_machine_configuration" "worker" {
     yamlencode({
       machine = {
         network = {
-          hostname = each.value.hostname
-          interfaces = [{
-            interface = "eth0"
-            addresses = [each.value.ip_address]
-            routes = [{
-              network = "0.0.0.0/0"
-              gateway = var.network_gateway
-            }]
-          }]
+          interfaces = [
+            {
+              interface = "eth0"
+              addresses = [each.value.ip_address]
+              routes = [
+                {
+                  network = "0.0.0.0/0"
+                  gateway = var.network_gateway
+                }
+              ]
+            }
+          ]
           nameservers = var.dns_servers
         }
         install = {
           disk  = "/dev/sda"
-          image = "factory.talos.dev/installer/${talos_image_factory_schematic.this.id}:${var.talos_version}"
+          image = "factory.talos.dev/nocloud-installer/dc7b152cb3ea99b821fcb7340ce7168313ce393d663740b791c36f6e95fc8586:${var.talos_version}"
         }
         sysctls = each.value.gpu_passthrough ? {
           "kernel.modules_disabled" = "0"

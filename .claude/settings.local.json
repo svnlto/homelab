@@ -3,12 +3,13 @@
   "permissions": {
     "allow": [
       "Bash(pre-commit run:*)",
-      "WebSearch",
+      "Web Search",
+      "Fetch",
       "Bash(just truenas-setup-check:*)"
     ],
     "deny": [
       "Bash(terraform destroy:*)",
-      "Bash(terraform apply:*)",
+      "Bash(terragrunt apply:*)",
       "Bash(git reset:*)"
     ]
   },

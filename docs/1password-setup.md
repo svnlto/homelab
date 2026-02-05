@@ -59,7 +59,7 @@ Vault: Personal (or Homelab)
 
 Fields:
   - token_id (text): terraform@pam!terraform
-  - token_secret (password): e51413ca-18cd-461c-86c8-e1d8f3cb690f
+  - token_secret (password): <your-proxmox-token-secret>
 ```
 
 **How to create**:
@@ -125,7 +125,7 @@ Vault: Personal (or Homelab)
 
 Fields:
   - username (text): WVAOFF7ScBgxGRoB+pmp
-  - password (password): ny9FdbdK73lnhV4509KXqC2BBYfUZzRn
+  - password (password): <your-b2-password>
 ```
 
 **How to create**:
@@ -133,7 +133,7 @@ Fields:
 1. Click "+" → "Login"
 2. Title: "OpenVPN"
 3. Username: WVAOFF7ScBgxGRoB+pmp
-4. Password: ny9FdbdK73lnhV4509KXqC2BBYfUZzRn
+4. Password: <your-b2-password>
 5. Save
 
 #### Item 5: Soulseek
@@ -145,7 +145,7 @@ Vault: Personal (or Homelab)
 
 Fields:
   - username (text): briaal_jellyfin
-  - password (password): fexe0r7u
+  - password (password): <your-soulseek-password>
 ```
 
 **How to create**:
@@ -153,7 +153,7 @@ Fields:
 1. Click "+" → "Login"
 2. Title: "Soulseek"
 3. Username: briaal_jellyfin
-4. Password: fexe0r7u
+4. Password: <your-soulseek-password>
 5. Save
 
 ### Step 3: Test 1Password CLI Access

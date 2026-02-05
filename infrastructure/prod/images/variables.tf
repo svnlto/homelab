@@ -1,5 +1,5 @@
 # ==============================================================================
-# ISO Images - Input Variables
+# Images - Input Variables
 # ==============================================================================
 
 # Provider credentials (from provider.hcl)
@@ -20,13 +20,23 @@ variable "proxmox_api_token_secret" {
   sensitive   = true
 }
 
-# ISO Images
-variable "iso_images" {
-  type = map(object({
-    node_name    = string
-    datastore_id = string
-    url          = string
-    filename     = string
-  }))
-  description = "Map of ISO images to download"
+# TrueNAS ISO
+variable "truenas_url" {
+  type        = string
+  description = "TrueNAS ISO download URL"
+}
+
+variable "truenas_filename" {
+  type        = string
+  description = "TrueNAS ISO filename"
+}
+
+variable "proxmox_node" {
+  type        = string
+  description = "Proxmox node name"
+}
+
+variable "datastore_id" {
+  type        = string
+  description = "Datastore for ISO storage"
 }

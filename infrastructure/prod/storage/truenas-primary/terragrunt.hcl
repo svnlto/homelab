@@ -16,9 +16,9 @@ include "provider" {
   path = find_in_parent_folders("provider.hcl")
 }
 
-# Ensure resource pools and ISOs are created first
+# Ensure resource pools and images are created first
 dependencies {
-  paths = ["../../resource-pools", "../../iso-images"]
+  paths = ["../../resource-pools", "../../images"]
 }
 
 locals {
