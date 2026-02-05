@@ -1,78 +1,24 @@
 # ==============================================================================
-# Bootstrap Components - Deployed via Kubernetes/Helm Providers
+# TrueNAS CSI - Democratic CSI for NFS and iSCSI Storage
 # ==============================================================================
 
 # ==============================================================================
-# Cilium CNI
+# Democratic CSI Namespace
 # ==============================================================================
 
-resource "helm_release" "cilium" {
-  count = var.deploy_bootstrap ? 1 : 0
-
-  name             = "cilium"
-  repository       = "https://helm.cilium.io/"
-  chart            = "cilium"
-  version          = "1.16.5"
-  namespace        = "kube-system"
-  create_namespace = false
-  wait             = true
-  timeout          = 600
-
-  values = [
-    yamlencode({
-      ipam = {
-        mode = "kubernetes"
-      }
-      kubeProxyReplacement = true
-      k8sServiceHost       = split(":", split("//", var.cluster_endpoint)[1])[0]
-      k8sServicePort       = split(":", split("//", var.cluster_endpoint)[1])[1]
-      securityContext = {
-        capabilities = {
-          ciliumAgent = [
-            "CHOWN",
-            "KILL",
-            "NET_ADMIN",
-            "NET_RAW",
-            "IPC_LOCK",
-            "SYS_ADMIN",
-            "SYS_RESOURCE",
-            "DAC_OVERRIDE",
-            "FOWNER",
-            "SETGID",
-            "SETUID"
-          ]
-          cleanCiliumState = [
-            "NET_ADMIN",
-            "SYS_ADMIN",
-            "SYS_RESOURCE"
-          ]
-        }
-      }
-      cgroup = {
-        autoMount = {
-          enabled = false
-        }
-        hostRoot = "/sys/fs/cgroup"
-      }
-    })
-  ]
-
-  depends_on = [talos_machine_bootstrap.cluster]
-}
-
-# ==============================================================================
-# TrueNAS CSI - NFS (RWX Shared Storage)
-# ==============================================================================
-
-resource "kubernetes_namespace" "democratic_csi" {
+resource "kubernetes_namespace_v1" "democratic_csi" {
   count = var.deploy_bootstrap && var.truenas_api_key != "" ? 1 : 0
 
   metadata {
     name = "democratic-csi"
   }
 
-  depends_on = [helm_release.cilium]
+  depends_on = [talos_machine_bootstrap.cluster]
 }
+
+# ==============================================================================
+# TrueNAS NFS CSI (RWX Shared Storage)
+# ==============================================================================
 
 resource "helm_release" "truenas_nfs" {
   count = var.deploy_bootstrap && var.truenas_api_key != "" ? 1 : 0
@@ -157,11 +103,11 @@ resource "helm_release" "truenas_nfs" {
     })
   ]
 
-  depends_on = [kubernetes_namespace.democratic_csi]
+  depends_on = [kubernetes_namespace_v1.democratic_csi]
 }
 
 # ==============================================================================
-# TrueNAS CSI - iSCSI (RWO Block Storage)
+# TrueNAS iSCSI CSI (RWO Block Storage)
 # ==============================================================================
 
 resource "helm_release" "truenas_iscsi" {
@@ -250,70 +196,5 @@ resource "helm_release" "truenas_iscsi" {
     })
   ]
 
-  depends_on = [kubernetes_namespace.democratic_csi]
-}
-
-# ==============================================================================
-# MetalLB Load Balancer
-# ==============================================================================
-
-resource "kubernetes_namespace" "metallb_system" {
-  count = var.deploy_bootstrap && var.metallb_ip_range != "" ? 1 : 0
-
-  metadata {
-    name = "metallb-system"
-  }
-
-  depends_on = [helm_release.cilium]
-}
-
-resource "helm_release" "metallb" {
-  count = var.deploy_bootstrap && var.metallb_ip_range != "" ? 1 : 0
-
-  name             = "metallb"
-  repository       = "https://metallb.github.io/metallb"
-  chart            = "metallb"
-  version          = "0.14.9"
-  namespace        = "metallb-system"
-  create_namespace = false
-  wait             = true
-  timeout          = 300
-
-  depends_on = [kubernetes_namespace.metallb_system]
-}
-
-resource "kubernetes_manifest" "metallb_ippool" {
-  count = var.deploy_bootstrap && var.metallb_ip_range != "" ? 1 : 0
-
-  manifest = {
-    apiVersion = "metallb.io/v1beta1"
-    kind       = "IPAddressPool"
-    metadata = {
-      name      = "default-pool"
-      namespace = "metallb-system"
-    }
-    spec = {
-      addresses = [var.metallb_ip_range]
-    }
-  }
-
-  depends_on = [helm_release.metallb]
-}
-
-resource "kubernetes_manifest" "metallb_l2advertisement" {
-  count = var.deploy_bootstrap && var.metallb_ip_range != "" ? 1 : 0
-
-  manifest = {
-    apiVersion = "metallb.io/v1beta1"
-    kind       = "L2Advertisement"
-    metadata = {
-      name      = "default"
-      namespace = "metallb-system"
-    }
-    spec = {
-      ipAddressPools = ["default-pool"]
-    }
-  }
-
-  depends_on = [kubernetes_manifest.metallb_ippool]
+  depends_on = [kubernetes_namespace_v1.democratic_csi]
 }

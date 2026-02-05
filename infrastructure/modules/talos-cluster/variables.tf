@@ -21,22 +21,18 @@ variable "cluster_endpoint" {
 variable "talos_version" {
   description = "Talos Linux version"
   type        = string
-  default     = "v1.11.6"
+  default     = "v1.12.2"
 }
 
 variable "kubernetes_version" {
   description = "Kubernetes version"
   type        = string
-  default     = "v1.32.3"
+  default     = "v1.35.0"
 }
 
-variable "talos_extensions" {
-  description = "List of Talos system extensions to include"
-  type        = list(string)
-  default = [
-    "siderolabs/qemu-guest-agent",
-    "siderolabs/iscsi-tools",
-  ]
+variable "talos_image_id" {
+  description = "Proxmox file ID for the pre-uploaded Talos disk image"
+  type        = string
 }
 
 # Network Configuration
@@ -63,7 +59,7 @@ variable "vip_ip" {
 
 # Proxmox Configuration
 variable "proxmox_node_storage" {
-  description = "Proxmox node to download Talos image to"
+  description = "Proxmox node for VM deployment"
   type        = string
 }
 
@@ -71,12 +67,6 @@ variable "datastore_id" {
   description = "Proxmox datastore for VM disks"
   type        = string
   default     = "local-zfs"
-}
-
-variable "iso_datastore_id" {
-  description = "Proxmox datastore for ISO images"
-  type        = string
-  default     = "local"
 }
 
 # Control Plane Nodes

@@ -1,3 +1,8 @@
+# ==============================================================================
+# K8s Cluster Provider Configuration
+# ==============================================================================
+# Custom provider config for Talos clusters (requires multiple providers)
+
 locals {
   global_vars = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
   proxmox     = local.global_vars.locals.proxmox
@@ -15,6 +20,22 @@ terraform {
       source  = "bpg/proxmox"
       version = "0.94.0"
     }
+    talos = {
+      source  = "siderolabs/talos"
+      version = "0.10.1"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "2.6.1"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "3.0.1"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "3.1.1"
+    }
   }
 }
 
@@ -26,12 +47,10 @@ provider "proxmox" {
   ssh {
     agent    = true
     username = "root"
-    node {
-      name    = "din"
-      address = "192.168.0.175"
-    }
   }
 }
+
+provider "talos" {}
 EOF
 }
 

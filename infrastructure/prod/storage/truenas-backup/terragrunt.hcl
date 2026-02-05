@@ -18,7 +18,7 @@ include "provider" {
 
 # Ensure resource pools and ISOs are created first
 dependencies {
-  paths = ["../../resource-pools", "../../iso-images"]
+  paths = ["../../resource-pools", "../../images"]
 }
 
 locals {
