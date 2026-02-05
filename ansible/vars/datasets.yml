@@ -1,14 +1,22 @@
 ---
 # TrueNAS ZFS Dataset Properties
+# Hardware: R730xd (din) with 3 pools
 # Based on: docs/truenas-ansible-setup.md
 
 datasets:
   # ===========================================================================
-  # BULK POOL (8TB HGST) - Large sequential files
+  # BULK POOL (~28.6TB, 6x 8TB RAIDZ2)
+  # Purpose: Large files, media, photos, backups, K8s large storage
   # ===========================================================================
 
+  bulk_kubernetes_nfs_dynamic:
+    recordsize: "128K" # Democratic-CSI provisions PVCs here
+    compression: "lz4" # Forgejo registry, large app data
+    sync: "standard"
+    quota: "10T" # 10TB quota for large K8s workloads
+
   bulk_media:
-    recordsize: "1M" # Large sequential reads
+    recordsize: "1M" # Large sequential reads (movies, music)
     compression: "lz4"
     sync: "standard"
     atime: "off"
@@ -16,25 +24,18 @@ datasets:
       - music
       - movies
       - tv
-      - downloads/incomplete
-      - downloads/complete
-      - downloads/usenet
-
-  bulk_downloads_incomplete:
-    recordsize: "16K" # Torrent random writes
-    compression: "off"
-    sync: "disabled"
-
-  bulk_media_downloads_usenet:
-    recordsize: "128K" # SABnzbd par2/unrar operations
-    compression: "off" # Already compressed data
-    sync: "disabled" # Temporary staging, performance critical
+      - books
 
   bulk_photos:
     recordsize: "1M" # Large image files (RAW, JPEG)
     compression: "lz4" # Light compression (photos already compressed)
     sync: "standard"
     atime: "off" # Immich manages metadata
+
+  bulk_signoz_cold:
+    recordsize: "128K" # Old observability data (30+ days)
+    compression: "zstd"
+    sync: "standard"
 
   bulk_backups_timemachine:
     recordsize: "1M"
@@ -52,50 +53,91 @@ datasets:
     compression: "off" # Restic handles own compression
     sync: "standard"
 
-  bulk_backups_arr_configs:
+  bulk_backups_forgejo:
     recordsize: "128K"
     compression: "zstd"
     sync: "standard"
-    quota: "10G" # Configs are small
-
-  # ===========================================================================
-  # FAST POOL (10K SAS) - Hot data, databases, VMs
-  # ===========================================================================
-
-  fast_kubernetes_dynamic:
-    recordsize: "16K" # Mixed workloads, DBs
-    compression: "lz4"
-    sync: "standard"
     quota: "100G"
 
-  fast_kubernetes_static:
-    recordsize: "128K"
+  bulk_archive:
+    recordsize: "1M" # Cold storage
     compression: "lz4"
     sync: "standard"
 
-  fast_databases:
-    recordsize: "8K" # PostgreSQL/MySQL optimal
+  # ===========================================================================
+  # FAST POOL (~16TB, 24x 900GB + 2x 128GB SSD SLOG, 3x 8-drive RAIDZ2)
+  # Purpose: Hot data, K8s, databases, VMs, Talos
+  # Layout: 3× 8-drive RAIDZ2 = (8-2) × 3 = 18 drives usable × 900GB = ~16TB
+  # RAIDZ2 = 2-drive fault tolerance per vdev (safer for critical data)
+  # ===========================================================================
+
+  fast_kubernetes_nfs_dynamic:
+    recordsize: "16K" # Mixed workloads
     compression: "lz4"
-    sync: "always" # Data integrity critical
-    logbias: "latency"
+    sync: "standard"
+    quota: "4T" # Reduced to leave ~1TB headroom
+
+  fast_kubernetes_nfs_static:
+    recordsize: "128K" # Shared configs
+    compression: "lz4"
+    sync: "standard"
+
+  fast_kubernetes_iscsi_zvols:
+    # Parent dataset for iSCSI zvols (block storage)
+    # democratic-csi creates zvols here automatically
+    # Properties set via midclt (volblocksize, compression, sync)
+    type: "filesystem" # Parent is filesystem, children are zvols
 
   fast_vms:
     recordsize: "64K" # VM disk images
     compression: "lz4"
     sync: "standard"
 
-  fast_app_configs:
-    recordsize: "128K" # Mixed small files
+  fast_ml_models:
+    recordsize: "1M" # Trained ML models
     compression: "lz4"
     sync: "standard"
+    quota: "1T" # Reduced to leave pool headroom
 
-  fast_app_configs_arr_stack:
-    recordsize: "128K" # arr-stack configs
-    compression: "lz4"
-    sync: "standard"
+  # ===========================================================================
+  # SCRATCH POOL (~15TB, 6x 3TB RAIDZ1)
+  # Purpose: Ephemeral data, downloads, CI cache
+  # ===========================================================================
 
-  fast_app_configs_observability:
-    recordsize: "16K" # Prometheus TSDB, Loki chunks
+  scratch_kubernetes_nfs_dynamic:
+    recordsize: "128K" # Democratic-CSI provisions PVCs here
+    compression: "lz4" # CI cache, build artifacts (ephemeral)
+    sync: "disabled" # Performance > durability for ephemeral data
+    quota: "8T" # 8TB quota for CI/CD workloads
+
+  scratch_downloads:
+    recordsize: "16K" # Torrent random writes
+    compression: "off" # Media already compressed
+    sync: "disabled" # Performance > durability
+    children:
+      - incomplete
+      - complete
+      - usenet
+
+  scratch_downloads_usenet:
+    recordsize: "128K" # SABnzbd par2/unrar operations
+    compression: "off"
+    sync: "disabled"
+
+  scratch_ci_runners:
+    recordsize: "128K" # Docker layers, build artifacts
     compression: "lz4"
-    sync: "standard"
-    quota: "50G" # Prevent runaway growth
+    sync: "disabled"
+    children:
+      - cache
+      - artifacts
+
+  scratch_ml_datasets:
+    recordsize: "1M" # Training data staging
+    compression: "lz4"
+    sync: "disabled"
+
+  scratch_temp:
+    recordsize: "128K" # General scratch space
+    compression: "lz4"
+    sync: "disabled"

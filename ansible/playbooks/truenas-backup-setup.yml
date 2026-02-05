@@ -70,8 +70,8 @@
         - media
         - photos
         - kubernetes
-        - databases
-        - app-configs
+        - vms
+        - ml-models
         - backups
       tags: [datasets]
 
@@ -85,8 +85,8 @@
         - media
         - photos
         - kubernetes
-        - databases
-        - app-configs
+        - vms
+        - ml-models
         - backups
       register: readonly_result
       changed_when: false
@@ -161,13 +161,13 @@
       failed_when: false
       tags: [snapshots]
 
-    - name: Create snapshot task for backup/databases (daily, keep 14)
+    - name: Create snapshot task for backup/vms (daily, keep 7)
       ansible.builtin.command:
         cmd: >
           midclt call pool.snapshottask.create '{
-            "dataset": "backup/databases",
+            "dataset": "backup/vms",
             "recursive": true,
-            "lifetime_value": 14,
+            "lifetime_value": 7,
             "lifetime_unit": "DAY",
             "naming_schema": "backup-%Y-%m-%d",
             "schedule": {
@@ -179,8 +179,31 @@
             },
             "enabled": true
           }'
-      register: snapshot_db_backup
-      changed_when: "'id' in snapshot_db_backup.stdout"
+      register: snapshot_vms_backup
+      changed_when: "'id' in snapshot_vms_backup.stdout"
+      failed_when: false
+      tags: [snapshots]
+
+    - name: Create snapshot task for backup/ml-models (weekly, keep 4)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.snapshottask.create '{
+            "dataset": "backup/ml-models",
+            "recursive": true,
+            "lifetime_value": 4,
+            "lifetime_unit": "WEEK",
+            "naming_schema": "backup-%Y-%m-%d",
+            "schedule": {
+              "minute": "0",
+              "hour": "5",
+              "dom": "*",
+              "month": "*",
+              "dow": "sun"
+            },
+            "enabled": true
+          }'
+      register: snapshot_ml_backup
+      changed_when: "'id' in snapshot_ml_backup.stdout"
       failed_when: false
       tags: [snapshots]
 
@@ -224,48 +247,6 @@
           dow: "mon"
         enabled: true
       tags: [scrub]
-
-    # ==========================================================================
-    # S.M.A.R.T. MONITORING
-    # ==========================================================================
-
-    - name: Enable SMART service
-      arensb.truenas.service:
-        name: smartd
-        state: started
-        enabled: true
-      tags: [smart]
-
-    - name: Configure SMART
-      arensb.truenas.smart:
-        interval: 30
-        powermode: NEVER
-        critical: 10
-        difference: 20
-        informational: 35
-      tags: [smart]
-
-    - name: Schedule weekly SMART short test (different day than primary)
-      arensb.truenas.smart_test_task:
-        type: SHORT
-        disks: []
-        schedule:
-          hour: "2"
-          dom: "*"
-          month: "*"
-          dow: "sun"
-      tags: [smart]
-
-    - name: Schedule monthly SMART long test (different day than primary)
-      arensb.truenas.smart_test_task:
-        type: LONG
-        disks: []
-        schedule:
-          hour: "3"
-          dom: "15"
-          month: "*"
-          dow: "*"
-      tags: [smart]
 
     # ==========================================================================
     # VERIFICATION & SUMMARY

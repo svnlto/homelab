@@ -108,9 +108,9 @@
         content: |
           #!/bin/bash
           # Restic Backup: Critical Data (Hourly)
-          # - Kubernetes configs
-          # - Databases
-          # - App configs
+          # - Kubernetes (includes both NFS PVCs and iSCSI zvols with databases)
+          # - VMs
+          # - ML models
 
           set -e
           source /root/.restic-env
@@ -120,8 +120,8 @@
           # Backup critical datasets
           restic backup \
             /mnt/fast/kubernetes \
-            /mnt/fast/databases \
-            /mnt/fast/app-configs \
+            /mnt/fast/vms \
+            /mnt/fast/ml-models \
             --tag critical \
             --tag hourly \
             --tag din \
@@ -548,9 +548,9 @@
           Backup Schedule:
           ─────────────────────────────────────────────────────────────────────
           HOURLY (Critical Data):
-            - /mnt/fast/kubernetes
-            - /mnt/fast/databases
-            - /mnt/fast/app-configs
+            - /mnt/fast/kubernetes (K8s PVCs + iSCSI zvols with databases)
+            - /mnt/fast/vms (VM disk images)
+            - /mnt/fast/ml-models (Trained ML models)
             Retention: 48h hourly, 30d daily, 8w weekly, 12m monthly, 3y yearly
 
           DAILY @ 01:00 (Photos):

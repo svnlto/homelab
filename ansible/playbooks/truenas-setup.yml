@@ -2,17 +2,20 @@
 # ==============================================================================
 # TrueNAS SCALE Setup - Primary Storage (din)
 # ==============================================================================
-# Based on: docs/truenas-ansible-setup.md
-# Target: TrueNAS SCALE 25.04+ running on din (r730xd)
+# Hardware: R730xd with 3 pools
+#   - bulk:    6× 8TB RAIDZ2 (~28.6TB) - Media, photos, backups
+#   - fast:    24× 900GB 3× RAIDZ2 (~16TB) + 2× 128GB SLOG - K8s, VMs, databases
+#   - scratch: 6× 3TB RAIDZ1 (~15TB) - Downloads, CI cache, ephemeral data
 #
 # Prerequisites:
 # - TrueNAS VM deployed and accessible at 192.168.0.13
-# - Pools created manually: bulk (5×8TB RAIDZ2), fast (4×6-wide RAIDZ2)
+# - Pools created manually via midclt (see docs/truenas-ansible-setup.md Part 5)
 # - ansible-galaxy collection install arensb.truenas
 #
 # Usage:
 #   ansible-playbook playbooks/truenas-setup.yml --check  # Dry run
 #   ansible-playbook playbooks/truenas-setup.yml          # Apply
+#   ansible-playbook playbooks/truenas-setup.yml --tags=bulk,fast  # Specific pools
 
 - name: Configure TrueNAS SCALE on din (primary)
   hosts: truenas_primary
@@ -28,10 +31,33 @@
 
   tasks:
     # ==========================================================================
-    # BULK POOL DATASETS (8TB HGST drives)
+    # BULK POOL DATASETS (~28.6TB, 6× 8TB RAIDZ2)
+    # Purpose: Large files, media, photos, backups
     # ==========================================================================
 
-    - name: Create bulk media datasets
+    - name: Create bulk kubernetes parent dataset
+      arensb.truenas.filesystem:
+        name: "bulk/kubernetes"
+        state: present
+        compression: lz4
+      tags: [datasets, bulk, k8s]
+
+    - name: Create bulk kubernetes NFS dynamic dataset
+      arensb.truenas.filesystem:
+        name: "bulk/kubernetes/nfs-dynamic"
+        state: present
+        compression: lz4
+      tags: [datasets, bulk, k8s]
+
+    - name: Create bulk media parent dataset
+      arensb.truenas.filesystem:
+        name: "bulk/media"
+        state: present
+        compression: lz4
+        atime: "off"
+      tags: [datasets, bulk]
+
+    - name: Create bulk media child datasets
       arensb.truenas.filesystem:
         name: "bulk/media/{{ item }}"
         state: present
@@ -41,11 +67,23 @@
         - music
         - movies
         - tv
-        - downloads
-        - downloads/incomplete
-        - downloads/complete
-        - downloads/usenet
+        - books
       tags: [datasets, bulk]
+
+    - name: Create bulk photos dataset (Immich)
+      arensb.truenas.filesystem:
+        name: "bulk/photos"
+        state: present
+        compression: lz4
+        atime: "off"
+      tags: [datasets, bulk, photos]
+
+    - name: Create bulk signoz cold storage dataset
+      arensb.truenas.filesystem:
+        name: "bulk/signoz-cold"
+        state: present
+        compression: zstd
+      tags: [datasets, bulk, observability]
 
     - name: Create bulk backup datasets
       arensb.truenas.filesystem:
@@ -55,9 +93,9 @@
       loop:
         - timemachine
         - proxmox
-        - arr-configs
         - restic-repo
-      tags: [datasets, bulk]
+        - forgejo
+      tags: [datasets, bulk, backups]
 
     - name: Create bulk archive dataset
       arensb.truenas.filesystem:
@@ -66,19 +104,19 @@
         compression: lz4
       tags: [datasets, bulk]
 
-    - name: Create bulk photos dataset (for Immich)
+    # ==========================================================================
+    # FAST POOL DATASETS (~16TB, 24× 900GB 3× RAIDZ2 + SLOG)
+    # Purpose: Hot data, K8s PVCs, databases, VMs, Talos
+    # ==========================================================================
+
+    - name: Create fast kubernetes parent dataset
       arensb.truenas.filesystem:
-        name: "bulk/photos"
+        name: "fast/kubernetes"
         state: present
         compression: lz4
-        atime: "off"
-      tags: [datasets, bulk, photos]
+      tags: [datasets, fast, k8s]
 
-    # ==========================================================================
-    # FAST POOL DATASETS (10K SAS drives)
-    # ==========================================================================
-
-    - name: Create fast kubernetes datasets
+    - name: Create fast kubernetes NFS datasets
       arensb.truenas.filesystem:
         name: "fast/kubernetes/{{ item }}"
         state: present
@@ -86,35 +124,122 @@
       loop:
         - nfs-dynamic
         - nfs-static
-      tags: [datasets, fast]
+      tags: [datasets, fast, k8s]
 
-    - name: Create fast databases dataset
+    - name: Create fast kubernetes iSCSI parent dataset
       arensb.truenas.filesystem:
-        name: "fast/databases"
+        name: "fast/kubernetes/iscsi-zvols"
         state: present
         compression: lz4
-      tags: [datasets, fast]
+      tags: [datasets, fast, k8s, iscsi]
 
-    - name: Create fast vms dataset
+    - name: Create fast VMs dataset
       arensb.truenas.filesystem:
         name: "fast/vms"
         state: present
         compression: lz4
-      tags: [datasets, fast]
+      tags: [datasets, fast, vms]
 
-    - name: Create fast app-configs datasets
+    - name: Create fast ML models dataset
       arensb.truenas.filesystem:
-        name: "fast/app-configs/{{ item }}"
+        name: "fast/ml-models"
         state: present
         compression: lz4
+      tags: [datasets, fast, ml]
+
+    # ==========================================================================
+    # SCRATCH POOL DATASETS (~15TB, 6× 3TB RAIDZ1)
+    # Purpose: Ephemeral data, downloads, CI cache
+    # ==========================================================================
+
+    - name: Create scratch kubernetes parent dataset
+      arensb.truenas.filesystem:
+        name: "scratch/kubernetes"
+        state: present
+        compression: lz4
+        sync: disabled
+      tags: [datasets, scratch, k8s]
+
+    - name: Create scratch kubernetes NFS dynamic dataset
+      arensb.truenas.filesystem:
+        name: "scratch/kubernetes/nfs-dynamic"
+        state: present
+        compression: lz4
+        sync: disabled
+      tags: [datasets, scratch, k8s]
+
+    - name: Create scratch downloads parent dataset
+      arensb.truenas.filesystem:
+        name: "scratch/downloads"
+        state: present
+        compression: "off"
+        sync: disabled
+      tags: [datasets, scratch, downloads]
+
+    - name: Create scratch downloads child datasets
+      arensb.truenas.filesystem:
+        name: "scratch/downloads/{{ item }}"
+        state: present
+        compression: "off"
+        sync: disabled
       loop:
-        - arr-stack
-        - observability
-      tags: [datasets, fast]
+        - incomplete
+        - complete
+        - usenet
+      tags: [datasets, scratch, downloads]
+
+    - name: Create scratch CI runners parent dataset
+      arensb.truenas.filesystem:
+        name: "scratch/ci-runners"
+        state: present
+        compression: lz4
+        sync: disabled
+      tags: [datasets, scratch, ci]
+
+    - name: Create scratch CI runners child datasets
+      arensb.truenas.filesystem:
+        name: "scratch/ci-runners/{{ item }}"
+        state: present
+        compression: lz4
+        sync: disabled
+      loop:
+        - cache
+        - artifacts
+      tags: [datasets, scratch, ci]
+
+    - name: Create scratch ML datasets dataset
+      arensb.truenas.filesystem:
+        name: "scratch/ml-datasets"
+        state: present
+        compression: lz4
+        sync: disabled
+      tags: [datasets, scratch, ml]
+
+    - name: Create scratch temp dataset
+      arensb.truenas.filesystem:
+        name: "scratch/temp"
+        state: present
+        compression: lz4
+        sync: disabled
+      tags: [datasets, scratch]
 
     # ==========================================================================
     # ADVANCED ZFS PROPERTIES (via midclt)
+    # Properties that arensb.truenas doesn't support (recordsize, sync, quotas)
     # ==========================================================================
+
+    # --------------------------------------------------------------------------
+    # BULK POOL PROPERTIES
+    # --------------------------------------------------------------------------
+
+    - name: Set bulk/kubernetes/nfs-dynamic for large K8s workloads (10TB quota)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'bulk/kubernetes/nfs-dynamic'
+          '{"recordsize": "128K", "quota": 10995116277760}'
+      changed_when: false
+      tags: [properties, bulk, k8s]
 
     - name: Set bulk/media recordsize to 1M
       ansible.builtin.command:
@@ -122,33 +247,6 @@
           midclt call pool.dataset.update
           'bulk/media'
           '{"recordsize": "1M"}'
-      changed_when: false
-      tags: [properties, bulk]
-
-    - name: Set downloads/incomplete for torrent random writes
-      ansible.builtin.command:
-        cmd: >
-          midclt call pool.dataset.update
-          'bulk/media/downloads/incomplete'
-          '{"recordsize": "16K", "compression": "OFF", "sync": "DISABLED"}'
-      changed_when: false
-      tags: [properties, bulk]
-
-    - name: Set bulk/media/downloads/usenet for SABnzbd
-      ansible.builtin.command:
-        cmd: >
-          midclt call pool.dataset.update
-          'bulk/media/downloads/usenet'
-          '{"recordsize": "128K", "compression": "OFF", "sync": "DISABLED"}'
-      changed_when: false
-      tags: [properties, bulk]
-
-    - name: Set bulk/backups/arr-configs properties
-      ansible.builtin.command:
-        cmd: >
-          midclt call pool.dataset.update
-          'bulk/backups/arr-configs'
-          '{"recordsize": "128K", "compression": "ZSTD", "quota": 10737418240}'
       changed_when: false
       tags: [properties, bulk]
 
@@ -161,32 +259,131 @@
       changed_when: false
       tags: [properties, bulk, photos]
 
-    - name: Set fast/kubernetes/nfs-dynamic for mixed workloads
+    - name: Set bulk/signoz-cold for observability data
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'bulk/signoz-cold'
+          '{"recordsize": "128K"}'
+      changed_when: false
+      tags: [properties, bulk, observability]
+
+    - name: Set bulk/backups/timemachine quota (2TB)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'bulk/backups/timemachine'
+          '{"quota": 2199023255552}'
+      changed_when: false
+      tags: [properties, bulk, backups]
+
+    - name: Set bulk/backups/forgejo quota (100GB)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'bulk/backups/forgejo'
+          '{"quota": 107374182400}'
+      changed_when: false
+      tags: [properties, bulk, backups, forgejo]
+
+    # --------------------------------------------------------------------------
+    # FAST POOL PROPERTIES
+    # --------------------------------------------------------------------------
+
+    - name: Set fast/kubernetes/nfs-dynamic for mixed workloads (4TB quota)
       ansible.builtin.command:
         cmd: >
           midclt call pool.dataset.update
           'fast/kubernetes/nfs-dynamic'
-          '{"recordsize": "16K", "quota": 107374182400}'
+          '{"recordsize": "16K", "quota": 4398046511104}'
       changed_when: false
-      tags: [properties, fast]
+      tags: [properties, fast, k8s]
 
-    - name: Set fast/databases for PostgreSQL
+    - name: Set fast/kubernetes/nfs-static properties
       ansible.builtin.command:
         cmd: >
           midclt call pool.dataset.update
-          'fast/databases'
-          '{"recordsize": "8K", "sync": "ALWAYS"}'
+          'fast/kubernetes/nfs-static'
+          '{"recordsize": "128K"}'
       changed_when: false
-      tags: [properties, fast]
+      tags: [properties, fast, k8s]
 
-    - name: Set fast/app-configs/observability for Prometheus/Loki
+    - name: Set fast/kubernetes/iscsi-zvols for block storage
       ansible.builtin.command:
         cmd: >
           midclt call pool.dataset.update
-          'fast/app-configs/observability'
-          '{"recordsize": "16K", "quota": 53687091200}'
+          'fast/kubernetes/iscsi-zvols'
+          '{"volblocksize": "16K", "compression": "LZ4", "sync": "STANDARD"}'
       changed_when: false
-      tags: [properties, fast]
+      failed_when: false
+      tags: [properties, fast, k8s, iscsi]
+
+    - name: Set fast/vms properties
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'fast/vms'
+          '{"recordsize": "64K"}'
+      changed_when: false
+      tags: [properties, fast, vms]
+
+    - name: Set fast/ml-models quota (1TB)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'fast/ml-models'
+          '{"recordsize": "1M", "quota": 1099511627776}'
+      changed_when: false
+      tags: [properties, fast, ml]
+
+    # --------------------------------------------------------------------------
+    # SCRATCH POOL PROPERTIES (ephemeral data, performance-focused)
+    # --------------------------------------------------------------------------
+
+    - name: Set scratch/kubernetes/nfs-dynamic for CI cache (8TB quota)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'scratch/kubernetes/nfs-dynamic'
+          '{"recordsize": "128K", "quota": 8796093022208}'
+      changed_when: false
+      tags: [properties, scratch, k8s]
+
+    - name: Set scratch/downloads/incomplete for torrent random writes
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'scratch/downloads/incomplete'
+          '{"recordsize": "16K"}'
+      changed_when: false
+      tags: [properties, scratch, downloads]
+
+    - name: Set scratch/downloads/usenet for SABnzbd
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'scratch/downloads/usenet'
+          '{"recordsize": "128K"}'
+      changed_when: false
+      tags: [properties, scratch, downloads]
+
+    - name: Set scratch/ci-runners/cache properties
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'scratch/ci-runners/cache'
+          '{"recordsize": "128K"}'
+      changed_when: false
+      tags: [properties, scratch, ci]
+
+    - name: Set scratch/ml-datasets properties
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'scratch/ml-datasets'
+          '{"recordsize": "1M"}'
+      changed_when: false
+      tags: [properties, scratch, ml]
 
     # ==========================================================================
     # NFS SHARES (for Kubernetes and arr-stack)
@@ -246,26 +443,117 @@
     - name: Create NFS share for kubernetes static
       arensb.truenas.sharing_nfs:
         path: /mnt/fast/kubernetes/nfs-static
-        comment: "Static PVs for configs"
+        comment: "Static PVs for shared configs"
         maproot_user: root
         maproot_group: wheel
         networks:
           - 10.10.10.0/24 # Storage VLAN
-          - 10.0.1.0/24 # Kubernetes cluster network
+          - 10.0.1.0/24 # K8s VLAN 30
+          - 10.0.2.0/24 # K8s VLAN 31
+          - 10.0.3.0/24 # K8s VLAN 32 (test)
         state: present
-      tags: [nfs, shares]
+      tags: [nfs, shares, k8s]
 
-    - name: Create NFS share for arr-stack configs
+    - name: Create NFS share for bulk kubernetes dynamic
       arensb.truenas.sharing_nfs:
-        path: /mnt/fast/app-configs/arr-stack
-        comment: "arr-stack persistent configs"
+        path: /mnt/bulk/kubernetes/nfs-dynamic
+        comment: "democratic-csi bulk pool (Forgejo registry, large app data)"
         maproot_user: root
         maproot_group: wheel
         networks:
           - 10.10.10.0/24 # Storage VLAN
-          - 192.168.0.0/24 # LAN
+          - 10.0.1.0/24 # K8s VLAN 30
+          - 10.0.2.0/24 # K8s VLAN 31
+          - 10.0.3.0/24 # K8s VLAN 32 (test)
         state: present
-      tags: [nfs, shares]
+      tags: [nfs, shares, k8s, bulk]
+
+    - name: Create NFS share for scratch kubernetes dynamic
+      arensb.truenas.sharing_nfs:
+        path: /mnt/scratch/kubernetes/nfs-dynamic
+        comment: "democratic-csi scratch pool (CI cache, ephemeral data)"
+        maproot_user: root
+        maproot_group: wheel
+        networks:
+          - 10.10.10.0/24 # Storage VLAN
+          - 10.0.1.0/24 # K8s VLAN 30
+          - 10.0.2.0/24 # K8s VLAN 31
+          - 10.0.3.0/24 # K8s VLAN 32 (test)
+        state: present
+      tags: [nfs, shares, k8s, scratch]
+
+    - name: Create NFS share for Signoz cold storage
+      arensb.truenas.sharing_nfs:
+        path: /mnt/bulk/signoz-cold
+        comment: "Signoz cold storage (30+ days)"
+        maproot_user: root
+        maproot_group: wheel
+        networks:
+          - 10.10.10.0/24 # Storage VLAN
+          - 10.0.1.0/24 # K8s VLAN 30
+        state: present
+      tags: [nfs, shares, observability]
+
+    - name: Create NFS share for scratch downloads
+      arensb.truenas.sharing_nfs:
+        path: /mnt/scratch/downloads
+        comment: "Torrent/Usenet download staging"
+        mapall_user: media
+        mapall_group: media
+        networks:
+          - 10.10.10.0/24 # Storage VLAN
+          - 192.168.0.0/24 # LAN (arr-stack)
+        state: present
+      tags: [nfs, shares, downloads]
+
+    - name: Create NFS share for CI runners
+      arensb.truenas.sharing_nfs:
+        path: /mnt/scratch/ci-runners
+        comment: "Forgejo CI runner cache and artifacts"
+        maproot_user: root
+        maproot_group: wheel
+        networks:
+          - 10.10.10.0/24 # Storage VLAN
+          - 10.0.1.0/24 # K8s VLAN 30
+          - 10.0.2.0/24 # K8s VLAN 31
+        state: present
+      tags: [nfs, shares, ci]
+
+    # ==========================================================================
+    # iSCSI CONFIGURATION (for Kubernetes databases)
+    # ==========================================================================
+
+    - name: Configure iSCSI portal (Storage VLAN)
+      ansible.builtin.command:
+        cmd: >
+          midclt call iscsi.portal.create '{
+            "comment": "Storage VLAN Portal",
+            "listen": [{"ip": "10.10.10.13", "port": 3260}]
+          }'
+      register: iscsi_portal
+      changed_when: "'id' in iscsi_portal.stdout"
+      failed_when: false
+      tags: [iscsi]
+
+    - name: Configure iSCSI initiator group (allow K8s nodes)
+      ansible.builtin.command:
+        cmd: >
+          midclt call iscsi.initiator.create '{
+            "comment": "Kubernetes Nodes",
+            "initiators": [],
+            "auth_network": ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+          }'
+      register: iscsi_initiator
+      changed_when: "'id' in iscsi_initiator.stdout"
+      failed_when: false
+      tags: [iscsi]
+
+    - name: Enable iSCSI service
+      arensb.truenas.service:
+        name: iscsitarget
+        state: started
+        enabled: true
+      tags: [iscsi, services]
 
     # ==========================================================================
     # SMB SHARES (for Time Machine from Mac)
@@ -348,28 +636,51 @@
       failed_when: false
       tags: [snapshots]
 
-    - name: Create snapshot task for fast/databases (hourly, keep 48)
+    - name: Create snapshot task for fast/vms (every 4 hours, keep 6)
       ansible.builtin.command:
         cmd: >
           midclt call pool.snapshottask.create '{
-            "dataset": "fast/databases",
+            "dataset": "fast/vms",
             "recursive": true,
-            "lifetime_value": 48,
+            "lifetime_value": 6,
             "lifetime_unit": "HOUR",
             "naming_schema": "auto-%Y-%m-%d_%H-%M",
             "schedule": {
               "minute": "0",
-              "hour": "*",
+              "hour": "*/4",
               "dom": "*",
               "month": "*",
               "dow": "*"
             },
             "enabled": true
           }'
-      register: snapshot_db
-      changed_when: "'id' in snapshot_db.stdout"
+      register: snapshot_vms
+      changed_when: "'id' in snapshot_vms.stdout"
       failed_when: false
-      tags: [snapshots]
+      tags: [snapshots, vms]
+
+    - name: Create snapshot task for fast/ml-models (daily, keep 7)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.snapshottask.create '{
+            "dataset": "fast/ml-models",
+            "recursive": true,
+            "lifetime_value": 7,
+            "lifetime_unit": "DAY",
+            "naming_schema": "daily-%Y-%m-%d",
+            "schedule": {
+              "minute": "0",
+              "hour": "5",
+              "dom": "*",
+              "month": "*",
+              "dow": "*"
+            },
+            "enabled": true
+          }'
+      register: snapshot_ml
+      changed_when: "'id' in snapshot_ml.stdout"
+      failed_when: false
+      tags: [snapshots, ml]
 
     - name: Create snapshot task for bulk/media (daily, keep 7)
       ansible.builtin.command:
@@ -417,28 +728,7 @@
       failed_when: false
       tags: [snapshots, photos]
 
-    - name: Create snapshot task for fast/app-configs (hourly, keep 24)
-      ansible.builtin.command:
-        cmd: >
-          midclt call pool.snapshottask.create '{
-            "dataset": "fast/app-configs",
-            "recursive": true,
-            "lifetime_value": 24,
-            "lifetime_unit": "HOUR",
-            "naming_schema": "auto-%Y-%m-%d_%H-%M",
-            "schedule": {
-              "minute": "0",
-              "hour": "*",
-              "dom": "*",
-              "month": "*",
-              "dow": "*"
-            },
-            "enabled": true
-          }'
-      register: snapshot_configs
-      changed_when: "'id' in snapshot_configs.stdout"
-      failed_when: false
-      tags: [snapshots]
+    # NOTE: No snapshots for scratch pool - ephemeral data by design
 
     # ==========================================================================
     # SCRUB TASKS
@@ -472,44 +762,16 @@
       tags: [scrub]
       failed_when: false
 
-    # ==========================================================================
-    # S.M.A.R.T. MONITORING
-    # ==========================================================================
-
-    - name: Enable SMART service
-      arensb.truenas.service:
-        name: smartd
-        state: started
-        enabled: true
-      tags: [smart]
-
-    - name: Configure SMART
-      arensb.truenas.smart:
-        interval: 30
-        power_mode: never
-        temp_crit: 10
-        temp_difference: 20
-        temp_info: 35
-      tags: [smart]
-
-    - name: Schedule weekly SMART short test
-      arensb.truenas.smart_test_task:
-        name: "Weekly SMART short test"
-        test: SHORT
-        disks: []
-        hour: "2"
+    - name: Configure weekly scrub for scratch pool
+      arensb.truenas.pool_scrub_task:
+        pool: scratch
+        threshold: 35
+        description: "Weekly scrub - scratch"
+        minute: "0"
+        hour: "6"
         day: "*"
         month: "*"
-        weekday: "sat"
-      tags: [smart]
-
-    - name: Schedule monthly SMART long test
-      arensb.truenas.smart_test_task:
-        name: "Monthly SMART long test"
-        test: LONG
-        disks: []
-        hour: "3"
-        day: "1"
-        month: "*"
-        weekday: "*"
-      tags: [smart]
+        weekday: "sun"
+        enabled: true
+      tags: [scrub]
+      failed_when: false

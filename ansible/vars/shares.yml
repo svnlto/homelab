@@ -1,17 +1,26 @@
 ---
 # TrueNAS NFS and SMB Share Configurations
+# Hardware: R730xd (din) with 3 pools (bulk, fast, scratch)
 # Based on: docs/truenas-ansible-setup.md
 
-# NFS Shares
+# ==============================================================================
+# NFS SHARES
+# ==============================================================================
+
 nfs_shares:
+  # ---------------------------------------------------------------------------
+  # BULK POOL - Large files, media, photos
+  # ---------------------------------------------------------------------------
   - path: /mnt/bulk/media
-    comment: "Media for Jellyfin on arr-stack"
+    comment: "Media for Jellyfin on arr-stack (ReadOnlyMany)"
     mapall_user: media
     mapall_group: media
     networks:
       - 10.10.10.0/24 # Storage VLAN (primary)
       - 192.168.0.0/24 # LAN (arr-stack)
-    ro: false
+      - 10.0.1.0/24 # K8s VLAN 30 (if Jellyfin runs on k8s)
+      - 10.0.2.0/24 # K8s VLAN 31
+    ro: true # Media is read-only for streaming
 
   - path: /mnt/bulk/photos
     comment: "Photos for Immich"
@@ -20,43 +29,86 @@ nfs_shares:
     networks:
       - 10.10.10.0/24 # Storage VLAN (primary)
       - 192.168.0.0/24 # LAN (Immich)
-      - 10.0.1.0/24 # Kubernetes cluster network (if Immich runs on k8s)
+      - 10.0.1.0/24 # K8s VLAN 30
+      - 10.0.2.0/24 # K8s VLAN 31
     ro: false
 
-  - path: /mnt/fast/kubernetes/nfs-dynamic
-    comment: "democratic-csi dynamic provisioning"
+  - path: /mnt/bulk/kubernetes/nfs-dynamic
+    comment: "democratic-csi bulk pool (Forgejo registry, large app data)"
     maproot_user: root
     maproot_group: wheel
     networks:
       - 10.10.10.0/24 # Storage VLAN
-      - 10.0.1.0/24 # Kubernetes cluster network
+      - 10.0.1.0/24 # K8s VLAN 30
+      - 10.0.2.0/24 # K8s VLAN 31
+      - 10.0.3.0/24 # K8s VLAN 32 (test)
+    ro: false
+
+  - path: /mnt/bulk/signoz-cold
+    comment: "Signoz cold storage (30+ days)"
+    maproot_user: root
+    maproot_group: wheel
+    networks:
+      - 10.10.10.0/24 # Storage VLAN
+      - 10.0.1.0/24 # K8s VLAN 30
+    ro: false
+
+  # ---------------------------------------------------------------------------
+  # FAST POOL - Hot data, K8s, VMs
+  # ---------------------------------------------------------------------------
+  - path: /mnt/fast/kubernetes/nfs-dynamic
+    comment: "democratic-csi NFS dynamic provisioning"
+    maproot_user: root
+    maproot_group: wheel
+    networks:
+      - 10.10.10.0/24 # Storage VLAN
+      - 10.0.1.0/24 # K8s VLAN 30
+      - 10.0.2.0/24 # K8s VLAN 31
+      - 10.0.3.0/24 # K8s VLAN 32 (test)
     ro: false
 
   - path: /mnt/fast/kubernetes/nfs-static
-    comment: "Static PVs for configs"
+    comment: "Static PVs for shared configs"
     maproot_user: root
     maproot_group: wheel
     networks:
       - 10.10.10.0/24 # Storage VLAN
-      - 10.0.1.0/24 # Kubernetes cluster network
+      - 10.0.1.0/24 # K8s VLAN 30
+      - 10.0.2.0/24 # K8s VLAN 31
+      - 10.0.3.0/24 # K8s VLAN 32 (test)
     ro: false
 
-  - path: /mnt/fast/app-configs/arr-stack
-    comment: "arr-stack persistent configs"
+  # ---------------------------------------------------------------------------
+  # SCRATCH POOL - Ephemeral data, downloads, CI cache
+  # ---------------------------------------------------------------------------
+  - path: /mnt/scratch/kubernetes/nfs-dynamic
+    comment: "democratic-csi scratch pool (CI cache, ephemeral data)"
     maproot_user: root
     maproot_group: wheel
     networks:
       - 10.10.10.0/24 # Storage VLAN
-      - 192.168.0.0/24 # LAN
+      - 10.0.1.0/24 # K8s VLAN 30
+      - 10.0.2.0/24 # K8s VLAN 31
+      - 10.0.3.0/24 # K8s VLAN 32 (test)
     ro: false
 
-  - path: /mnt/fast/app-configs/observability
-    comment: "Prometheus/Loki data"
+  - path: /mnt/scratch/downloads
+    comment: "Torrent/Usenet download staging"
+    mapall_user: media
+    mapall_group: media
+    networks:
+      - 10.10.10.0/24 # Storage VLAN
+      - 192.168.0.0/24 # LAN (arr-stack)
+    ro: false
+
+  - path: /mnt/scratch/ci-runners
+    comment: "Forgejo CI runner cache and artifacts"
     maproot_user: root
     maproot_group: wheel
     networks:
       - 10.10.10.0/24 # Storage VLAN
-      - 192.168.0.0/24 # LAN
+      - 10.0.1.0/24 # K8s VLAN 30
+      - 10.0.2.0/24 # K8s VLAN 31
     ro: false
 
 # SMB Shares
