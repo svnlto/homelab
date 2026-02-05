@@ -1,73 +1,160 @@
 ---
-# TrueNAS Snapshot Policies
+# TrueNAS Snapshot & Backup Strategy
+# Hardware: R730xd (din) → R630 (grogu)
 # Based on: docs/truenas-ansible-setup.md
 
+# ==============================================================================
+# SNAPSHOT POLICIES (Local on din)
+# ==============================================================================
+
 snapshot_policies:
-  # Bulk pool - media is replaceable, backups less frequent
+  # ---------------------------------------------------------------------------
+  # BULK POOL (~28.6TB RAIDZ2) - Large files, lower snapshot frequency
+  # ---------------------------------------------------------------------------
   bulk_media:
     hourly: 0
     daily: 7
     weekly: 4
     monthly: 3
+    replicate: false # Media is replaceable (can re-download)
 
   bulk_photos:
     hourly: 0
-    daily: 30 # Keep 30 days of daily snapshots (photos are valuable)
+    daily: 30 # Keep 30 days (photos are irreplaceable)
     weekly: 8
     monthly: 12
+    replicate: true # CRITICAL: Photos must be backed up
+
+  bulk_container_registry:
+    hourly: 0
+    daily: 7
+    weekly: 0
+    monthly: 0
+    replicate: false # Container images can be rebuilt
+
+  bulk_signoz_cold:
+    hourly: 0
+    daily: 14
+    weekly: 4
+    monthly: 6
+    replicate: true # Observability data valuable for analysis
 
   bulk_backups:
     daily: 7
     weekly: 4
     monthly: 6
+    replicate: false # Don't replicate backups of backups
 
-  # Fast pool - critical data, aggressive snapshots
+  # ---------------------------------------------------------------------------
+  # FAST POOL (~16TB, 3x 8-drive RAIDZ2) - Hot data, aggressive snapshots
+  # RAIDZ2 = 2-drive fault tolerance per vdev (safe for critical data)
+  # Still replicate for disaster recovery and off-site protection
+  # ---------------------------------------------------------------------------
   fast_kubernetes:
     hourly: 24
     daily: 7
     weekly: 4
     monthly: 6
+    replicate: true # CRITICAL: K8s PVC data
 
-  fast_databases:
-    hourly: 48 # 2 days of hourly
-    daily: 14
-    weekly: 8
-    monthly: 12
+  fast_vms:
+    hourly: 6 # Every 4 hours
+    daily: 7
+    weekly: 4
+    monthly: 3
+    replicate: true # CRITICAL: VM data
 
-# Replication tasks (din → grogu)
+  fast_ml_models:
+    hourly: 0
+    daily: 7
+    weekly: 4
+    monthly: 6
+    replicate: true # Trained models are expensive to recreate
+
+  # ---------------------------------------------------------------------------
+  # SCRATCH POOL (~15TB RAIDZ1) - Ephemeral data, NO SNAPSHOTS
+  # ---------------------------------------------------------------------------
+  # scratch/* - No snapshots, data is replaceable by design
+
+# ==============================================================================
+# REPLICATION TASKS (din → grogu backup pool)
+# 3-2-1 Backup Strategy Tier 2
+# ==============================================================================
+
 replication_tasks:
-  - source: bulk/media
-    destination: backup/media
-    schedule: daily 02:00
+  # CRITICAL data (can't lose, replicate frequently)
+  - source: fast/kubernetes
+    destination: backup/kubernetes
+    schedule: hourly
     recursive: true
-    priority: low
+    priority: critical
+    retention:
+      hourly: 48
+      daily: 14
+      weekly: 8
+
+  - source: fast/vms
+    destination: backup/vms
+    schedule: "*/4 * * * *" # Every 4 hours
+    recursive: true
+    priority: critical
+    retention:
+      hourly: 24
+      daily: 7
+      weekly: 4
 
   - source: bulk/photos
     destination: backup/photos
     schedule: daily 04:00
     recursive: true
-    priority: high
-
-  - source: fast/kubernetes
-    destination: backup/kubernetes
-    schedule: hourly
-    recursive: true
-    priority: high
-
-  - source: fast/databases
-    destination: backup/databases
-    schedule: "*/15 * * * *" # Every 15 min
-    recursive: true
     priority: critical
+    retention:
+      daily: 60
+      weekly: 12
+      monthly: 24
 
-  - source: fast/app-configs
-    destination: backup/app-configs
-    schedule: hourly
+  # HIGH priority (important, replicate daily)
+  - source: fast/ml-models
+    destination: backup/ml-models
+    schedule: daily 05:00
     recursive: true
     priority: high
 
-  - source: bulk/backups
-    destination: backup/backups
-    schedule: daily 03:00
+  - source: bulk/signoz-cold
+    destination: backup/signoz-cold
+    schedule: daily 06:00
+    recursive: true
+    priority: medium
+
+  # LOW priority (replicate but not urgent)
+  - source: bulk/media
+    destination: backup/media
+    schedule: weekly # Only weekly, media is replaceable
     recursive: true
     priority: low
+
+# ==============================================================================
+# OFFSITE BACKUP (Tier 3 - Backblaze B2 via Restic)
+# Only backup CRITICAL data that's small enough
+# ==============================================================================
+
+offsite_backup_datasets:
+  # What to backup to B2 (Restic)
+  include:
+    - fast/kubernetes/nfs-static # K8s configs, GitOps repos
+    - bulk/backups/forgejo # Git repo backups
+    # Forgejo Git repos backed up via PVC snapshots
+
+  # What NOT to backup (too large or replaceable)
+  exclude:
+    - fast/kubernetes/iscsi-zvols/* # Too large, replicated to grogu
+    - bulk/media/* # Replaceable
+    - bulk/photos/* # Too large (use Immich's B2 integration instead)
+    - scratch/* # Ephemeral by design
+
+  # Restic retention policy
+  retention:
+    hourly: 24
+    daily: 7
+    weekly: 4
+    monthly: 12

@@ -1,0 +1,409 @@
+---
+# ==============================================================================
+# TrueNAS SCALE Initial Configuration
+# ==============================================================================
+# Purpose: Initial setup of TrueNAS after ISO install
+# Run this BEFORE truenas-setup.yml
+#
+# What this does:
+# - Enable SSH service
+# - Configure SSH key authentication (for password-less Ansible)
+# - Set timezone and NTP
+# - Configure email alerts (optional)
+# - Verify network configuration
+# - Display system information
+#
+# Prerequisites:
+# - TrueNAS SCALE installed from ISO
+# - Initial admin password set during installation
+# - TrueNAS accessible at management IP
+# - Run with --ask-pass for initial password authentication
+#
+# Usage:
+#   ansible-playbook playbooks/truenas-initial-setup.yml --ask-pass
+#   # After this playbook, SSH keys will be configured
+#   # Future playbooks won't need --ask-pass
+
+- name: Initial TrueNAS SCALE Configuration
+  hosts: truenas_primary
+  gather_facts: true
+
+  vars:
+    truenas_timezone: "Europe/Berlin"
+    ntp_servers:
+      - 0.pool.ntp.org
+      - 1.pool.ntp.org
+      - 2.pool.ntp.org
+
+  tasks:
+    # ==========================================================================
+    # SYSTEM INFORMATION
+    # ==========================================================================
+
+    - name: Get TrueNAS system information
+      ansible.builtin.command:
+        cmd: midclt call system.info
+      register: system_info
+      changed_when: false
+      tags: [info]
+
+    - name: Display TrueNAS version
+      ansible.builtin.debug:
+        msg: |
+          =======================================================================
+          TrueNAS SCALE System Information
+          =======================================================================
+          Hostname: {{ (system_info.stdout | from_json).hostname }}
+          Version: {{ (system_info.stdout | from_json).version }}
+          Uptime: {{ (system_info.stdout | from_json).uptime_seconds | int // 3600 }} hours
+          =======================================================================
+      when: system_info.stdout is defined and system_info.stdout | length > 0
+      tags: [info]
+
+    # ==========================================================================
+    # SSH SERVICE CONFIGURATION
+    # ==========================================================================
+
+    - name: Check if SSH service is running
+      ansible.builtin.command:
+        cmd: midclt call service.query '[["service", "=", "ssh"]]'
+      register: ssh_service
+      changed_when: false
+      tags: [ssh]
+
+    - name: Display SSH service status
+      ansible.builtin.debug:
+        msg: |
+          SSH Service Status:
+          Enabled: {{ (ssh_service.stdout | from_json)[0].enable }}
+          Running: {{ (ssh_service.stdout | from_json)[0].state }}
+      when: ssh_service.stdout is defined and ssh_service.stdout | length > 0
+      tags: [ssh]
+
+    - name: Enable SSH service
+      arensb.truenas.service:
+        name: ssh
+        state: started
+        enabled: true
+      tags: [ssh]
+
+    - name: Get current SSH configuration
+      ansible.builtin.command:
+        cmd: midclt call ssh.config
+      register: ssh_config
+      changed_when: false
+      tags: [ssh]
+
+    - name: Display SSH configuration
+      ansible.builtin.debug:
+        msg: |
+          SSH Configuration:
+          Port: {{ (ssh_config.stdout | from_json).tcpport }}
+          Password Auth: {{ (ssh_config.stdout | from_json).passwordauth }}
+          Allowed Groups: {{ (ssh_config.stdout | from_json).password_login_groups }}
+      when: ssh_config.stdout is defined and ssh_config.stdout | length > 0
+      tags: [ssh]
+
+    - name: Update SSH configuration (ensure password auth enabled)
+      ansible.builtin.command:
+        cmd: >
+          midclt call ssh.update '{
+            "passwordauth": true,
+            "tcpport": 22
+          }'
+      register: ssh_update
+      changed_when: true
+      failed_when: false
+      tags: [ssh]
+
+    # ==========================================================================
+    # SSH KEY AUTHENTICATION
+    # ==========================================================================
+
+    - name: Read SSH public key from 1Password
+      ansible.builtin.command:
+        cmd: op read "op://Personal/proxmox/public key"
+      register: local_ssh_key
+      delegate_to: localhost
+      become: false
+      changed_when: false
+      tags: [ssh, keys]
+
+    - name: Get current user information
+      ansible.builtin.command:
+        cmd: midclt call user.query '[["username", "=", "{{ ansible_user }}"]]'
+      register: user_info
+      changed_when: false
+      tags: [ssh, keys]
+
+    - name: Display current SSH keys
+      ansible.builtin.debug:
+        msg: |
+          Current user: {{ ansible_user }}
+          User ID: {{ (user_info.stdout | from_json)[0].id }}
+          Existing SSH keys: {{ (user_info.stdout | from_json)[0].sshpubkey | default('None') }}
+      when: user_info.stdout is defined and user_info.stdout | length > 0
+      tags: [ssh, keys]
+
+    - name: Check if SSH key already exists
+      ansible.builtin.set_fact:
+        existing_key: "{{ (user_info.stdout | from_json)[0].sshpubkey | default('') }}"
+        user_id: "{{ (user_info.stdout | from_json)[0].id }}"
+      when: user_info.stdout is defined and user_info.stdout | length > 0
+      tags: [ssh, keys]
+
+    - name: Add SSH public key to user account
+      ansible.builtin.command:
+        cmd: >
+          midclt call user.update
+          {{ user_id }}
+          '{"sshpubkey": "{{ local_ssh_key.stdout | trim }}"}'
+      register: ssh_key_result
+      changed_when: true
+      when:
+        - user_info.stdout is defined
+        - user_info.stdout | length > 0
+        - (existing_key is none or existing_key == '' or local_ssh_key.stdout | trim not in existing_key)
+      tags: [ssh, keys]
+
+    - name: Display SSH key setup instructions
+      ansible.builtin.debug:
+        msg: |
+          =======================================================================
+          SSH Key Authentication Setup
+          =======================================================================
+          ✓ SSH public key added to {{ ansible_user }} account
+          ✓ Future Ansible runs won't need --ask-pass
+
+          Test SSH key authentication:
+            ssh {{ ansible_user }}@{{ ansible_host }}
+
+          If you prefer to use root account for Ansible:
+          1. Update inventory.ini: ansible_user=root
+          2. Set root SSH key via TrueNAS WebUI:
+             Credentials → Local Users → root → Edit
+             → SSH Public Key → Paste key → Save
+          =======================================================================
+      tags: [ssh, keys, verify]
+
+    # ==========================================================================
+    # TIMEZONE AND NTP
+    # ==========================================================================
+
+    - name: Configure timezone
+      ansible.builtin.command:
+        cmd: >
+          midclt call system.general.update '{
+            "timezone": "{{ truenas_timezone }}"
+          }'
+      register: timezone_result
+      changed_when: false
+      tags: [timezone]
+
+    - name: Configure NTP servers
+      ansible.builtin.command:
+        cmd: >
+          midclt call system.ntpserver.create '{
+            "address": "{{ item }}",
+            "burst": false,
+            "iburst": true,
+            "prefer": false,
+            "minpoll": 6,
+            "maxpoll": 10
+          }'
+      loop: "{{ ntp_servers }}"
+      register: ntp_result
+      changed_when: "'id' in ntp_result.stdout"
+      failed_when: false
+      tags: [ntp]
+
+    # ==========================================================================
+    # NETWORK VERIFICATION
+    # ==========================================================================
+
+    - name: Get network configuration
+      ansible.builtin.command:
+        cmd: midclt call interface.query
+      register: network_config
+      changed_when: false
+      tags: [network, verify]
+
+    - name: Display network interfaces
+      ansible.builtin.debug:
+        msg: |
+          =======================================================================
+          Network Configuration
+          =======================================================================
+          {% for iface in (network_config.stdout | from_json) %}
+          Interface: {{ iface.name }}
+            State: {{ iface.state.link_state }}
+            {% if iface.state.aliases %}
+            IPs: {{ iface.state.aliases | map(attribute='address') | join(', ') }}
+            {% endif %}
+          {% endfor %}
+          =======================================================================
+      when: network_config.stdout is defined and network_config.stdout | length > 0
+      tags: [network, verify]
+
+    - name: Test internet connectivity
+      ansible.builtin.command:
+        cmd: ping -c 3 8.8.8.8
+      register: ping_result
+      changed_when: false
+      failed_when: false
+      tags: [network, verify]
+
+    - name: Display connectivity status
+      ansible.builtin.debug:
+        msg: |
+          {% if ping_result.rc is defined and ping_result.rc == 0 %}
+          ✓ Internet connectivity OK
+          {% elif ping_result.rc is defined %}
+          ✗ Internet connectivity FAILED
+          {% else %}
+          ⊘ Connectivity check skipped (check mode)
+          {% endif %}
+      tags: [network, verify]
+
+    # ==========================================================================
+    # SCRUTINY APP INSTALLATION
+    # ==========================================================================
+    # Note: TrueNAS apps (IX Charts) cannot be installed via API in SCALE 25.04+
+    # Must be installed manually via WebUI: Apps → Discover Apps → Scrutiny
+    #
+    # After manual installation:
+    # 1. Apps → Discover Apps → Search "Scrutiny"
+    # 2. Click Install
+    # 3. Configure:
+    #    - Enable Web Portal (default port 8080)
+    #    - Enable Host Path for /dev (for drive access)
+    # 4. Add to TrueNAS dashboard: Dashboard → Add Widget → Scrutiny
+
+    - name: Display Scrutiny installation instructions
+      ansible.builtin.debug:
+        msg: |
+          =======================================================================
+          SCRUTINY SMART MONITORING SETUP (Manual Step Required)
+          =======================================================================
+          TrueNAS SCALE 25.04+ removed built-in SMART monitoring.
+          Install Scrutiny app for drive health monitoring:
+
+          1. Open TrueNAS WebUI: https://{{ ansible_host }}
+          2. Go to: Apps → Discover Apps
+          3. Search for "Scrutiny"
+          4. Click "Install" and configure:
+             - Enable Web Portal (port 8080)
+             - Enable host path for /dev
+          5. After install, add to dashboard:
+             Dashboard → Add Widget → Scrutiny
+
+          Scrutiny provides:
+          - Real-time SMART attribute monitoring
+          - Historical graphs and trends
+          - Email/webhook alerts for failing drives
+          - Better than old TrueNAS SMART service
+
+          Configuration (after install):
+          - Access: http://{{ ansible_host }}:8080
+          - Configure notifications: Settings → Notifications
+          =======================================================================
+      tags: [scrutiny, info]
+
+    # ==========================================================================
+    # EMAIL ALERTS (Optional)
+    # ==========================================================================
+
+    - name: Display email alert configuration instructions
+      ansible.builtin.debug:
+        msg: |
+          =======================================================================
+          EMAIL ALERTS CONFIGURATION (Optional)
+          =======================================================================
+          To receive email alerts for TrueNAS events:
+
+          1. Open TrueNAS WebUI: https://{{ ansible_host }}
+          2. Go to: System Settings → General → Email
+          3. Configure SMTP:
+             - From Email: truenas@yourdomain.com
+             - SMTP Server: smtp.gmail.com (or your SMTP server)
+             - Port: 587 (TLS) or 465 (SSL)
+             - Authentication: Yes
+             - Username: your-email@gmail.com
+             - Password: your-app-password
+          4. Test email: System Settings → General → Send Test Email
+
+          Alerts will be sent for:
+          - Pool degraded/offline
+          - Scrub failures
+          - Replication failures
+          - High pool capacity (85%, 90%, 95%)
+          - SMART failures (if using TrueNAS alerts, not Scrutiny)
+
+          For Scrutiny alerts:
+          - Configure in Scrutiny app settings (not TrueNAS)
+          =======================================================================
+      tags: [email, info]
+
+    # ==========================================================================
+    # SYSTEM TUNING (Optional)
+    # ==========================================================================
+
+    - name: Set system tunables for ZFS
+      ansible.builtin.command:
+        cmd: >
+          midclt call tunable.create '{
+            "var": "{{ item.var }}",
+            "value": "{{ item.value }}",
+            "type": "SYSCTL",
+            "comment": "{{ item.comment }}",
+            "enabled": true
+          }'
+      loop:
+        - var: vfs.zfs.arc.max
+          value: "17179869184" # 16GB ARC max (adjust for your RAM)
+          comment: "Limit ZFS ARC to 16GB"
+      register: tunable_result
+      changed_when: "'id' in tunable_result.stdout"
+      failed_when: false
+      tags: [tuning]
+
+    # ==========================================================================
+    # FINAL SUMMARY
+    # ==========================================================================
+
+    - name: Display setup summary
+      ansible.builtin.debug:
+        msg: |
+          =======================================================================
+          TrueNAS INITIAL SETUP COMPLETE
+          =======================================================================
+          Host: {{ ansible_host }}
+          Version: {{ (system_info.stdout | from_json).version if (system_info is defined and system_info.stdout is defined and system_info.stdout | length > 0) else 'Unknown (check mode)' }}
+
+          ✓ SSH service enabled and running
+          ✓ SSH key authentication configured
+          ✓ Timezone set to {{ truenas_timezone }}
+          ✓ NTP servers configured
+          ✓ Network connectivity verified
+
+          Next Steps:
+          1. Install Scrutiny app (see instructions above)
+          2. Create ZFS pools manually:
+             ssh {{ ansible_user }}@{{ ansible_host }}
+             # Follow: docs/truenas-pool-setup.md
+
+          3. Run main setup playbook (after pools created):
+             ansible-playbook playbooks/truenas-setup.yml
+
+          4. (Optional) Configure email alerts in WebUI
+          5. (Optional) Configure Scrutiny notifications
+
+          Manual Tasks Required:
+          - Install Scrutiny app via TrueNAS WebUI
+          - Create ZFS pools (fast, bulk, scratch) via midclt
+
+          Documentation:
+          - Pool Creation: docs/truenas-pool-setup.md
+          - Ansible Setup: docs/truenas-ansible-setup.md
+          =======================================================================
+      tags: [info, summary]

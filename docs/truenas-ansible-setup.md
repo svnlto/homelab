@@ -61,23 +61,23 @@ Based on our previous conversations:
                gradually replace 900GB drives as they age.
 
 
-    POOL: bulk (5× 8TB — OPTIONS)
+    POOL: bulk (6× 8TB — OPTIONS)
     ══════════════════════════════
     Location: R730xd front 12× LFF bays
-    Current:  5× 8TB HGST Ultrastar
+    Current:  6× 8TB HGST Ultrastar
 
     ┌─────────────────────────────────────────────────────────────────────┐
-    │ Option A: Start now with 5-drive RAIDZ2                            │
+    │ Option A: Start now with 6-drive RAIDZ2                            │
     ├─────────────────────────────────────────────────────────────────────┤
     │                                                                     │
     │     ┌─────────────────────┐                                        │
-    │     │ raidz2 (5× 8TB)     │  → 24TB usable                         │
+    │     │ raidz2 (6× 8TB)     │  → 24TB usable                         │
     │     └─────────────────────┘                                        │
     │                                                                     │
     │     Expansion path: Add second vdev when 5-7 more drives acquired  │
     │                                                                     │
     │     ┌─────────────────────┐ ┌─────────────────────┐                │
-    │     │ raidz2 (5× 8TB)     │ │ raidz2 (5-7× 8TB)   │  → 48-64TB     │
+    │     │ raidz2 (6× 8TB)     │ │ raidz2 (5-7× 8TB)   │  → 48-64TB     │
     │     └─────────────────────┘ └─────────────────────┘                │
     │                                                                     │
     │     ✓ Start using storage immediately                              │
@@ -182,7 +182,6 @@ bulk/                               # 8TB HGST drives - media & backups
 │   ├── music/                      # → Navidrome
 │   ├── movies/                     # → Jellyfin
 │   ├── tv/                         # → Jellyfin
-│   ├── books/                      # → Kavita/Calibre
 │   └── downloads/
 │       ├── incomplete/             # Torrent staging
 │       └── complete/               # Finished downloads
@@ -221,7 +220,6 @@ datasets:
       - music
       - movies
       - tv
-      - books
       - downloads/incomplete
       - downloads/complete
 

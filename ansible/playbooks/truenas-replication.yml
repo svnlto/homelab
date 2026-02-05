@@ -107,17 +107,17 @@
     #      "readonly": "SET"
     #    }'
     #
-    # 3. Create replication task (fast/databases → every 15 min):
+    # 3. Create replication task (fast/vms → every 4 hours):
     #    midclt call replication.create '{
-    #      "name": "databases-to-grogu",
+    #      "name": "vms-to-grogu",
     #      "direction": "PUSH",
     #      "transport": "SSH",
     #      "ssh_credentials": <ssh_credential_id>,
-    #      "source_datasets": ["fast/databases"],
-    #      "target_dataset": "backup/databases",
+    #      "source_datasets": ["fast/vms"],
+    #      "target_dataset": "backup/vms",
     #      "recursive": true,
     #      "auto": true,
-    #      "schedule": {"minute": "*/15", "hour": "*", "dom": "*", "month": "*", "dow": "*"},
+    #      "schedule": {"minute": "0", "hour": "*/4", "dom": "*", "month": "*", "dow": "*"},
     #      "retention_policy": "SOURCE",
     #      "readonly": "SET"
     #    }'
@@ -152,17 +152,17 @@
     #      "readonly": "SET"
     #    }'
     #
-    # 6. Create replication task (fast/app-configs → hourly):
+    # 6. Create replication task (fast/ml-models → daily):
     #    midclt call replication.create '{
-    #      "name": "app-configs-to-grogu",
+    #      "name": "ml-models-to-grogu",
     #      "direction": "PUSH",
     #      "transport": "SSH",
     #      "ssh_credentials": <ssh_credential_id>,
-    #      "source_datasets": ["fast/app-configs"],
-    #      "target_dataset": "backup/app-configs",
+    #      "source_datasets": ["fast/ml-models"],
+    #      "target_dataset": "backup/ml-models",
     #      "recursive": true,
     #      "auto": true,
-    #      "schedule": {"minute": "0", "hour": "*", "dom": "*", "month": "*", "dow": "*"},
+    #      "schedule": {"minute": "0", "hour": "6", "dom": "*", "month": "*", "dow": "*"},
     #      "retention_policy": "SOURCE",
     #      "readonly": "SET"
     #    }'
@@ -218,8 +218,8 @@
       loop:
         - media
         - kubernetes
-        - databases
-        - app-configs
+        - vms
+        - ml-models
         - backups
       when: backup_pool.stdout | from_json | length > 0
       register: dataset_creation

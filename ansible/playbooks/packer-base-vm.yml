@@ -118,7 +118,7 @@
         reload: true
       loop:
         - {name: 'fs.inotify.max_user_watches', value: '524288'}
-        - {name: 'fs.inotify.max_user_instances', value: '512',}
+        - {name: 'fs.inotify.max_user_instances', value: '512'}
 
     - name: Configure SSH hardening
       ansible.builtin.lineinfile:
@@ -129,7 +129,7 @@
       loop:
         - {regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no'}
         - {regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no'}
-        - {regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication yes',}
+        - {regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication yes'}
 
     - name: Enable automatic security updates
       ansible.builtin.copy:
