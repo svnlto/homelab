@@ -15,6 +15,6 @@ resource "routeros_ip_dhcp_server" "this" {
 resource "routeros_ip_dhcp_server_network" "this" {
   address    = var.subnet
   gateway    = var.gateway
-  dns_server = join(",", var.dns_servers)
+  dns_server = var.dns_servers
   comment    = "DHCP network config for ${var.vlan_name}"
 }
