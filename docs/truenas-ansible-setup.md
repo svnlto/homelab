@@ -61,17 +61,18 @@ Based on our previous conversations:
                gradually replace 900GB drives as they age.
 
 
-    POOL: bulk (6× 8TB — OPTIONS)
-    ══════════════════════════════
+    POOL: bulk (6× 7.15TB — DEPLOYED)
+    ══════════════════════════════════
     Location: R730xd front 12× LFF bays
-    Current:  6× 8TB HGST Ultrastar
+    Current:  6× 7.15TB HGST Ultrastar (limited by smallest drive)
+    Status:   ONLINE - 42.9TB raw, 25.3TB usable
 
     ┌─────────────────────────────────────────────────────────────────────┐
-    │ Option A: Start now with 6-drive RAIDZ2                            │
+    │ Current Configuration: 6-drive RAIDZ2                               │
     ├─────────────────────────────────────────────────────────────────────┤
     │                                                                     │
     │     ┌─────────────────────┐                                        │
-    │     │ raidz2 (6× 8TB)     │  → 24TB usable                         │
+    │     │ raidz2 (6× 7.15TB)  │  → 42.9TB raw / 25.3TB usable          │
     │     └─────────────────────┘                                        │
     │                                                                     │
     │     Expansion path: Add second vdev when 5-7 more drives acquired  │
@@ -148,13 +149,13 @@ Based on our previous conversations:
 
 ### Recommended Starting Configuration
 
-| Pool | Drives | Layout | Usable | Status |
-|------|--------|--------|--------|--------|
-| **fast** | 24× 900GB 10K SAS | 4× RAIDZ2 (6-wide) | ~16TB | Ready now |
-| **bulk** | 5× 8TB HGST | 1× RAIDZ2 (5-wide) | ~24TB | Ready now (Option A) |
-| **backup** | 8× 3TB Constellation | 1× RAIDZ2 (8-wide) | ~18TB | Ready now |
-| SLOG | 2× 120GB SSD | Mirror | — | Ready now |
-| Boot | 1× 256GB SATA | Single | — | Already configured |
+| Pool | Drives | Layout | Raw | Usable | Status |
+|------|--------|--------|-----|--------|--------|
+| **fast** | 24× 900GB 10K SAS | 3× RAIDZ2 (8-wide) + SLOG | ~20TB | ~16TB | Ready now |
+| **bulk** | 6× 7.15TB | 1× RAIDZ2 (6-wide) | 42.9TB | 25.3TB | Ready now |
+| **scratch** | 6× 2.73TB | 1× RAIDZ1 (6-wide) | 16.4TB | 12.9TB | Ready now |
+| SLOG | 2× 128GB SSD | Mirror | — | — | Attached to fast pool |
+| Boot | 1× 256GB SATA | Single | — | — | Already configured |
 
 ### Future Expansion Notes
 
@@ -177,7 +178,7 @@ Based on our previous conversations:
 ## Part 1: Dataset Hierarchy Design
 
 ```
-bulk/                               # 8TB HGST drives - media & backups
+bulk/                               # 6× 7.15TB RAIDZ2 (25.3TB usable) - media & backups
 ├── media/
 │   ├── music/                      # → Navidrome
 │   ├── movies/                     # → Jellyfin
@@ -754,11 +755,12 @@ midclt call pool.create '{
 }'
 ```
 
-### Bulk Pool — Option A: 5× 8TB HGST (start now)
+### Bulk Pool — 6× 7.15TB RAIDZ2 (DEPLOYED)
 
 ```bash
-# Create single 5-drive RAIDZ2 vdev (~24TB usable)
-# Add SLOG mirror with 2× 120GB SSDs
+# Create single 6-drive RAIDZ2 vdev (42.9TB raw, 25.3TB usable)
+# Note: Pool limited by smallest drive size (7.15TB)
+# No SLOG needed - sequential large writes (media files)
 midclt call pool.create '{
   "name": "bulk",
   "topology": {
@@ -766,11 +768,12 @@ midclt call pool.create '{
       {
         "type": "RAIDZ2",
         "disks": [
-          "/dev/disk/by-id/wwn-... (8TB #1)",
-          "/dev/disk/by-id/wwn-... (8TB #2)",
-          "/dev/disk/by-id/wwn-... (8TB #3)",
-          "/dev/disk/by-id/wwn-... (8TB #4)",
-          "/dev/disk/by-id/wwn-... (8TB #5)"
+          "/dev/disk/by-id/wwn-... (7.15TB #1)",
+          "/dev/disk/by-id/wwn-... (7.15TB #2)",
+          "/dev/disk/by-id/wwn-... (7.15TB #3)",
+          "/dev/disk/by-id/wwn-... (7.15TB #4)",
+          "/dev/disk/by-id/wwn-... (7.15TB #5)",
+          "/dev/disk/by-id/wwn-... (7.15TB #6)"
         ]
       }
     ],

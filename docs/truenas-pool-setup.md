@@ -4,13 +4,13 @@ Complete guide for creating the 3-pool ZFS configuration on TrueNAS SCALE runnin
 
 ## Hardware Configuration
 
-| Component | Drives | Layout | Usable | Purpose |
-|-----------|--------|--------|--------|---------|
-| **Proxmox OS** | 2× 256GB NVMe | Mirror | — | Hypervisor boot (includes Talos images on local-zfs) |
-| **fast** | 24× 900GB + 2× 128GB SSD | 3× 8-drive RAIDZ2 + mirrored SLOG | ~16TB | K8s PVCs (iSCSI), VMs, databases, ML models |
-| **bulk** | 6× 8TB (4×8TB + 2×7.15TB) | RAIDZ2 | ~28.6TB | Media, photos, cold observability data |
-| **scratch** | 6× 3TB | RAIDZ1 | ~15TB | Downloads, CI cache, ML datasets staging |
-| **Total** | | | **~60TB** | |
+| Component | Drives | Layout | Raw | Usable | Purpose |
+|-----------|--------|--------|-----|--------|---------|
+| **Proxmox OS** | 2× 256GB NVMe | Mirror | — | — | Hypervisor boot (includes Talos images on local-zfs) |
+| **fast** | 24× 900GB + 2× 128GB SSD | 3× 8-drive RAIDZ2 + mirrored SLOG | ~20TB | ~16TB | K8s PVCs (iSCSI), VMs, databases, ML models |
+| **bulk** | 6× 7.15TB (limited by smallest) | 1× 6-drive RAIDZ2 | 42.9TB | 25.3TB | Media, photos, cold observability data |
+| **scratch** | 6× 2.73TB (limited by smallest) | 1× 6-drive RAIDZ1 | 16.4TB | 12.9TB | Downloads, CI cache, ML datasets staging |
+| **Total** | | | **~79TB** | **~54TB** | |
 
 ## Pre-Flight Checks
 
@@ -121,8 +121,9 @@ zpool status fast
 ### Step 2: Create Bulk Pool
 
 ```bash
-# Create 6-drive RAIDZ2 (~28.6TB usable)
-# Note: 2 drives are 7.15TB, pool limited to smallest drive size
+# Create 6-drive RAIDZ2 (42.9TB raw, 25.3TB usable)
+# Note: Pool is limited to smallest drive size (7.15TB)
+# Actual: 6× 7.15TB drives = 42.9TB raw, RAIDZ2 provides 25.3TB usable
 midclt call pool.create '{
   "name": "bulk",
   "topology": {
@@ -130,12 +131,12 @@ midclt call pool.create '{
       {
         "type": "RAIDZ2",
         "disks": [
-          "/dev/disk/by-id/wwn-... (8TB #1)",
-          "/dev/disk/by-id/wwn-... (8TB #2)",
-          "/dev/disk/by-id/wwn-... (8TB #3)",
-          "/dev/disk/by-id/wwn-... (8TB #4)",
           "/dev/disk/by-id/wwn-... (7.15TB #1)",
-          "/dev/disk/by-id/wwn-... (7.15TB #2)"
+          "/dev/disk/by-id/wwn-... (7.15TB #2)",
+          "/dev/disk/by-id/wwn-... (7.15TB #3)",
+          "/dev/disk/by-id/wwn-... (7.15TB #4)",
+          "/dev/disk/by-id/wwn-... (7.15TB #5)",
+          "/dev/disk/by-id/wwn-... (7.15TB #6)"
         ]
       }
     ]
@@ -151,14 +152,29 @@ midclt call pool.create '{
 zpool status bulk
 # Should show:
 #   - 1 RAIDZ2 vdev (6 drives)
-#   - ~28.6TB usable (limited by 7.15TB drives)
+#   - ONLINE status
+
+zpool list bulk
+# Expected output:
+# NAME   SIZE  ALLOC   FREE  CKPOINT  EXPANDSZ   FRAG    CAP  DEDUP    HEALTH
+# bulk  42.9T  1.21G  42.9T        -         -     0%     0%  1.00x    ONLINE
+
+zfs list bulk
+# Expected output:
+# NAME   USED  AVAIL  REFER  MOUNTPOINT
+# bulk   734M  25.3T   170K  /mnt/bulk
+
+# Note: 42.9T raw capacity, 25.3T available for datasets
+# Difference accounts for RAIDZ2 parity (2 drives) + ZFS metadata overhead
 ```
 
 ### Step 3: Create Scratch Pool
 
 ```bash
-# Create 6-drive RAIDZ1 (~15TB usable)
+# Create 6-drive RAIDZ1 (16.4TB raw, 12.9TB usable)
+# Note: Pool is limited to smallest drive size (2.73TB)
 # RAIDZ1 is OK here - ephemeral data, can be recreated
+# Actual: 6× 2.73TB drives = 16.4TB raw, RAIDZ1 provides 12.9TB usable
 midclt call pool.create '{
   "name": "scratch",
   "topology": {
@@ -166,12 +182,12 @@ midclt call pool.create '{
       {
         "type": "RAIDZ1",
         "disks": [
-          "/dev/disk/by-id/... (3TB #1)",
-          "/dev/disk/by-id/... (3TB #2)",
-          "/dev/disk/by-id/... (3TB #3)",
-          "/dev/disk/by-id/... (3TB #4)",
-          "/dev/disk/by-id/... (3TB #5)",
-          "/dev/disk/by-id/... (3TB #6)"
+          "/dev/disk/by-id/... (2.73TB #1)",
+          "/dev/disk/by-id/... (2.73TB #2)",
+          "/dev/disk/by-id/... (2.73TB #3)",
+          "/dev/disk/by-id/... (2.73TB #4)",
+          "/dev/disk/by-id/... (2.73TB #5)",
+          "/dev/disk/by-id/... (2.73TB #6)"
         ]
       }
     ]
@@ -185,20 +201,42 @@ midclt call pool.create '{
 zpool status scratch
 # Should show:
 #   - 1 RAIDZ1 vdev (6 drives)
-#   - ~15TB usable
+#   - ONLINE status
+
+zpool list scratch
+# Expected output:
+# NAME      SIZE  ALLOC   FREE  CKPOINT  EXPANDSZ   FRAG    CAP  DEDUP    HEALTH
+# scratch  16.4T  1.05M  16.4T        -         -     0%     0%  1.00x    ONLINE
+
+zfs list scratch
+# Expected output:
+# NAME      USED  AVAIL  REFER  MOUNTPOINT
+# scratch   863K  12.9T   153K  /mnt/scratch
+
+# Note: 16.4T raw capacity, 12.9T available for datasets
+# Difference accounts for RAIDZ1 parity (1 drive) + ZFS metadata overhead
 ```
 
 ## Post-Creation Verification
 
 ```bash
-# List all pools
+# List all pools (raw capacity)
 zpool list
 
 # Expected output:
 # NAME      SIZE  ALLOC   FREE  CKPOINT  EXPANDSZ   FRAG    CAP  DEDUP    HEALTH
-# bulk     28.6T    0     28.6T     -         -      0%     0%   1.00x    ONLINE
-# fast     16.0T    0     16.0T     -         -      0%     0%   1.00x    ONLINE
-# scratch  15.0T    0     15.0T     -         -      0%     0%   1.00x    ONLINE
+# bulk     42.9T  1.21G  42.9T     -         -      0%     0%   1.00x    ONLINE
+# fast     20.0T    0    20.0T     -         -      0%     0%   1.00x    ONLINE
+# scratch  16.4T  1.05M  16.4T     -         -      0%     0%   1.00x    ONLINE
+
+# List available capacity for datasets
+zfs list -o name,avail,used,refer,mountpoint | grep -E "^(bulk|fast|scratch)"
+
+# Expected output:
+# NAME      AVAIL  USED  REFER  MOUNTPOINT
+# bulk      25.3T  734M   170K  /mnt/bulk
+# fast      16.0T  512M   170K  /mnt/fast
+# scratch   12.9T  863K   153K  /mnt/scratch
 
 # Check SLOG is attached to fast pool
 zpool status fast | grep log
