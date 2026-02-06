@@ -82,7 +82,7 @@ locals {
 
     # MikroTik CRS Router (to be configured)
     router_mgmt    = "10.10.1.2"   # Management VLAN
-    router_lan     = "192.168.0.2" # LAN VLAN (secondary IP)
+    router_lan     = "192.168.0.3" # MikroTik switch/router
     router_storage = "10.10.10.1"  # Storage VLAN gateway
 
     # Proxmox Nodes
@@ -165,7 +165,7 @@ locals {
 
   mikrotik = {
     hostname = "crs-router"
-    api_url  = "https://192.168.0.2" # Will be configured, currently at gateway
+    api_url  = "https://192.168.0.3" # MikroTik REST API (after configuration)
 
     # Physical interfaces (to be configured based on actual hardware)
     interfaces = {

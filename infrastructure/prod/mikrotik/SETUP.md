@@ -91,7 +91,7 @@ ssh admin@192.168.88.1  # Or discovered IP
 /ip dhcp-client remove [find]
 
 # Set static IP
-/ip address add address=192.168.0.2/24 interface=ether1
+/ip address add address=192.168.0.3/24 interface=ether1
 
 # Set default gateway (to Beryl AX for internet access)
 /ip route add gateway=192.168.0.1
@@ -106,7 +106,7 @@ From your workstation:
 
 ```bash
 # Test HTTPS API (ignore SSL warning for self-signed cert)
-curl -k -u terraform:<password> https://192.168.0.2/rest/system/resource
+curl -k -u terraform:<password> https://192.168.0.3/rest/system/resource
 
 # Should return JSON with system info
 ```
@@ -162,7 +162,7 @@ terragrunt plan
 terragrunt apply
 
 # Verify connectivity after apply
-ping 192.168.0.2  # Router
+ping 192.168.0.3  # Router
 ping 192.168.0.10  # Proxmox grogu
 ping 192.168.0.53  # Pi-hole
 ```
@@ -171,7 +171,7 @@ ping 192.168.0.53  # Pi-hole
 
 ```bash
 # Option A: SSH to router (if accessible)
-ssh admin@192.168.0.2
+ssh admin@192.168.0.3
 /system reset-configuration
 
 # Option B: Physical console access
@@ -225,7 +225,7 @@ cd infrastructure/mikrotik/dns
 terragrunt apply
 
 # Verify DNS resolution
-nslookup google.com 192.168.0.2  # Router forwards to Pi-hole
+nslookup google.com 192.168.0.3  # Router forwards to Pi-hole
 ```
 
 ### Validation
@@ -241,13 +241,13 @@ find . -name "terragrunt.hcl" -not -path "*/.terragrunt-cache/*"
 just tg-list
 
 # Network connectivity
-ping 192.168.0.2   # Router
+ping 192.168.0.3   # Router
 ping 192.168.0.10  # Proxmox
 ping 192.168.0.53  # Pi-hole
 ping 192.168.0.13  # TrueNAS
 
 # SSH access
-ssh admin@192.168.0.2
+ssh admin@192.168.0.3
 
 # DNS resolution
 nslookup google.com 192.168.0.53
@@ -256,7 +256,7 @@ nslookup google.com 192.168.0.53
 #### MikroTik Router Check
 
 ```bash
-ssh admin@192.168.0.2
+ssh admin@192.168.0.3
 
 # Check VLANs
 /interface vlan print
@@ -283,7 +283,7 @@ ssh admin@192.168.0.2
 
 ```bash
 # SSH to router
-ssh admin@192.168.0.2
+ssh admin@192.168.0.3
 
 # Reset to factory default
 /system reset-configuration no-defaults=yes skip-backup=yes
@@ -316,7 +316,7 @@ terragrunt run-all destroy
 #### DHCP Not Working
 
 ```bash
-ssh admin@192.168.0.2
+ssh admin@192.168.0.3
 
 # Check DHCP server status
 /ip dhcp-server print detail
@@ -334,7 +334,7 @@ ssh admin@192.168.0.2
 #### Firewall Blocking Traffic
 
 ```bash
-ssh admin@192.168.0.2
+ssh admin@192.168.0.3
 
 # Check firewall counters
 /ip firewall filter print stats
@@ -349,7 +349,7 @@ ssh admin@192.168.0.2
 #### DNS Not Resolving
 
 ```bash
-ssh admin@192.168.0.2
+ssh admin@192.168.0.3
 
 # Check DNS settings
 /ip dns print
