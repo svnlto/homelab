@@ -72,27 +72,29 @@ Fields:
 6. Copy values from current `.env` file
 7. Save
 
-#### Item 2: MikroTik Router
+#### Item 2: MikroTik Terraform API
 
 ```text
-Type: Login
-Name: MikroTik Router
+Type: API Credential
+Name: MikroTik Terraform API
 Vault: Personal (or Homelab)
 
 Fields:
-  - username (text): admin
-  - password (password): <your-router-password>
+  - username (text): terraform
+  - credential (password): <strong-password-for-terraform-user>
+  - notes: MikroTik REST API credentials for Terraform/Terragrunt
 ```
 
 **How to create**:
 
-1. Click "+" → "Login"
-2. Title: "MikroTik Router"
-3. Username: admin
-4. Password: <your-router-password>
-5. Save
+1. Click "+" → "API Credential"
+2. Title: "MikroTik Terraform API"
+3. Username: terraform
+4. Credential: <strong-password-for-terraform-user>
+5. Notes: "MikroTik REST API credentials for Terraform/Terragrunt. User has API permissions to manage network configuration via infrastructure code."
+6. Save
 
-**Note**: This is for future use when deploying MikroTik configuration.
+**Note**: Separate from admin credentials (stored in "MikroTik Router" item). The `terraform` user is created on the MikroTik during initial setup with `full` group permissions for API access.
 
 #### Item 3: Backblaze B2
 
