@@ -64,6 +64,17 @@ ssh admin@192.168.88.1  # Or discovered IP
 /user print
 ```
 
+**Store credentials in 1Password:**
+
+The password is already stored in 1Password item `MikroTik Terraform API` (API Credential type).
+Update the credential field with the password you just set:
+
+```bash
+# Open 1Password and edit the "MikroTik Terraform API" item
+# Set the credential field to the password used above
+# .envrc will automatically fetch it via: op read "op://Personal/MikroTik Terraform API/credential"
+```
+
 #### Step 4: Enable REST API with SSL
 
 ```routeros
@@ -111,16 +122,20 @@ curl -k -u terraform:<password> https://192.168.0.3/rest/system/resource
 # Should return JSON with system info
 ```
 
-#### Step 7: Add Credentials to .env
+#### Step 7: Verify Credentials
+
+Credentials are automatically loaded from 1Password via `.envrc`:
 
 ```bash
 cd ~/Projects/homelab
 
-# Add to .env file
-cat >> .env <<EOF
-MIKROTIK_USERNAME="terraform"
-MIKROTIK_PASSWORD="<STRONG_PASSWORD>"
-EOF
+# Verify direnv loads credentials from 1Password
+direnv allow
+
+# Test that credentials are available
+echo "Username: $MIKROTIK_USERNAME"
+# Password should be set (don't echo it)
+[ -n "$MIKROTIK_PASSWORD" ] && echo "Password: [SET]" || echo "Password: [NOT SET]"
 
 # Reload environment
 direnv allow
