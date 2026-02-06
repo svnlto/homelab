@@ -108,7 +108,7 @@ datasets:
     recordsize: "128K" # Democratic-CSI provisions PVCs here
     compression: "lz4" # CI cache, build artifacts (ephemeral)
     sync: "disabled" # Performance > durability for ephemeral data
-    quota: "8T" # 8TB quota for CI/CD workloads
+    quota: "8T" # 8TB quota for CI/CD workloads (scratch pool: 12.9TB total)
 
   scratch_downloads:
     recordsize: "16K" # Torrent random writes
