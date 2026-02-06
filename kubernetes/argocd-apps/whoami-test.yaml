@@ -1,0 +1,33 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: whoami-test
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Project
+  project: default
+
+  # Source - where the manifests live
+  source:
+    repoURL: https://github.com/svnlto/homelab
+    targetRevision: HEAD
+    path: kubernetes/apps/whoami/overlays/test
+
+  # Destination - where to deploy
+  destination:
+    server: https://kubernetes.default.svc # Deploy to hub (test) cluster
+    namespace: whoami-test
+
+  # Sync policy
+  syncPolicy:
+    automated:
+      prune: true # Remove resources when removed from Git
+      selfHeal: true # Auto-sync if cluster state drifts from Git
+    syncOptions:
+      - CreateNamespace=true # Auto-create namespace if missing
+
+  # Health check
+  ignoreDifferences: []

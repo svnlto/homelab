@@ -1,0 +1,30 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Use base as foundation
+bases:
+  - ../../base
+
+# Namespace for test cluster
+namespace: whoami-test
+
+# Test-specific labels
+commonLabels:
+  environment: test
+  cluster: test
+
+# Test-specific annotations
+commonAnnotations:
+  deployed-by: argocd
+  cluster: test-cluster
+
+# Patches for test environment
+patches:
+  - target:
+      kind: Deployment
+      name: whoami
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
