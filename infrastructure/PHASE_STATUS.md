@@ -93,7 +93,7 @@ This simplified approach:
 2. Access via WebFig/Winbox
 3. Create terraform user
 4. Enable REST API with SSL certificate
-5. Set static IP (192.168.0.2/24)
+5. Set static IP (192.168.0.3/24)
 6. Test API access
 7. Add credentials to .env
 
@@ -259,7 +259,7 @@ cd ../arr-stack && terragrunt init && terragrunt apply
    - Access via WebFig/Winbox
    - Create terraform user
    - Enable REST API with SSL
-   - Configure static IP (192.168.0.2/24)
+   - Configure static IP (192.168.0.3/24)
    - Add credentials to .env
 
 2. **Schedule maintenance window** for Phase 3 (30-60 min network disruption)
