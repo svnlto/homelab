@@ -106,7 +106,7 @@ locals {
       start = "192.168.0.100"
       end   = "192.168.0.149"
       lease = "24h"
-      dns   = ["192.168.0.53", "1.1.1.1"] # Pi-hole, Cloudflare fallback
+      dns   = ["192.168.0.53"]
     }
 
     k8s_shared = {
