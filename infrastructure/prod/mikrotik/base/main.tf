@@ -33,3 +33,20 @@ resource "routeros_ip_address" "vlan_gateways" {
 resource "routeros_ip_settings" "routing" {
   rp_filter = "loose"
 }
+
+# Default route to internet via Beryl AX gateway
+resource "routeros_ip_route" "default" {
+  dst_address = "0.0.0.0/0"
+  gateway     = "192.168.0.1"
+  comment     = "Default route to internet via Beryl AX"
+}
+
+# VLAN bridge membership - configure which VLANs are allowed on trunk ports
+resource "routeros_interface_bridge_vlan" "vlan_membership" {
+  for_each = var.vlans
+
+  bridge   = routeros_interface_bridge.main.name
+  vlan_ids = [each.value.id]
+  tagged   = [for k, v in var.interfaces : v]
+  comment  = "VLAN ${each.value.id} (${each.value.name}) membership on trunk ports"
+}

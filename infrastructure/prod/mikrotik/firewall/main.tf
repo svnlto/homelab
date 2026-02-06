@@ -87,3 +87,11 @@ resource "routeros_firewall_filter" "default_drop" {
 
   depends_on = [routeros_firewall_filter.k8s_isolation]
 }
+
+# Source NAT - Masquerade outbound traffic to internet
+resource "routeros_ip_firewall_nat" "masquerade" {
+  chain         = "srcnat"
+  action        = "masquerade"
+  out_interface = var.wan_interface
+  comment       = "Masquerade outbound traffic to internet via Beryl AX"
+}
