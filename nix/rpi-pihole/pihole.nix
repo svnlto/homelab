@@ -35,7 +35,7 @@
           WEBPASSWORD: "changeme"
           FTLCONF_LOCAL_IPV4: "192.168.0.53"
           PIHOLE_DNS_: "127.0.0.1#5335"
-          DNSMASQ_LISTENING: "all"
+          FTLCONF_dns_listeningMode: "all"
         volumes:
           - /opt/pihole/etc-pihole:/etc/pihole
           - /opt/pihole/etc-dnsmasq.d:/etc/dnsmasq.d

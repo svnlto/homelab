@@ -2,6 +2,7 @@
   imports = [
     ./hardware.nix
     ./pihole.nix
+    ./tailscale.nix
   ];
 
   # Network configuration
