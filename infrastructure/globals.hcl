@@ -94,6 +94,9 @@ locals {
     din_storage = "10.10.10.11"
     din_idrac   = "10.10.1.11"
 
+    # Arr Media Stack
+    arr_stack = "192.168.0.50"
+
     # TrueNAS
     truenas_primary_mgmt    = "192.168.0.13"
     truenas_primary_storage = "10.10.10.13"
@@ -235,6 +238,12 @@ locals {
       }
     }
   }
+
+  nixos = {
+    iso_url  = "https://channels.nixos.org/nixos-unstable/latest-nixos-minimal-x86_64-linux.iso"
+    filename = "nixos-minimal-x86_64-linux.iso"
+  }
+
 
   versions = {
     terraform  = "1.14.1"

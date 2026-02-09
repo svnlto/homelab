@@ -15,6 +15,10 @@ terraform {
       source  = "bpg/proxmox"
       version = "0.94.0"
     }
+    onepassword = {
+      source  = "1Password/onepassword"
+      version = "~> 2.1"
+    }
   }
 }
 
@@ -27,6 +31,10 @@ provider "proxmox" {
     agent = true
   }
 }
+
+provider "onepassword" {
+  account = "$${var.onepassword_account}"
+}
 EOF
 }
 
@@ -34,4 +42,5 @@ inputs = {
   proxmox_api_url          = local.proxmox.api_url
   proxmox_api_token_id     = get_env("TF_VAR_proxmox_api_token_id", "")
   proxmox_api_token_secret = get_env("TF_VAR_proxmox_api_token_secret", "")
+  onepassword_account      = get_env("OP_ACCOUNT", "")
 }

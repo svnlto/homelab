@@ -4,7 +4,7 @@ This directory contains Kubernetes manifests managed by ArgoCD using the hub-and
 
 ## Directory Structure
 
-```
+```text
 kubernetes/
 ├── argocd-apps/              # ArgoCD Application definitions (watched by root app)
 │   └── whoami-test.yaml      # Deploy whoami to test cluster
@@ -24,7 +24,8 @@ kubernetes/
 
 ### 1. ArgoCD Root App (App of Apps)
 
-ArgoCD's root Application watches `kubernetes/argocd-apps/` directory. Any Application manifests added here are automatically deployed.
+ArgoCD's root Application watches `kubernetes/argocd-apps/` directory.
+Any Application manifests added here are automatically deployed.
 
 ### 2. Application Definitions
 
@@ -43,7 +44,7 @@ Applications use Kustomize to share common manifests while customizing per clust
 
 ## GitOps Workflow
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │ 1. Developer: git commit + push                    │
 │    - Add/modify manifests in kubernetes/apps/      │

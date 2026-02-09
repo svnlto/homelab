@@ -20,11 +20,6 @@ datasets:
     compression: "lz4"
     sync: "standard"
     atime: "off"
-    children:
-      - music
-      - movies
-      - tv
-      - books
 
   bulk_photos:
     recordsize: "1M" # Large image files (RAW, JPEG)
@@ -42,6 +37,9 @@ datasets:
     compression: "zstd"
     sync: "standard"
     quota: "2T" # Per-Mac via SMB
+    casesensitivity: "insensitive" # macOS is case-insensitive (set at creation only)
+    acltype: "nfsv4" # Required for SMB/macOS extended attributes
+    aclmode: "passthrough" # Preserve macOS ACLs on permission changes
 
   bulk_backups_proxmox:
     recordsize: "1M"
@@ -58,6 +56,13 @@ datasets:
     compression: "zstd"
     sync: "standard"
     quota: "100G"
+
+  bulk_arr_config:
+    recordsize: "16K" # Mixed small files (SQLite DBs, XML configs)
+    compression: "lz4"
+    sync: "standard"
+    atime: "off"
+    # TODO: Move to fast pool once MD1220 hardware arrives (fast_arr_config)
 
   bulk_archive:
     recordsize: "1M" # Cold storage
@@ -116,13 +121,6 @@ datasets:
     sync: "disabled" # Performance > durability
     children:
       - incomplete
-      - complete
-      - usenet
-
-  scratch_downloads_usenet:
-    recordsize: "128K" # SABnzbd par2/unrar operations
-    compression: "off"
-    sync: "disabled"
 
   scratch_ci_runners:
     recordsize: "128K" # Docker layers, build artifacts

@@ -49,7 +49,7 @@ module "argocd" {
 
 ## Hub-and-Spoke Architecture
 
-```
+```text
 ┌─────────────────────────────────┐
 │      Hub Cluster (ArgoCD)       │
 │                                 │
@@ -66,11 +66,12 @@ module "argocd" {
 
 ## App of Apps Pattern
 
-The module creates a root Application that watches `kubernetes/argocd-apps/` directory in your Git repository. Any Application manifests in that directory are automatically deployed.
+The module creates a root Application that watches `kubernetes/argocd-apps/` directory in your Git repository.
+Any Application manifests in that directory are automatically deployed.
 
 **Example directory structure:**
 
-```
+```text
 kubernetes/
 ├── argocd-apps/              # ArgoCD Applications (watched by root app)
 │   ├── whoami-test.yaml
@@ -194,28 +195,28 @@ Commit and push - ArgoCD will automatically deploy!
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| kubeconfig_path | Path to kubeconfig for hub cluster | `string` | n/a | yes |
-| argocd_namespace | Namespace for ArgoCD | `string` | `"argocd"` | no |
-| argocd_chart_version | ArgoCD Helm chart version | `string` | `"7.7.18"` | no |
-| repo_url | Git repository URL | `string` | n/a | yes |
-| repo_branch | Git branch to track | `string` | `"main"` | no |
-| root_app_path | Path to Application manifests | `string` | `"kubernetes/argocd-apps"` | no |
-| admin_password | Initial admin password | `string` | n/a | yes |
-| ingress_enabled | Enable ingress | `bool` | `false` | no |
-| ingress_host | Ingress hostname | `string` | `""` | no |
-| spoke_clusters | Map of spoke clusters | `map(object)` | `{}` | no |
+| Name                 | Description                        | Type          | Default                    | Required |
+| -------------------- | ---------------------------------- | ------------- | -------------------------- | :------: |
+| kubeconfig_path      | Path to kubeconfig for hub cluster | `string`      | n/a                        |   yes    |
+| argocd_namespace     | Namespace for ArgoCD               | `string`      | `"argocd"`                 |    no    |
+| argocd_chart_version | ArgoCD Helm chart version          | `string`      | `"7.7.18"`                 |    no    |
+| repo_url             | Git repository URL                 | `string`      | n/a                        |   yes    |
+| repo_branch          | Git branch to track                | `string`      | `"main"`                   |    no    |
+| root_app_path        | Path to Application manifests      | `string`      | `"kubernetes/argocd-apps"` |    no    |
+| admin_password       | Initial admin password             | `string`      | n/a                        |   yes    |
+| ingress_enabled      | Enable ingress                     | `bool`        | `false`                    |    no    |
+| ingress_host         | Ingress hostname                   | `string`      | `""`                       |    no    |
+| spoke_clusters       | Map of spoke clusters              | `map(object)` | `{}`                       |    no    |
 
 ## Outputs
 
-| Name | Description |
-|------|-------------|
-| argocd_namespace | ArgoCD namespace |
-| argocd_server_url | ArgoCD server URL |
+| Name                          | Description                        |
+| ----------------------------- | ---------------------------------- |
+| argocd_namespace              | ArgoCD namespace                   |
+| argocd_server_url             | ArgoCD server URL                  |
 | argocd_initial_admin_password | Initial admin password (sensitive) |
-| root_app_status | Root Application status |
-| registered_clusters | List of registered clusters |
+| root_app_status               | Root Application status            |
+| registered_clusters           | List of registered clusters        |
 
 ## Adding Spoke Clusters
 

@@ -76,6 +76,35 @@ nixos-clean:
     @echo "✓ Cleanup complete"
 
 # =============================================================================
+# Arr Stack (Proxmox VM - NixOS declarative approach)
+# =============================================================================
+# Install NixOS on the arr-stack VM using nixos-anywhere.
+# Builds on the target VM (native x86_64), no local image building needed.
+# Prerequisites: VM 200 running NixOS live ISO, root SSH access to it.
+# Configuration: nix/arr-stack/
+# =============================================================================
+
+# Install NixOS on arr-stack VM via nixos-anywhere (pass the live ISO's IP)
+nixos-install-arr-stack ip:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Installing NixOS arr-stack to VM at {{ip}}..."
+    echo "This will partition the disk, install NixOS, and reboot."
+    cd nix && nix --extra-experimental-features "nix-command flakes" run github:nix-community/nixos-anywhere -- \
+      --flake .#arr-stack \
+      --build-on-remote \
+      root@{{ip}}
+    echo "NixOS installed! VM will reboot to 192.168.0.50"
+    echo "SSH: ssh svenlito@192.168.0.50"
+
+# Update arr-stack NixOS configuration (after initial install)
+nixos-update-arr-stack:
+    @echo "Syncing NixOS config to arr-stack..."
+    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.50:/tmp/nix-config/
+    @echo "Rebuilding NixOS on arr-stack..."
+    ssh svenlito@192.168.0.50 "sudo nixos-rebuild switch --flake /tmp/nix-config#arr-stack"
+
+# =============================================================================
 # Ansible
 # =============================================================================
 

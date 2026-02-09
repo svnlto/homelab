@@ -20,6 +20,11 @@ variable "proxmox_api_token_secret" {
   sensitive   = true
 }
 
+variable "onepassword_account" {
+  type        = string
+  description = "1Password account ID for desktop app integration"
+}
+
 # TrueNAS ISO
 variable "truenas_url" {
   type        = string
@@ -29,6 +34,17 @@ variable "truenas_url" {
 variable "truenas_filename" {
   type        = string
   description = "TrueNAS ISO filename"
+}
+
+# NixOS ISO
+variable "nixos_url" {
+  type        = string
+  description = "NixOS ISO download URL"
+}
+
+variable "nixos_filename" {
+  type        = string
+  description = "NixOS ISO filename"
 }
 
 variable "proxmox_node" {
