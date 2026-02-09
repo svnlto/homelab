@@ -17,8 +17,10 @@
 # - NO NFS/SMB shares needed (replication target only)
 #
 # Usage:
-#   ansible-playbook playbooks/truenas-backup-setup.yml --check  # Dry run
-#   ansible-playbook playbooks/truenas-backup-setup.yml          # Apply
+#   ansible-playbook -i ansible/inventory.ini \
+#     ansible/playbooks/truenas-backup-setup.yml --check  # Dry run
+#   ansible-playbook -i ansible/inventory.ini \
+#     ansible/playbooks/truenas-backup-setup.yml          # Apply
 
 - name: Configure TrueNAS SCALE on grogu (backup)
   hosts: truenas_secondary
@@ -65,7 +67,7 @@
       arensb.truenas.filesystem:
         name: "backup/{{ item }}"
         state: present
-        compression: lz4
+        compression: "LZ4"
       loop:
         - media
         - photos
@@ -239,14 +241,14 @@
         pool: backup
         threshold: 35
         description: "Weekly scrub - backup"
-        schedule:
-          minute: "0"
-          hour: "1"
-          dom: "*"
-          month: "*"
-          dow: "mon"
+        minute: "0"
+        hour: "1"
+        day: "*"
+        month: "*"
+        weekday: "mon"
         enabled: true
       tags: [scrub]
+      failed_when: false
 
     # ==========================================================================
     # VERIFICATION & SUMMARY

@@ -12,7 +12,7 @@ nfs_shares:
   # BULK POOL - Large files, media, photos
   # ---------------------------------------------------------------------------
   - path: /mnt/bulk/media
-    comment: "Media for Jellyfin on arr-stack (ReadOnlyMany)"
+    comment: "Media + downloads for arr-stack (hardlinks require single dataset)"
     mapall_user: media
     mapall_group: media
     networks:
@@ -20,7 +20,52 @@ nfs_shares:
       - 192.168.0.0/24 # LAN (arr-stack)
       - 10.0.1.0/24 # K8s VLAN 30 (if Jellyfin runs on k8s)
       - 10.0.2.0/24 # K8s VLAN 31
-    ro: true # Media is read-only for streaming
+    ro: false # Read-write: arr apps hardlink downloads → media libraries
+
+  # Child ZFS datasets need their own NFS shares (NFS can't cross dataset boundaries)
+  - path: /mnt/bulk/media/movies
+    comment: "Movies library (child dataset)"
+    mapall_user: media
+    mapall_group: media
+    networks:
+      - 10.10.10.0/24 # Storage VLAN (primary)
+      - 192.168.0.0/24 # LAN (arr-stack)
+      - 10.0.1.0/24 # K8s VLAN 30
+      - 10.0.2.0/24 # K8s VLAN 31
+    ro: false
+
+  - path: /mnt/bulk/media/tv
+    comment: "TV library (child dataset)"
+    mapall_user: media
+    mapall_group: media
+    networks:
+      - 10.10.10.0/24 # Storage VLAN (primary)
+      - 192.168.0.0/24 # LAN (arr-stack)
+      - 10.0.1.0/24 # K8s VLAN 30
+      - 10.0.2.0/24 # K8s VLAN 31
+    ro: false
+
+  - path: /mnt/bulk/media/music
+    comment: "Music library (child dataset)"
+    mapall_user: media
+    mapall_group: media
+    networks:
+      - 10.10.10.0/24 # Storage VLAN (primary)
+      - 192.168.0.0/24 # LAN (arr-stack)
+      - 10.0.1.0/24 # K8s VLAN 30
+      - 10.0.2.0/24 # K8s VLAN 31
+    ro: false
+
+  - path: /mnt/bulk/media/books
+    comment: "Books library (child dataset)"
+    mapall_user: media
+    mapall_group: media
+    networks:
+      - 10.10.10.0/24 # Storage VLAN (primary)
+      - 192.168.0.0/24 # LAN (arr-stack)
+      - 10.0.1.0/24 # K8s VLAN 30
+      - 10.0.2.0/24 # K8s VLAN 31
+    ro: false
 
   - path: /mnt/bulk/photos
     comment: "Photos for Immich"
@@ -54,8 +99,17 @@ nfs_shares:
     ro: false
 
   # ---------------------------------------------------------------------------
-  # FAST POOL - Hot data, K8s, VMs
+  # FAST POOL - Hot data, K8s, VMs, arr config
   # ---------------------------------------------------------------------------
+  # TODO: Move to /mnt/fast/arr-config once MD1220 hardware arrives
+  - path: /mnt/bulk/arr-config
+    comment: "Arr stack configuration data (databases, settings)"
+    mapall_user: media
+    mapall_group: media
+    networks:
+      - 192.168.0.0/24 # LAN (arr-stack VM)
+    ro: false
+
   - path: /mnt/fast/kubernetes/nfs-dynamic
     comment: "democratic-csi NFS dynamic provisioning"
     maproot_user: root
@@ -92,8 +146,8 @@ nfs_shares:
       - 10.0.3.0/24 # K8s VLAN 32 (test)
     ro: false
 
-  - path: /mnt/scratch/downloads
-    comment: "Torrent/Usenet download staging"
+  - path: /mnt/scratch/downloads/incomplete
+    comment: "Active/incomplete downloads (temp staging, sync=disabled)"
     mapall_user: media
     mapall_group: media
     networks:
@@ -115,7 +169,7 @@ nfs_shares:
 smb_shares:
   - name: TimeMachine
     path: /mnt/bulk/backups/timemachine
-    purpose: TIMEMACHINE
+    purpose: ENHANCED_TIMEMACHINE
     comment: "macOS Time Machine backups"
 
   - name: Archive

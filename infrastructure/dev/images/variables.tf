@@ -16,6 +16,11 @@ variable "proxmox_api_token_secret" {
   sensitive   = true
 }
 
+variable "onepassword_account" {
+  type        = string
+  description = "1Password account ID for desktop app integration"
+}
+
 variable "talos_version" {
   description = "Talos Linux version"
   type        = string

@@ -20,6 +20,11 @@ variable "proxmox_api_token_secret" {
   sensitive   = true
 }
 
+variable "onepassword_account" {
+  type        = string
+  description = "1Password account ID for desktop app integration"
+}
+
 # TrueNAS VM Configuration
 variable "node_name" {
   type = string

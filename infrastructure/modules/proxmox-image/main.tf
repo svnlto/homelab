@@ -32,6 +32,7 @@ resource "null_resource" "download_image" {
         gunzip -k -f "${path.root}/.images/${var.image_name}.${var.compression_format}"
       elif [ "${var.compression_format}" = "none" ]; then
         echo "No decompression needed."
+        mv "${path.root}/.images/${var.image_name}.none" "${path.root}/.images/${var.image_name}"
       fi
     EOT
   }

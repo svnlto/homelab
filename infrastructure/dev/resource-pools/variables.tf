@@ -20,10 +20,9 @@ variable "proxmox_api_token_secret" {
   sensitive   = true
 }
 
-# Resource Pool Configuration
-variable "environment" {
+variable "onepassword_account" {
   type        = string
-  description = "Environment name (prod, dev)"
+  description = "1Password account ID for desktop app integration"
 }
 
 variable "pools" {

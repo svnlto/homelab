@@ -37,7 +37,7 @@ Vagrant.configure("2") do |config|
       echo "Setting up x86_64 emulation via binfmt_misc..."
       apt-get update -qq
       apt-get install -y -qq qemu-user-static binfmt-support
-      systemctl restart systemd-binfmt.service
+      systemctl restart binfmt-support.service
       echo "x86_64 emulation enabled"
     fi
 

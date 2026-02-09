@@ -48,13 +48,6 @@ repos:
           - --args=-recursive
         files: ^infrastructure/.*\.tf$
         exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
-        # NOTE: Terragrunt hooks disabled - use direnv environment instead
-        # - id: terragrunt_fmt
-        #   files: ^infrastructure/
-        #   exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
-        # - id: terragrunt_validate
-        #   files: ^infrastructure/
-        #   exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
 
   - repo: https://github.com/ansible/ansible-lint
     rev: v25.12.1
@@ -67,12 +60,3 @@ repos:
           - ansible-core>=2.12
         require_serial: true
         entry: env ANSIBLE_CONFIG=ansible/ansible.cfg ansible-lint
-
-  - repo: local
-    hooks:
-      - id: packer-fmt
-        name: Format Packer HCL files
-        entry: bash -c 'command -v packer >/dev/null && packer fmt packer/ || true'
-        language: system
-        files: \.pkr\.hcl$
-        pass_filenames: false

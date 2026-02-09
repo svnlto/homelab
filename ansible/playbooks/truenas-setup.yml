@@ -39,69 +39,144 @@
       arensb.truenas.filesystem:
         name: "bulk/kubernetes"
         state: present
-        compression: lz4
+        compression: "LZ4"
       tags: [datasets, bulk, k8s]
 
     - name: Create bulk kubernetes NFS dynamic dataset
       arensb.truenas.filesystem:
         name: "bulk/kubernetes/nfs-dynamic"
         state: present
-        compression: lz4
+        compression: "LZ4"
       tags: [datasets, bulk, k8s]
 
     - name: Create bulk media parent dataset
       arensb.truenas.filesystem:
         name: "bulk/media"
         state: present
-        compression: lz4
-        atime: "off"
+        compression: "LZ4"
+        atime: "OFF"
       tags: [datasets, bulk]
 
-    - name: Create bulk media child datasets
-      arensb.truenas.filesystem:
-        name: "bulk/media/{{ item }}"
-        state: present
-        compression: lz4
-        atime: "off"
+    - name: Set ownership on bulk media dataset root
+      ansible.builtin.command:
+        cmd: >
+          midclt call filesystem.setperm '{
+            "path": "/mnt/bulk/media",
+            "uid": 1000,
+            "gid": 1000,
+            "mode": "0775",
+            "options": {"recursive": false, "traverse": false}
+          }'
+      changed_when: false
+      failed_when: false
+      tags: [datasets, bulk]
+
+    - name: Create bulk media subdirectories
+      ansible.builtin.command:
+        cmd: >
+          midclt call filesystem.mkdir '"/mnt/bulk/media/{{ item }}"'
       loop:
         - music
         - movies
         - tv
         - books
+        - downloads
+        - downloads/torrents
+        - downloads/usenet
+        - downloads/soulseek
+      register: media_dirs
+      changed_when: media_dirs.rc == 0
+      failed_when: false
+      tags: [datasets, bulk]
+
+    - name: Set ownership on bulk media subdirectories
+      ansible.builtin.command:
+        cmd: >
+          midclt call filesystem.setperm '{
+            "path": "/mnt/bulk/media/{{ item }}",
+            "uid": 1000,
+            "gid": 1000,
+            "mode": "0775",
+            "options": {"recursive": false, "traverse": false}
+          }'
+      loop:
+        - music
+        - movies
+        - tv
+        - books
+        - downloads
+        - downloads/torrents
+        - downloads/usenet
+        - downloads/soulseek
+      changed_when: false
+      failed_when: false
       tags: [datasets, bulk]
 
     - name: Create bulk photos dataset (Immich)
       arensb.truenas.filesystem:
         name: "bulk/photos"
         state: present
-        compression: lz4
-        atime: "off"
+        compression: "LZ4"
+        atime: "OFF"
       tags: [datasets, bulk, photos]
 
     - name: Create bulk signoz cold storage dataset
       arensb.truenas.filesystem:
         name: "bulk/signoz-cold"
         state: present
-        compression: zstd
+        compression: "ZSTD"
       tags: [datasets, bulk, observability]
+
+    - name: Create bulk backups parent dataset
+      arensb.truenas.filesystem:
+        name: "bulk/backups"
+        state: present
+        compression: "ZSTD"
+      tags: [datasets, bulk, backups]
 
     - name: Create bulk backup datasets
       arensb.truenas.filesystem:
         name: "bulk/backups/{{ item }}"
         state: present
-        compression: zstd
+        compression: "ZSTD"
       loop:
-        - timemachine
         - proxmox
         - restic-repo
         - forgejo
       tags: [datasets, bulk, backups]
 
+    - name: Create bulk/backups/timemachine dataset (case-insensitive for macOS)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.create '{
+            "name": "bulk/backups/timemachine",
+            "compression": "ZSTD",
+            "casesensitivity": "INSENSITIVE",
+            "acltype": "NFSV4",
+            "aclmode": "PASSTHROUGH"
+          }'
+      register: tm_dataset_create
+      changed_when: tm_dataset_create.rc == 0
+      failed_when: >
+        tm_dataset_create.rc != 0
+        and 'already exists' not in (tm_dataset_create.stderr | default(''))
+        and 'already exists' not in (tm_dataset_create.stdout | default(''))
+      tags: [datasets, bulk, backups, timemachine]
+
+    - name: Create bulk arr-config dataset
+      arensb.truenas.filesystem:
+        name: "bulk/arr-config"
+        state: present
+        compression: "LZ4"
+        atime: "OFF"
+      tags: [datasets, bulk, arr]
+      # TODO: Move to fast/arr-config once MD1220 hardware arrives
+
     - name: Create bulk archive dataset
       arensb.truenas.filesystem:
         name: "bulk/archive"
         state: present
-        compression: lz4
+        compression: "LZ4"
       tags: [datasets, bulk]
 
     # ==========================================================================
@@ -113,14 +188,14 @@
       arensb.truenas.filesystem:
         name: "fast/kubernetes"
         state: present
-        compression: lz4
+        compression: "LZ4"
       tags: [datasets, fast, k8s]
 
     - name: Create fast kubernetes NFS datasets
       arensb.truenas.filesystem:
         name: "fast/kubernetes/{{ item }}"
         state: present
-        compression: lz4
+        compression: "LZ4"
       loop:
         - nfs-dynamic
         - nfs-static
@@ -130,21 +205,21 @@
       arensb.truenas.filesystem:
         name: "fast/kubernetes/iscsi-zvols"
         state: present
-        compression: lz4
+        compression: "LZ4"
       tags: [datasets, fast, k8s, iscsi]
 
     - name: Create fast VMs dataset
       arensb.truenas.filesystem:
         name: "fast/vms"
         state: present
-        compression: lz4
+        compression: "LZ4"
       tags: [datasets, fast, vms]
 
     - name: Create fast ML models dataset
       arensb.truenas.filesystem:
         name: "fast/ml-models"
         state: present
-        compression: lz4
+        compression: "LZ4"
       tags: [datasets, fast, ml]
 
     # ==========================================================================
@@ -156,52 +231,62 @@
       arensb.truenas.filesystem:
         name: "scratch/kubernetes"
         state: present
-        compression: lz4
-        sync: disabled
+        compression: "LZ4"
+        sync: "DISABLED"
       tags: [datasets, scratch, k8s]
 
     - name: Create scratch kubernetes NFS dynamic dataset
       arensb.truenas.filesystem:
         name: "scratch/kubernetes/nfs-dynamic"
         state: present
-        compression: lz4
-        sync: disabled
+        compression: "LZ4"
+        sync: "DISABLED"
       tags: [datasets, scratch, k8s]
 
     - name: Create scratch downloads parent dataset
       arensb.truenas.filesystem:
         name: "scratch/downloads"
         state: present
-        compression: "off"
-        sync: disabled
+        compression: "OFF"
+        sync: "DISABLED"
       tags: [datasets, scratch, downloads]
 
-    - name: Create scratch downloads child datasets
+    - name: Create scratch downloads incomplete dataset
       arensb.truenas.filesystem:
-        name: "scratch/downloads/{{ item }}"
+        name: "scratch/downloads/incomplete"
         state: present
-        compression: "off"
-        sync: disabled
-      loop:
-        - incomplete
-        - complete
-        - usenet
+        compression: "OFF"
+        sync: "DISABLED"
+      tags: [datasets, scratch, downloads]
+
+    - name: Set ownership on scratch/downloads/incomplete (media:media)
+      ansible.builtin.command:
+        cmd: >
+          midclt call filesystem.setperm '{
+            "path": "/mnt/scratch/downloads/incomplete",
+            "uid": 1000,
+            "gid": 1000,
+            "mode": "0775",
+            "options": {"recursive": false, "traverse": false}
+          }'
+      changed_when: false
+      failed_when: false
       tags: [datasets, scratch, downloads]
 
     - name: Create scratch CI runners parent dataset
       arensb.truenas.filesystem:
         name: "scratch/ci-runners"
         state: present
-        compression: lz4
-        sync: disabled
+        compression: "LZ4"
+        sync: "DISABLED"
       tags: [datasets, scratch, ci]
 
     - name: Create scratch CI runners child datasets
       arensb.truenas.filesystem:
         name: "scratch/ci-runners/{{ item }}"
         state: present
-        compression: lz4
-        sync: disabled
+        compression: "LZ4"
+        sync: "DISABLED"
       loop:
         - cache
         - artifacts
@@ -211,16 +296,16 @@
       arensb.truenas.filesystem:
         name: "scratch/ml-datasets"
         state: present
-        compression: lz4
-        sync: disabled
+        compression: "LZ4"
+        sync: "DISABLED"
       tags: [datasets, scratch, ml]
 
     - name: Create scratch temp dataset
       arensb.truenas.filesystem:
         name: "scratch/temp"
         state: present
-        compression: lz4
-        sync: disabled
+        compression: "LZ4"
+        sync: "DISABLED"
       tags: [datasets, scratch]
 
     # ==========================================================================
@@ -259,6 +344,15 @@
       changed_when: false
       tags: [properties, bulk, photos]
 
+    - name: Set bulk/arr-config for mixed small files (databases, configs)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          'bulk/arr-config'
+          '{"recordsize": "16K"}'
+      changed_when: false
+      tags: [properties, bulk, arr]
+
     - name: Set bulk/signoz-cold for observability data
       ansible.builtin.command:
         cmd: >
@@ -268,14 +362,14 @@
       changed_when: false
       tags: [properties, bulk, observability]
 
-    - name: Set bulk/backups/timemachine quota (2TB)
+    - name: Set bulk/backups/timemachine properties (quota, ACLs for macOS)
       ansible.builtin.command:
         cmd: >
           midclt call pool.dataset.update
           'bulk/backups/timemachine'
-          '{"quota": 2199023255552}'
+          '{"quota": 2199023255552, "acltype": "NFSV4", "aclmode": "PASSTHROUGH"}'
       changed_when: false
-      tags: [properties, bulk, backups]
+      tags: [properties, bulk, backups, timemachine]
 
     - name: Set bulk/backups/forgejo quota (100GB)
       ansible.builtin.command:
@@ -358,15 +452,6 @@
       changed_when: false
       tags: [properties, scratch, downloads]
 
-    - name: Set scratch/downloads/usenet for SABnzbd
-      ansible.builtin.command:
-        cmd: >
-          midclt call pool.dataset.update
-          'scratch/downloads/usenet'
-          '{"recordsize": "128K"}'
-      changed_when: false
-      tags: [properties, scratch, downloads]
-
     - name: Set scratch/ci-runners/cache properties
       ansible.builtin.command:
         cmd: >
@@ -403,17 +488,88 @@
         enabled: true
       tags: [nfs, services]
 
-    - name: Create NFS share for media (ReadOnlyMany)
+    - name: Create NFS share for media and downloads
       arensb.truenas.sharing_nfs:
         path: /mnt/bulk/media
-        comment: "Media for Jellyfin on arr-stack"
+        comment: "Media + downloads for arr-stack (hardlinks)"
         mapall_user: media
         mapall_group: media
         networks:
           - 10.10.10.0/24 # Storage VLAN (primary)
           - 192.168.0.0/24 # LAN (arr-stack)
+          - 10.0.1.0/24 # K8s VLAN 30
+          - 10.0.2.0/24 # K8s VLAN 31
         state: present
       tags: [nfs, shares]
+
+    # Child ZFS datasets need their own NFS shares (NFS can't cross dataset boundaries)
+    - name: Create NFS share for media/movies (child dataset)
+      arensb.truenas.sharing_nfs:
+        path: /mnt/bulk/media/movies
+        comment: "Movies library (child dataset)"
+        mapall_user: media
+        mapall_group: media
+        networks:
+          - 10.10.10.0/24 # Storage VLAN (primary)
+          - 192.168.0.0/24 # LAN (arr-stack)
+          - 10.0.1.0/24 # K8s VLAN 30
+          - 10.0.2.0/24 # K8s VLAN 31
+        state: present
+      tags: [nfs, shares]
+
+    - name: Create NFS share for media/tv (child dataset)
+      arensb.truenas.sharing_nfs:
+        path: /mnt/bulk/media/tv
+        comment: "TV library (child dataset)"
+        mapall_user: media
+        mapall_group: media
+        networks:
+          - 10.10.10.0/24 # Storage VLAN (primary)
+          - 192.168.0.0/24 # LAN (arr-stack)
+          - 10.0.1.0/24 # K8s VLAN 30
+          - 10.0.2.0/24 # K8s VLAN 31
+        state: present
+      tags: [nfs, shares]
+
+    - name: Create NFS share for media/music (child dataset)
+      arensb.truenas.sharing_nfs:
+        path: /mnt/bulk/media/music
+        comment: "Music library (child dataset)"
+        mapall_user: media
+        mapall_group: media
+        networks:
+          - 10.10.10.0/24 # Storage VLAN (primary)
+          - 192.168.0.0/24 # LAN (arr-stack)
+          - 10.0.1.0/24 # K8s VLAN 30
+          - 10.0.2.0/24 # K8s VLAN 31
+        state: present
+      tags: [nfs, shares]
+
+    - name: Create NFS share for media/books (child dataset)
+      arensb.truenas.sharing_nfs:
+        path: /mnt/bulk/media/books
+        comment: "Books library (child dataset)"
+        mapall_user: media
+        mapall_group: media
+        networks:
+          - 10.10.10.0/24 # Storage VLAN (primary)
+          - 192.168.0.0/24 # LAN (arr-stack)
+          - 10.0.1.0/24 # K8s VLAN 30
+          - 10.0.2.0/24 # K8s VLAN 31
+        state: present
+      tags: [nfs, shares]
+
+    - name: Create NFS share for arr-config
+      arensb.truenas.sharing_nfs:
+        path: /mnt/bulk/arr-config
+        comment: "Arr stack configuration data (databases, settings)"
+        mapall_user: media
+        mapall_group: media
+        networks:
+          - 192.168.0.0/24 # LAN (arr-stack VM)
+        state: present
+      tags: [nfs, shares, arr]
+      # TODO: Move to /mnt/fast/arr-config once MD1220 hardware arrives
 
     - name: Create NFS share for photos (Immich)
       arensb.truenas.sharing_nfs:
@@ -494,10 +650,10 @@
         state: present
       tags: [nfs, shares, observability]
 
-    - name: Create NFS share for scratch downloads
+    - name: Create NFS share for scratch downloads (incomplete)
       arensb.truenas.sharing_nfs:
-        path: /mnt/scratch/downloads
-        comment: "Torrent/Usenet download staging"
+        path: /mnt/scratch/downloads/incomplete
+        comment: "Active/incomplete downloads (temp staging)"
         mapall_user: media
         mapall_group: media
         networks:
@@ -559,6 +715,17 @@
     # SMB SHARES (for Time Machine from Mac)
     # ==========================================================================
 
+    - name: Enable Apple SMB2/3 protocol extensions
+      ansible.builtin.command:
+        cmd: >
+          midclt call smb.update '{
+            "aapl_extensions": true
+          }'
+      register: smb_config
+      changed_when: false
+      failed_when: false
+      tags: [smb, services]
+
     - name: Enable SMB service
       arensb.truenas.service:
         name: cifs
@@ -575,6 +742,39 @@
         state: present
       tags: [smb, shares]
 
+    - name: Set permissions on Time Machine dataset
+      ansible.builtin.command:
+        cmd: >
+          midclt call filesystem.setperm '{
+            "path": "/mnt/bulk/backups/timemachine",
+            "uid": 1002,
+            "gid": 1002,
+            "mode": "0770",
+            "options": {"recursive": false, "traverse": false}
+          }'
+      register: timemachine_perms
+      changed_when: false
+      failed_when: false
+      tags: [smb, bulk, backups]
+
+    - name: Create Time Machine marker file
+      ansible.builtin.command:
+        cmd: touch /mnt/bulk/backups/timemachine/.com.apple.timemachine.supported
+      changed_when: false
+      failed_when: false
+      tags: [smb, bulk, backups]
+
+    - name: Set Time Machine quota (2TB)
+      ansible.builtin.command:
+        cmd: >
+          midclt call sharing.smb.update 1 '{
+            "timemachine_quota": 2048
+          }'
+      register: tm_quota
+      changed_when: false
+      failed_when: false
+      tags: [smb, bulk, backups]
+
     # ==========================================================================
     # USERS & GROUPS
     # ==========================================================================
@@ -590,8 +790,11 @@
         name: media
         uid: 1000
         group: media
-        home: /nonexistent
+        home: /var/empty
         shell: /usr/sbin/nologin
+        comment: "Media Service Account"
+        password: "*"
+        smb: false
       tags: [users]
 
     - name: Create immich group
@@ -605,9 +808,58 @@
         name: immich
         uid: 1001
         group: immich
-        home: /nonexistent
+        home: /var/empty
         shell: /usr/sbin/nologin
+        comment: "Immich Service Account"
+        password: "*"
+        smb: false
       tags: [users, photos]
+
+    - name: Create svenlito group for SMB access
+      arensb.truenas.group:
+        name: svenlito
+        gid: 1002
+      tags: [users, smb]
+
+    - name: Create svenlito user for SMB/Time Machine
+      arensb.truenas.user:
+        name: svenlito
+        uid: 1002
+        group: svenlito
+        home: /mnt/bulk/backups
+        shell: /usr/bin/bash
+        comment: "Sven Lito"
+        password: "{{ lookup('env', 'TRUENAS_SMB_PASSWORD') | default('changeme123', true) }}"
+        smb: true
+      tags: [users, smb]
+
+    - name: Get media group ID
+      ansible.builtin.command:
+        cmd: midclt call group.query '[["group", "=", "media"]]'
+      register: media_group_info
+      changed_when: false
+      tags: [users]
+
+    - name: Get truenas_admin user info
+      ansible.builtin.command:
+        cmd: midclt call user.query '[["username", "=", "truenas_admin"]]'
+      register: truenas_admin_info
+      changed_when: false
+      tags: [users]
+
+    - name: Add truenas_admin to media group (preserving existing groups)
+      ansible.builtin.command:
+        cmd: >
+          midclt call user.update
+          {{ (truenas_admin_info.stdout | from_json)[0].id }}
+          '{"groups": {{ (truenas_admin_info.stdout | from_json)[0].groups | union([(media_group_info.stdout | from_json)[0].id])
+          | to_json }}}'
+      when:
+        - (media_group_info.stdout | from_json) | length > 0
+        - (truenas_admin_info.stdout | from_json) | length > 0
+        - (media_group_info.stdout | from_json)[0].id not in (truenas_admin_info.stdout | from_json)[0].groups
+      changed_when: true
+      tags: [users]
 
     # ==========================================================================
     # SNAPSHOT TASKS
@@ -704,6 +956,29 @@
       changed_when: "'id' in snapshot_media.stdout"
       failed_when: false
       tags: [snapshots]
+
+    - name: Create snapshot task for bulk/arr-config (daily, keep 14)
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.snapshottask.create '{
+            "dataset": "bulk/arr-config",
+            "recursive": true,
+            "lifetime_value": 14,
+            "lifetime_unit": "DAY",
+            "naming_schema": "daily-%Y-%m-%d",
+            "schedule": {
+              "minute": "0",
+              "hour": "4",
+              "dom": "*",
+              "month": "*",
+              "dow": "*"
+            },
+            "enabled": true
+          }'
+      register: snapshot_arr
+      changed_when: "'id' in snapshot_arr.stdout"
+      failed_when: false
+      tags: [snapshots, arr]
 
     - name: Create snapshot task for bulk/photos (daily, keep 30)
       ansible.builtin.command:
