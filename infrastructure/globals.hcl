@@ -248,7 +248,6 @@ locals {
   versions = {
     terraform  = "1.14.1"
     terragrunt = "0.71.6"
-    packer     = "1.14.3"
     ansible    = "latest" # From nixpkgs-unstable
   }
 

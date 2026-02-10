@@ -22,7 +22,7 @@ repos:
     hooks:
       - id: yamlfmt
         args: ["-conf", ".yamlfmt.yaml"]
-        exclude: ^(\.git/|ansible/playbooks/packer-base-vm\.yml)
+        exclude: ^\.git/
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1
