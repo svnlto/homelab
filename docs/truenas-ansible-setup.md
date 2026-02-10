@@ -1094,7 +1094,7 @@ truenas-ansible/
 │   └── hosts.yml
 ├── group_vars/
 │   └── all/
-│       └── vault.yml          # Encrypted secrets
+│       └── ssh.yml             # SSH public keys
 ├── vars/
 │   ├── datasets.yml
 │   ├── snapshots.yml

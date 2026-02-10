@@ -263,11 +263,10 @@ just ansible-configure din
 # Create Terraform API tokens (run after initial node setup)
 just proxmox-create-api-tokens
 
-# Tokens are displayed and saved to ansible/group_vars/all/vault.yml
-# Add tokens to .env file, then reload direnv:
+# Tokens are saved to 1Password, reload direnv to pick them up:
 direnv allow
 
-# View stored tokens (requires vault password)
+# View stored tokens (from 1Password)
 just proxmox-view-tokens
 
 # Rotate tokens (recommended every 90 days)

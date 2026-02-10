@@ -148,10 +148,10 @@ proxmox-rotate-api-tokens:
     @echo "Rotating Terraform API tokens on all Proxmox nodes..."
     cd ansible && ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags api-tokens -e rotate_tokens=true
 
-# View stored API tokens (requires vault password)
+# View stored API tokens (from 1Password)
 proxmox-view-tokens:
     @echo "=== Proxmox API Tokens ==="
-    @ansible-vault view ansible/group_vars/all/vault.yml 2>/dev/null | grep -A 2 "PROXMOX TERRAFORM TOKEN" || echo "No tokens found or vault.yml not encrypted"
+    @op read "op://Personal/Proxmox API Token/token_id" 2>/dev/null && op read "op://Personal/Proxmox API Token/token_secret" 2>/dev/null || echo "Failed to read tokens from 1Password"
 
 # =============================================================================
 # TrueNAS (Storage)
