@@ -1,6 +1,16 @@
-{ pkgs, lib, constants, ... }: {
+{ pkgs, constants, ... }: {
   # Enable Docker for Pi-hole containers
-  virtualisation.docker.enable = true;
+  virtualisation.docker = {
+    enable = true;
+    # Log rotation to prevent SD card fill
+    daemon.settings = {
+      log-driver = "json-file";
+      log-opts = {
+        max-size = "10m";
+        max-file = "3";
+      };
+    };
+  };
 
   # Pi-hole systemd service
   systemd.services.pihole = {
@@ -62,22 +72,39 @@
           retries: 3
   '';
 
-  # Create Unbound configuration file (port 5335 for host networking)
+  # Create Unbound configuration file (port 5335, localhost only)
+  # Forwards to Mullvad DNS-over-TLS (ISP cannot see DNS queries)
   environment.etc."unbound/unbound.conf".text = ''
     server:
       verbosity: 0
-      interface: 0.0.0.0@5335
+      interface: 127.0.0.1@5335
       port: 5335
       do-ip4: yes
       do-udp: yes
       do-tcp: yes
       do-ip6: no
       prefer-ip6: no
+
+      # Access control — localhost only (Pi-hole queries Unbound)
+      access-control: 127.0.0.0/8 allow
+      access-control: 0.0.0.0/0 refuse
+
+      # DNSSEC hardening
       harden-glue: yes
       harden-dnssec-stripped: yes
+      harden-below-nxdomain: yes
+
+      # TLS for upstream forwarding
+      tls-cert-bundle: /etc/ssl/certs/ca-certificates.crt
+
+      # Cache tuning
+      cache-min-ttl: 300
+      cache-max-ttl: 86400
+      prefetch: yes
+      prefetch-key: yes
+
       use-caps-for-id: no
       edns-buffer-size: 1232
-      prefetch: yes
       num-threads: 1
       so-rcvbuf: 1m
       private-address: 192.168.0.0/16
@@ -85,6 +112,13 @@
       private-address: 10.0.0.0/8
       private-address: fd00::/8
       private-address: fe80::/10
+
+    # Forward all queries to Mullvad DNS over TLS (no-logging, Sweden)
+    forward-zone:
+      name: "."
+      forward-tls-upstream: yes
+      forward-addr: 194.242.2.2@853#dns.mullvad.net
+      forward-addr: 193.19.108.2@853#dns.mullvad.net
   '';
 
   # Copy docker-compose.yml and configs to working directory

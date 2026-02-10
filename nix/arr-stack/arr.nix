@@ -1,4 +1,4 @@
-{ pkgs, lib, constants, ... }:
+{ pkgs, constants, ... }:
 
 let
   dataDir = "/mnt/arr-config";
@@ -6,7 +6,7 @@ let
   scratchDir = "/mnt/scratch";
   composeDir = "/opt/stacks/arr";
 
-  truenasIp = constants.truenasIp;
+  inherit (constants) truenasIp;
 
   puid = "1000";
   pgid = "1000";

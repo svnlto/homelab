@@ -1,0 +1,3 @@
+# Statix configuration for NixOS module linting
+# W20 (repeated keys) is a false positive for NixOS modules which merge attribute sets
+disabled = ["repeated_keys"]

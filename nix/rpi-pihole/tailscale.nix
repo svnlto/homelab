@@ -1,13 +1,11 @@
-{ pkgs, lib, ... }: {
+_: {
   # Enable Tailscale service
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "client";
 
     # Prevent Tailscale from overriding DNS settings
-    extraUpFlags = [
-      "--accept-dns=false"
-    ];
+    extraUpFlags = [ "--accept-dns=false" ];
   };
 
   # Firewall configuration

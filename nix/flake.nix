@@ -14,7 +14,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, disko, ... }: {
+  outputs = { nixpkgs, disko, ... }: {
     nixosConfigurations = {
       rpi-pihole = nixpkgs.lib.nixosSystem {
         system = "aarch64-linux";
@@ -26,9 +26,7 @@
             sdImage.compressImage = false;
           }
         ];
-        specialArgs = {
-          constants = import ./common/constants.nix;
-        };
+        specialArgs = { constants = import ./common/constants.nix; };
       };
 
       arr-stack = nixpkgs.lib.nixosSystem {
@@ -38,9 +36,7 @@
           ./arr-stack/disk-config.nix
           ./arr-stack/configuration.nix
         ];
-        specialArgs = {
-          constants = import ./common/constants.nix;
-        };
+        specialArgs = { constants = import ./common/constants.nix; };
       };
     };
   };
