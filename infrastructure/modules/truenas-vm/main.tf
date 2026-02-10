@@ -3,14 +3,20 @@
 # ==============================================================================
 
 resource "proxmox_virtual_environment_vm" "truenas" {
-  name          = var.vm_name
-  description   = "${var.vm_description} - TrueNAS SCALE ${var.truenas_version}"
-  tags          = var.tags
-  pool_id       = var.pool_id
-  node_name     = var.node_name
-  vm_id         = var.vm_id
-  on_boot       = true
-  bios          = "ovmf"
+  name        = var.vm_name
+  description = "${var.vm_description} - TrueNAS SCALE ${var.truenas_version}"
+  tags        = var.tags
+  pool_id     = var.pool_id
+  node_name   = var.node_name
+  vm_id       = var.vm_id
+  on_boot     = true
+  bios        = "ovmf"
+
+  startup {
+    order      = 1
+    up_delay   = 120
+    down_delay = 120
+  }
   machine       = "q35"
   scsi_hardware = "virtio-scsi-single"
   boot_order    = ["virtio0"]

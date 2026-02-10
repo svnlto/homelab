@@ -42,6 +42,24 @@ variable "start_on_boot" {
   default     = true
 }
 
+variable "startup_order" {
+  description = "VM startup order (lower = starts first). Set to null to disable."
+  type        = number
+  default     = 2
+}
+
+variable "startup_up_delay" {
+  description = "Seconds to wait after starting this VM before starting the next"
+  type        = number
+  default     = 30
+}
+
+variable "startup_down_delay" {
+  description = "Seconds to wait after shutting down this VM before stopping the next"
+  type        = number
+  default     = 30
+}
+
 # Boot Configuration
 variable "boot_mode" {
   description = "Boot mode: 'uefi' (OVMF + q35) or 'bios' (SeaBIOS + i440fx)"
