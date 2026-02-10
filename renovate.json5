@@ -111,10 +111,9 @@
       "matchUpdateTypes": ["minor", "patch"]
     },
 
-    // Separate major updates — one PR per package for careful review
+    // Label major updates for careful review
     {
       "matchUpdateTypes": ["major"],
-      "separateMinorPatch": true,
       "labels": ["dependencies", "major"]
     },
 
