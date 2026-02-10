@@ -1,9 +1,5 @@
-{ pkgs, lib, constants, ... }: {
-  imports = [
-    ./hardware.nix
-    ./pihole.nix
-    ./tailscale.nix
-  ];
+{ pkgs, constants, ... }: {
+  imports = [ ./hardware.nix ./pihole.nix ./tailscale.nix ];
 
   # Network configuration
   networking = {
@@ -14,18 +10,19 @@
       prefixLength = 24;
     }];
     defaultGateway = "192.168.0.1";
-    nameservers = [ "1.1.1.1" "8.8.8.8" ];  # Bootstrap DNS (before Pi-hole is running)
+    nameservers =
+      [ "1.1.1.1" "8.8.8.8" ]; # Bootstrap DNS (before Pi-hole is running)
 
     firewall = {
       enable = true;
       allowedTCPPorts = [
-        22    # SSH
-        53    # DNS
-        80    # Pi-hole web interface
-        9100  # Prometheus node exporter
+        22 # SSH
+        53 # DNS
+        80 # Pi-hole web interface
+        9100 # Prometheus node exporter
       ];
       allowedUDPPorts = [
-        53    # DNS
+        53 # DNS
       ];
     };
   };
@@ -73,6 +70,24 @@
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
   };
+
+  # Reduce SD card wear — tmpfs for high-write paths
+  fileSystems."/var/log" = {
+    device = "tmpfs";
+    fsType = "tmpfs";
+    options = [ "size=50M" "nodev" "nosuid" ];
+  };
+  fileSystems."/tmp" = {
+    device = "tmpfs";
+    fsType = "tmpfs";
+    options = [ "size=100M" "nodev" "nosuid" ];
+  };
+
+  # Cap journal size (persisted journals would go to tmpfs /var/log)
+  services.journald.extraConfig = ''
+    SystemMaxUse=30M
+    RuntimeMaxUse=30M
+  '';
 
   # Timezone
   time.timeZone = constants.timezone;

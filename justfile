@@ -59,7 +59,7 @@ nixos-flash-pihole disk:
     fi
 
 # Update NixOS flake lock (get latest packages) - runs in VM
-nixos-update-pihole:
+nixos-flake-update-pihole:
     @echo "Updating NixOS flake lock in VM..."
     cd nix && vagrant ssh -c "cd /vagrant && nix flake update"
     @echo "✓ Flake updated. Run 'just nixos-build-pihole' to rebuild."
@@ -96,6 +96,13 @@ nixos-install-arr-stack ip:
       root@{{ip}}
     echo "NixOS installed! VM will reboot to 192.168.0.50"
     echo "SSH: ssh svenlito@192.168.0.50"
+
+# Deploy Pi-hole NixOS configuration via SSH (rebuilds on the Pi)
+nixos-deploy-pihole:
+    @echo "Syncing NixOS config to rpi-pihole..."
+    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.53:/tmp/nix-config/
+    @echo "Rebuilding NixOS on rpi-pihole..."
+    ssh svenlito@192.168.0.53 "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-pihole"
 
 # Update arr-stack NixOS configuration (after initial install)
 nixos-update-arr-stack:

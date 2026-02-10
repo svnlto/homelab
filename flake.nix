@@ -15,8 +15,7 @@
       "github:NixOS/nixpkgs/dc205f7b4fdb04c8b7877b43edb7b73be7730081";
   };
 
-  outputs =
-    { self, nixpkgs, flake-utils, nixpkgs-terraform, nixpkgs-packer, ... }:
+  outputs = { nixpkgs, flake-utils, nixpkgs-terraform, nixpkgs-packer, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -33,8 +32,18 @@
       in {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs;
-            [ ansible ansible-lint tflint vagrant qemu jq yq-go sshpass just terragrunt ]
-            ++ [ pkgs-packer.packer terraform ];
+            [
+              ansible
+              ansible-lint
+              tflint
+              vagrant
+              qemu
+              jq
+              yq-go
+              sshpass
+              just
+              terragrunt
+            ] ++ [ pkgs-packer.packer terraform ];
 
           shellHook = ''
             export QEMU_DIR="${pkgs.qemu}/share/qemu"

@@ -60,3 +60,25 @@ repos:
           - ansible-core>=2.12
         require_serial: true
         entry: env ANSIBLE_CONFIG=ansible/ansible.cfg ansible-lint
+
+  - repo: local
+    hooks:
+      - id: nixfmt
+        name: Format Nix files
+        entry: nixfmt
+        language: system
+        files: \.nix$
+      - id: statix
+        name: Lint Nix files
+        entry: bash -c 'NIX="nix --extra-experimental-features \"nix-command flakes\""; CMD="statix"; command -v statix &>/dev/null
+          || CMD="$NIX shell nixpkgs#statix -c statix"; rc=0; for f in "$@"; do eval "$CMD check \"$f\"" || rc=1; done; exit
+          $rc' --
+        language: system
+        files: \.nix$
+      - id: deadnix
+        name: Find dead Nix code
+        entry: bash -c 'NIX="nix --extra-experimental-features \"nix-command flakes\""; CMD="deadnix"; command -v deadnix
+          &>/dev/null || CMD="$NIX shell nixpkgs#deadnix -c deadnix"; rc=0; for f in "$@"; do eval "$CMD --fail \"$f\"" ||
+          rc=1; done; exit $rc' --
+        language: system
+        files: \.nix$

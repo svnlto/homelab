@@ -1,8 +1,5 @@
-{ pkgs, lib, modulesPath, constants, ... }: {
-  imports = [
-    (modulesPath + "/profiles/qemu-guest.nix")
-    ./arr.nix
-  ];
+{ pkgs, modulesPath, constants, ... }: {
+  imports = [ (modulesPath + "/profiles/qemu-guest.nix") ./arr.nix ];
 
   # Boot loader (EFI — systemd-boot for UEFI/OVMF VM)
   boot.loader.systemd-boot.enable = true;
@@ -18,25 +15,25 @@
       prefixLength = 24;
     }];
     defaultGateway = "192.168.0.1";
-    nameservers = [ "192.168.0.53" ];  # Pi-hole DNS
+    nameservers = [ "192.168.0.53" ]; # Pi-hole DNS
 
     firewall = {
       enable = true;
       allowedTCPPorts = [
-        22    # SSH
-        5055  # Jellyseerr
-        8096  # Jellyfin
-        8701  # qBittorrent WebUI
-        8080  # SABnzbd
-        7878  # Radarr
-        8989  # Sonarr
-        8686  # Lidarr
-        6767  # Bazarr
-        9696  # Prowlarr
-        8191  # FlareSolverr
-        5030  # Slskd
-        8090  # Glance
-        5001  # Sonobarr
+        22 # SSH
+        5055 # Jellyseerr
+        8096 # Jellyfin
+        8701 # qBittorrent WebUI
+        8080 # SABnzbd
+        7878 # Radarr
+        8989 # Sonarr
+        8686 # Lidarr
+        6767 # Bazarr
+        9696 # Prowlarr
+        8191 # FlareSolverr
+        5030 # Slskd
+        8090 # Glance
+        5001 # Sonobarr
       ];
     };
   };
@@ -91,12 +88,7 @@
   time.timeZone = constants.timezone;
 
   # System packages
-  environment.systemPackages = with pkgs; [
-    vim
-    htop
-    curl
-    git
-  ];
+  environment.systemPackages = with pkgs; [ vim htop curl git ];
 
   # NixOS state version
   system.stateVersion = "25.11";
