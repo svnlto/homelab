@@ -126,7 +126,7 @@ Name: OpenVPN
 Vault: Personal (or Homelab)
 
 Fields:
-  - username (text): WVAOFF7ScBgxGRoB+pmp
+  - username (text): <your-openvpn-username>
   - password (password): <your-b2-password>
 ```
 
@@ -134,7 +134,7 @@ Fields:
 
 1. Click "+" → "Login"
 2. Title: "OpenVPN"
-3. Username: WVAOFF7ScBgxGRoB+pmp
+3. Username: <your-openvpn-username>
 4. Password: <your-b2-password>
 5. Save
 
@@ -146,7 +146,7 @@ Name: Soulseek
 Vault: Personal (or Homelab)
 
 Fields:
-  - username (text): briaal_jellyfin
+  - username (text): <your-soulseek-username>
   - password (password): <your-soulseek-password>
 ```
 
@@ -154,7 +154,7 @@ Fields:
 
 1. Click "+" → "Login"
 2. Title: "Soulseek"
-3. Username: briaal_jellyfin
+3. Username: <your-soulseek-username>
 4. Password: <your-soulseek-password>
 5. Save
 
