@@ -11,11 +11,9 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     nixpkgs-terraform.url = "github:stackbuilders/nixpkgs-terraform";
-    nixpkgs-packer.url =
-      "github:NixOS/nixpkgs/dc205f7b4fdb04c8b7877b43edb7b73be7730081";
   };
 
-  outputs = { nixpkgs, flake-utils, nixpkgs-terraform, nixpkgs-packer, ... }:
+  outputs = { nixpkgs, flake-utils, nixpkgs-terraform, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -23,34 +21,28 @@
           config.allowUnfree = true;
         };
 
-        pkgs-packer = import nixpkgs-packer {
-          inherit system;
-          config.allowUnfree = true;
-        };
-
         terraform = nixpkgs-terraform.packages.${system}."terraform-1.14.1";
       in {
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs;
-            [
-              ansible
-              ansible-lint
-              tflint
-              vagrant
-              qemu
-              jq
-              yq-go
-              sshpass
-              just
-              terragrunt
-            ] ++ [ pkgs-packer.packer terraform ];
+          buildInputs = with pkgs; [
+            ansible
+            ansible-lint
+            tflint
+            vagrant
+            qemu
+            jq
+            yq-go
+            sshpass
+            just
+            terragrunt
+            terraform
+          ];
 
           shellHook = ''
             export QEMU_DIR="${pkgs.qemu}/share/qemu"
             export PATH="${pkgs.qemu}/bin:$PATH"
 
             echo "Homelab Development Environment"
-            packer version | head -1
             terraform version | head -1
             terragrunt --version | head -1
             ansible --version | head -1
