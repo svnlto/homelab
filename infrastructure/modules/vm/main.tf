@@ -8,14 +8,20 @@ locals {
 }
 
 resource "proxmox_virtual_environment_vm" "vm" {
-  name          = var.vm_name
-  description   = var.vm_description
-  tags          = var.tags
-  pool_id       = var.pool_id
-  node_name     = var.node_name
-  vm_id         = var.vm_id
-  on_boot       = var.start_on_boot
-  bios          = local.is_uefi ? "ovmf" : "seabios"
+  name        = var.vm_name
+  description = var.vm_description
+  tags        = var.tags
+  pool_id     = var.pool_id
+  node_name   = var.node_name
+  vm_id       = var.vm_id
+  on_boot     = var.start_on_boot
+  bios        = local.is_uefi ? "ovmf" : "seabios"
+
+  startup {
+    order      = var.startup_order
+    up_delay   = var.startup_up_delay
+    down_delay = var.startup_down_delay
+  }
   machine       = local.is_uefi ? "q35" : "i440fx"
   scsi_hardware = "virtio-scsi-single"
   boot_order    = ["virtio0"]

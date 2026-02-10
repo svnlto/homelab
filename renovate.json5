@@ -1,0 +1,111 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+
+  // Weekly on Monday mornings, Europe/Berlin timezone
+  "schedule": ["before 9am on Monday"],
+  "timezone": "Europe/Berlin",
+
+  // Never automerge — infrastructure code requires manual review
+  "automerge": false,
+
+  // Skip legacy/generated paths
+  "ignorePaths": [
+    "archive/**",
+    ".terragrunt-cache/**",
+    "packer/**"
+  ],
+
+  // Keep Terraform lock files up to date
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 9am on Monday"]
+  },
+
+  // Custom regex managers for Nix files with Docker image references
+  "customManagers": [
+    {
+      // Match single-line: name = "registry/image:tag";
+      // Requires depName to start with [a-z] to exclude NFS device lines (${truenasIp}:...)
+      "customType": "regex",
+      "fileMatch": ["^nix/arr-stack/arr\\.nix$"],
+      "matchStrings": [
+        "\\s+\\w+\\s*=\\s*\"(?<depName>[a-z][^\"]*?):(?<currentValue>[^\"]+?)\";"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      // Match multi-line jellyfinAutoCollections (value on next line)
+      "customType": "regex",
+      "fileMatch": ["^nix/arr-stack/arr\\.nix$"],
+      "matchStrings": [
+        "jellyfinAutoCollections\\s*=\\s*\\n\\s*\"(?<depName>[^\"]+?):(?<currentValue>[^\"]+?)\";"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      // Pi-hole version in constants.nix (Docker Hub pihole/pihole)
+      "customType": "regex",
+      "fileMatch": ["^nix/common/constants\\.nix$"],
+      "matchStrings": [
+        "piholeVersion\\s*=\\s*\"(?<currentValue>[^\"]+?)\";"
+      ],
+      "depNameTemplate": "pihole/pihole",
+      "datasourceTemplate": "docker"
+    },
+    {
+      // Unbound image in constants.nix
+      "customType": "regex",
+      "fileMatch": ["^nix/common/constants\\.nix$"],
+      "matchStrings": [
+        "unboundImage\\s*=\\s*\"(?<depName>[^\"]+?):(?<currentValue>[^\"]+?)\";"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ],
+
+  "packageRules": [
+    // Group pre-commit hooks (minor + patch)
+    {
+      "groupName": "pre-commit hooks",
+      "matchManagers": ["pre-commit"],
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+
+    // Group Terraform providers (minor + patch)
+    {
+      "groupName": "terraform providers",
+      "matchManagers": ["terraform"],
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+
+    // Group arr-stack container images (minor + patch)
+    {
+      "groupName": "arr-stack containers",
+      "matchFileNames": ["nix/arr-stack/arr.nix"],
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+
+    // Group Nix flake inputs (minor + patch)
+    {
+      "groupName": "nix flake inputs",
+      "matchManagers": ["nix"],
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+
+    // Pin Docker images that use "latest" tag
+    {
+      "matchDatasources": ["docker"],
+      "matchCurrentVersion": "latest",
+      "pinDigests": true
+    },
+
+    // Ignore lidarr — uses non-standard pr-plugins-* versioning from hotio
+    {
+      "matchPackageNames": ["ghcr.io/hotio/lidarr"],
+      "enabled": false
+    }
+  ]
+}

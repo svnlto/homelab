@@ -135,6 +135,8 @@ in {
           - VPN_PORT_FORWARDING=on
           - VPN_PORT_FORWARDING_PROVIDER=protonvpn
           - UPDATER_PERIOD=24h
+          - HEALTH_VPN_DURATION_INITIAL=30s
+          - HEALTH_VPN_DURATION_ADDITION=30s
         volumes:
           - ${dataDir}/gluetun:/gluetun
         healthcheck:
@@ -177,7 +179,7 @@ in {
           - WEBUI_PORT=8701
         volumes:
           - ${dataDir}/qbittorrent:/config
-          - ${mediaDir}:/data
+          - ${mediaDir}:/data/media
           - ${scratchDir}:/data-scratch
         depends_on:
           gluetun:
@@ -194,7 +196,7 @@ in {
           - TZ=${tz}
         volumes:
           - ${dataDir}/sabnzbd:/config
-          - ${mediaDir}:/data
+          - ${mediaDir}:/data/media
           - ${scratchDir}:/data-scratch
         depends_on:
           gluetun:
@@ -211,7 +213,7 @@ in {
           - TZ=${tz}
         volumes:
           - ${dataDir}/radarr:/config
-          - ${mediaDir}:/data
+          - ${mediaDir}:/data/media
         depends_on:
           gluetun:
             condition: service_healthy
@@ -227,7 +229,7 @@ in {
           - TZ=${tz}
         volumes:
           - ${dataDir}/sonarr:/config
-          - ${mediaDir}:/data
+          - ${mediaDir}:/data/media
         depends_on:
           gluetun:
             condition: service_healthy
@@ -243,7 +245,7 @@ in {
           - TZ=${tz}
         volumes:
           - ${dataDir}/lidarr:/config
-          - ${mediaDir}:/data
+          - ${mediaDir}:/data/media
         depends_on:
           gluetun:
             condition: service_healthy
@@ -458,7 +460,7 @@ in {
     Accepted=true
 
     [BitTorrent]
-    Session\DefaultSavePath=/data/downloads/torrents
+    Session\DefaultSavePath=/data/media/downloads/torrents
     Session\TempPath=/data-scratch
     Session\TempPathEnabled=true
     Session\Port=6881
@@ -489,7 +491,7 @@ in {
     host = 0.0.0.0
     port = 8080
     download_dir = /data-scratch
-    complete_dir = /data/downloads/usenet
+    complete_dir = /data/media/downloads/usenet
     permissions = 0775
     auto_browser = 0
     replace_illegal = 1
@@ -736,7 +738,7 @@ in {
         chown -R 1000:1000 ${mediaDir}/downloads
 
         # Symlink old incomplete path to scratch mount so queued jobs still work
-        # (containers see /data/downloads/incomplete → /data-scratch)
+        # (containers see /data/media/downloads/incomplete → /data-scratch)
         rm -rf ${mediaDir}/downloads/incomplete
         ln -sf /data-scratch ${mediaDir}/downloads/incomplete
 
@@ -758,17 +760,18 @@ in {
         fi
 
         # Fix download paths — ensure incomplete downloads use scratch pool
-        QB_CONF="${dataDir}/qbittorrent/qBittorrent/config/qBittorrent.conf"
+        # Note: qBittorrent stores runtime config in parent dir, not config/ subdir
+        QB_CONF="${dataDir}/qbittorrent/qBittorrent/qBittorrent.conf"
         if [ -f "$QB_CONF" ]; then
           sed -i 's|Session\\TempPath=.*|Session\\TempPath=/data-scratch|' "$QB_CONF"
           sed -i 's|Session\\TempPathEnabled=.*|Session\\TempPathEnabled=true|' "$QB_CONF"
-          sed -i 's|Session\\DefaultSavePath=.*|Session\\DefaultSavePath=/data/downloads/torrents|' "$QB_CONF"
+          sed -i 's|Session\\DefaultSavePath=.*|Session\\DefaultSavePath=/data/media/downloads/torrents|' "$QB_CONF"
         fi
 
         SAB_CONF="${dataDir}/sabnzbd/sabnzbd.ini"
         if [ -f "$SAB_CONF" ]; then
           sed -i 's|^download_dir = .*|download_dir = /data-scratch|' "$SAB_CONF"
-          sed -i 's|^complete_dir = .*|complete_dir = /data/downloads/usenet|' "$SAB_CONF"
+          sed -i 's|^complete_dir = .*|complete_dir = /data/media/downloads/usenet|' "$SAB_CONF"
         fi
 
         # Symlink .env to compose directory
@@ -799,6 +802,13 @@ in {
       ExecStartPre = "${pkgs.docker-compose}/bin/docker-compose up -d";
       ExecStart = pkgs.writeShellScript "arr-stack-monitor" ''
         set -euo pipefail
+
+        # Wait for containers to initialize, then create compatibility symlinks
+        # Old queued jobs reference /data/downloads/* but mount is now at /data/media
+        sleep 15
+        for ctr in sabnzbd qbittorrent; do
+          docker exec "$ctr" sh -c 'mkdir -p /data && ln -sfn /data/media/downloads /data/downloads' 2>/dev/null || true
+        done
 
         # Monitor loop — exits non-zero if critical containers are down,
         # which triggers systemd Restart=on-failure
