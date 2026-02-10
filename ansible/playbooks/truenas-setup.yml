@@ -97,7 +97,7 @@
             "uid": 1000,
             "gid": 1000,
             "mode": "0775",
-            "options": {"recursive": false, "traverse": false}
+            "options": {"recursive": true, "traverse": false}
           }'
       loop:
         - music
@@ -110,7 +110,7 @@
         - downloads/soulseek
       changed_when: false
       failed_when: false
-      tags: [datasets, bulk]
+      tags: [datasets, bulk, fix-perms]
 
     - name: Create bulk photos dataset (Immich)
       arensb.truenas.filesystem:

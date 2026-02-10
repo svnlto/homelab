@@ -33,7 +33,6 @@
         8191 # FlareSolverr
         5030 # Slskd
         8090 # Glance
-        5001 # Sonobarr
       ];
     };
   };

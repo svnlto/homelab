@@ -35,7 +35,7 @@ inputs = {
 
   # Hardware
   cpu_cores         = 4
-  memory_mb         = 4096
+  memory_mb         = 6144
   boot_disk_size_gb = 32
 
   # Network - LAN on vmbr0 (no VLAN tag)

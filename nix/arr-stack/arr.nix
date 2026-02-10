@@ -29,7 +29,6 @@ let
     recyclarr = "ghcr.io/recyclarr/recyclarr:7.4.0";
     buildarr = "callum027/buildarr:0.7.8";
     glance = "glanceapp/glance:v0.8.4";
-    sonobarr = "ghcr.io/dodelidoo-labs/sonobarr:0.11.0";
     jellyfinAutoCollections =
       "ghcr.io/ghomashudson/jellyfin-auto-collections:latest";
   };
@@ -380,21 +379,6 @@ in {
           - 8090:8080
         restart: unless-stopped
 
-      sonobarr:
-        image: ${images.sonobarr}
-        container_name: sonobarr
-        environment:
-          - TZ=${tz}
-          - secret_key=''${SONOBARR_SECRET_KEY}
-          - lidarr_address=http://gluetun:8686
-          - lidarr_api_key=''${LIDARR_API_KEY}
-          - root_folder_path=/data/media/music/
-        volumes:
-          - ${dataDir}/sonobarr:/config
-        ports:
-          - 5001:5000
-        restart: unless-stopped
-
       jellyfin-auto-collections:
         image: ${images.jellyfinAutoCollections}
         container_name: jellyfin-auto-collections
@@ -443,8 +427,6 @@ in {
     JELLYSEERR_EMAIL=
     JELLYSEERR_PASSWORD=
 
-    # Sonobarr
-    SONOBARR_SECRET_KEY=
   '';
 
   # ---------------------------------------------------------------------------
@@ -728,7 +710,6 @@ in {
         mkdir -p ${dataDir}/recyclarr
         mkdir -p ${dataDir}/buildarr
         mkdir -p ${dataDir}/glance
-        mkdir -p ${dataDir}/sonobarr
         mkdir -p ${dataDir}/jellyfin-auto-collections
 
         # Ensure download directories exist on media mount
