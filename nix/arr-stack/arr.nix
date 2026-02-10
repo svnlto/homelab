@@ -68,9 +68,63 @@ in {
     ];
   };
 
-  # Media — persistent mount (Docker containers need constant access)
+  # Media — parent mount (NFS can't cross ZFS dataset boundaries,
+  # so child datasets are mounted explicitly below)
   fileSystems.${mediaDir} = {
     device = "${truenasIp}:/mnt/bulk/media";
+    fsType = "nfs";
+    options = [
+      "nfsvers=4.2"
+      "sec=sys"
+      "rsize=131072"
+      "wsize=131072"
+      "hard"
+      "_netdev"
+    ];
+  };
+
+  # Child ZFS datasets — separate NFS exports, must be mounted individually
+  fileSystems."${mediaDir}/movies" = {
+    device = "${truenasIp}:/mnt/bulk/media/movies";
+    fsType = "nfs";
+    options = [
+      "nfsvers=4.2"
+      "sec=sys"
+      "rsize=131072"
+      "wsize=131072"
+      "hard"
+      "_netdev"
+    ];
+  };
+
+  fileSystems."${mediaDir}/tv" = {
+    device = "${truenasIp}:/mnt/bulk/media/tv";
+    fsType = "nfs";
+    options = [
+      "nfsvers=4.2"
+      "sec=sys"
+      "rsize=131072"
+      "wsize=131072"
+      "hard"
+      "_netdev"
+    ];
+  };
+
+  fileSystems."${mediaDir}/music" = {
+    device = "${truenasIp}:/mnt/bulk/media/music";
+    fsType = "nfs";
+    options = [
+      "nfsvers=4.2"
+      "sec=sys"
+      "rsize=131072"
+      "wsize=131072"
+      "hard"
+      "_netdev"
+    ];
+  };
+
+  fileSystems."${mediaDir}/books" = {
+    device = "${truenasIp}:/mnt/bulk/media/books";
     fsType = "nfs";
     options = [
       "nfsvers=4.2"
