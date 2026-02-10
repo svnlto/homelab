@@ -142,21 +142,15 @@
           - "Access: https://{{ ansible_host }}:8006"
           - "{% if configure_pcie_passthrough %}⚠ REBOOT REQUIRED for PCIe passthrough changes{% endif %}"
 
-    - name: Reminder to encrypt vault.yml and update .env
+    - name: Reminder to reload environment
       ansible.builtin.debug:
         msg:
           - "========================================="
-          - "IMPORTANT: API Tokens Generated"
+          - "API Tokens saved to 1Password"
           - "========================================="
           - ""
-          - "1. Encrypt vault.yml (if not encrypted):"
-          - "   ansible-vault encrypt ansible/group_vars/all/vault.yml"
-          - ""
-          - "2. Add tokens to your .env file:"
-          - "   ansible-vault view ansible/group_vars/all/vault.yml"
-          - ""
-          - "3. Reload direnv:"
-          - "   direnv allow"
+          - "Reload direnv to pick up new tokens:"
+          - "  direnv allow"
           - ""
       run_once: true
       tags: [api-tokens]

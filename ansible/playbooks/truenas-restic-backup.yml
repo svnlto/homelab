@@ -18,10 +18,9 @@
 # - Backblaze B2 account created
 # - B2 bucket created (e.g., "homelab-truenas-backup")
 # - B2 application key generated
-# - Variables defined in group_vars/all/vault.yml (encrypted):
-#   - vault_b2_account_id
-#   - vault_b2_account_key
-#   - vault_restic_password
+# - Secrets fetched from 1Password via .envrc:
+#   - B2_KEY_ID / B2_APPLICATION_KEY (Backblaze B2)
+#   - vault_restic_password (stored in 1Password)
 #
 # Usage:
 #   ansible-playbook playbooks/truenas-restic-backup.yml
