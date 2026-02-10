@@ -34,7 +34,7 @@ inputs = {
   tags           = ["nixos", "arr", "media", "production"]
 
   # Hardware
-  cpu_cores         = 4
+  cpu_cores         = 8
   memory_mb         = 6144
   boot_disk_size_gb = 32
 
