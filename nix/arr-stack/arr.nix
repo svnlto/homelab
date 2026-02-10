@@ -21,15 +21,15 @@ let
     radarr = "lscr.io/linuxserver/radarr:6.0.4.10291-ls288";
     sonarr = "lscr.io/linuxserver/sonarr:4.0.16.2944-ls299";
     lidarr = "ghcr.io/hotio/lidarr:pr-plugins-3.0.0.4856";
-    bazarr = "lscr.io/linuxserver/bazarr:latest";
+    bazarr = "lscr.io/linuxserver/bazarr:v1.5.5-ls336";
     slskd = "slskd/slskd:0.24.1";
     prowlarr = "lscr.io/linuxserver/prowlarr:2.3.0.5236-ls133";
     flaresolverr = "ghcr.io/flaresolverr/flaresolverr:v3.4.5";
     jellyseerr = "fallenbagel/jellyseerr:2.7.3";
     recyclarr = "ghcr.io/recyclarr/recyclarr:7.4.0";
     buildarr = "callum027/buildarr:0.7.8";
-    glance = "glanceapp/glance:latest";
-    sonobarr = "ghcr.io/dodelidoo-labs/sonobarr:latest";
+    glance = "glanceapp/glance:v0.8.4";
+    sonobarr = "ghcr.io/dodelidoo-labs/sonobarr:0.11.0";
     jellyfinAutoCollections =
       "ghcr.io/ghomashudson/jellyfin-auto-collections:latest";
   };

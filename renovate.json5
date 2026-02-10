@@ -1,7 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "docker:pinDigests",
+    ":pinVersions"
   ],
 
   // Weekly on Monday mornings, Europe/Berlin timezone
@@ -10,6 +12,20 @@
 
   // Never automerge — infrastructure code requires manual review
   "automerge": false,
+
+  // Pin versions instead of using ranges
+  "rangeStrategy": "pin",
+
+  // PR configuration
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 10,
+  "labels": ["dependencies"],
+
+  // Enable vulnerability alerts
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  },
 
   // Skip legacy/generated paths
   "ignorePaths": [
@@ -95,17 +111,23 @@
       "matchUpdateTypes": ["minor", "patch"]
     },
 
-    // Pin Docker images that use "latest" tag
+    // Separate major updates — one PR per package for careful review
     {
-      "matchDatasources": ["docker"],
-      "matchCurrentVersion": "latest",
-      "pinDigests": true
+      "matchUpdateTypes": ["major"],
+      "separateMinorPatch": true,
+      "labels": ["dependencies", "major"]
     },
 
     // Ignore lidarr — uses non-standard pr-plugins-* versioning from hotio
     {
       "matchPackageNames": ["ghcr.io/hotio/lidarr"],
       "enabled": false
+    },
+
+    // jellyfin-auto-collections has no versioned releases, pin digest only
+    {
+      "matchPackageNames": ["ghcr.io/ghomashudson/jellyfin-auto-collections"],
+      "pinDigests": true
     }
   ]
 }
