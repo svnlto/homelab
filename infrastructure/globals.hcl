@@ -167,7 +167,7 @@ locals {
   }
 
   mikrotik = {
-    hostname = "crs-router"
+    hostname = "nevarro"
     api_url  = "https://192.168.0.1" # MikroTik REST API (LAN gateway)
 
     # WAN interface (standalone, not in bridge)
@@ -220,10 +220,9 @@ locals {
 
     # PCIe Resource Mappings (configured in Proxmox UI)
     resource_mappings = {
-      truenas_h330 = "truenas-h330" # Dell H330 Mini on din (6×8TB bulk)
-      truenas_lsi  = "truenas-lsi"  # Dell PERC H200E on din (MD1220 shelf, 24×900GB fast)
-      md1200_hba   = "md1200-hba"   # md1200 controller on grogu (12×8TB backup)
-      md1220_hba   = "md1220-hba"   # md1220 controller on din (6×3TB scratch)
+      truenas_h330 = "truenas-h330" # Dell H330 Mini on din (6×8TB bulk + 6×3TB scratch, internal)
+      truenas_lsi  = "truenas-lsi"  # Dell PERC H200E on din → MD1220 (24×900GB fast)
+      md1200_hba   = "md1200-hba"   # HPE H241 on grogu → MD1200 (12×8TB backup)
     }
   }
 
