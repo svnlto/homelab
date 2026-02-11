@@ -55,3 +55,8 @@ variable "wan_gateway" {
   type        = string
   description = "WAN default gateway IP"
 }
+
+variable "allowed_management_subnets" {
+  type        = string
+  description = "Comma-separated subnets allowed to access management services"
+}

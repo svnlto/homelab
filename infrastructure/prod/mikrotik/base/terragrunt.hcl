@@ -25,4 +25,6 @@ inputs = {
   wan_interface = local.mikrotik.wan.interface
   wan_address   = local.mikrotik.wan.address
   wan_gateway   = local.mikrotik.wan.gateway
+
+  allowed_management_subnets = local.mikrotik.allowed_management_subnets
 }

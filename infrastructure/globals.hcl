@@ -193,6 +193,9 @@ locals {
     }
 
     bridge_name = "bridge-vlans"
+
+    # Subnets allowed to access management services (SSH, HTTPS, WinBox, API-SSL)
+    allowed_management_subnets = "192.168.0.0/24,10.10.1.0/24"
   }
 
   proxmox = {

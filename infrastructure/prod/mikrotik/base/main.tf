@@ -81,3 +81,57 @@ resource "routeros_interface_bridge_vlan" "vlan_membership" {
   ]
   comment = "VLAN ${each.value.id} (${each.value.name})"
 }
+
+# =============================================================================
+# Service hardening — disable insecure services, restrict management access
+# =============================================================================
+
+resource "routeros_ip_service" "ftp" {
+  numbers  = "ftp"
+  disabled = true
+  port     = 21
+}
+
+resource "routeros_ip_service" "ssh" {
+  numbers = "ssh"
+  port    = 22
+  address = var.allowed_management_subnets
+}
+
+resource "routeros_ip_service" "telnet" {
+  numbers  = "telnet"
+  disabled = true
+  port     = 23
+}
+
+resource "routeros_ip_service" "www" {
+  numbers  = "www"
+  disabled = true
+  port     = 80
+}
+
+resource "routeros_ip_service" "www_ssl" {
+  numbers     = "www-ssl"
+  port        = 443
+  address     = var.allowed_management_subnets
+  certificate = "api-cert"
+}
+
+resource "routeros_ip_service" "api" {
+  numbers  = "api"
+  disabled = true
+  port     = 8728
+}
+
+resource "routeros_ip_service" "api_ssl" {
+  numbers     = "api-ssl"
+  port        = 8729
+  address     = var.allowed_management_subnets
+  certificate = "api-cert"
+}
+
+resource "routeros_ip_service" "winbox" {
+  numbers = "winbox"
+  port    = 8291
+  address = var.allowed_management_subnets
+}
