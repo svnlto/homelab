@@ -2,7 +2,7 @@
 # TrueNAS Backup Server (VMID 301)
 # ==============================================================================
 # Target: grogu (r630) - Backup storage node
-# Storage: MD1200 disk shelf (8×3TB via HBA passthrough)
+# Storage: MD1200 disk shelf (12×8TB via HBA passthrough)
 # Network: Dual-homed (VLAN 10 storage + VLAN 20 management)
 #
 # Note: MD1200 HBA passthrough must be configured manually in Proxmox UI
