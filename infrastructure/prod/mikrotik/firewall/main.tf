@@ -257,3 +257,23 @@ resource "routeros_ip_firewall_nat" "masquerade" {
 
   lifecycle { create_before_destroy = true }
 }
+
+# =============================================================================
+# MAC server and discovery hardening
+# =============================================================================
+
+resource "routeros_tool_mac_server" "this" {
+  allowed_interface_list = routeros_interface_list.zones["lan"].name
+}
+
+resource "routeros_tool_mac_server_winbox" "this" {
+  allowed_interface_list = routeros_interface_list.zones["lan"].name
+}
+
+resource "routeros_tool_bandwidth_server" "this" {
+  enabled = false
+}
+
+resource "routeros_ip_neighbor_discovery_settings" "this" {
+  discover_interface_list = routeros_interface_list.zones["lan"].name
+}

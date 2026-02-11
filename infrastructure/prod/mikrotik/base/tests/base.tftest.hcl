@@ -69,6 +69,8 @@ variables {
     sfp_plus1 = { interface = "sfp-sfpplus1", comment = "grogu 10GbE" }
     sfp_plus2 = { interface = "sfp-sfpplus2", comment = "din 10GbE" }
   }
+
+  allowed_management_subnets = "192.168.0.0/24,10.10.1.0/24"
 }
 
 # Test 1: Validate all required VLANs are created
@@ -212,7 +214,54 @@ run "validate_routing_settings" {
   }
 }
 
-# Test 8: Output validation
+# Test 8: Service hardening
+run "validate_service_hardening" {
+  command = plan
+
+  # Insecure services should be disabled
+  assert {
+    condition     = routeros_ip_service.ftp.disabled == true
+    error_message = "FTP should be disabled"
+  }
+
+  assert {
+    condition     = routeros_ip_service.telnet.disabled == true
+    error_message = "Telnet should be disabled"
+  }
+
+  assert {
+    condition     = routeros_ip_service.www.disabled == true
+    error_message = "HTTP should be disabled"
+  }
+
+  assert {
+    condition     = routeros_ip_service.api.disabled == true
+    error_message = "Unencrypted API should be disabled"
+  }
+
+  # Enabled services should be restricted to management subnets
+  assert {
+    condition     = routeros_ip_service.ssh.address == "192.168.0.0/24,10.10.1.0/24"
+    error_message = "SSH should be restricted to LAN and management subnets"
+  }
+
+  assert {
+    condition     = routeros_ip_service.winbox.address == "192.168.0.0/24,10.10.1.0/24"
+    error_message = "WinBox should be restricted to LAN and management subnets"
+  }
+
+  assert {
+    condition     = routeros_ip_service.www_ssl.address == "192.168.0.0/24,10.10.1.0/24"
+    error_message = "HTTPS should be restricted to LAN and management subnets"
+  }
+
+  assert {
+    condition     = routeros_ip_service.api_ssl.address == "192.168.0.0/24,10.10.1.0/24"
+    error_message = "API-SSL should be restricted to LAN and management subnets"
+  }
+}
+
+# Test 9: Output validation
 run "validate_outputs" {
   command = plan
 

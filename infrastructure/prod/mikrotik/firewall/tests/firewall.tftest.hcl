@@ -306,3 +306,37 @@ run "validate_security_policy" {
     error_message = "WAN input must be dropped (router protection)"
   }
 }
+
+# Test 13: Validate MAC server hardening
+run "validate_mac_server_hardening" {
+  command = plan
+
+  # MAC server should be restricted to LAN
+  assert {
+    condition     = routeros_tool_mac_server.this.allowed_interface_list == "lan"
+    error_message = "MAC server should be restricted to LAN interface list"
+  }
+
+  # MAC WinBox should be restricted to LAN
+  assert {
+    condition     = routeros_tool_mac_server_winbox.this.allowed_interface_list == "lan"
+    error_message = "MAC WinBox should be restricted to LAN interface list"
+  }
+}
+
+# Test 14: Validate bandwidth server and neighbor discovery
+run "validate_discovery_hardening" {
+  command = plan
+
+  # Bandwidth server should be disabled
+  assert {
+    condition     = routeros_tool_bandwidth_server.this.enabled == false
+    error_message = "Bandwidth server should be disabled"
+  }
+
+  # Neighbor discovery should be restricted to LAN
+  assert {
+    condition     = routeros_ip_neighbor_discovery_settings.this.discover_interface_list == "lan"
+    error_message = "Neighbor discovery should be restricted to LAN"
+  }
+}
