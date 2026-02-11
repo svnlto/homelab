@@ -16,3 +16,8 @@ output "vlan_gateways" {
   }
   description = "VLAN gateway IPs"
 }
+
+output "wan_interface" {
+  value       = var.wan_interface
+  description = "WAN interface name"
+}

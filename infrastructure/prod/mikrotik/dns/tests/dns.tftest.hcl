@@ -4,7 +4,7 @@
 mock_provider "routeros" {}
 
 variables {
-  mikrotik_api_url  = "https://192.168.0.3"
+  mikrotik_api_url  = "https://192.168.0.1"
   mikrotik_username = "terraform"
   mikrotik_password = "test-password"
   pihole_ip         = "192.168.0.53"

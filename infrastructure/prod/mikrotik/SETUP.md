@@ -1,431 +1,146 @@
 # MikroTik CRS Router Setup Guide
 
-## Phase 3: MikroTik Integration
+## Prerequisites
 
-### Prerequisites
+- MikroTik CRS310-8G+2S+IN with factory default configuration
+- MikroTik is the primary gateway at 192.168.0.1 (post-migration from Beryl AX)
 
-**Hardware:**
+## Phase 0: Initial Router Setup (Before Terragrunt)
 
-- MikroTik CRS series router (Cloud Router Switch)
-- Factory default configuration
-- Network connectivity for initial setup
+### Step 1: Connect and Access
 
-**Network:**
+Connect your Mac directly to the router's 1GbE port. Use WinBox (<https://mt.lv/winbox>)
+and connect via MAC address from the **Neighbors** tab. Default login: `admin` with the
+password printed on the sticker on the device.
 
-- 30-60 minute maintenance window (network will be disrupted)
-- Physical access to router or console access
-- Current network gateway (Beryl AX) at 192.168.0.1
+**Factory reset (if second-hand):** Hold reset button during power-on until the user LED
+flashes, then release immediately. Holding longer enters Netinstall mode.
 
-### Phase 0: Initial Router Setup (Before Terragrunt)
+### Step 2: Set Static IP, Gateway, and DNS
 
-#### Step 1: Physical Connection
+Use the **Quick Set** tab in WebFig to configure basic networking:
 
-```bash
-# Connect router to network
-# Router will get IP via DHCP or use default 192.168.88.1
+| Field               | Value             |
+| ------------------- | ----------------- |
+| Mode                | Bridge            |
+| Address Acquisition | Static            |
+| IP Address          | 192.168.0.1       |
+| Netmask             | 255.255.255.0     |
+| Gateway             | 192.168.8.1       |
+| DNS Servers         | 192.168.0.53      |
+| Router Identity     | nevarro           |
 
-# Find router IP
-nmap -sn 192.168.0.0/24 | grep -i mikrotik
-# Or check Beryl AX DHCP leases
+> **Note:** This is the post-migration configuration where MikroTik is the primary
+> gateway. The upstream gateway (192.168.8.1) is the ISP router/modem.
+
+Click **Apply Configuration**. The remaining steps require the **Terminal** tab in
+WebFig or SSH (`ssh admin@192.168.0.1`).
+
+### Step 3: Set Password and Update Firmware
+
+```routeros
+/user set admin password=<STRONG_PASSWORD>
+/system package update check-for-updates
+/system package update install
 ```
 
-#### Step 2: Initial Configuration via WebFig/Winbox
+Ensure RouterOS is v7.13 or later.
 
-##### Option A: WebFig (Web Interface)
+### Step 4: Create Terraform User
 
-```bash
-# Access via browser
-open http://192.168.88.1  # Or discovered IP
-
-# Login with default credentials
-# Username: admin
-# Password: (blank)
-```
-
-##### Option B: Winbox (Recommended for macOS via Wine)
-
-```bash
-# Download Winbox from mikrotik.com
-# Run via Wine or use Web-based Winbox
-```
-
-#### Step 3: Create Terraform User
-
-SSH to router:
-
-```bash
-ssh admin@192.168.88.1  # Or discovered IP
-# Press 'a' for advanced mode
-
-# Create dedicated terraform user
+```routeros
 /user add name=terraform group=full password=<STRONG_PASSWORD>
-
-# Verify
-/user print
 ```
 
-**Store credentials in 1Password:**
+Store password in 1Password item `MikroTik Terraform API` (credential field).
+`.envrc` fetches it via: `op read "op://Personal/MikroTik Terraform API/credential"`
 
-The password is already stored in 1Password item `MikroTik Terraform API` (API Credential type).
-Update the credential field with the password you just set:
+### Step 5: Enable REST API with SSL
 
-```bash
-# Open 1Password and edit the "MikroTik Terraform API" item
-# Set the credential field to the password used above
-# .envrc will automatically fetch it via: op read "op://Personal/MikroTik Terraform API/credential"
-```
-
-#### Step 4: Enable REST API with SSL
+RouterOS 7.x requires a CA before signing server certs:
 
 ```routeros
-# Generate self-signed certificate (valid 10 years)
-/certificate add name=api-cert common-name=mikrotik-api \
-  key-size=2048 days-valid=3650 key-usage=digital-signature,key-encipherment
-
-# Sign the certificate
-/certificate sign api-cert
-
-# Wait for certificate to be signed (check with /certificate print)
-
-# Enable HTTPS service with certificate
+/certificate add name=local-ca common-name=local-ca key-usage=key-cert-sign,crl-sign
+/certificate sign local-ca
+/certificate add name=api-cert common-name=mikrotik-api
+/certificate sign api-cert ca=local-ca
 /ip service set www-ssl certificate=api-cert disabled=no port=443
-
-# Verify HTTPS is enabled
-/ip service print detail
+/ip service set api-ssl certificate=api-cert disabled=no
 ```
 
-#### Step 5: Set Static IP
+Signing takes 10-30 seconds on the ARM CPU.
 
-```routeros
-# Remove DHCP client (if present)
-/ip dhcp-client print
-/ip dhcp-client remove [find]
-
-# Set static IP
-/ip address add address=192.168.0.3/24 interface=ether1
-
-# Set default gateway (to Beryl AX for internet access)
-/ip route add gateway=192.168.0.1
-
-# Set DNS
-/ip dns set servers=192.168.0.53  # Pi-hole
-```
-
-#### Step 6: Test API Access
-
-From your workstation:
+### Step 6: Test API Access
 
 ```bash
-# Test HTTPS API (ignore SSL warning for self-signed cert)
-curl -k -u terraform:<password> https://192.168.0.3/rest/system/resource
-
-# Should return JSON with system info
+curl -k -u terraform:<password> https://192.168.0.1/rest/system/resource
 ```
 
-#### Step 7: Verify Credentials
-
-Credentials are automatically loaded from 1Password via `.envrc`:
+### Step 7: Verify Credentials
 
 ```bash
-cd ~/Projects/homelab
-
-# Verify direnv loads credentials from 1Password
-direnv allow
-
-# Test that credentials are available
+cd ~/Projects/homelab && direnv allow
 echo "Username: $MIKROTIK_USERNAME"
-# Password should be set (don't echo it)
 [ -n "$MIKROTIK_PASSWORD" ] && echo "Password: [SET]" || echo "Password: [NOT SET]"
-
-# Reload environment
-direnv allow
 ```
 
-### Phase 3: Terragrunt Deployment
+## Phase 3: Terragrunt Deployment
 
-**IMPORTANT**: This will reconfigure the router network. Schedule a maintenance window.
+**Schedule a maintenance window** — this reconfigures the router network.
 
-#### Step 1: Verify Prerequisites
-
-```bash
-# Verify credentials loaded
-env | grep MIKROTIK
-
-# Verify Terragrunt available
-terragrunt --version
-
-# Verify globals.hcl correct
-cat infrastructure/globals.hcl | grep -A 10 "mikrotik ="
-```
-
-#### Step 2: Deploy Base Networking (CRITICAL)
+### Step 1: Deploy Base Networking (CRITICAL)
 
 ```bash
-cd infrastructure/mikrotik/base
+just tg-plan-module prod/mikrotik/base
+just tg-apply-module prod/mikrotik/base
 
-# Review what will be created
-terragrunt plan
-
-# IMPORTANT: Review carefully - this creates VLANs and reconfigures network
-# Expected resources:
-# - 1 bridge (bridge-vlans)
-# - 4 trunk ports (ether1-4, sfp-sfpplus1-2)
-# - 6 VLAN interfaces (management, storage, lan, k8s-shared, k8s-apps, k8s-test)
-# - 6 IP addresses (gateways)
-
-# Apply during maintenance window
-terragrunt apply
-
-# Verify connectivity after apply
-ping 192.168.0.3  # Router
+ping 192.168.0.1   # Router
 ping 192.168.0.10  # Proxmox grogu
 ping 192.168.0.53  # Pi-hole
 ```
 
-**If network breaks:**
+**If network breaks:** SSH to `admin@192.168.0.1` and run `/system reset-configuration`,
+or hold the physical reset button during boot.
+
+### Step 2: Deploy DHCP Servers
 
 ```bash
-# Option A: SSH to router (if accessible)
-ssh admin@192.168.0.3
-/system reset-configuration
-
-# Option B: Physical console access
-# Connect serial cable, reset to factory defaults
+just tg-apply-module prod/mikrotik/dhcp/vlan-20-lan
+just tg-apply-module prod/mikrotik/dhcp/vlan-30-k8s-shared
+just tg-apply-module prod/mikrotik/dhcp/vlan-31-k8s-apps
+just tg-apply-module prod/mikrotik/dhcp/vlan-32-k8s-test
 ```
 
-#### Step 3: Deploy DHCP Servers
+### Step 3: Deploy Firewall Rules
 
 ```bash
-# Deploy LAN DHCP first
-cd infrastructure/mikrotik/dhcp/vlan-20-lan
-terragrunt apply
-
-# Test DHCP on a client
-# Release/renew DHCP lease, verify IP from 192.168.0.100-149 range
-
-# Deploy K8s VLANs
-cd ../vlan-30-k8s-shared && terragrunt apply
-cd ../vlan-31-k8s-apps && terragrunt apply
-cd ../vlan-32-k8s-test && terragrunt apply
+just tg-plan-module prod/mikrotik/firewall
+just tg-apply-module prod/mikrotik/firewall
 ```
 
-#### Step 4: Deploy Firewall Rules
+### Step 4: Deploy DNS Forwarding
 
 ```bash
-cd infrastructure/mikrotik/firewall
-
-# CRITICAL: Review firewall rules carefully
-terragrunt plan
-
-# Expected:
-# - 5 interface lists (zones: wan, lan, management, storage, k8s)
-# - 8 interface list members
-# - 6 firewall filter rules (established, invalid, lan-to-any, k8s-to-storage, k8s-isolation, default-drop)
-
-terragrunt apply
-
-# Test connectivity
-ping 192.168.0.10  # LAN → Management (should work)
-ping 10.10.10.13   # LAN → Storage (should work)
-
-# From K8s node (after deployment):
-ping 10.10.10.13   # K8s → Storage (should work)
-ping 10.0.2.10     # K8s shared → K8s apps (should fail - isolation)
+just tg-apply-module prod/mikrotik/dns
+nslookup google.com 192.168.0.1
 ```
 
-#### Step 5: Deploy DNS Forwarding
+## Troubleshooting
 
-```bash
-cd infrastructure/mikrotik/dns
-terragrunt apply
-
-# Verify DNS resolution
-nslookup google.com 192.168.0.3  # Router forwards to Pi-hole
-```
-
-### Validation
-
-#### Complete System Check
-
-```bash
-# All Terragrunt modules should be applied
-cd infrastructure/mikrotik
-find . -name "terragrunt.hcl" -not -path "*/.terragrunt-cache/*"
-
-# Verify all applied successfully
-just tg-list
-
-# Network connectivity
-ping 192.168.0.3   # Router
-ping 192.168.0.10  # Proxmox
-ping 192.168.0.53  # Pi-hole
-ping 192.168.0.13  # TrueNAS
-
-# SSH access
-ssh admin@192.168.0.3
-
-# DNS resolution
-nslookup google.com 192.168.0.53
-```
-
-#### MikroTik Router Check
-
-```bash
-ssh admin@192.168.0.3
-
-# Check VLANs
+```routeros
 /interface vlan print
-
-# Check bridge
 /interface bridge print
-
-# Check IP addresses
 /ip address print
-
-# Check DHCP servers
-/ip dhcp-server print
-
-# Check firewall rules
-/ip firewall filter print
-
-# Check DNS
-/ip dns print
-```
-
-### Rollback Procedures
-
-#### Rollback to Factory Default
-
-```bash
-# SSH to router
-ssh admin@192.168.0.3
-
-# Reset to factory default
-/system reset-configuration no-defaults=yes skip-backup=yes
-
-# Or via console
-# System → Reset Configuration → No Default Configuration → Reset
-```
-
-#### Rollback Specific Module
-
-```bash
-# Destroy specific module (e.g., firewall)
-cd infrastructure/mikrotik/firewall
-terragrunt destroy
-
-# Or destroy all MikroTik config
-cd infrastructure/mikrotik
-terragrunt run-all destroy
-```
-
-### Troubleshooting
-
-#### Router Not Accessible After Base Apply
-
-1. **Check physical connectivity** - cables, link lights
-2. **Try console access** - serial cable
-3. **Factory reset** - physical reset button (hold 5+ seconds on boot)
-4. **Reconfigure manually** - set IP, enable API
-
-#### DHCP Not Working
-
-```bash
-ssh admin@192.168.0.3
-
-# Check DHCP server status
 /ip dhcp-server print detail
-
-# Check IP pool
-/ip pool print
-
-# Check DHCP leases
-/ip dhcp-server lease print
-
-# Check network config
-/ip dhcp-server network print
-```
-
-#### Firewall Blocking Traffic
-
-```bash
-ssh admin@192.168.0.3
-
-# Check firewall counters
 /ip firewall filter print stats
-
-# Temporarily disable firewall (TESTING ONLY)
-/ip firewall filter disable [find]
-
-# Re-enable
-/ip firewall filter enable [find]
-```
-
-#### DNS Not Resolving
-
-```bash
-ssh admin@192.168.0.3
-
-# Check DNS settings
 /ip dns print
-
-# Test DNS from router
-/tool fetch url=http://google.com mode=http
-
-# Check DNS cache
-/ip dns cache print
 ```
 
-### Emergency Access
+**Emergency access:** SSH to `admin@192.168.0.1`, or use WinBox Neighbors tab to connect
+via MAC address (works without IP).
 
-**Console Cable Access:**
+## Next Steps
 
-1. Connect USB-to-serial cable
-2. Use screen/minicom: `screen /dev/tty.usbserial-XXXX 115200`
-3. Login as admin
-4. Reset or reconfigure
-
-**Physical Reset Button:**
-
-1. Power off router
-2. Hold reset button
-3. Power on while holding
-4. Wait for light pattern indicating reset
-5. Release button
-
-**MAC Address Access (Winbox):**
-
-1. Open Winbox
-2. Click "Neighbors" tab
-3. Connect via MAC address (works even without IP)
-4. Reconfigure network settings
-
-### Next Steps After Phase 3
-
-Once MikroTik is deployed and validated:
-
-1. **Update Proxmox bridge configuration** - Point VLANs to new router
-2. **Update Pi-hole DHCP** - Disable Beryl AX DHCP, rely on MikroTik
-3. **Deploy Kubernetes clusters** - Use new K8s VLANs
-4. **Monitor router** - Add to observability stack (Prometheus/Grafana)
-5. **Phase 4: Migrate to B2 state backend**
-
-### Useful Commands
-
-```bash
-# View all Terragrunt outputs
-cd infrastructure/mikrotik
-terragrunt run-all output
-
-# Backup current state
-just tg-backup
-
-# Show dependency graph
-just tg-graph
-
-# Plan all modules
-just tg-plan
-
-# Apply specific module
-just tg-apply-module mikrotik/base
-```
+1. Update Proxmox bridge configuration for new VLANs
+2. Deploy Kubernetes clusters on K8s VLANs
+3. Add router to observability stack

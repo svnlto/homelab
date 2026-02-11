@@ -3,7 +3,7 @@
 # Proxmox Networking Role - Default Variables
 # ==============================================================================
 
-# Gateway IP (Beryl AX router)
+# Gateway IP (MikroTik CRS310 router)
 gateway_ip: "192.168.0.1"
 
 # Storage IP (VLAN 10) - Override per host in inventory

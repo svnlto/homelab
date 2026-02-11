@@ -4,7 +4,7 @@
 mock_provider "routeros" {}
 
 variables {
-  mikrotik_api_url  = "https://192.168.0.3"
+  mikrotik_api_url  = "https://192.168.0.1"
   mikrotik_username = "terraform"
   mikrotik_password = "test-password"
   vlan_name         = "lan"
@@ -14,7 +14,7 @@ variables {
   gateway           = "192.168.0.1"
   dhcp_start        = "192.168.0.100"
   dhcp_end          = "192.168.0.149"
-  dhcp_lease        = "24h"
+  dhcp_lease        = "1d"
   dns_servers       = ["192.168.0.53"]
 }
 
@@ -53,8 +53,8 @@ run "validate_dhcp_server" {
 
   # Lease time should be 24 hours
   assert {
-    condition     = routeros_ip_dhcp_server.this.lease_time == "24h"
-    error_message = "LAN DHCP lease should be 24 hours"
+    condition     = routeros_ip_dhcp_server.this.lease_time == "1d"
+    error_message = "LAN DHCP lease should be 1 day"
   }
 }
 
@@ -68,10 +68,10 @@ run "validate_dhcp_network" {
     error_message = "DHCP network should be 192.168.0.0/24"
   }
 
-  # Gateway should be Beryl AX
+  # Gateway should be MikroTik
   assert {
     condition     = routeros_ip_dhcp_server_network.this.gateway == "192.168.0.1"
-    error_message = "DHCP gateway should be 192.168.0.1 (Beryl AX)"
+    error_message = "DHCP gateway should be 192.168.0.1 (MikroTik)"
   }
 
   # DNS should be Pi-hole only

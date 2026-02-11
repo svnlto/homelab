@@ -9,12 +9,13 @@ The homelab network uses MikroTik CRS310 switches with RouterOS for L3 inter-VLA
 ### Current Setup (Single Router)
 
 **Equipment in use:**
-- **CRS310-8G+2S+IN**: L3 router handling inter-VLAN routing (8x 2.5GbE + 2x 10G SFP+)
-- **Beryl AX (sorgan)**: Internet gateway with dual WAN failover + WiFi AP
-- **Pi-hole**: DNS/DHCP server for network-wide ad blocking
+- **CRS310-8G+2S+IN (nevarro)**: Main gateway with NAT/firewall/DHCP + L3 inter-VLAN routing (8x 2.5GbE + 2x 10G SFP+)
+- **O2 Homespot**: WAN uplink (modem/bridge mode, 192.168.8.1)
+- **Beryl AX (sorgan)**: WiFi-only access point on ether3 (no routing/NAT)
+- **Pi-hole**: DNS server for network-wide ad blocking
 - **2x Dell PowerEdge servers**: grogu (R630), din (R730xd) with 10GbE X520 NICs
 
-Servers connect directly to router SFP+ ports with all VLANs trunked.
+MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot WAN uplink. Servers connect directly to router SFP+ ports with all VLANs trunked.
 
 ### Future Expansion (Two-Switch Design)
 
@@ -32,25 +33,26 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
                     INTERNET
                         │
                   ┌─────┴──────┐
-                  │  Beryl AX  │
-                  │  (sorgan)  │
-                  │192.168.0.1 │
-                  │  Router    │
+                  │ O2 Homespot│
+                  │192.168.8.1 │
+                  │ WAN uplink │
                   └─────┬──────┘
-                        │ VLAN 20 (untagged)
-                        │
+                        │ 192.168.8.2
+                        │ ether1 (WAN, standalone)
         ┌───────────────┴────────────────┐
-        │   CRS310-8G+2S+IN (Router)     │
+        │   CRS310-8G+2S+IN (Gateway)   │
         │     nevarro-router             │
+        │   NAT / Firewall / DHCP        │
         │   L3 Inter-VLAN Routing        │
+        │   192.168.0.1 (LAN gateway)    │
         │                                │
         │  8x 2.5GbE      2x 10G SFP+    │
         │  ┌─┬─┬─┬─┬───┐  ┌──────┬────┐  │
         │  │1│2│3│4│5-8│  │ SFP+1│SFP+2│ │
         └──┴─┴─┴─┴─┴───┴──┴──┬───┴─┬───┴─┘
            │ │ │ │           │     │
-      Beryl Pi iDRACs       grogu  din
-                            X520   X520
+         WAN Pi Beryl iDRAC grogu  din
+              hole AP        X520   X520
                            10GbE  10GbE
                          (trunk)(trunk)
                          All VLANs: 1,10,20,30,31,32
@@ -66,10 +68,10 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
 
 ```
                           ┌──────────────┐
-                          │   Beryl AX   │
-                          │  192.168.0.1 │
+                          │ O2 Homespot  │
+                          │ 192.168.8.1  │
                           └──────┬───────┘
-                                 │
+                                 │ WAN (ether1)
                   ┌──────────────▼──────────────┐
                   │ CRS310-8G+2S+IN (Router)    │
                   │   nevarro-router            │
@@ -102,7 +104,7 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
 |------|--------------------|-----------------|--------------|-----------------------------------|
 | 1    | Management         | 10.10.1.0/24    | 10.10.1.1    | iDRAC, switch management          |
 | 10   | Storage            | 10.10.10.0/24   | 10.10.10.1   | 10GbE NFS/iSCSI, TrueNAS          |
-| 20   | LAN                | 192.168.0.0/24  | 192.168.0.1  | VMs, clients, WiFi (via Beryl)    |
+| 20   | LAN                | 192.168.0.0/24  | 192.168.0.1  | VMs, clients, WiFi (via Beryl AP) |
 | 30   | K8s Shared Services| 10.0.1.0/24     | 10.0.1.1     | Infrastructure cluster            |
 | 31   | K8s Apps           | 10.0.2.0/24     | 10.0.2.1     | Production apps cluster           |
 | 32   | K8s Test           | 10.0.3.0/24     | 10.0.3.1     | Testing/staging cluster           |
@@ -156,14 +158,13 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
 
 | Range            | Purpose                 | Notes                    |
 |------------------|-------------------------|--------------------------|
-| 192.168.0.1      | Gateway/Router          | Beryl AX (sorgan)       |
-| 192.168.0.2      | Router secondary IP     | CRS310-8G+2S+IN         |
+| 192.168.0.1      | Gateway/Router          | MikroTik CRS310 (nevarro) |
 | 192.168.0.10     | grogu Proxmox           | Management interface    |
 | 192.168.0.11     | din Proxmox             | Management interface    |
 | 192.168.0.13     | TrueNAS Primary         | NAS management UI       |
 | 192.168.0.14     | TrueNAS Backup          | Backup NAS UI           |
 | 192.168.0.53     | Pi-hole                 | DNS/DHCP server         |
-| 192.168.0.100-149| DHCP pool               | Dynamic clients (Beryl) |
+| 192.168.0.100-149| DHCP pool               | Dynamic clients (MikroTik DHCP) |
 | 192.168.0.150-159| Entertainment           | Apple TV, HomePod, etc. |
 | 192.168.0.160-169| Personal devices        | MacBook, iPhone, etc.   |
 | 192.168.0.200-250| VMs/Containers          | Reserved for utility VMs |
@@ -239,15 +240,16 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
 
 **Current (Single Router):**
 
-| Port   | VLAN Mode | VLAN    | Device            | Cable Type      |
-|--------|-----------|---------|-------------------|-----------------|
-| ether1 | access    | 20      | Beryl AX LAN      | Cat6A           |
-| ether2 | access    | 20      | Pi-hole           | Cat6A           |
-| ether3 | access    | 1       | grogu iDRAC       | Cat6A           |
-| ether4 | access    | 1       | din iDRAC         | Cat6A           |
-| ether5-8| access   | 20      | Future devices    | -               |
-| sfp+1  | trunk     | 1,10,20,30,31,32 | grogu X520 | 10G DAC/Fiber |
-| sfp+2  | trunk     | 1,10,20,30,31,32 | din X520   | 10G DAC/Fiber |
+| Port   | VLAN Mode       | VLAN    | Device            | Cable Type      |
+|--------|-----------------|---------|-------------------|-----------------|
+| ether1 | WAN (standalone)| —       | O2 Homespot uplink| Cat6A           |
+| ether2 | access          | 20      | Pi-hole           | Cat6A           |
+| ether3 | access          | 20      | Beryl AX WiFi AP  | Cat6A           |
+| ether4 | access          | 1       | din iDRAC         | Cat6A           |
+| ether5 | access          | 1       | grogu iDRAC       | Cat6A           |
+| ether6-8| access         | 20      | Future devices    | -               |
+| sfp+1  | trunk           | 1,10,20,30,31,32 | grogu X520 | 10G DAC/Fiber |
+| sfp+2  | trunk           | 1,10,20,30,31,32 | din X520   | 10G DAC/Fiber |
 
 **Future (With Aggregation Switch):**
 
@@ -269,9 +271,10 @@ add interface=bridge1 name=vlan31-k8s-apps vlan-id=31
 add interface=bridge1 name=vlan32-k8s-test vlan-id=32
 
 /ip address
+add address=192.168.8.2/24 interface=ether1 comment="WAN to O2 Homespot"
 add address=10.10.1.1/24 interface=vlan1-mgmt comment="Management gateway"
 add address=10.10.10.1/24 interface=vlan10-storage comment="Storage gateway"
-add address=192.168.0.2/24 interface=vlan20-lan comment="LAN secondary (Beryl is .1)"
+add address=192.168.0.1/24 interface=vlan20-lan comment="LAN gateway"
 add address=10.0.1.1/24 interface=vlan30-k8s-shared comment="K8s Shared Services"
 add address=10.0.2.1/24 interface=vlan31-k8s-apps comment="K8s Apps"
 add address=10.0.3.1/24 interface=vlan32-k8s-test comment="K8s Test"
@@ -283,13 +286,12 @@ add address=10.0.3.1/24 interface=vlan32-k8s-test comment="K8s Test"
 /interface bridge
 add name=bridge1 vlan-filtering=yes
 
-# Add all ports to bridge
+# Add all ports to bridge (ether1 is standalone WAN, not bridged)
 /interface bridge port
-add bridge=bridge1 interface=ether1 pvid=20
 add bridge=bridge1 interface=ether2 pvid=20
-add bridge=bridge1 interface=ether3 pvid=1
+add bridge=bridge1 interface=ether3 pvid=20
 add bridge=bridge1 interface=ether4 pvid=1
-add bridge=bridge1 interface=ether5 pvid=20
+add bridge=bridge1 interface=ether5 pvid=1
 add bridge=bridge1 interface=ether6 pvid=20
 add bridge=bridge1 interface=ether7 pvid=20
 add bridge=bridge1 interface=ether8 pvid=20
@@ -298,9 +300,9 @@ add bridge=bridge1 interface=sfp-sfpplus2 frame-types=admit-only-vlan-tagged
 
 # VLAN membership
 /interface bridge vlan
-add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 untagged=ether3,ether4 vlan-ids=1
+add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 untagged=ether4,ether5 vlan-ids=1
 add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 vlan-ids=10
-add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 untagged=ether1,ether2,ether5,ether6,ether7,ether8 vlan-ids=20
+add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 untagged=ether2,ether3,ether6,ether7,ether8 vlan-ids=20
 add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 vlan-ids=30
 add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 vlan-ids=31
 add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 vlan-ids=32
@@ -327,7 +329,7 @@ add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 vlan-ids=32
 | 32 (K8s Test) | 30 (K8s Shared) | ✅ Allow | Monitoring only |
 | 31 (K8s Apps) | 32 (K8s Test) | ❌ Deny | **Prod/test isolation** |
 | 32 (K8s Test) | 31 (K8s Apps) | ❌ Deny | **Prod/test isolation** |
-| All VLANs | 20 (LAN) | ✅ Allow | Internet egress via Beryl NAT |
+| All VLANs | WAN | ✅ Allow | Internet egress via MikroTik NAT |
 
 ### Firewall Configuration
 
@@ -453,7 +455,7 @@ iface vmbr10 inet static
 auto vmbr20
 iface vmbr20 inet static
     address 192.168.0.10/24   # grogu: .10, din: .11
-    gateway 192.168.0.1       # Internet via Beryl
+    gateway 192.168.0.1       # Internet via MikroTik
     bridge-ports eno3.20
     bridge-stp off
     bridge-fd 0
@@ -538,9 +540,9 @@ resource "proxmox_virtual_environment_vm" "k8s_worker" {
 ```
 MacBook (192.168.0.160, VLAN 20)
     ↓ WiFi
-Beryl AX (192.168.0.1)
-    ↓ ether1 (untagged VLAN 20)
-Router (inter-VLAN routing: VLAN 20 → VLAN 30)
+Beryl AX AP (sorgan)
+    ↓ ether3 (untagged VLAN 20)
+MikroTik (inter-VLAN routing: VLAN 20 → VLAN 30)
     ↓ sfp+1 trunk (VLAN 30 tagged)
 grogu vmbr30
     ↓
@@ -549,7 +551,7 @@ K8s Shared Services Ingress (10.0.1.100)
 K8s Apps Jellyfin pod (10.0.2.x)
 ```
 
-**Path:** WiFi → Beryl → Router (20→30) → Ingress → Router (30→31) → Jellyfin
+**Path:** WiFi → Beryl AP → ether3 → MikroTik (20→30) → Ingress → MikroTik (30→31) → Jellyfin
 
 **Why centralized ingress:** Single LoadBalancer IP, unified TLS termination, simplified DNS.
 
@@ -608,10 +610,11 @@ Prometheus pod (10.0.1.25, VLAN 30)
 ```
 Talos worker node (10.0.2.21, VLAN 31)
     ↓ VLAN 31
-Router (inter-VLAN routing: VLAN 31 → VLAN 20)
-    ↓ ether1 (untagged VLAN 20)
-Beryl AX (192.168.0.1)
-    ↓ NAT (dual WAN: fiber primary, 4G failover)
+MikroTik (inter-VLAN routing: VLAN 31 → WAN)
+    ↓ NAT (masquerade)
+    ↓ ether1 (WAN, 192.168.8.2)
+O2 Homespot (192.168.8.1)
+    ↓
 Internet
 ```
 
@@ -668,8 +671,8 @@ TrueNAS Backup (grogu) - 10.10.10.14
 10.10.10.14     truenas-backup.stor.home.arpa backup-stor.home.arpa
 
 # LAN (192.168.0.0/24)
-192.168.0.1     sorgan.home.arpa gateway.home.arpa
-192.168.0.2     router.home.arpa nevarro-router.home.arpa
+192.168.0.1     router.home.arpa nevarro-router.home.arpa
+# Beryl AX (sorgan) - WiFi AP, gets IP via DHCP
 192.168.0.10    grogu.home.arpa
 192.168.0.11    din.home.arpa
 192.168.0.13    truenas.home.arpa nas.home.arpa
@@ -849,7 +852,7 @@ nslookup google.com 192.168.0.53  # DNS via Pi-hole
 | Proxmox din | https://192.168.0.11:8006 | 20 | Admin |
 | grogu iDRAC | https://10.10.1.10 | 1 | Out-of-band mgmt |
 | din iDRAC | https://10.10.1.11 | 1 | Out-of-band mgmt |
-| Router | http://192.168.0.2 | 20 | Winbox/WebFig |
+| Router | https://192.168.0.1 | 20 | Winbox/WebFig |
 | TrueNAS Primary | https://192.168.0.13 | 20 | NAS management |
 | TrueNAS Backup | https://192.168.0.14 | 20 | Backup NAS |
 | Pi-hole | http://192.168.0.53/admin | 20 | DNS/DHCP admin |
@@ -913,8 +916,8 @@ set api-ssl disabled=yes
 
 ### Quick Reference
 
-**Router:** CRS310-8G+2S+IN (nevarro-router) - 192.168.0.2 / 10.10.1.1
-**Gateway:** Beryl AX (sorgan) - 192.168.0.1
+**Router:** CRS310-8G+2S+IN (nevarro-router) - 192.168.0.1 / 10.10.1.1
+**Gateway:** O2 Homespot - 192.168.8.1 (WAN)
 **DNS:** Pi-hole - 192.168.0.53
 **Proxmox:** grogu (192.168.0.10), din (192.168.0.11)
 **TrueNAS:** Primary (192.168.0.13), Backup (192.168.0.14)

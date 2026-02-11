@@ -17,7 +17,12 @@ inputs = {
   mikrotik_username = get_env("MIKROTIK_USERNAME", "")
   mikrotik_password = get_env("MIKROTIK_PASSWORD", "")
 
-  bridge_name = local.mikrotik.bridge_name
-  vlans       = local.vlans
-  interfaces  = local.mikrotik.interfaces
+  bridge_name  = local.mikrotik.bridge_name
+  vlans        = local.vlans
+  access_ports = local.mikrotik.access_ports
+  trunk_ports  = local.mikrotik.trunk_ports
+
+  wan_interface = local.mikrotik.wan.interface
+  wan_address   = local.mikrotik.wan.address
+  wan_gateway   = local.mikrotik.wan.gateway
 }

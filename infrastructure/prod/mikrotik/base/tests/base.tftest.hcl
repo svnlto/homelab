@@ -4,10 +4,14 @@
 mock_provider "routeros" {}
 
 variables {
-  mikrotik_api_url  = "https://192.168.0.3"
+  mikrotik_api_url  = "https://192.168.0.1"
   mikrotik_username = "terraform"
   mikrotik_password = "test-password"
   bridge_name       = "bridge-vlans"
+
+  wan_interface = "ether1"
+  wan_address   = "192.168.8.2/24"
+  wan_gateway   = "192.168.8.1"
 
   vlans = {
     management = {
@@ -54,11 +58,16 @@ variables {
     }
   }
 
-  interfaces = {
-    wan_to_beryl = "ether1"
-    pihole       = "ether2"
-    sfp_plus1    = "sfp-sfpplus1"
-    sfp_plus2    = "sfp-sfpplus2"
+  access_ports = {
+    pihole      = { interface = "ether2", pvid = 20, comment = "Pi-hole DNS" }
+    beryl_ap    = { interface = "ether3", pvid = 20, comment = "Beryl AX WiFi AP" }
+    din_idrac   = { interface = "ether4", pvid = 1, comment = "din iDRAC" }
+    grogu_idrac = { interface = "ether5", pvid = 1, comment = "grogu iDRAC" }
+  }
+
+  trunk_ports = {
+    sfp_plus1 = { interface = "sfp-sfpplus1", comment = "grogu 10GbE" }
+    sfp_plus2 = { interface = "sfp-sfpplus2", comment = "din 10GbE" }
   }
 }
 
@@ -95,7 +104,7 @@ run "validate_vlan_creation" {
 run "validate_gateway_ips" {
   command = plan
 
-  # Verify LAN gateway
+  # Verify LAN gateway (MikroTik is now the LAN gateway at .1)
   assert {
     condition     = can(regex("192\\.168\\.0\\.1/24", routeros_ip_address.vlan_gateways["lan"].address))
     error_message = "LAN gateway should be 192.168.0.1/24"
@@ -131,20 +140,30 @@ run "validate_bridge_config" {
   }
 }
 
-# Test 4: Validate default route exists
-run "validate_default_route" {
+# Test 4: Validate WAN configuration
+run "validate_wan_config" {
   command = plan
 
-  # Default route should exist
+  # WAN IP should be configured on ether1
+  assert {
+    condition     = routeros_ip_address.wan.address == "192.168.8.2/24"
+    error_message = "WAN address should be 192.168.8.2/24"
+  }
+
+  assert {
+    condition     = routeros_ip_address.wan.interface == "ether1"
+    error_message = "WAN interface should be ether1"
+  }
+
+  # Default route should point to O2 Homespot
   assert {
     condition     = routeros_ip_route.default.dst_address == "0.0.0.0/0"
     error_message = "Default route destination should be 0.0.0.0/0"
   }
 
-  # Default route should point to Beryl AX
   assert {
-    condition     = routeros_ip_route.default.gateway == "192.168.0.1"
-    error_message = "Default gateway should be 192.168.0.1 (Beryl AX)"
+    condition     = routeros_ip_route.default.gateway == "192.168.8.1"
+    error_message = "Default gateway should be 192.168.8.1 (O2 Homespot)"
   }
 }
 
@@ -165,20 +184,20 @@ run "validate_vlan_membership" {
   }
 }
 
-# Test 6: Validate trunk ports configuration
-run "validate_trunk_ports" {
+# Test 6: Validate access and trunk ports
+run "validate_ports" {
   command = plan
 
-  # Should have 4 trunk ports configured
+  # Should have 4 access ports (pihole, beryl_ap, din_idrac, grogu_idrac)
   assert {
-    condition     = length(routeros_interface_bridge_port.trunk_ports) == 4
-    error_message = "Expected 4 trunk ports (ether1, pihole, sfp_plus1, sfp_plus2)"
+    condition     = length(routeros_interface_bridge_port.access_ports) == 4
+    error_message = "Expected 4 access ports (pihole, beryl_ap, din_idrac, grogu_idrac)"
   }
 
-  # Trunk ports should be added to bridge
+  # Should have 2 trunk ports (sfp+1, sfp+2)
   assert {
-    condition     = routeros_interface_bridge_port.trunk_ports["wan_to_beryl"].bridge == "bridge-vlans"
-    error_message = "Trunk ports should be members of bridge-vlans"
+    condition     = length(routeros_interface_bridge_port.trunk_ports) == 2
+    error_message = "Expected 2 trunk ports (sfp_plus1, sfp_plus2)"
   }
 }
 
@@ -213,5 +232,11 @@ run "validate_outputs" {
   assert {
     condition     = length(output.vlan_gateways) == 6
     error_message = "vlan_gateways output should contain all 6 gateways"
+  }
+
+  # WAN interface output
+  assert {
+    condition     = output.wan_interface == "ether1"
+    error_message = "wan_interface output should be ether1"
   }
 }
