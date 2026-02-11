@@ -220,10 +220,10 @@ locals {
 
     # PCIe Resource Mappings (configured in Proxmox UI)
     resource_mappings = {
-      truenas_h330 = "truenas-h330" # Dell H330 Mini on din (5×8TB internal drives)
-      truenas_lsi  = "truenas-lsi"  # LSI 9201-8e on din (MD1220 shelf, 24×900GB)
+      truenas_h330 = "truenas-h330" # Dell H330 Mini on din (6×8TB bulk)
+      truenas_lsi  = "truenas-lsi"  # LSI 9201-8e on din (MD1220 shelf, 24×900GB fast)
       md1200_hba   = "md1200-hba"   # md1200 controller on grogu (8×3tb)
-      md1220_hba   = "md1220-hba"   # md1220 controller on din (11×3tb)
+      md1220_hba   = "md1220-hba"   # md1220 controller on din (6×3TB scratch)
     }
   }
 
