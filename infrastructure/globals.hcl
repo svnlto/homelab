@@ -97,6 +97,9 @@ locals {
     # Arr Media Stack
     arr_stack = "192.168.0.50"
 
+    # Proxmox QDevice (corosync-qnetd)
+    qdevice = "192.168.0.54"
+
     # TrueNAS
     truenas_primary_mgmt    = "192.168.0.13"
     truenas_primary_storage = "10.10.10.13"
@@ -184,6 +187,7 @@ locals {
       beryl_ap    = { interface = "ether3", pvid = 20, comment = "Beryl AX WiFi AP" }
       din_idrac   = { interface = "ether4", pvid = 1, comment = "din iDRAC" }
       grogu_idrac = { interface = "ether5", pvid = 1, comment = "grogu iDRAC" }
+      qdevice     = { interface = "ether6", pvid = 20, comment = "Proxmox QDevice" }
     }
 
     # Trunk ports: tagged all VLANs (direct to servers, no aggregation switch yet)
