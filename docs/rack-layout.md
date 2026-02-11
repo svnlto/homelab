@@ -243,25 +243,23 @@ Gateway, NAT, firewall, DHCP, DNS forwarding. Managed via Terragrunt.
 
 | Device | Idle | Load |
 |--------|------|------|
-| R630 (grogu) | 120W | 200W |
-| MD1200 | 80W | 120W |
-| R730xd (din) | 150W | 250W |
-| MD1220 | 60W | 100W |
-| Network | 30W | 40W |
-| **Total** | **~440W** | **~710W** |
+| R630 (grogu) — 2× E5-2699v3, 256GB, 2× SSD | 150W | 350W |
+| MD1200 — 12× 8TB 3.5" SATA | 100W | 150W |
+| R730xd (din) — 2× E5-2680v3, 128GB, 12× internal drives | 200W | 400W |
+| MD1220 — 24× 900GB 2.5" 10K SAS | 150W | 200W |
+| Network — CRS310, 2× Pi 4B, Beryl AX, Homespot | 40W | 50W |
+| **Total** | **~640W** | **~1150W** |
 
-UPS: APC SMT1500RMI2U (1000W) → ~71% max load, ~12min runtime
+UPS: APC SMT1500RMI2U (1500VA / 1000W) → ~64% idle load, ~8min runtime at full load
 
-## PDU Layout (Rear-Mounted)
+## PDU Layout (Rear-Mounted, 2× PDU from UPS)
 
 ```
-Intellinet PDU + Fan Controller (rear rails)
-─────────────────────────────────────────────
-R630 PSU1 + PSU2
-MD1200 PSU1 + PSU2
-R730xd PSU1 + PSU2
-MD1220 PSU1 + PSU2
-Network gear
+PDU A (rear left rail)          PDU B (rear right rail)
+───────────────────────         ───────────────────────
+R630 PSU1                       R630 PSU2
+MD1200 PSU1                     MD1200 PSU2
+R730xd PSU1                     R730xd PSU2
+MD1220 PSU1                     MD1220 PSU2
+CRS310 + 2× Pi 4B
 ```
-
-Note: Single PDU may require second PDU for redundancy if desired.
