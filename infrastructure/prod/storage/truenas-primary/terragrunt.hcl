@@ -2,7 +2,7 @@
 # TrueNAS Primary Server (VMID 300)
 # ==============================================================================
 # Target: din (r730xd) - Primary storage node
-# Storage: H330 Mini (5×8TB internal) + LSI 9201-8e (DS2246 shelf with 24×900GB)
+# Storage: H330 Mini (6×8TB bulk) + MD1220 (6×3TB scratch) + LSI 9201-8e (24×900GB fast)
 # Network: Single interface on vmbr0
 #
 # HBA Passthrough: H330 Mini managed via Proxmox resource mapping "truenas-h330"
@@ -52,7 +52,7 @@ inputs = {
   # Environment - Resource Pool
   pool_id = local.environments.prod.pools.storage
 
-  # HBA Passthrough - Dell H330 Mini (5×8TB internal drives)
+  # HBA Passthrough - Dell H330 Mini (6×8TB bulk drives)
   enable_hostpci  = true
   hostpci_mapping = local.proxmox.resource_mappings.truenas_h330
 }
