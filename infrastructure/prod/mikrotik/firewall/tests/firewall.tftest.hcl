@@ -5,7 +5,7 @@
 mock_provider "routeros" {}
 
 variables {
-  mikrotik_api_url  = "https://192.168.0.3"
+  mikrotik_api_url  = "https://192.168.0.1"
   mikrotik_username = "terraform"
   mikrotik_password = "test-password"
   wan_interface     = "ether1"
@@ -63,20 +63,65 @@ run "validate_zone_membership" {
   }
 }
 
-# Test 3: Validate firewall filter rules order
+# Test 3: Validate input chain rules (router protection)
+run "validate_input_chain" {
+  command = plan
+
+  # Input chain: accept established
+  assert {
+    condition     = routeros_firewall_filter.input_accept_established.chain == "input"
+    error_message = "input_accept_established should be in input chain"
+  }
+
+  assert {
+    condition     = routeros_firewall_filter.input_accept_established.connection_state == "established,related"
+    error_message = "Input chain should accept established/related connections"
+  }
+
+  # Input chain: drop invalid
+  assert {
+    condition     = routeros_firewall_filter.input_drop_invalid.action == "drop"
+    error_message = "Input chain should drop invalid packets"
+  }
+
+  # Input chain: accept from LAN
+  assert {
+    condition     = routeros_firewall_filter.input_accept_lan.action == "accept"
+    error_message = "Input chain should accept from LAN"
+  }
+
+  # Input chain: accept from K8s
+  assert {
+    condition     = routeros_firewall_filter.input_accept_k8s.action == "accept"
+    error_message = "Input chain should accept from K8s (DHCP, DNS)"
+  }
+
+  # Input chain: accept ICMP
+  assert {
+    condition     = routeros_firewall_filter.input_accept_icmp.protocol == "icmp"
+    error_message = "Input chain should accept ICMP"
+  }
+
+  # Input chain: drop WAN
+  assert {
+    condition     = routeros_firewall_filter.input_drop_wan.action == "drop"
+    error_message = "Input chain should drop all other WAN input"
+  }
+}
+
+# Test 4: Validate forward chain rules order
 run "validate_firewall_rules_order" {
   command = plan
 
-  # Rule 1: Accept established connections (should be first)
+  # Rule 1: Accept established connections
   assert {
     condition     = routeros_firewall_filter.accept_established.action == "accept"
     error_message = "accept_established should have accept action"
   }
 
-  # Rule 1: Should accept established/related
   assert {
     condition     = routeros_firewall_filter.accept_established.connection_state == "established,related"
-    error_message = "First rule should accept established,related connections"
+    error_message = "First forward rule should accept established,related connections"
   }
 
   # Rule 2: Should drop invalid
@@ -91,7 +136,7 @@ run "validate_firewall_rules_order" {
   }
 }
 
-# Test 4: Validate LAN access policy
+# Test 5: Validate LAN access policy
 run "validate_lan_access" {
   command = plan
 
@@ -107,7 +152,7 @@ run "validate_lan_access" {
   }
 }
 
-# Test 5: Validate K8s to storage access
+# Test 6: Validate K8s to storage access
 run "validate_k8s_storage_access" {
   command = plan
 
@@ -127,7 +172,26 @@ run "validate_k8s_storage_access" {
   }
 }
 
-# Test 6: Validate K8s cluster isolation
+# Test 7: Validate K8s to WAN access
+run "validate_k8s_wan_access" {
+  command = plan
+
+  # K8s clusters should be able to access internet
+  assert {
+    condition     = routeros_firewall_filter.k8s_to_wan.action == "accept"
+    error_message = "K8s should have access to internet (WAN)"
+  }
+
+  assert {
+    condition = (
+      routeros_firewall_filter.k8s_to_wan.in_interface_list == "k8s" &&
+      routeros_firewall_filter.k8s_to_wan.out_interface_list == "wan"
+    )
+    error_message = "K8s to WAN rule should match in:k8s out:wan"
+  }
+}
+
+# Test 8: Validate K8s cluster isolation
 run "validate_k8s_isolation" {
   command = plan
 
@@ -147,7 +211,32 @@ run "validate_k8s_isolation" {
   }
 }
 
-# Test 7: Validate default deny rule
+# Test 9: Validate management and storage WAN access
+run "validate_other_wan_access" {
+  command = plan
+
+  # Management should access internet
+  assert {
+    condition = (
+      routeros_firewall_filter.mgmt_to_wan.action == "accept" &&
+      routeros_firewall_filter.mgmt_to_wan.in_interface_list == "management" &&
+      routeros_firewall_filter.mgmt_to_wan.out_interface_list == "wan"
+    )
+    error_message = "Management should have internet access via WAN"
+  }
+
+  # Storage should access internet
+  assert {
+    condition = (
+      routeros_firewall_filter.storage_to_wan.action == "accept" &&
+      routeros_firewall_filter.storage_to_wan.in_interface_list == "storage" &&
+      routeros_firewall_filter.storage_to_wan.out_interface_list == "wan"
+    )
+    error_message = "Storage should have internet access via WAN"
+  }
+}
+
+# Test 10: Validate default deny rule
 run "validate_default_deny" {
   command = plan
 
@@ -163,7 +252,7 @@ run "validate_default_deny" {
   }
 }
 
-# Test 8: Validate NAT masquerade
+# Test 11: Validate NAT masquerade
 run "validate_nat_masquerade" {
   command = plan
 
@@ -186,7 +275,7 @@ run "validate_nat_masquerade" {
   }
 }
 
-# Test 9: Security policy validation
+# Test 12: Security policy validation
 run "validate_security_policy" {
   command = plan
 
@@ -209,5 +298,11 @@ run "validate_security_policy" {
   assert {
     condition     = routeros_firewall_filter.drop_invalid.action == "drop"
     error_message = "Invalid traffic must be dropped"
+  }
+
+  # Verify WAN input is dropped
+  assert {
+    condition     = routeros_firewall_filter.input_drop_wan.action == "drop"
+    error_message = "WAN input must be dropped (router protection)"
   }
 }

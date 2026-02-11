@@ -135,14 +135,16 @@ SSH uses 1Password SSH agent. See `docs/1password-setup.md` for setup.
 
 ## Network
 
-| Host              | LAN (VLAN 20)  | Storage (VLAN 10) |
-| ----------------- | -------------- | ----------------- |
-| Pi-hole (RPi)     | 192.168.0.53   | —                 |
-| Arr Stack         | 192.168.0.50   | —                 |
-| grogu (r630)      | 192.168.0.10   | 10.10.10.10       |
-| din (r730xd)      | 192.168.0.11   | 10.10.10.11       |
-| TrueNAS Primary   | 192.168.0.13   | 10.10.10.13       |
-| TrueNAS Backup    | 192.168.0.14   | 10.10.10.14       |
+| Host              | LAN (VLAN 20)  | Storage (VLAN 10) | WAN              |
+| ----------------- | -------------- | ----------------- | ---------------- |
+| MikroTik (nevarro)| 192.168.0.1    | —                 | 192.168.8.2      |
+| Pi-hole (RPi)     | 192.168.0.53   | —                 | —                |
+| Arr Stack         | 192.168.0.50   | —                 | —                |
+| grogu (r630)      | 192.168.0.10   | 10.10.10.10       | —                |
+| din (r730xd)      | 192.168.0.11   | 10.10.10.11       | —                |
+| TrueNAS Primary   | 192.168.0.13   | 10.10.10.13       | —                |
+| TrueNAS Backup    | 192.168.0.14   | 10.10.10.14       | —                |
+| O2 Homespot       | —              | —                 | 192.168.8.1 (GW) |
 
 VLANs: 1 (management/iDRAC), 10 (storage/10GbE), 20 (LAN), 30-32 (K8s clusters).
 

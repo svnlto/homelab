@@ -26,6 +26,32 @@ variable "vlans" {
   }))
 }
 
-variable "interfaces" {
-  type = map(string)
+variable "access_ports" {
+  type = map(object({
+    interface = string
+    pvid      = number
+    comment   = string
+  }))
+}
+
+variable "trunk_ports" {
+  type = map(object({
+    interface = string
+    comment   = string
+  }))
+}
+
+variable "wan_interface" {
+  type        = string
+  description = "WAN interface name (standalone, not in bridge)"
+}
+
+variable "wan_address" {
+  type        = string
+  description = "WAN IP address with CIDR (e.g. 192.168.8.2/24)"
+}
+
+variable "wan_gateway" {
+  type        = string
+  description = "WAN default gateway IP"
 }

@@ -70,60 +70,30 @@ This simplified approach:
 
 ---
 
-## Phase 3: MikroTik Integration ✅ SETUP COMPLETE
+## Phase 3: MikroTik Integration ✅ COMPLETE
 
-**Duration**: Estimated 5-7 hours
+**Duration**: ~8 hours
 **Risk**: High (network reconfiguration)
-**Status**: Module code complete, awaiting router setup and execution
+**Status**: Complete — MikroTik is main gateway at 192.168.0.1
+**Date Completed**: 2026-02-11
 
 ### Phase 3: Completed Tasks
 
 - ✅ Created MikroTik provider.hcl
 - ✅ Created base networking module (bridge, VLANs, IPs, routing)
 - ✅ Created DHCP modules for 4 VLANs (lan, k8s-shared, k8s-apps, k8s-test)
-- ✅ Created firewall module (zone-based rules)
+- ✅ Created firewall module (zone-based rules with `routeros_move_items`)
 - ✅ Created DNS forwarding module (to Pi-hole)
 - ✅ Created comprehensive SETUP.md documentation
-
-### Pending Execution Steps
-
-**Phase 0: Router Setup** (see infrastructure/mikrotik/SETUP.md):
-
-1. Connect MikroTik CRS to network
-2. Access via WebFig/Winbox
-3. Create terraform user
-4. Enable REST API with SSL certificate
-5. Set static IP (192.168.0.3/24)
-6. Test API access
-7. Add credentials to .env
-
-**Phase 3A: Base Networking** (⚠️ MAINTENANCE WINDOW):
-
-```bash
-cd infrastructure/mikrotik/base
-terragrunt apply  # Creates VLANs, bridge, gateways
-```
-
-**Phase 3B: DHCP Servers**:
-
-```bash
-cd infrastructure/mikrotik/dhcp/vlan-20-lan && terragrunt apply
-# Repeat for k8s VLANs
-```
-
-**Phase 3C: Firewall Rules** - Apply zone-based firewall:
-
-```bash
-cd infrastructure/mikrotik/firewall
-terragrunt apply  # Zone-based firewall
-```
-
-**Phase 3D: DNS Forwarding** - Configure DNS forwarding to Pi-hole:
-
-```bash
-cd infrastructure/mikrotik/dns
-terragrunt apply  # Forward to Pi-hole
-```
+- ✅ **Router Setup** — CRS310-8G+2S+IN, terraform user, HTTPS API with SSL
+- ✅ **Base Networking** — VLAN-aware bridge, 6 VLANs, access/trunk ports
+- ✅ **DNS Forwarding** — Router DNS set to Pi-hole (192.168.0.53)
+- ✅ **K8s DHCP** — DHCP servers for VLANs 30, 31, 32
+- ✅ **Gateway Migration** — MikroTik at 192.168.0.1, WAN on ether1,
+  NAT/masquerade, input chain firewall, Beryl AX switched to AP mode
+- ✅ **LAN DHCP** — DHCP server for VLAN 20 (192.168.0.100-149)
+- ✅ **Firewall** — Input chain (8 rules) + forward chain (9 rules)
+- ✅ **Terragrunt state aligned** — All resources imported and applied
 
 ### Artifacts Created
 
@@ -225,46 +195,21 @@ terragrunt apply  # Forward to Pi-hole
 | ----- | ------ | -------- | ---- | -------- |
 | 1. Setup | ✅ Complete | 2h | Low | 100% |
 | 2. Proxmox Migration | ✅ Complete | 15m | Low | 100% |
-| 3. MikroTik Integration | ⏳ Setup Complete | 5-7h | High | 75% |
+| 3. MikroTik Integration | ✅ Complete | ~8h | High | 100% |
 | 4. B2 State Migration | ✅ Complete | 30m | Medium | 100% |
 | 5. Documentation | 🔜 Not Started | 1-2h | Low | 0% |
 
 **Total Estimated Time**: 2-3 weeks (part-time)
-**Time Invested**: ~5 hours
-**Completion**: ~75% (setup/code)
+**Time Invested**: ~7 hours
+**Completion**: ~95%
 
 ---
 
 ## Next Actions
 
-### Immediate (Phase 3 Preparation)
-
-**Option A: Deploy VMs with Terragrunt** (if VMs don't exist yet):
-
-```bash
-# Reload shell to get Terragrunt
-exec $SHELL
-cd ~/Projects/homelab
-
-# Initialize and apply Proxmox modules
-cd infrastructure/proxmox/truenas-primary && terragrunt init && terragrunt apply
-cd ../truenas-backup && terragrunt init && terragrunt apply
-cd ../arr-stack && terragrunt init && terragrunt apply
-```
-
-**Option B: Proceed to MikroTik Setup** (if VMs already deployed):
-
-1. **MikroTik router physical setup** (see infrastructure/mikrotik/SETUP.md):
-   - Connect CRS to network
-   - Access via WebFig/Winbox
-   - Create terraform user
-   - Enable REST API with SSL
-   - Configure static IP (192.168.0.3/24)
-   - Add credentials to .env
-
-2. **Schedule maintenance window** for Phase 3 (30-60 min network disruption)
-
-3. **Execute Phase 3** during maintenance window (see infrastructure/mikrotik/SETUP.md)
+1. **Phase 5: Documentation cleanup**
+2. Deploy Kubernetes clusters on K8s VLANs (30-32)
+3. Add MikroTik to observability stack
 
 ---
 

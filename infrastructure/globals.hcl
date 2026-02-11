@@ -45,7 +45,7 @@ locals {
       name        = "lan"
       subnet      = "192.168.0.0/24"
       gateway     = "192.168.0.1"
-      description = "VMs, clients, WiFi (Beryl AX gateway)"
+      description = "VMs, clients, WiFi"
     }
 
     k8s_shared = {
@@ -74,15 +74,15 @@ locals {
   }
 
   infrastructure_ips = {
-    # Gateway (Beryl AX)
-    gateway = "192.168.0.1"
+    # WAN/Internet gateway (O2 Homespot)
+    gateway = "192.168.8.1"
 
     # DNS
     pihole = "192.168.0.53"
 
-    # MikroTik CRS Router (to be configured)
+    # MikroTik CRS Router (main gateway)
     router_mgmt    = "10.10.1.2"   # Management VLAN
-    router_lan     = "192.168.0.3" # MikroTik switch/router
+    router_lan     = "192.168.0.1" # MikroTik LAN gateway
     router_storage = "10.10.10.1"  # Storage VLAN gateway
 
     # Proxmox Nodes
@@ -108,7 +108,7 @@ locals {
     lan = {
       start = "192.168.0.100"
       end   = "192.168.0.149"
-      lease = "24h"
+      lease = "1d"
       dns   = ["192.168.0.53"]
     }
 
@@ -168,14 +168,28 @@ locals {
 
   mikrotik = {
     hostname = "crs-router"
-    api_url  = "https://192.168.0.3" # MikroTik REST API (after configuration)
+    api_url  = "https://192.168.0.1" # MikroTik REST API (LAN gateway)
 
-    # Physical interfaces (to be configured based on actual hardware)
-    interfaces = {
-      wan_to_beryl = "ether1"       # Uplink to Beryl AX gateway
-      pihole       = "ether2"       # Raspberry Pi
-      sfp_plus1    = "sfp-sfpplus1" # grogu 10GbE
-      sfp_plus2    = "sfp-sfpplus2" # din 10GbE
+    # WAN interface (standalone, not in bridge)
+    wan = {
+      interface = "ether1"
+      address   = "192.168.8.2/24"
+      gateway   = "192.168.8.1"
+      comment   = "WAN to O2 Homespot"
+    }
+
+    # Access ports: untagged on their respective VLAN
+    access_ports = {
+      pihole      = { interface = "ether2", pvid = 20, comment = "Pi-hole DNS" }
+      beryl_ap    = { interface = "ether3", pvid = 20, comment = "Beryl AX WiFi AP" }
+      din_idrac   = { interface = "ether4", pvid = 1, comment = "din iDRAC" }
+      grogu_idrac = { interface = "ether5", pvid = 1, comment = "grogu iDRAC" }
+    }
+
+    # Trunk ports: tagged all VLANs (direct to servers, no aggregation switch yet)
+    trunk_ports = {
+      sfp_plus1 = { interface = "sfp-sfpplus1", comment = "grogu 10GbE" }
+      sfp_plus2 = { interface = "sfp-sfpplus2", comment = "din 10GbE" }
     }
 
     bridge_name = "bridge-vlans"

@@ -21,5 +21,5 @@ inputs = {
   mikrotik_password = get_env("MIKROTIK_PASSWORD", "")
 
   vlan_interfaces = dependency.base.outputs.vlan_interfaces
-  wan_interface   = local.mikrotik.interfaces.wan_to_beryl
+  wan_interface   = local.mikrotik.wan.interface
 }

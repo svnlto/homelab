@@ -4,13 +4,30 @@ resource "routeros_interface_bridge" "main" {
   comment        = "VLAN-aware bridge for homelab infrastructure"
 }
 
-resource "routeros_interface_bridge_port" "trunk_ports" {
-  for_each = var.interfaces
+# Access ports: untagged on their PVID VLAN
+# depends_on ensures VLAN memberships exist before ports join the filtered bridge
+resource "routeros_interface_bridge_port" "access_ports" {
+  for_each = var.access_ports
 
-  interface = each.value
+  interface = each.value.interface
   bridge    = routeros_interface_bridge.main.name
-  pvid      = 1
-  comment   = "Trunk port: ${each.key}"
+  pvid      = each.value.pvid
+  comment   = each.value.comment
+
+  depends_on = [routeros_interface_bridge_vlan.vlan_membership]
+}
+
+# Trunk ports: carry all VLANs tagged
+resource "routeros_interface_bridge_port" "trunk_ports" {
+  for_each = var.trunk_ports
+
+  interface   = each.value.interface
+  bridge      = routeros_interface_bridge.main.name
+  pvid        = 1
+  frame_types = "admit-only-vlan-tagged"
+  comment     = each.value.comment
+
+  depends_on = [routeros_interface_bridge_vlan.vlan_membership]
 }
 
 resource "routeros_interface_vlan" "vlans" {
@@ -34,19 +51,33 @@ resource "routeros_ip_settings" "routing" {
   rp_filter = "loose"
 }
 
-# Default route to internet via Beryl AX gateway
-resource "routeros_ip_route" "default" {
-  dst_address = "0.0.0.0/0"
-  gateway     = "192.168.0.1"
-  comment     = "Default route to internet via Beryl AX"
+# WAN IP on ether1 (standalone, not in bridge)
+resource "routeros_ip_address" "wan" {
+  address   = var.wan_address
+  interface = var.wan_interface
+  comment   = "WAN to O2 Homespot"
 }
 
-# VLAN bridge membership - configure which VLANs are allowed on trunk ports
+# Default route to internet via O2 Homespot
+resource "routeros_ip_route" "default" {
+  dst_address = "0.0.0.0/0"
+  gateway     = var.wan_gateway
+  comment     = "Default route to internet via O2 Homespot"
+}
+
+# VLAN bridge membership: trunk ports tagged, access ports untagged on their VLAN
 resource "routeros_interface_bridge_vlan" "vlan_membership" {
   for_each = var.vlans
 
   bridge   = routeros_interface_bridge.main.name
   vlan_ids = [each.value.id]
-  tagged   = [for k, v in var.interfaces : v]
-  comment  = "VLAN ${each.value.id} (${each.value.name}) membership on trunk ports"
+  tagged = concat(
+    [routeros_interface_bridge.main.name],
+    [for k, v in var.trunk_ports : v.interface]
+  )
+  untagged = [
+    for k, v in var.access_ports : v.interface
+    if v.pvid == each.value.id
+  ]
+  comment = "VLAN ${each.value.id} (${each.value.name})"
 }

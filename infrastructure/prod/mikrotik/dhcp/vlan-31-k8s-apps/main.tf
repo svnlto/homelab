@@ -5,11 +5,12 @@ resource "routeros_ip_pool" "dhcp" {
 }
 
 resource "routeros_ip_dhcp_server" "this" {
-  name         = "dhcp-server-${var.vlan_name}"
-  interface    = var.vlan_interface
-  address_pool = routeros_ip_pool.dhcp.name
-  lease_time   = var.dhcp_lease
-  comment      = "DHCP server for ${var.vlan_name}"
+  name                      = "dhcp-server-${var.vlan_name}"
+  interface                 = var.vlan_interface
+  address_pool              = routeros_ip_pool.dhcp.name
+  lease_time                = var.dhcp_lease
+  dynamic_lease_identifiers = "client-mac,client-id"
+  comment                   = "DHCP server for ${var.vlan_name}"
 }
 
 resource "routeros_ip_dhcp_server_network" "this" {
