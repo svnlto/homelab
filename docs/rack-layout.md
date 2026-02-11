@@ -176,7 +176,7 @@ On the back side, cables arrive from devices above, beside, or below the panel.
 
 **Direct SAS** (server → shelf, no switch):
 
-- grogu HPE H241 (U10) → MD1200 EMM (U11-U12), Mini-SAS SFF-8088
+- grogu HPE H241 (U10) → MD1200 EMM (U11-U12), Mini-SAS HD SFF-8644 to SFF-8088
 - din PERC H200E (U13) → MD1220 EMM (U15-U16), Mini-SAS SFF-8088
 
 ## Patch Panel Port Assignments (U1)
@@ -225,7 +225,7 @@ Gateway, NAT, firewall, DHCP, DNS forwarding. Managed via Terragrunt.
 
 | Source | HBA | Target | Cable |
 |--------|-----|--------|-------|
-| grogu (R630) | HPE H241 | Dell MD1200 EMM | Mini-SAS SFF-8088 |
+| grogu (R630) | HPE H241 | Dell MD1200 EMM | Mini-SAS HD SFF-8644 to SFF-8088 |
 | din (R730xd) | Dell PERC H200E | Dell MD1220 EMM | Mini-SAS SFF-8088 |
 
 ## VLAN Summary
