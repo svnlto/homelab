@@ -2,11 +2,11 @@
 # TrueNAS Primary Server (VMID 300)
 # ==============================================================================
 # Target: din (r730xd) - Primary storage node
-# Storage: H330 Mini (6×8TB bulk) + MD1220 (6×3TB scratch) + LSI 9201-8e (24×900GB fast)
+# Storage: H330 Mini (6×8TB bulk) + MD1220 (6×3TB scratch) + PERC H200E (24×900GB fast)
 # Network: Single interface on vmbr0
 #
 # HBA Passthrough: H330 Mini managed via Proxmox resource mapping "truenas-h330"
-# Note: Additional HBAs (LSI 9201-8e) must be added manually via Proxmox UI
+# Note: Additional HBAs (PERC H200E, MD1220) must be added manually via Proxmox UI
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
