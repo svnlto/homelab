@@ -63,6 +63,7 @@ variables {
     beryl_ap    = { interface = "ether3", pvid = 20, comment = "Beryl AX WiFi AP" }
     din_idrac   = { interface = "ether4", pvid = 1, comment = "din iDRAC" }
     grogu_idrac = { interface = "ether5", pvid = 1, comment = "grogu iDRAC" }
+    qdevice     = { interface = "ether6", pvid = 20, comment = "Proxmox QDevice" }
   }
 
   trunk_ports = {
@@ -190,10 +191,10 @@ run "validate_vlan_membership" {
 run "validate_ports" {
   command = plan
 
-  # Should have 4 access ports (pihole, beryl_ap, din_idrac, grogu_idrac)
+  # Should have 5 access ports (pihole, beryl_ap, din_idrac, grogu_idrac, qdevice)
   assert {
-    condition     = length(routeros_interface_bridge_port.access_ports) == 4
-    error_message = "Expected 4 access ports (pihole, beryl_ap, din_idrac, grogu_idrac)"
+    condition     = length(routeros_interface_bridge_port.access_ports) == 5
+    error_message = "Expected 5 access ports (pihole, beryl_ap, din_idrac, grogu_idrac, qdevice)"
   }
 
   # Should have 2 trunk ports (sfp+1, sfp+2)

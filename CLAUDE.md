@@ -34,6 +34,11 @@ just nixos-flash-pihole /dev/rdiskX      # Flash to SD card
 just nixos-deploy-pihole                 # Deploy config via SSH (rsync + nixos-rebuild)
 just nixos-flake-update-pihole           # Update flake lock in VM
 
+# QDevice (Raspberry Pi) - corosync-qnetd for Proxmox quorum
+just nixos-build-qdevice                 # Build SD image
+just nixos-flash-qdevice /dev/rdiskX     # Flash to SD card
+just nixos-deploy-qdevice               # Deploy config via SSH
+
 # Arr Stack (Proxmox VM at 192.168.0.50)
 just nixos-install-arr-stack <ip>        # Initial install via nixos-anywhere
 just nixos-update-arr-stack              # Deploy config via SSH
@@ -104,9 +109,10 @@ infrastructure/
 
 ```text
 nix/
-├── flake.nix                # Two configs: rpi-pihole (aarch64), arr-stack (x86_64)
+├── flake.nix                # Three configs: rpi-pihole, rpi-qdevice (aarch64), arr-stack (x86_64)
 ├── common/constants.nix     # Shared values (IPs, image versions)
 ├── rpi-pihole/              # Pi-hole: pihole.nix, configuration.nix, tailscale.nix
+├── rpi-qdevice/             # QDevice: qdevice.nix, configuration.nix (corosync-qnetd)
 └── arr-stack/               # Media stack: arr.nix, configuration.nix, disk-config.nix
 ```
 
@@ -139,6 +145,7 @@ SSH uses 1Password SSH agent. See `docs/1password-setup.md` for setup.
 | ----------------- | -------------- | ----------------- | ---------------- |
 | MikroTik (nevarro)| 192.168.0.1    | —                 | 192.168.8.2      |
 | Pi-hole (RPi)     | 192.168.0.53   | —                 | —                |
+| QDevice (RPi)     | 192.168.0.54   | —                 | —                |
 | Arr Stack         | 192.168.0.50   | —                 | —                |
 | grogu (r630)      | 192.168.0.10   | 10.10.10.10       | —                |
 | din (r730xd)      | 192.168.0.11   | 10.10.10.11       | —                |

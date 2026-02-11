@@ -29,6 +29,19 @@
         specialArgs = { constants = import ./common/constants.nix; };
       };
 
+      rpi-qdevice = nixpkgs.lib.nixosSystem {
+        system = "aarch64-linux";
+        modules = [
+          "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+          ./rpi-qdevice/configuration.nix
+          {
+            # Faster builds (disable compression)
+            sdImage.compressImage = false;
+          }
+        ];
+        specialArgs = { constants = import ./common/constants.nix; };
+      };
+
       arr-stack = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [

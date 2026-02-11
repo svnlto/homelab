@@ -66,6 +66,43 @@ nixos-check-pihole:
 nixos-clean:
     cd nix && vagrant ssh -c "sudo rm -rf /tmp/nix-* /tmp/nixos-build /tmp/tmp.* && nix-collect-garbage -d && df -h /"
 
+# --- NixOS QDevice (Raspberry Pi) ---
+
+# Build SD image for QDevice in VM
+nixos-build-qdevice:
+    @echo "Building NixOS SD image for QDevice in Linux VM..."
+    cd nix && vagrant ssh -c 'cd /tmp && rm -rf nix-build && mkdir nix-build && cd nix-build && rsync -a --exclude=".vagrant" --exclude="result*" --exclude="*.img" --exclude="*.qcow2" --exclude="*.vma.zst" /vagrant/ . && nix build .#nixosConfigurations.rpi-qdevice.config.system.build.sdImage && cp -L result/sd-image/*.img /vagrant/qdevice-nixos.img'
+    @ls -lh nix/qdevice-nixos.img
+
+# Flash QDevice SD image to disk
+nixos-flash-qdevice disk:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    IMAGE="nix/qdevice-nixos.img"
+    if [ ! -f "$IMAGE" ]; then
+      echo "Error: No NixOS image found. Run 'just nixos-build-qdevice' first."
+      exit 1
+    fi
+    echo "Flashing $IMAGE to {{disk}}"
+    echo "WARNING: This will DESTROY all data on {{disk}}!"
+    read -p "Continue? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      diskutil unmountDisk {{disk}}
+      sudo dd if="$IMAGE" of={{disk}} bs=1048576
+      diskutil eject {{disk}}
+      echo "Done!"
+    else
+      echo "Aborted."
+    fi
+
+# Deploy QDevice config via SSH
+nixos-deploy-qdevice:
+    @echo "Syncing NixOS config to rpi-qdevice..."
+    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.54:/tmp/nix-config/
+    @echo "Rebuilding NixOS on rpi-qdevice..."
+    ssh svenlito@192.168.0.54 "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-qdevice"
+
 # --- NixOS Arr Stack (Proxmox VM) ---
 
 # Install NixOS on arr-stack VM via nixos-anywhere
