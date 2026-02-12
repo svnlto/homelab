@@ -51,6 +51,12 @@
       failed_when: not pvesh_stat.stat.exists
 
   tasks:
+    - name: Install common packages
+      ansible.builtin.include_role:
+        name: proxmox_configure
+        tasks_from: packages.yml
+      tags: [packages]
+
     - name: Fix locale settings
       ansible.builtin.include_role:
         name: proxmox_configure

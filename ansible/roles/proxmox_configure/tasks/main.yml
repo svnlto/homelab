@@ -4,6 +4,9 @@
 # Configures Proxmox VE after installation
 # =============================================================================
 
+- name: Install common packages
+  ansible.builtin.include_tasks: packages.yml
+
 - name: Configure locales
   ansible.builtin.include_tasks: locale.yml
 
