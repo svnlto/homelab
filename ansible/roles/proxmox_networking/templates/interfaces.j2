@@ -38,6 +38,7 @@ auto vmbr20
 iface vmbr20 inet static
     address {{ management_ip }}/24
     gateway {{ gateway_ip }}
+    dns-nameservers {{ dns_server | default('192.168.0.53') }}
     bridge-ports {{ primary_interface }}.20
     bridge-stp off
     bridge-fd 0

@@ -419,10 +419,10 @@ add chain=forward action=drop comment="Drop all other inter-VLAN (default deny)"
 
 ### Network Interfaces
 
-**Physical interfaces on both grogu and din:**
-- `eno1`, `eno2`: Intel I350 1GbE (unused/spare)
-- `eno3`: Intel X520 10GbE Port 1 (primary, all VLANs trunked)
-- `eno4`: Intel X520 10GbE Port 2 (spare/future LACP)
+**Physical interfaces on both grogu and din (Proxmox biosdevname):**
+- `nic0`, `nic1`: Intel I350 1GbE (unused, no cable)
+- `nic2`: Intel X520 10GbE SFP+ Port 1 (primary, all VLANs trunked)
+- `nic3`: Intel X520 10GbE SFP+ Port 2 (spare/future LACP)
 
 ### Bridge Configuration
 
@@ -437,15 +437,15 @@ auto lo
 iface lo inet loopback
 
 # Physical interface (all VLANs trunked)
-auto eno3
-iface eno3 inet manual
+auto nic2
+iface nic2 inet manual
     mtu 9000
 
 # VLAN 10 - Storage (10GbE, Jumbo Frames)
 auto vmbr10
 iface vmbr10 inet static
     address 10.10.10.10/24    # grogu: .10, din: .11
-    bridge-ports eno3.10
+    bridge-ports nic2.10
     bridge-stp off
     bridge-fd 0
     mtu 9000
@@ -456,7 +456,7 @@ auto vmbr20
 iface vmbr20 inet static
     address 192.168.0.10/24   # grogu: .10, din: .11
     gateway 192.168.0.1       # Internet via MikroTik
-    bridge-ports eno3.20
+    bridge-ports nic2.20
     bridge-stp off
     bridge-fd 0
     # This is how you reach Proxmox web UI
@@ -464,7 +464,7 @@ iface vmbr20 inet static
 # VLAN 30 - K8s Shared Services
 auto vmbr30
 iface vmbr30 inet manual
-    bridge-ports eno3.30
+    bridge-ports nic2.30
     bridge-stp off
     bridge-fd 0
     bridge-vlan-aware no
@@ -472,7 +472,7 @@ iface vmbr30 inet manual
 # VLAN 31 - K8s Apps
 auto vmbr31
 iface vmbr31 inet manual
-    bridge-ports eno3.31
+    bridge-ports nic2.31
     bridge-stp off
     bridge-fd 0
     bridge-vlan-aware no
@@ -480,7 +480,7 @@ iface vmbr31 inet manual
 # VLAN 32 - K8s Test
 auto vmbr32
 iface vmbr32 inet manual
-    bridge-ports eno3.32
+    bridge-ports nic2.32
     bridge-stp off
     bridge-fd 0
     bridge-vlan-aware no
@@ -561,9 +561,9 @@ K8s Apps Jellyfin pod (10.0.2.x)
 Jellyfin pod (10.0.2.50, VLAN 31)
     ↓ K8s network
 Worker node vmbr31
-    ↓ eno3.31 (VLAN 31 tagged)
+    ↓ nic2.31 (VLAN 31 tagged)
 Router SFP+1 (inter-VLAN routing: VLAN 31 → VLAN 10)
-    ↓ eno3.10 on din (VLAN 10 tagged)
+    ↓ nic2.10 on din (VLAN 10 tagged)
 din vmbr10 (10.10.10.11)
     ↓ VM bridge
 TrueNAS VM (10.10.10.13)
@@ -579,9 +579,9 @@ ZFS dataset: bulk/media
 Prometheus pod (10.0.1.25, VLAN 30)
     ↓
 Worker node vmbr30
-    ↓ eno3.30 (VLAN 30 tagged)
+    ↓ nic2.30 (VLAN 30 tagged)
 Router (inter-VLAN routing: VLAN 30 → VLAN 10)
-    ↓ eno3.10 on din (VLAN 10 tagged)
+    ↓ nic2.10 on din (VLAN 10 tagged)
 din vmbr10
     ↓
 TrueNAS VM (10.10.10.13:9273)
@@ -595,9 +595,9 @@ TrueNAS VM (10.10.10.13:9273)
 App pod (10.0.2.45, VLAN 31)
     ↓ Push metrics
 Worker node vmbr31
-    ↓ eno3.31 (VLAN 31 tagged)
+    ↓ nic2.31 (VLAN 31 tagged)
 Router (inter-VLAN routing: VLAN 31 → VLAN 30)
-    ↓ eno3.30 on grogu (VLAN 30 tagged)
+    ↓ nic2.30 on grogu (VLAN 30 tagged)
 grogu vmbr30
     ↓
 Prometheus pod (10.0.1.25, VLAN 30)
@@ -626,11 +626,11 @@ Internet
 ```
 TrueNAS Primary (din) - 10.10.10.13
     ↓ VLAN 10
-din eno3.10
+din nic2.10
     ↓ SFP+2 trunk
 Router (L2 switching, same VLAN)
     ↓ SFP+1 trunk
-grogu eno3.10
+grogu nic2.10
     ↓ VLAN 10
 TrueNAS Backup (grogu) - 10.10.10.14
 ```
@@ -641,11 +641,11 @@ TrueNAS Backup (grogu) - 10.10.10.14
 ```
 TrueNAS Primary (din) - 10.10.10.13
     ↓ SAS to MD1220
-din eno3.10
+din nic2.10
     ↓ SFP+2 trunk (VLAN 10)
 Aggregation Switch (L2 switching)
     ↓ SFP+1 trunk (VLAN 10)
-grogu eno3.10
+grogu nic2.10
     ↓ SAS to MD1200
 TrueNAS Backup (grogu) - 10.10.10.14
 ```
@@ -715,8 +715,8 @@ TrueNAS Backup (grogu) - 10.10.10.14
 **Phase 2: Add Aggregation Switch**
 1. Configure CRS310-1G-5S-4S+IN as L2 switch
 2. Connect router SFP+1 → switch SFP+4 (10G DAC trunk)
-3. Move grogu eno3 → switch SFP+1
-4. Move din eno3 → switch SFP+2
+3. Move grogu nic2 → switch SFP+1
+4. Move din nic2 → switch SFP+2
 5. Test connectivity (no config changes needed on Proxmox/VMs)
 
 **Benefits:**

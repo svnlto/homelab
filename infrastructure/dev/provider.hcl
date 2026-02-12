@@ -32,7 +32,7 @@ provider "proxmox" {
     username = "root"
     node {
       name    = "din"
-      address = "192.168.0.175"
+      address = "192.168.0.11"
     }
   }
 }
