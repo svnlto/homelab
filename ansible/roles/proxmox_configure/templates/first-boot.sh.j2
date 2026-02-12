@@ -57,11 +57,11 @@ fi
 # =============================================================================
 # Configure network bridge (if not already configured)
 # =============================================================================
-if ! grep -q "vmbr0" /etc/network/interfaces; then
-    log "Note: Network bridge (vmbr0) not configured. Please configure manually."
+if ! grep -q "vmbr20" /etc/network/interfaces; then
+    log "Note: Network bridge (vmbr20) not configured. Please configure manually."
     log "Example configuration:"
-    log "  auto vmbr0"
-    log "  iface vmbr0 inet static"
+    log "  auto vmbr20"
+    log "  iface vmbr20 inet static"
     log "      address <IP>/24"
     log "      gateway <GATEWAY>"
     log "      bridge-ports <INTERFACE>"

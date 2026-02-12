@@ -105,7 +105,7 @@
       tags: [ssh]
 
     - name: Add SSH public key to root authorized_keys
-      ansible.posix.authorized_key:
+      ansible.builtin.authorized_key:
         user: root
         key: "{{ proxmox_ssh_public_key }}"
         state: present
