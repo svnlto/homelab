@@ -50,7 +50,7 @@ repos:
         exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
 
   - repo: https://github.com/ansible/ansible-lint
-    rev: v25.12.1
+    rev: v26.1.1
     hooks:
       - id: ansible-lint
         files: ^ansible/

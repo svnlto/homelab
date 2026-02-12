@@ -4,6 +4,9 @@
 # Configures Proxmox VE after installation
 # =============================================================================
 
+- name: Ensure /etc/hosts is correct
+  ansible.builtin.include_tasks: hosts.yml
+
 - name: Install common packages
   ansible.builtin.include_tasks: packages.yml
 
@@ -60,7 +63,7 @@
     mode: "0700"
 
 - name: Add SSH public key to root authorized_keys
-  ansible.posix.authorized_key:
+  ansible.builtin.authorized_key:
     user: root
     key: "{{ proxmox_ssh_public_key }}"
     state: present

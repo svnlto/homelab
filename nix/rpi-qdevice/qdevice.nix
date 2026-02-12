@@ -5,11 +5,9 @@
   # With only 2 corosync voters, losing one node = 50% = no quorum = both fence.
   # The QDevice gives 3 votes total (quorum = 2), so one node can survive.
   #
-  # Post-deploy certificate exchange (manual, one-time):
-  #   1. On this Pi:     sudo corosync-qnetd-certutil -i
-  #   2. Copy CA cert:   scp /var/lib/corosync-qnetd/nssdb/qnetd-cacert.crt to both Proxmox nodes
-  #   3. On Proxmox:     pvecm qdevice setup 192.168.0.54
-  #   4. Verify:         pvecm status (should show 3 votes, quorum = 2)
+  # Post-deploy setup (one-time, from any Proxmox node):
+  #   pvecm qdevice setup 192.168.0.54
+  #   pvecm status  # should show 3 votes, quorum = 2
 
   users.users.coroqnetd = {
     isSystemUser = true;
@@ -18,6 +16,14 @@
   };
 
   users.groups.coroqnetd = { };
+
+  # Ensure the nssdb directory exists with correct ownership.
+  # corosync-qnetd-certutil creates it at /etc/corosync/qnetd/nssdb/
+  # but the service runs as coroqnetd, so it needs read access.
+  systemd.tmpfiles.rules = [
+    "d /etc/corosync/qnetd 0750 coroqnetd coroqnetd -"
+    "d /etc/corosync/qnetd/nssdb 0750 coroqnetd coroqnetd -"
+  ];
 
   systemd.services.corosync-qnetd = {
     description = "Corosync QDevice Network Daemon";

@@ -27,6 +27,7 @@
           buildInputs = with pkgs; [
             ansible
             ansible-lint
+            pre-commit
             tflint
             vagrant
             qemu
