@@ -1,0 +1,16 @@
+---
+# =============================================================================
+# Task: Install common packages on Proxmox nodes
+# =============================================================================
+
+- name: Install common packages
+  ansible.builtin.apt:
+    name:
+      - htop
+      - iotop
+      - lshw
+      - sysstat
+      - nvme-cli
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
