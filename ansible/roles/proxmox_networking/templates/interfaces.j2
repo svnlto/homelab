@@ -26,10 +26,10 @@ iface vmbr10 inet static
     address {{ storage_ip }}/24
     bridge-ports {{ primary_interface }}.10
     bridge-stp off
-    bridge-fd 0
+    bridge-fd 2
     bridge-vlan-aware no
-    mtu 9000
     # No gateway - storage VLAN is L2 only for server-to-server
+    # MTU inherited from physical interface (9000)
 
 # ==============================================================================
 # VLAN 20 - LAN (Proxmox Management + Infrastructure VMs)
@@ -41,7 +41,7 @@ iface vmbr20 inet static
     dns-nameservers {{ dns_server | default('192.168.0.53') }}
     bridge-ports {{ primary_interface }}.20
     bridge-stp off
-    bridge-fd 0
+    bridge-fd 2
     bridge-vlan-aware no
     # This is how you reach Proxmox web UI
 
@@ -52,7 +52,7 @@ auto vmbr30
 iface vmbr30 inet manual
     bridge-ports {{ primary_interface }}.30
     bridge-stp off
-    bridge-fd 0
+    bridge-fd 2
     bridge-vlan-aware no
     # No IP - VMs only
 
@@ -63,7 +63,7 @@ auto vmbr31
 iface vmbr31 inet manual
     bridge-ports {{ primary_interface }}.31
     bridge-stp off
-    bridge-fd 0
+    bridge-fd 2
     bridge-vlan-aware no
     # No IP - VMs only
 
@@ -74,6 +74,6 @@ auto vmbr32
 iface vmbr32 inet manual
     bridge-ports {{ primary_interface }}.32
     bridge-stp off
-    bridge-fd 0
+    bridge-fd 2
     bridge-vlan-aware no
     # No IP - VMs only
