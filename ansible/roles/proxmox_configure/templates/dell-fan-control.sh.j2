@@ -1,6 +1,6 @@
 #!/bin/bash
 # Dell Fan Control Script
-# Automatically adjusts fan speed based on inlet temperature
+# Adjusts fan speed based on inlet and CPU temperatures via IPMI
 
 IPMI_HOST=localhost
 
@@ -16,33 +16,50 @@ set_fan_speed() {
     ipmitool raw 0x30 0x30 0x02 0xff "$1"
 }
 
-get_temp() {
+get_inlet_temp() {
     ipmitool sdr type temperature | grep -i "inlet\|ambient" | head -1 | awk -F'|' '{print $5}' | grep -oP '\d+'
 }
 
-# Fail safe on exit
+get_max_cpu_temp() {
+    ipmitool sdr type temperature | grep -E '^Temp\s' | awk -F'|' '{print $5}' | grep -oP '\d+' | sort -rn | head -1
+}
+
+# Fail safe on exit - always restore automatic control
 trap 'enable_auto; exit' SIGTERM SIGINT
 
 enable_manual
 
 while true; do
-    TEMP=$(get_temp)
+    INLET=$(get_inlet_temp)
+    CPU=$(get_max_cpu_temp)
 
-    if [[ -z "$TEMP" ]]; then
+    # If we can't read temps, fail safe to automatic
+    if [[ -z "$INLET" ]] || [[ -z "$CPU" ]]; then
         enable_auto
         sleep 30
         continue
     fi
 
-    if (( TEMP >= 35 )); then
-        set_fan_speed 0x32  # 50%
-    elif (( TEMP >= 30 )); then
-        set_fan_speed 0x1e  # 30%
-    elif (( TEMP >= 25 )); then
-        set_fan_speed 0x14  # 20%
+    # Determine fan speed from inlet temp
+    if (( INLET >= 35 )); then
+        SPEED=0x32  # 50%
+    elif (( INLET >= 30 )); then
+        SPEED=0x1e  # 30%
+    elif (( INLET >= 25 )); then
+        SPEED=0x14  # 20%
     else
-        set_fan_speed 0x0f  # 15%
+        SPEED=0x0f  # 15%
     fi
 
+    # CPU temp override - takes priority if CPUs are hot
+    if (( CPU >= 90 )); then
+        SPEED=0x64  # 100% - emergency
+    elif (( CPU >= 85 )); then
+        SPEED=0x50  # 80%
+    elif (( CPU >= 80 )); then
+        SPEED=0x3c  # 60%
+    fi
+
+    set_fan_speed "$SPEED"
     sleep 30
 done

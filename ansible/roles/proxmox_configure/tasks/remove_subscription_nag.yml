@@ -11,8 +11,8 @@
 - name: Remove subscription warning from web UI
   ansible.builtin.replace:
     path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
-    regexp: "(Ext.Msg.show\\(\\{[^}]*title:\\s*gettext\\('No valid subscription'\\))"
-    replace: "void({ //\\1"
+    regexp: '(?<!//)Ext\.Msg\.show\(\{'
+    replace: "void({ //Ext.Msg.show({"
     backup: true
   when: proxmoxlib_stat.stat.exists
   failed_when: false
