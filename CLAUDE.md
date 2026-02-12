@@ -177,6 +177,20 @@ Configured in `.pre-commit-config.yaml`:
 - **Ansible**: ansible-lint for `ansible/`
 - **Nix**: nixfmt, statix, deadnix (statix W20 "repeated_keys" suppressed in `statix.toml`)
 
+## Formatting Rules
+
+- When outputting shell commands that are long or have multiple arguments, always use
+  backslash line continuations so they are easy to copy-paste:
+
+  ```bash
+  rsync -avP --partial \
+    /source/path/ \
+    user@host:/destination/path/
+  ```
+
+- Never output a shell command that wraps mid-argument without a backslash — it will
+  break when pasted into a terminal.
+
 ## Common Issues
 
 ### VM stuck at SeaBIOS boot screen

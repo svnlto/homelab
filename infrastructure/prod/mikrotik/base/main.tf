@@ -4,6 +4,17 @@ resource "routeros_interface_bridge" "main" {
   comment        = "VLAN-aware bridge for homelab infrastructure"
 }
 
+# Jumbo frames on SFP+ trunk ports for storage VLAN (10GbE)
+resource "routeros_interface_ethernet" "sfp_mtu" {
+  for_each = var.trunk_ports
+
+  factory_name = each.value.interface
+  name         = each.value.interface
+  l2mtu        = var.storage_l2mtu
+  mtu          = var.storage_mtu
+  comment      = each.value.comment
+}
+
 # Access ports: untagged on their PVID VLAN
 # depends_on ensures VLAN memberships exist before ports join the filtered bridge
 resource "routeros_interface_bridge_port" "access_ports" {

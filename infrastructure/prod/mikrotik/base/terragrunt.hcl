@@ -27,4 +27,7 @@ inputs = {
   wan_gateway   = local.mikrotik.wan.gateway
 
   allowed_management_subnets = local.mikrotik.allowed_management_subnets
+
+  storage_l2mtu = 10218
+  storage_mtu   = 9000
 }
