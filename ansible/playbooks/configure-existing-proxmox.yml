@@ -106,6 +106,13 @@
       when: proxmox_ssh_public_key is defined
       tags: [ssh]
 
+    - name: Allow unsupported SFP+ modules
+      ansible.builtin.include_role:
+        name: proxmox_configure
+        tasks_from: ixgbe_unsupported_sfp.yml
+      when: configure_ixgbe_unsupported_sfp | default(false)
+      tags: [ixgbe]
+
     - name: Configure Dell fan control
       ansible.builtin.include_role:
         name: proxmox_configure

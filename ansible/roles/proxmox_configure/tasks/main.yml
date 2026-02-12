@@ -19,6 +19,9 @@
   ansible.builtin.include_tasks: ixgbe_unsupported_sfp.yml
   when: configure_ixgbe_unsupported_sfp | default(false)
 
+- name: Configure Dell fan control
+  ansible.builtin.include_tasks: dell_fan_control.yml
+
 - name: Configure basic datacenter settings
   ansible.builtin.template:
     src: datacenter.cfg.j2
