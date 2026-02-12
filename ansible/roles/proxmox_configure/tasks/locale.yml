@@ -1,0 +1,14 @@
+---
+# =============================================================================
+# Task: Configure system locales
+# =============================================================================
+
+- name: Enable en_GB.UTF-8 locale
+  ansible.builtin.lineinfile:
+    path: /etc/locale.gen
+    regexp: '^# en_GB.UTF-8 UTF-8'
+    line: 'en_GB.UTF-8 UTF-8'
+
+- name: Generate locales
+  ansible.builtin.command: locale-gen
+  changed_when: true
