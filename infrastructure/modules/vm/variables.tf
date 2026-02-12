@@ -134,7 +134,7 @@ variable "additional_disks" {
 variable "network_bridge" {
   description = "Network bridge for primary interface"
   type        = string
-  default     = "vmbr0"
+  default     = "vmbr20"
 }
 
 variable "vlan_id" {
@@ -159,7 +159,7 @@ variable "enable_dual_network" {
 variable "secondary_bridge" {
   description = "Network bridge for secondary interface"
   type        = string
-  default     = "vmbr0"
+  default     = "vmbr20"
 }
 
 variable "secondary_vlan_id" {
