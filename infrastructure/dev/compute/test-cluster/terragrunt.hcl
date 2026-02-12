@@ -34,8 +34,8 @@ inputs = {
   # Talos Image (from persistent image storage)
   talos_image_id = dependency.talos_image.outputs.talos_image_id
 
-  # Network (temporary LAN setup until switch arrives, then migrate to VLAN 32)
-  network_bridge  = "vmbr0"
+  # Network - LAN VLAN 20 (migrate to vmbr32 when K8s VLANs are active)
+  network_bridge  = "vmbr20"
   network_gateway = local.ips.gateway
   dns_servers     = [local.ips.pihole]
   vip_ip          = "192.168.0.160"

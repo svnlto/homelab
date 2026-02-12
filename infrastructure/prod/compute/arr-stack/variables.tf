@@ -65,7 +65,7 @@ variable "boot_disk_size_gb" {
 
 variable "network_bridge" {
   type    = string
-  default = "vmbr0"
+  default = "vmbr20"
 }
 
 variable "pool_id" {

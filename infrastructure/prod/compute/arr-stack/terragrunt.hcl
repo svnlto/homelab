@@ -3,7 +3,7 @@
 # ==============================================================================
 # Target: din (r730xd) - Primary compute node
 # Purpose: NixOS VM running arr media stack (Sonarr, Radarr, etc.)
-# Network: vmbr0 on LAN (no VLAN tag until MikroTik switch)
+# Network: vmbr20 on LAN VLAN 20
 # Storage: 32GB boot disk, media/downloads via NFS from TrueNAS
 
 include "root" {
@@ -38,8 +38,8 @@ inputs = {
   memory_mb         = 6144
   boot_disk_size_gb = 32
 
-  # Network - LAN on vmbr0 (no VLAN tag)
-  network_bridge = "vmbr0"
+  # Network - LAN VLAN 20
+  network_bridge = "vmbr20"
 
   # Environment - Resource Pool
   pool_id = local.environments.prod.pools.compute

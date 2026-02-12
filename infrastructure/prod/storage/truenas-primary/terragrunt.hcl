@@ -3,7 +3,7 @@
 # ==============================================================================
 # Target: din (r730xd) - Primary storage node
 # Storage: H330 Mini (6×8TB bulk) + MD1220 (6×3TB scratch) + PERC H200E (24×900GB fast)
-# Network: Single interface on vmbr0
+# Network: Single interface on vmbr20 (LAN VLAN 20)
 #
 # HBA Passthrough: H330 Mini via resource mapping "truenas-h330" (hostpci0)
 # PERC H200E via resource mapping "truenas-lsi" (hostpci1, added manually in Proxmox UI)

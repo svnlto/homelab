@@ -67,6 +67,12 @@ variable "boot_disk_size_gb" {
 }
 
 # Network Configuration
+variable "network_bridge" {
+  description = "Network bridge for VM interfaces"
+  type        = string
+  default     = "vmbr20"
+}
+
 variable "mac_address" {
   description = "MAC address for primary network interface"
   type        = string

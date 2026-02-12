@@ -55,7 +55,7 @@ resource "proxmox_virtual_environment_vm" "truenas" {
 
   # Primary network interface
   network_device {
-    bridge      = "vmbr0"
+    bridge      = var.network_bridge
     mac_address = var.mac_address
     vlan_id     = var.vlan_id
     model       = "virtio"
@@ -65,7 +65,7 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   dynamic "network_device" {
     for_each = var.enable_dual_network ? [1] : []
     content {
-      bridge  = "vmbr0"
+      bridge  = var.network_bridge
       vlan_id = var.storage_vlan_id
       model   = "virtio"
     }
