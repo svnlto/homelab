@@ -36,7 +36,7 @@ inputs = {
 
   # Network - LAN VLAN 20 (migrate to vmbr32 when K8s VLANs are active)
   network_bridge  = "vmbr20"
-  network_gateway = local.ips.gateway
+  network_gateway = local.vlans.lan.gateway
   dns_servers     = [local.ips.pihole]
   vip_ip          = "192.168.0.160"
 

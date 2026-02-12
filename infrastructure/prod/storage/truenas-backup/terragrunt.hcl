@@ -58,7 +58,7 @@ inputs = {
   # Cloud-init Network Configuration
   enable_network_init = true
   management_ip       = "${local.ips.truenas_backup_mgmt}/24"
-  management_gateway  = local.ips.gateway
+  management_gateway  = local.vlans.lan.gateway
   storage_ip          = "${local.ips.truenas_backup_storage}/24"
   dns_server          = local.ips.pihole
 }
