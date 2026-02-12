@@ -1,20 +1,30 @@
 ---
 # Host-specific configuration for grogu (r630)
 
-# PCIe Devices for Passthrough
-# Note: Passthrough is configured manually via Proxmox UI (Hardware → Add → PCI Device)
+# ============================================================================
+# PCIe Device Inventory
+# ============================================================================
+# Storage Controllers:
+#   - HPE H241 (external SAS3) → MD1200 disk shelf (12×8TB backup)
+#     Passed through to TrueNAS Backup VM 301 as "md1200-hba"
+#
+# GPU:
+#   - Intel Arc A310 Eco (low-profile) for Jellyfin transcoding
+#     Passed through to K8s worker VM
+#
+# Network Interfaces (X520/I350 rNDC):
+#   - 10GbE SFP+ ports → Proxmox host VLAN trunk
+#   - 1GbE ports → Unused
 
-# GPU (for Jellyfin transcoding in K8s)
-# - TBD: Intel Arc A310 Eco (low-profile)
+# ============================================================================
+# PCIe Passthrough Configuration
+# ============================================================================
+# Intel Arc A310 - Auto-bind to vfio-pci for GPU passthrough
+pci_device_ids: "8086:56a5"
+vfio_blacklist_drivers: [i915]
 
-# Storage Controllers (for TrueNAS Backup VM 301)
-# - TBD: MD1200 controller (grogu) → 8×3TB backup storage
-
-# Network Interfaces
-# - TBD: Intel X520 10GbE ports (interface names to be determined)
-# - Onboard: 2×10GbE SFP+ NDC → Direct connection to din
-
-# PCIe passthrough configuration
-# Uncomment when Arc A310 is installed and you want to blacklist Intel GPU drivers
-# pci_device_ids: "8086:56a5"  # Intel Arc A310 PCI ID
-# vfio_blacklist_drivers: [i915]  # Blacklist Intel GPU driver for passthrough
+# ============================================================================
+# Network Driver Configuration
+# ============================================================================
+# Intel ixgbe rejects non-Intel SFP+ transceivers (Finisar FTLX8571D3BCL)
+configure_ixgbe_unsupported_sfp: true

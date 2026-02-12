@@ -4,6 +4,9 @@
 # Configures Proxmox VE after installation
 # =============================================================================
 
+- name: Configure locales
+  ansible.builtin.include_tasks: locale.yml
+
 - name: Remove subscription nag
   ansible.builtin.include_tasks: remove_subscription_nag.yml
   when: pve_remove_subscription_warning | default(true)
@@ -11,6 +14,10 @@
 - name: Configure PCIe passthrough
   ansible.builtin.include_tasks: pcie_passthrough.yml
   when: configure_pcie_passthrough | default(false)
+
+- name: Allow unsupported SFP+ modules
+  ansible.builtin.include_tasks: ixgbe_unsupported_sfp.yml
+  when: configure_ixgbe_unsupported_sfp | default(false)
 
 - name: Configure basic datacenter settings
   ansible.builtin.template:

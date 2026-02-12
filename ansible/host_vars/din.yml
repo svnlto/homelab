@@ -6,20 +6,21 @@
 # ============================================================================
 # Storage Controllers:
 #   - 02:00.0: Broadcom/LSI SAS3008 (H330 Mini in IT mode)
-#              → 5×8TB SATA drives (internal)
-#              → Passed through to TrueNAS VM 300
+#              → 6×8TB bulk + 6×3TB scratch (internal bays)
+#              → Passed through to TrueNAS VM 300 as "truenas-h330"
 #
-# Network Interfaces:
+#   - 84:00.0: Broadcom/LSI SAS2008 (Dell PERC H200E, external)
+#              → MD1220 disk shelf (24×900GB SFF)
+#              → Passed through to TrueNAS VM 300 as "truenas-lsi"
+#
+# Network Interfaces (4-port X520/I350 rNDC):
 #   - 01:00.0: Intel 82599ES 10GbE SFP+ Port 1 (nic2)
 #   - 01:00.1: Intel 82599ES 10GbE SFP+ Port 2 (nic3)
-#              → Used by Proxmox host (primary_interface for VLANs)
+#              → Used by Proxmox host for VLAN trunk via SFP+
 #              → DO NOT passthrough - needed for network bridges
 #
-#   - 06:00.0: Intel I350 1GbE (nic0) - Currently used by vmbr0
+#   - 06:00.0: Intel I350 1GbE (nic0) - Unused (no cable)
 #   - 06:00.1: Intel I350 1GbE (nic1) - Unused
-#
-# Future Hardware:
-#   - LSI 9201-8e → MD1220 disk shelf (24×900GB SFF) - To be added
 
 # ============================================================================
 # PCIe Passthrough Configuration
@@ -27,9 +28,15 @@
 # Automatically bind devices to vfio-pci at boot (alternative to manual passthrough)
 # Set to empty string "" to disable auto-binding
 
-# LSI SAS3008 (H330 Mini) - Auto-bind to vfio-pci for TrueNAS VM
-pci_device_ids: "1000:0097"
+# LSI SAS3008 (H330 Mini) + LSI SAS2008 (PERC H200E) - Auto-bind for TrueNAS VM
+pci_device_ids: "1000:0097,1000:0072"
 
-# Blacklist native driver for LSI SAS3008 (prevents host from binding to it)
-# Allows vfio-pci to claim the device for VM passthrough
-vfio_blacklist_drivers: [mpt3sas]
+# Blacklist native drivers (prevents host from binding before vfio-pci)
+# mpt3sas = SAS3008 (H330), mpt2sas = SAS2008 (H200E)
+vfio_blacklist_drivers: [mpt3sas, mpt2sas]
+
+# ============================================================================
+# Network Driver Configuration
+# ============================================================================
+# Intel ixgbe rejects non-Intel SFP+ transceivers (Finisar FTLX8571D3BCL)
+configure_ixgbe_unsupported_sfp: true

@@ -208,7 +208,7 @@ locals {
       secondary = "grogu" # r630 - Compute-focused
     }
 
-    api_url = "https://192.168.0.175:8006/api2/json" # din node (current IP)
+    api_url = "https://192.168.0.11:8006/api2/json"
 
     # Bridge names for VLAN-aware networking
     bridges = {
