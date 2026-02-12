@@ -41,6 +41,18 @@ variable "trunk_ports" {
   }))
 }
 
+variable "storage_l2mtu" {
+  type        = number
+  description = "L2MTU for SFP+ trunk ports (max frame size, requires reboot)"
+  default     = 10218
+}
+
+variable "storage_mtu" {
+  type        = number
+  description = "MTU for SFP+ trunk ports (jumbo frames for storage VLAN)"
+  default     = 9000
+}
+
 variable "wan_interface" {
   type        = string
   description = "WAN interface name (standalone, not in bridge)"

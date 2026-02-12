@@ -262,7 +262,17 @@ run "validate_service_hardening" {
   }
 }
 
-# Test 9: Output validation
+# Test 9: Validate jumbo frames on SFP+ trunk ports
+run "validate_jumbo_frames" {
+  command = plan
+
+  assert {
+    condition     = length(routeros_interface_ethernet.sfp_mtu) == 2
+    error_message = "Both SFP+ trunk ports should have MTU configured"
+  }
+}
+
+# Test 10: Output validation
 run "validate_outputs" {
   command = plan
 

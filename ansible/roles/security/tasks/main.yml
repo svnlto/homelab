@@ -13,7 +13,7 @@
     mode: "0700"
 
 - name: Deploy authorized SSH keys
-  ansible.builtin.authorized_key:
+  ansible.posix.authorized_key:
     user: root
     key: "{{ item }}"
     state: present

@@ -63,7 +63,7 @@
     mode: "0700"
 
 - name: Add SSH public key to root authorized_keys
-  ansible.builtin.authorized_key:
+  ansible.posix.authorized_key:
     user: root
     key: "{{ proxmox_ssh_public_key }}"
     state: present
