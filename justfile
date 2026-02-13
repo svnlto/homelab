@@ -143,6 +143,33 @@ nixos-update-jellyfin:
     @echo "Rebuilding NixOS on jellyfin..."
     ssh svenlito@192.168.0.51 "sudo nixos-rebuild switch --flake /tmp/nix-config#jellyfin"
 
+# --- NixOS Dumper (Proxmox LXC) ---
+
+# Build NixOS LXC template for dumper
+nixos-build-dumper:
+    @echo "Building NixOS LXC tarball for dumper..."
+    cd nix && nix build .#nixosConfigurations.dumper.config.system.build.tarball
+    @ls -lh nix/result
+
+# Deploy dumper config via SSH
+nixos-update-dumper:
+    @echo "Syncing NixOS config to dumper..."
+    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.52:/tmp/nix-config/
+    @echo "Rebuilding NixOS on dumper..."
+    ssh svenlito@192.168.0.52 "sudo nixos-rebuild switch --flake /tmp/nix-config#dumper"
+
+# Populate dumper secrets from 1Password
+dumper-secrets:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    REMOTE_HOST=$(op read 'op://Personal/Dumper Rsync Config/remote_host')
+    REMOTE_PATH=$(op read 'op://Personal/Dumper Rsync Config/remote_path')
+    ssh svenlito@192.168.0.52 "sudo mkdir -p /etc/dumper && sudo tee /etc/dumper/rsync.env > /dev/null" <<EOF
+    REMOTE_HOST=${REMOTE_HOST}
+    REMOTE_PATH=${REMOTE_PATH}
+    EOF
+    echo "Secrets pushed to dumper:/etc/dumper/rsync.env"
+
 # --- Ansible ---
 
 ansible-lint:

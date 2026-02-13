@@ -61,6 +61,12 @@
         ];
         specialArgs = { constants = import ./common/constants.nix; };
       };
+
+      dumper = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ ./dumper/configuration.nix ];
+        specialArgs = { constants = import ./common/constants.nix; };
+      };
     };
   };
 }

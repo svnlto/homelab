@@ -3,7 +3,7 @@
 # ==============================================================================
 # Target: grogu (r630) - Compute node with Intel Arc A310
 # Purpose: NixOS VM running Jellyfin, Jellyseerr, jellyfin-auto-collections
-# Network: vmbr20 on LAN VLAN 20
+# Network: vmbr20 (LAN VLAN 20) + vmbr10 (Storage VLAN 10)
 # GPU: Intel Arc A310 PCI passthrough for hardware transcoding
 # Storage: 32GB boot disk, media/config via NFS from TrueNAS
 
@@ -39,8 +39,10 @@ inputs = {
   memory_mb         = 8192
   boot_disk_size_gb = 32
 
-  # Network - LAN VLAN 20
-  network_bridge = "vmbr20"
+  # Network - LAN VLAN 20 + Storage VLAN 10
+  network_bridge      = "vmbr20"
+  enable_dual_network = true
+  secondary_bridge    = "vmbr10"
 
   # Environment - Resource Pool
   pool_id = local.environments.prod.pools.compute

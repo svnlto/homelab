@@ -6,7 +6,7 @@ let
   scratchDir = "/mnt/scratch";
   composeDir = "/opt/stacks/arr";
 
-  inherit (constants) truenasIp;
+  inherit (constants) truenasStorageIp;
 
   puid = "1000";
   pgid = "1000";
@@ -52,7 +52,7 @@ in {
   # Config data — regular mount (required for service startup)
   # TODO: Move to fast/arr-config once MD1220 hardware arrives
   fileSystems.${dataDir} = {
-    device = "${truenasIp}:/mnt/bulk/arr-config";
+    device = "${truenasStorageIp}:/mnt/bulk/arr-config";
     fsType = "nfs";
     options = [
       "nfsvers=4.2"
@@ -67,7 +67,7 @@ in {
   # Media — parent mount (NFS can't cross ZFS dataset boundaries,
   # so child datasets are mounted explicitly below)
   fileSystems.${mediaDir} = {
-    device = "${truenasIp}:/mnt/bulk/media";
+    device = "${truenasStorageIp}:/mnt/bulk/media";
     fsType = "nfs";
     options = [
       "nfsvers=4.2"
@@ -81,7 +81,7 @@ in {
 
   # Child ZFS datasets — separate NFS exports, must be mounted individually
   fileSystems."${mediaDir}/movies" = {
-    device = "${truenasIp}:/mnt/bulk/media/movies";
+    device = "${truenasStorageIp}:/mnt/bulk/media/movies";
     fsType = "nfs";
     options = [
       "nfsvers=4.2"
@@ -94,7 +94,7 @@ in {
   };
 
   fileSystems."${mediaDir}/tv" = {
-    device = "${truenasIp}:/mnt/bulk/media/tv";
+    device = "${truenasStorageIp}:/mnt/bulk/media/tv";
     fsType = "nfs";
     options = [
       "nfsvers=4.2"
@@ -107,7 +107,7 @@ in {
   };
 
   fileSystems."${mediaDir}/music" = {
-    device = "${truenasIp}:/mnt/bulk/media/music";
+    device = "${truenasStorageIp}:/mnt/bulk/media/music";
     fsType = "nfs";
     options = [
       "nfsvers=4.2"
@@ -120,7 +120,7 @@ in {
   };
 
   fileSystems."${mediaDir}/books" = {
-    device = "${truenasIp}:/mnt/bulk/media/books";
+    device = "${truenasStorageIp}:/mnt/bulk/media/books";
     fsType = "nfs";
     options = [
       "nfsvers=4.2"
@@ -134,7 +134,7 @@ in {
 
   # Scratch — persistent mount (active/incomplete downloads)
   fileSystems.${scratchDir} = {
-    device = "${truenasIp}:/mnt/scratch/downloads/incomplete";
+    device = "${truenasStorageIp}:/mnt/scratch/downloads/incomplete";
     fsType = "nfs";
     options = [
       "nfsvers=4.2"

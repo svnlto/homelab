@@ -75,18 +75,13 @@ variable "pool_id" {
   default = null
 }
 
-variable "vlan_id" {
-  type    = number
-  default = null
-}
-
 variable "enable_dual_network" {
   type = bool
 }
 
-variable "storage_vlan_id" {
-  type    = number
-  default = null
+variable "storage_bridge" {
+  type    = string
+  default = "vmbr10"
 }
 
 variable "enable_network_init" {

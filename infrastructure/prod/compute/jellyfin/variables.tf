@@ -68,6 +68,16 @@ variable "network_bridge" {
   default = "vmbr20"
 }
 
+variable "enable_dual_network" {
+  type    = bool
+  default = false
+}
+
+variable "secondary_bridge" {
+  type    = string
+  default = "vmbr10"
+}
+
 variable "pool_id" {
   type    = string
   default = null

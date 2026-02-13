@@ -84,17 +84,17 @@ variable "vlan_id" {
   default     = null
 }
 
-# Dual Network Configuration (optional - for backup server)
+# Dual Network Configuration
 variable "enable_dual_network" {
   description = "Enable second network interface for storage VLAN"
   type        = bool
   default     = false
 }
 
-variable "storage_vlan_id" {
-  description = "VLAN ID for storage network (when dual network enabled)"
-  type        = number
-  default     = null
+variable "storage_bridge" {
+  description = "Network bridge for storage interface (e.g., 'vmbr10')"
+  type        = string
+  default     = "vmbr10"
 }
 
 # Network Initialization (optional - for backup server)

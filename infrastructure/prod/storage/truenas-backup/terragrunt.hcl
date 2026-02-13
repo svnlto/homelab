@@ -49,8 +49,7 @@ inputs = {
   # Dual Network Configuration
   enable_dual_network = true
   mac_address         = "BC:24:11:2E:D4:04"
-  vlan_id             = local.vlans.lan.id
-  storage_vlan_id     = local.vlans.storage.id
+  storage_bridge      = local.proxmox.bridges.storage
 
   # Environment - Resource Pool
   pool_id = local.environments.prod.pools.storage

@@ -65,9 +65,8 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   dynamic "network_device" {
     for_each = var.enable_dual_network ? [1] : []
     content {
-      bridge  = var.network_bridge
-      vlan_id = var.storage_vlan_id
-      model   = "virtio"
+      bridge = var.storage_bridge
+      model  = "virtio"
     }
   }
 

@@ -1,5 +1,5 @@
 # ==============================================================================
-# TrueNAS Primary - Input Variables
+# Dumper LXC Container - Input Variables
 # ==============================================================================
 
 # Provider credentials (from provider.hcl)
@@ -25,48 +25,55 @@ variable "onepassword_account" {
   description = "1Password account ID for desktop app integration"
 }
 
-# TrueNAS VM Configuration
+# Container Configuration
 variable "node_name" {
   type = string
 }
 
-variable "vm_id" {
+variable "container_id" {
   type = number
 }
 
-variable "vm_name" {
+variable "container_name" {
   type = string
 }
 
-variable "vm_description" {
-  type = string
+variable "container_description" {
+  type    = string
+  default = ""
 }
 
 variable "tags" {
-  type = list(string)
+  type    = list(string)
+  default = []
 }
 
-variable "truenas_version" {
-  type = string
-}
-
-variable "iso_id" {
-  type = string
-}
-
-variable "cpu_cores" {
-  type = number
+variable "cores" {
+  type    = number
+  default = 1
 }
 
 variable "memory_mb" {
-  type = number
+  type    = number
+  default = 512
 }
 
-variable "boot_disk_size_gb" {
-  type = number
+variable "disk_size_gb" {
+  type    = number
+  default = 2
 }
 
-variable "mac_address" {
+variable "network_bridge" {
+  type    = string
+  default = "vmbr20"
+}
+
+variable "secondary_bridge" {
+  type    = string
+  default = null
+}
+
+variable "template_file_id" {
   type = string
 }
 
@@ -75,25 +82,13 @@ variable "pool_id" {
   default = null
 }
 
-variable "enable_dual_network" {
-  type = bool
-}
-
-variable "storage_bridge" {
-  type    = string
-  default = "vmbr10"
-}
-
-variable "enable_network_init" {
-  type = bool
-}
-
-variable "management_ip" {
+# Initialization
+variable "ip_address" {
   type    = string
   default = null
 }
 
-variable "management_gateway" {
+variable "gateway" {
   type    = string
   default = null
 }
@@ -103,16 +98,7 @@ variable "storage_ip" {
   default = null
 }
 
-variable "dns_server" {
-  type    = string
-  default = null
-}
-
-variable "enable_hostpci" {
-  type = bool
-}
-
-variable "hostpci_mapping" {
-  type    = string
+variable "dns_servers" {
+  type    = list(string)
   default = null
 }
