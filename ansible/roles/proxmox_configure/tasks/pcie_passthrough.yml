@@ -12,13 +12,29 @@
   ansible.builtin.set_fact:
     iommu_param: "{{ 'intel_iommu=on' if 'Intel' in cpu_vendor.stdout else 'amd_iommu=on' }}"
 
-- name: Configure GRUB for IOMMU
+- name: Check boot method
+  ansible.builtin.command: proxmox-boot-tool status
+  register: pbt_status
+  changed_when: false
+  failed_when: false
+
+- name: Configure kernel cmdline for systemd-boot (proxmox-boot-tool)
+  ansible.builtin.replace:
+    path: /etc/kernel/cmdline
+    regexp: '^(.*boot=zfs)(?!.*iommu)(.*)$'
+    replace: '\1 {{ iommu_param }} iommu=pt\2'
+    backup: true
+  notify: Refresh proxmox-boot-tool
+  when: pbt_status.rc == 0
+
+- name: Configure GRUB for IOMMU (fallback for GRUB-based systems)
   ansible.builtin.lineinfile:
     path: /etc/default/grub
     regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
     line: 'GRUB_CMDLINE_LINUX_DEFAULT="quiet {{ iommu_param }} iommu=pt"'
     backup: true
   notify: Update GRUB
+  when: pbt_status.rc != 0
 
 - name: Configure VFIO modules
   ansible.builtin.lineinfile:
@@ -37,7 +53,7 @@
     content: |
       # Load VFIO modules early for PCIe passthrough
       softdep drm pre: vfio-pci
-      options vfio-pci ids={{ pci_device_ids | default('') }}
+      options vfio-pci ids={{ pci_device_ids | default('') }} disable_vga=1
     dest: /etc/modprobe.d/vfio.conf
     owner: root
     group: root
@@ -56,6 +72,30 @@
     group: root
     mode: "0644"
   when: vfio_blacklist_drivers is defined and vfio_blacklist_drivers | length > 0
+
+- name: Ensure snippets directory exists
+  ansible.builtin.file:
+    path: /var/lib/vz/snippets
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: intel_arc_pci_addresses is defined and intel_arc_pci_addresses | length > 0
+
+- name: Deploy Intel Arc FLR reset hookscript
+  ansible.builtin.template:
+    src: intel-arc-reset.sh.j2
+    dest: /var/lib/vz/snippets/intel-arc-reset.sh
+    owner: root
+    group: root
+    mode: "0755"
+  when: intel_arc_pci_addresses is defined and intel_arc_pci_addresses | length > 0
+
+- name: Attach hookscript to Intel Arc VMs
+  ansible.builtin.command: qm set {{ item }} --hookscript local:snippets/intel-arc-reset.sh
+  loop: "{{ intel_arc_vm_ids | default([]) }}"
+  changed_when: true
+  when: intel_arc_vm_ids is defined and intel_arc_vm_ids | length > 0
 
 - name: Update initramfs
   ansible.builtin.command: update-initramfs -u -k all

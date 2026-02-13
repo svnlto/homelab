@@ -26,11 +26,6 @@ variable "onepassword_account" {
 }
 
 # Resource Pool Configuration
-variable "environment" {
-  type        = string
-  description = "Environment name (prod, dev)"
-}
-
 variable "pools" {
   type = map(object({
     id      = string

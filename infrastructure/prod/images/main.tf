@@ -31,3 +31,20 @@ module "nixos_iso" {
   content_type     = "iso"
   proxmox_filename = var.nixos_filename
 }
+
+# ==============================================================================
+# NixOS ISO Image (for grogu - jellyfin VM)
+# ==============================================================================
+
+module "nixos_iso_grogu" {
+  source = "../../modules/proxmox-image"
+
+  download_url       = var.nixos_url
+  image_name         = var.nixos_filename
+  compression_format = "none"
+
+  proxmox_node     = "grogu"
+  datastore_id     = var.datastore_id
+  content_type     = "iso"
+  proxmox_filename = var.nixos_filename
+}

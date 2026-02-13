@@ -97,6 +97,9 @@ locals {
     # Arr Media Stack
     arr_stack = "192.168.0.50"
 
+    # Jellyfin Media Server
+    jellyfin = "192.168.0.51"
+
     # Proxmox QDevice (corosync-qnetd)
     qdevice = "192.168.0.54"
 
@@ -227,6 +230,7 @@ locals {
       truenas_h330 = "truenas-h330" # Dell H330 Mini on din (6×8TB bulk + 6×3TB scratch, internal)
       truenas_lsi  = "truenas-lsi"  # Dell PERC H200E on din → MD1220 (24×900GB fast)
       md1200_hba   = "md1200-hba"   # HPE H241 on grogu → MD1200 (12×8TB backup)
+      arc_a310     = "arc-a310"     # Intel Arc A310 GPU on grogu
     }
   }
 
@@ -260,7 +264,7 @@ locals {
   }
 
   nixos = {
-    iso_url  = "https://channels.nixos.org/nixos-unstable/latest-nixos-minimal-x86_64-linux.iso"
+    iso_url  = "https://releases.nixos.org/nixos/unstable/nixos-26.05pre942779.d6c719321308/nixos-minimal-26.05pre942779.d6c719321308-x86_64-linux.iso"
     filename = "nixos-minimal-x86_64-linux.iso"
   }
 

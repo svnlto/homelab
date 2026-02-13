@@ -58,11 +58,6 @@ variable "vip_ip" {
 }
 
 # Proxmox Configuration
-variable "proxmox_node_storage" {
-  description = "Proxmox node for VM deployment"
-  type        = string
-}
-
 variable "datastore_id" {
   description = "Proxmox datastore for VM disks"
   type        = string

@@ -41,8 +41,7 @@ inputs = {
   vip_ip          = "192.168.0.160"
 
   # Proxmox
-  proxmox_node_storage = "din"
-  datastore_id         = "local-zfs"
+  datastore_id = "local-zfs"
 
   # Control Plane - Single node for dev (no HA needed)
   control_plane_nodes = {

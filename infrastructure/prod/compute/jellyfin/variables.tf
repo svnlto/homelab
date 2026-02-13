@@ -1,5 +1,5 @@
 # ==============================================================================
-# TrueNAS Backup - Input Variables
+# Jellyfin Media Server - Input Variables
 # ==============================================================================
 
 # Provider credentials (from provider.hcl)
@@ -25,7 +25,7 @@ variable "onepassword_account" {
   description = "1Password account ID for desktop app integration"
 }
 
-# TrueNAS VM Configuration
+# VM Configuration
 variable "node_name" {
   type = string
 }
@@ -39,35 +39,33 @@ variable "vm_name" {
 }
 
 variable "vm_description" {
-  type = string
+  type    = string
+  default = ""
 }
 
 variable "tags" {
-  type = list(string)
-}
-
-variable "truenas_version" {
-  type = string
-}
-
-variable "iso_id" {
-  type = string
+  type    = list(string)
+  default = []
 }
 
 variable "cpu_cores" {
-  type = number
+  type    = number
+  default = 8
 }
 
 variable "memory_mb" {
-  type = number
+  type    = number
+  default = 8192
 }
 
 variable "boot_disk_size_gb" {
-  type = number
+  type    = number
+  default = 32
 }
 
-variable "mac_address" {
-  type = string
+variable "network_bridge" {
+  type    = string
+  default = "vmbr20"
 }
 
 variable "pool_id" {
@@ -75,40 +73,55 @@ variable "pool_id" {
   default = null
 }
 
-variable "vlan_id" {
-  type    = number
-  default = null
-}
-
-variable "enable_dual_network" {
-  type = bool
-}
-
-variable "storage_vlan_id" {
-  type    = number
-  default = null
-}
-
-variable "enable_network_init" {
-  type = bool
-}
-
-variable "management_ip" {
+variable "iso_id" {
   type    = string
   default = null
 }
 
-variable "management_gateway" {
+# Display
+variable "vga_type" {
+  type    = string
+  default = "virtio"
+}
+
+variable "enable_serial_console" {
+  type    = bool
+  default = false
+}
+
+# PCI Passthrough
+variable "enable_pci_passthrough" {
+  type    = bool
+  default = false
+}
+
+variable "pci_mapping_id" {
   type    = string
   default = null
 }
 
-variable "storage_ip" {
+# Cloud-init
+variable "enable_cloud_init" {
+  type    = bool
+  default = false
+}
+
+variable "ip_address" {
   type    = string
   default = null
 }
 
-variable "dns_server" {
+variable "gateway" {
+  type    = string
+  default = null
+}
+
+variable "nameserver" {
+  type    = string
+  default = null
+}
+
+variable "username" {
   type    = string
   default = null
 }

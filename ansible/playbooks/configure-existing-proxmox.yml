@@ -142,6 +142,10 @@
       ansible.builtin.command: update-grub
       changed_when: true
 
+    - name: Refresh proxmox-boot-tool
+      ansible.builtin.command: proxmox-boot-tool refresh
+      changed_when: true
+
   post_tasks:
     - name: Update initramfs (if passthrough configured)
       ansible.builtin.command: update-initramfs -u -k all

@@ -16,11 +16,6 @@ variable "proxmox_api_token_secret" {
   sensitive = true
 }
 
-variable "onepassword_account" {
-  type        = string
-  description = "1Password account ID for desktop app integration"
-}
-
 # Cluster Variables
 variable "cluster_name" {
   type = string
@@ -51,10 +46,6 @@ variable "dns_servers" {
 }
 
 variable "vip_ip" {
-  type = string
-}
-
-variable "proxmox_node_storage" {
   type = string
 }
 

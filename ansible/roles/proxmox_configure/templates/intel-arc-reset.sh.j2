@@ -1,0 +1,19 @@
+#!/bin/bash
+# Hookscript to clear broken FLR (Function Level Reset) on Intel Arc GPUs.
+# Intel Arc reports FLR support but the implementation hangs QEMU on device reset.
+# Clearing the reset_method before VM start prevents the hang.
+set -e
+
+vmId="$1"
+runPhase="$2"
+
+case "$runPhase" in
+    pre-start)
+{% for addr in intel_arc_pci_addresses %}
+        if [ -e "/sys/bus/pci/devices/{{ addr }}/reset_method" ]; then
+            echo "Clearing reset methods for {{ addr }} (VM $vmId)"
+            echo "" > /sys/bus/pci/devices/{{ addr }}/reset_method
+        fi
+{% endfor %}
+        ;;
+esac

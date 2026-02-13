@@ -48,6 +48,10 @@ repos:
           - --args=-recursive
         files: ^infrastructure/.*\.tf$
         exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
+      - id: terraform_tflint
+        name: TFLint (infrastructure)
+        files: ^infrastructure/.*\.tf$
+        exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
 
   - repo: https://github.com/ansible/ansible-lint
     rev: v26.1.1

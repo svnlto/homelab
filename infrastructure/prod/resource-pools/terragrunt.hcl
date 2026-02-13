@@ -21,7 +21,6 @@ locals {
 }
 
 inputs = {
-  environment = "prod"
   pools = {
     storage = {
       id      = local.environments.prod.pools.storage

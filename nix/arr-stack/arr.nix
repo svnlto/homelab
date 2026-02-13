@@ -15,7 +15,6 @@ let
   # Container image versions (pinned for reproducibility)
   images = {
     gluetun = "qmcgaw/gluetun:v3.40.0";
-    jellyfin = "jellyfin/jellyfin:10.11.4";
     qbittorrent = "lscr.io/linuxserver/qbittorrent:5.1.4-r1-ls431";
     sabnzbd = "lscr.io/linuxserver/sabnzbd:4.5.1-ls223";
     radarr = "lscr.io/linuxserver/radarr:6.0.4.10291-ls288";
@@ -25,12 +24,9 @@ let
     slskd = "slskd/slskd:0.24.1";
     prowlarr = "lscr.io/linuxserver/prowlarr:2.3.0.5236-ls133";
     flaresolverr = "ghcr.io/flaresolverr/flaresolverr:v3.4.5";
-    jellyseerr = "fallenbagel/jellyseerr:2.7.3";
     recyclarr = "ghcr.io/recyclarr/recyclarr:7.4.0";
     buildarr = "callum027/buildarr:0.7.8";
     glance = "glanceapp/glance:v0.8.4";
-    jellyfinAutoCollections =
-      "ghcr.io/ghomashudson/jellyfin-auto-collections:latest";
   };
 in {
   # Enable Docker
@@ -157,7 +153,7 @@ in {
   ];
 
   # ---------------------------------------------------------------------------
-  # Docker Compose — matches actual running stack from jellyfin-stack
+  # Docker Compose — arr media acquisition stack
   # ---------------------------------------------------------------------------
   environment.etc."arr/docker-compose.yml".text = ''
     ---
@@ -198,27 +194,6 @@ in {
           timeout: 10s
           retries: 3
           start_period: 30s
-        restart: unless-stopped
-
-      jellyfin:
-        image: ${images.jellyfin}
-        container_name: jellyfin
-        environment:
-          - PUID=${puid}
-          - PGID=${pgid}
-          - TZ=${tz}
-        volumes:
-          - ${dataDir}/jellyfin/config:/config
-          - ${dataDir}/jellyfin/cache:/cache
-          - ${mediaDir}:/data/media
-        ports:
-          - 8096:8096
-        healthcheck:
-          test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
-          interval: 30s
-          timeout: 10s
-          retries: 3
-          start_period: 40s
         restart: unless-stopped
 
       qbittorrent:
@@ -367,25 +342,6 @@ in {
           - gluetun
         restart: unless-stopped
 
-      jellyseerr:
-        image: ${images.jellyseerr}
-        container_name: jellyseerr
-        environment:
-          - PUID=${puid}
-          - PGID=${pgid}
-          - TZ=${tz}
-        volumes:
-          - ${dataDir}/jellyseerr:/app/config
-        ports:
-          - 5055:5055
-        healthcheck:
-          test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5055/ || exit 1"]
-          interval: 1m
-          timeout: 10s
-          retries: 3
-          start_period: 30s
-        restart: unless-stopped
-
       recyclarr:
         image: ${images.recyclarr}
         container_name: recyclarr
@@ -433,23 +389,6 @@ in {
           - 8090:8080
         restart: unless-stopped
 
-      jellyfin-auto-collections:
-        image: ${images.jellyfinAutoCollections}
-        container_name: jellyfin-auto-collections
-        environment:
-          - TZ=${tz}
-          - JELLYFIN_SERVER_URL=http://jellyfin:8096
-          - JELLYFIN_API_KEY=''${JELLYFIN_API_KEY}
-          - JELLYFIN_USER_ID=''${JELLYFIN_USER_ID}
-          - JELLYSEERR_EMAIL=''${JELLYSEERR_EMAIL}
-          - JELLYSEERR_PASSWORD=''${JELLYSEERR_PASSWORD}
-          - CRONTAB=0 6 * * *
-        volumes:
-          - ${dataDir}/jellyfin-auto-collections:/app/config
-        depends_on:
-          jellyfin:
-            condition: service_healthy
-        restart: unless-stopped
   '';
 
   # ---------------------------------------------------------------------------
@@ -472,14 +411,6 @@ in {
     PROWLARR_API_KEY=
     LIDARR_API_KEY=
     BAZARR_API_KEY=
-
-    # Jellyfin
-    JELLYFIN_API_KEY=
-    JELLYFIN_USER_ID=
-
-    # Jellyseerr
-    JELLYSEERR_EMAIL=
-    JELLYSEERR_PASSWORD=
 
   '';
 
@@ -750,8 +681,6 @@ in {
 
         # Create service directories on NFS
         mkdir -p ${dataDir}/gluetun
-        mkdir -p ${dataDir}/jellyfin/config
-        mkdir -p ${dataDir}/jellyfin/cache
         mkdir -p ${dataDir}/qbittorrent/qBittorrent/config
         mkdir -p ${dataDir}/sabnzbd
         mkdir -p ${dataDir}/radarr
@@ -760,12 +689,9 @@ in {
         mkdir -p ${dataDir}/bazarr
         mkdir -p ${dataDir}/slskd
         mkdir -p ${dataDir}/prowlarr
-        mkdir -p ${dataDir}/jellyseerr
         mkdir -p ${dataDir}/recyclarr
         mkdir -p ${dataDir}/buildarr
         mkdir -p ${dataDir}/glance
-        mkdir -p ${dataDir}/jellyfin-auto-collections
-
         # Ensure download directories exist on media mount
         mkdir -p ${mediaDir}/downloads/torrents
         mkdir -p ${mediaDir}/downloads/usenet
@@ -853,13 +779,6 @@ in {
           # Check that gluetun (VPN gateway) is running — all arr apps depend on it
           if ! docker inspect --format='{{.State.Running}}' gluetun 2>/dev/null | grep -q true; then
             echo "gluetun is not running, restarting stack..."
-            docker-compose up -d
-            sleep 30
-          fi
-
-          # Check that jellyfin is running
-          if ! docker inspect --format='{{.State.Running}}' jellyfin 2>/dev/null | grep -q true; then
-            echo "jellyfin is not running, restarting stack..."
             docker-compose up -d
             sleep 30
           fi
