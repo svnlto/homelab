@@ -107,6 +107,7 @@ nfs_shares:
     mapall_user: media
     mapall_group: media
     networks:
+      - 10.10.10.0/24 # Storage VLAN (primary)
       - 192.168.0.0/24 # LAN (arr-stack VM)
     ro: false
 

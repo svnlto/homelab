@@ -29,7 +29,35 @@
   environment:
     middleware_method: client
 
+  handlers:
+    - name: Commit network changes
+      ansible.builtin.command:
+        cmd: midclt call interface.commit
+      changed_when: true
+      notify: Checkin network changes
+      tags: [network]
+
+    - name: Checkin network changes
+      ansible.builtin.command:
+        cmd: midclt call interface.checkin
+      changed_when: false
+      tags: [network]
+
   tasks:
+    # ==========================================================================
+    # NETWORK — Storage VLAN interface (10.10.10.13/24)
+    # ==========================================================================
+
+    - name: Configure storage VLAN interface (enp6s19)
+      ansible.builtin.command:
+        cmd: >
+          midclt call interface.update enp6s19 '{"aliases": [{"type": "INET", "address": "10.10.10.13", "netmask": 24}]}'
+      register: storage_iface
+      changed_when: "'enp6s19' in storage_iface.stdout"
+      failed_when: "storage_iface.rc != 0 and 'does not exist' not in storage_iface.stderr"
+      notify: Commit network changes
+      tags: [network]
+
     # ==========================================================================
     # BULK POOL DATASETS (~28.6TB, 6× 8TB RAIDZ2)
     # Purpose: Large files, media, photos, backups
@@ -594,7 +622,7 @@
           - 10.10.10.0/24 # Storage VLAN
           - 10.0.1.0/24 # Kubernetes cluster network
         state: present
-      tags: [nfs, shares]
+      tags: [nfs, shares, fast]
 
     - name: Create NFS share for kubernetes static
       arensb.truenas.sharing_nfs:
@@ -608,7 +636,7 @@
           - 10.0.2.0/24 # K8s VLAN 31
           - 10.0.3.0/24 # K8s VLAN 32 (test)
         state: present
-      tags: [nfs, shares, k8s]
+      tags: [nfs, shares, k8s, fast]
 
     - name: Create NFS share for bulk kubernetes dynamic
       arensb.truenas.sharing_nfs:

@@ -95,10 +95,16 @@ locals {
     din_idrac   = "10.10.1.11"
 
     # Arr Media Stack
-    arr_stack = "192.168.0.50"
+    arr_stack         = "192.168.0.50"
+    arr_stack_storage = "10.10.10.50"
 
     # Jellyfin Media Server
-    jellyfin = "192.168.0.51"
+    jellyfin         = "192.168.0.51"
+    jellyfin_storage = "10.10.10.51"
+
+    # Dumper LXC (Tailscale rsync automation)
+    dumper         = "192.168.0.52"
+    dumper_storage = "10.10.10.52"
 
     # Proxmox QDevice (corosync-qnetd)
     qdevice = "192.168.0.54"

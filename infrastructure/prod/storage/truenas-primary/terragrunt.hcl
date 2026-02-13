@@ -3,7 +3,7 @@
 # ==============================================================================
 # Target: din (r730xd) - Primary storage node
 # Storage: H330 Mini (6×8TB bulk) + MD1220 (6×3TB scratch) + PERC H200E (24×900GB fast)
-# Network: Single interface on vmbr20 (LAN VLAN 20)
+# Network: Dual-homed (VLAN 10 storage + VLAN 20 management)
 #
 # HBA Passthrough: H330 Mini via resource mapping "truenas-h330" (hostpci0)
 # PERC H200E via resource mapping "truenas-lsi" (hostpci1, added manually in Proxmox UI)
@@ -25,6 +25,7 @@ locals {
   global_vars  = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
   truenas      = local.global_vars.locals.truenas
   ips          = local.global_vars.locals.infrastructure_ips
+  vlans        = local.global_vars.locals.vlans
   environments = local.global_vars.locals.environments
   proxmox      = local.global_vars.locals.proxmox
 }
@@ -46,11 +47,20 @@ inputs = {
   memory_mb         = local.truenas.primary.memory_mb
   boot_disk_size_gb = local.truenas.primary.disks.boot_size_gb
 
-  # Network
-  mac_address = "BC:24:11:2E:D4:03"
+  # Dual Network Configuration
+  enable_dual_network = true
+  mac_address         = "BC:24:11:2E:D4:03"
+  storage_bridge      = local.proxmox.bridges.storage
 
   # Environment - Resource Pool
   pool_id = local.environments.prod.pools.storage
+
+  # Cloud-init Network Configuration
+  enable_network_init = true
+  management_ip       = "${local.ips.truenas_primary_mgmt}/24"
+  management_gateway  = local.vlans.lan.gateway
+  storage_ip          = "${local.ips.truenas_primary_storage}/24"
+  dns_server          = local.ips.pihole
 
   # HBA Passthrough - Dell H330 Mini (6×8TB bulk drives)
   enable_hostpci  = true

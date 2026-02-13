@@ -18,9 +18,8 @@ module "truenas_backup" {
   boot_disk_size_gb   = var.boot_disk_size_gb
   mac_address         = var.mac_address
   pool_id             = var.pool_id
-  vlan_id             = var.vlan_id
   enable_dual_network = var.enable_dual_network
-  storage_vlan_id     = var.storage_vlan_id
+  storage_bridge      = var.storage_bridge
   enable_network_init = var.enable_network_init
   management_ip       = var.management_ip
   management_gateway  = var.management_gateway
