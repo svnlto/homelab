@@ -62,8 +62,16 @@ resource "proxmox_virtual_environment_vm" "vm" {
   }
 
   vga {
-    type   = "virtio"
-    memory = 32
+    type   = var.vga_type
+    memory = var.vga_type != "none" ? 32 : 0
+  }
+
+  # Serial console (required when vga=none for GPU passthrough)
+  dynamic "serial_device" {
+    for_each = var.enable_serial_console ? [1] : []
+    content {
+      device = "socket"
+    }
   }
 
   # Primary network interface

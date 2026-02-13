@@ -205,6 +205,19 @@ variable "ssh_keys" {
   default     = []
 }
 
+# Display Configuration
+variable "vga_type" {
+  description = "VGA display type ('virtio', 'std', 'none'). Use 'none' for GPU passthrough VMs."
+  type        = string
+  default     = "virtio"
+}
+
+variable "enable_serial_console" {
+  description = "Enable serial console (serial0: socket). Required when vga_type is 'none' for Proxmox xterm.js access."
+  type        = bool
+  default     = false
+}
+
 # PCI Passthrough Configuration
 variable "enable_pci_passthrough" {
   description = "Enable PCI device passthrough"

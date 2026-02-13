@@ -58,5 +58,4 @@ inputs = {
   proxmox_api_url          = local.proxmox.api_url
   proxmox_api_token_id     = get_env("TF_VAR_proxmox_api_token_id", "")
   proxmox_api_token_secret = get_env("TF_VAR_proxmox_api_token_secret", "")
-  onepassword_account      = get_env("OP_ACCOUNT", "")
 }

@@ -20,9 +20,8 @@ module "test_cluster" {
   vip_ip          = var.vip_ip
 
   # Proxmox
-  proxmox_node_storage = var.proxmox_node_storage
-  datastore_id         = var.datastore_id
-  talos_image_id       = var.talos_image_id
+  datastore_id   = var.datastore_id
+  talos_image_id = var.talos_image_id
 
   # Nodes
   control_plane_nodes = var.control_plane_nodes

@@ -1,17 +1,24 @@
 { pkgs, modulesPath, constants, ... }: {
-  imports = [ (modulesPath + "/profiles/qemu-guest.nix") ./arr.nix ];
+  imports = [ (modulesPath + "/profiles/qemu-guest.nix") ./jellyfin.nix ];
 
   # Boot loader (EFI — systemd-boot for UEFI/OVMF VM)
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.growPartition = true;
 
+  # Intel Arc A310 GPU firmware (GuC, HuC, DMC)
+  hardware.firmware = [ pkgs.linux-firmware ];
+
+  # Serial console for Proxmox xterm.js (GPU passthrough disables VGA)
+  boot.kernelParams = [ "console=ttyS0,115200" ];
+  systemd.services."serial-getty@ttyS0".enable = true;
+
   # Network configuration
   networking = {
-    hostName = "arr-stack";
+    hostName = "jellyfin";
     useDHCP = false;
     interfaces.ens18.ipv4.addresses = [{
-      address = "192.168.0.50";
+      address = "192.168.0.51";
       prefixLength = 24;
     }];
     defaultGateway = "192.168.0.1";
@@ -21,16 +28,8 @@
       enable = true;
       allowedTCPPorts = [
         22 # SSH
-        8701 # qBittorrent WebUI
-        8080 # SABnzbd
-        7878 # Radarr
-        8989 # Sonarr
-        8686 # Lidarr
-        6767 # Bazarr
-        9696 # Prowlarr
-        8191 # FlareSolverr
-        5030 # Slskd
-        8090 # Glance
+        8096 # Jellyfin
+        5055 # Jellyseerr
       ];
     };
   };
@@ -59,7 +58,7 @@
   # User configuration
   users.users.${constants.username} = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "docker" "media" ];
+    extraGroups = [ "wheel" "docker" "media" "render" "video" ];
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGAfz+KUctvSo0azvIQhHY2eBvKhT3pHRE0vpNtvpjMY"
     ];
@@ -85,7 +84,14 @@
   time.timeZone = constants.timezone;
 
   # System packages
-  environment.systemPackages = with pkgs; [ vim htop curl git ];
+  environment.systemPackages = with pkgs; [
+    vim
+    htop
+    curl
+    git
+    intel-gpu-tools
+    libva-utils
+  ];
 
   # NixOS state version
   system.stateVersion = "25.11";

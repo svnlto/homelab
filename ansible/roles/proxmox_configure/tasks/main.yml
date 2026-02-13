@@ -28,15 +28,13 @@
 - name: Configure Dell fan control
   ansible.builtin.include_tasks: dell_fan_control.yml
 
-- name: Configure basic datacenter settings
+- name: Configure datacenter settings (migration network, keyboard)
   ansible.builtin.template:
     src: datacenter.cfg.j2
     dest: /etc/pve/datacenter.cfg
     owner: root
     group: www-data
     mode: "0640"
-  when: false # /etc/pve doesn't exist until first boot
-  failed_when: false
 
 - name: Configure NTP with chrony
   ansible.builtin.template:
