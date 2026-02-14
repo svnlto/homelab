@@ -54,6 +54,25 @@ provider "talos" {}
 EOF
 }
 
+generate "provider_variables" {
+  path      = "provider_variables.tf"
+  if_exists = "overwrite_terragrunt"
+  contents  = <<EOF
+variable "proxmox_api_url" {
+  type = string
+}
+
+variable "proxmox_api_token_id" {
+  type = string
+}
+
+variable "proxmox_api_token_secret" {
+  type      = string
+  sensitive = true
+}
+EOF
+}
+
 inputs = {
   proxmox_api_url          = local.proxmox.api_url
   proxmox_api_token_id     = get_env("TF_VAR_proxmox_api_token_id", "")

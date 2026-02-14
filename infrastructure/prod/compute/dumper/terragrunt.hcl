@@ -14,13 +14,14 @@ dependencies {
 
 locals {
   global_vars  = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
-  ips          = local.global_vars.locals.infrastructure_ips
+  proxmox      = local.global_vars.locals.proxmox
+  vm_ids       = local.global_vars.locals.vm_ids
   environments = local.global_vars.locals.environments
 }
 
 inputs = {
-  node_name      = "grogu"
-  vm_id          = 202
+  node_name      = local.proxmox.nodes.secondary
+  vm_id          = local.vm_ids.dumper
   vm_name        = "dumper"
   vm_description = "NixOS - Tailscale rsync automation (photo dump to TrueNAS)"
   tags           = ["nixos", "tailscale", "rsync", "production"]
@@ -29,9 +30,9 @@ inputs = {
   memory_mb         = 2048
   boot_disk_size_gb = 8
 
-  network_bridge      = "vmbr20"
+  network_bridge      = local.proxmox.bridges.lan
   enable_dual_network = true
-  secondary_bridge    = "vmbr10"
+  secondary_bridge    = local.proxmox.bridges.storage
 
   pool_id = local.environments.prod.pools.compute
 

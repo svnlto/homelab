@@ -26,6 +26,12 @@ variable "compression_format" {
   }
 }
 
+variable "checksum" {
+  description = "SHA256 checksum of the image for verification (e.g., 'abc123...'). Empty string to skip verification."
+  type        = string
+  default     = ""
+}
+
 variable "proxmox_node" {
   description = "Target Proxmox node name"
   type        = string

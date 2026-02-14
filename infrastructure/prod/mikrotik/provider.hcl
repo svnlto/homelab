@@ -27,6 +27,26 @@ provider "routeros" {
 EOF
 }
 
+generate "provider_variables" {
+  path      = "provider_variables.tf"
+  if_exists = "overwrite_terragrunt"
+  contents  = <<EOF
+variable "mikrotik_api_url" {
+  type = string
+}
+
+variable "mikrotik_username" {
+  type      = string
+  sensitive = true
+}
+
+variable "mikrotik_password" {
+  type      = string
+  sensitive = true
+}
+EOF
+}
+
 inputs = {
   mikrotik_api_url  = local.mikrotik.api_url
   mikrotik_username = get_env("MIKROTIK_USERNAME", "")

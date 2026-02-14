@@ -38,6 +38,34 @@ provider "onepassword" {
 EOF
 }
 
+generate "provider_variables" {
+  path      = "provider_variables.tf"
+  if_exists = "overwrite_terragrunt"
+  contents  = <<EOF
+variable "proxmox_api_url" {
+  type        = string
+  description = "Proxmox API URL"
+}
+
+variable "proxmox_api_token_id" {
+  type        = string
+  description = "Proxmox API token ID"
+  sensitive   = true
+}
+
+variable "proxmox_api_token_secret" {
+  type        = string
+  description = "Proxmox API token secret"
+  sensitive   = true
+}
+
+variable "onepassword_account" {
+  type        = string
+  description = "1Password account ID for desktop app integration"
+}
+EOF
+}
+
 inputs = {
   proxmox_api_url          = local.proxmox.api_url
   proxmox_api_token_id     = get_env("TF_VAR_proxmox_api_token_id", "")

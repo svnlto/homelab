@@ -192,6 +192,12 @@ locals {
     allowed_management_subnets = "192.168.0.0/24,10.10.1.0/24"
   }
 
+  vm_ids = {
+    arr_stack = 200
+    dumper    = 202
+    jellyfin  = 210
+  }
+
   proxmox = {
     nodes = {
       primary   = "din"
@@ -223,7 +229,7 @@ locals {
     version  = "25.10.1"
     url      = "https://download.truenas.com/TrueNAS-SCALE-Goldeye/25.10.1/TrueNAS-SCALE-25.10.1.iso"
     filename = "TrueNAS-SCALE-25.10.1.iso"
-    checksum = "sha256:PLACEHOLDER" # TODO: add actual checksum
+    checksum = "d7e325c4e5416f52060f87ee337ae5a4c9c7bb16d34bfcad5e4a69c265ceb5d6"
 
     primary = {
       vm_id     = 300

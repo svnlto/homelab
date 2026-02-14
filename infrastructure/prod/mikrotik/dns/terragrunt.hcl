@@ -13,9 +13,5 @@ locals {
 }
 
 inputs = {
-  mikrotik_api_url  = local.mikrotik.api_url
-  mikrotik_username = get_env("MIKROTIK_USERNAME", "")
-  mikrotik_password = get_env("MIKROTIK_PASSWORD", "")
-
   pihole_ip = local.ips.pihole
 }
