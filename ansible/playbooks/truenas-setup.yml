@@ -739,6 +739,18 @@
         state: present
       tags: [smb, shares]
 
+    - name: Create SMB shares from variable
+      arensb.truenas.sharing_smb:
+        name: "{{ item.name }}"
+        path: "{{ item.path }}"
+        purpose: "{{ item.purpose }}"
+        comment: "{{ item.comment }}"
+        state: present
+      loop: "{{ smb_shares | rejectattr('name', 'equalto', 'TimeMachine') | list }}"
+      loop_control:
+        label: "{{ item.name }}"
+      tags: [smb, shares]
+
     - name: Set permissions on Time Machine dataset
       ansible.builtin.command:
         cmd: >

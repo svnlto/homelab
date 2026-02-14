@@ -116,7 +116,7 @@
     - name: Verify SSH root login is restricted to pubkey
       ansible.builtin.assert:
         that:
-          - "'permitrootlogin prohibit-password' in sshd_config.stdout"
+          - "'permitrootlogin prohibit-password' in sshd_config.stdout or 'permitrootlogin without-password' in sshd_config.stdout"
         fail_msg: "Root login should be restricted to pubkey only"
         quiet: true
       tags: [ssh]

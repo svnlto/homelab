@@ -51,8 +51,24 @@
     ];
   };
 
+  # Dedicated service account for rsync operations
+  users.users.dumper = {
+    isSystemUser = true;
+    group = "dumper";
+    home = "/var/lib/dumper";
+    createHome = true;
+    shell = pkgs.bash;
+  };
+  users.groups.dumper = { };
+
   # Enable sudo without password for wheel group
   security.sudo.wheelNeedsPassword = false;
+
+  # Cap journal size
+  services.journald.extraConfig = ''
+    SystemMaxUse=50M
+    RuntimeMaxUse=50M
+  '';
 
   # Automatic garbage collection
   nix.gc = {
