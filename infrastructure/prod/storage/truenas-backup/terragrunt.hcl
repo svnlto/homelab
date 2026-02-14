@@ -18,6 +18,7 @@ locals {
   ips          = local.global_vars.locals.infrastructure_ips
   vlans        = local.global_vars.locals.vlans
   environments = local.global_vars.locals.environments
+  proxmox      = local.global_vars.locals.proxmox
 }
 
 inputs = {
