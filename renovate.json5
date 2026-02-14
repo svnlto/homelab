@@ -6,8 +6,8 @@
     ":pinVersions"
   ],
 
-  // Weekly on Monday mornings, Europe/Berlin timezone
-  "schedule": ["before 9am on Monday"],
+  // Check immediately on every run, Europe/Berlin timezone
+  "schedule": ["at any time"],
   "timezone": "Europe/Berlin",
 
   // Never automerge — infrastructure code requires manual review
@@ -37,7 +37,7 @@
   // Keep Terraform lock files up to date
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 9am on Monday"]
+    "schedule": ["before 5am"]
   },
 
   // Custom regex managers for Nix files with Docker image references
