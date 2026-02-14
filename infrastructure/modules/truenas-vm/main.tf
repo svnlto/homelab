@@ -1,6 +1,4 @@
-# ==============================================================================
-# TrueNAS VM Module - Main Configuration
-# ==============================================================================
+# TrueNAS VM with HBA passthrough and dual networking (management + storage).
 
 resource "proxmox_virtual_environment_vm" "truenas" {
   name        = var.vm_name
@@ -53,7 +51,6 @@ resource "proxmox_virtual_environment_vm" "truenas" {
     memory = 32
   }
 
-  # Primary network interface
   network_device {
     bridge      = var.network_bridge
     mac_address = var.mac_address
@@ -61,7 +58,6 @@ resource "proxmox_virtual_environment_vm" "truenas" {
     model       = "virtio"
   }
 
-  # Optional second network interface (storage VLAN)
   dynamic "network_device" {
     for_each = var.enable_dual_network ? [1] : []
     content {
@@ -70,7 +66,6 @@ resource "proxmox_virtual_environment_vm" "truenas" {
     }
   }
 
-  # Boot disk
   disk {
     datastore_id = "local-zfs"
     file_format  = "raw"
@@ -119,14 +114,13 @@ resource "proxmox_virtual_environment_vm" "truenas" {
     }
   }
 
-  # Lifecycle - ignore manual changes made in Proxmox UI
-  # This is needed because HBA passthrough must be added manually
+  # Ignore manual changes (ejected ISO, HBA devices added in UI)
   lifecycle {
     ignore_changes = [
-      cdrom,          # ISO might be ejected after install
-      disk,           # Data disks added via HBA passthrough
-      hostpci,        # HBA devices added manually in UI
-      network_device, # Network changes made manually
+      cdrom,
+      disk,
+      hostpci,
+      network_device,
     ]
   }
 }

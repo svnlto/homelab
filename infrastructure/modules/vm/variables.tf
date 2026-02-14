@@ -1,8 +1,5 @@
-# ==============================================================================
-# Generic VM Module - Input Variables
-# ==============================================================================
+# Generic VM module variables.
 
-# Proxmox Configuration
 variable "node_name" {
   description = "Proxmox node name (e.g., 'din', 'grogu')"
   type        = string
@@ -60,7 +57,6 @@ variable "startup_down_delay" {
   default     = 30
 }
 
-# Boot Configuration
 variable "boot_mode" {
   description = "Boot mode: 'uefi' (OVMF + q35) or 'bios' (SeaBIOS + i440fx)"
   type        = string
@@ -72,7 +68,6 @@ variable "boot_mode" {
   }
 }
 
-# Boot Media (mutually exclusive)
 variable "iso_id" {
   description = "ISO file ID for manual install (e.g., 'local:iso/nixos.iso'). Mutually exclusive with disk_image_id."
   type        = string
@@ -85,7 +80,6 @@ variable "disk_image_id" {
   default     = null
 }
 
-# Hardware Configuration
 variable "cpu_cores" {
   description = "Number of CPU cores"
   type        = number
@@ -110,7 +104,6 @@ variable "memory_mb" {
   default     = 8192
 }
 
-# Boot Disk
 variable "boot_disk_size_gb" {
   description = "Boot disk size in GB"
   type        = number
@@ -123,14 +116,12 @@ variable "boot_disk_storage" {
   default     = "local-zfs"
 }
 
-# Additional Disks
 variable "additional_disks" {
   description = "List of additional disk sizes in GB"
   type        = list(number)
   default     = []
 }
 
-# Network Configuration
 variable "network_bridge" {
   description = "Network bridge for primary interface"
   type        = string
@@ -149,7 +140,6 @@ variable "mac_address" {
   default     = null
 }
 
-# Dual Network Configuration
 variable "enable_dual_network" {
   description = "Enable second network interface"
   type        = bool
@@ -168,7 +158,6 @@ variable "secondary_vlan_id" {
   default     = null
 }
 
-# Cloud-Init Configuration
 variable "enable_cloud_init" {
   description = "Enable cloud-init initialization"
   type        = bool
@@ -205,7 +194,6 @@ variable "ssh_keys" {
   default     = []
 }
 
-# Display Configuration
 variable "vga_type" {
   description = "VGA display type ('virtio', 'std', 'none'). Use 'none' for GPU passthrough VMs."
   type        = string
@@ -218,7 +206,6 @@ variable "enable_serial_console" {
   default     = false
 }
 
-# PCI Passthrough Configuration
 variable "enable_pci_passthrough" {
   description = "Enable PCI device passthrough"
   type        = bool
@@ -231,7 +218,6 @@ variable "pci_mapping_id" {
   default     = null
 }
 
-# QEMU Agent
 variable "enable_qemu_agent" {
   description = "Enable QEMU guest agent"
   type        = bool

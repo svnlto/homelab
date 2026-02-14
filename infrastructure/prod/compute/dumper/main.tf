@@ -1,8 +1,3 @@
-# ==============================================================================
-# Dumper VM
-# ==============================================================================
-
-# Fetch SSH public key from 1Password for Ansible access
 data "onepassword_item" "ssh_key" {
   vault = "Personal"
   title = "proxmox"
@@ -11,7 +6,6 @@ data "onepassword_item" "ssh_key" {
 module "dumper" {
   source = "../../../modules/vm"
 
-  # Pass all inputs from terragrunt.hcl
   node_name           = var.node_name
   vm_id               = var.vm_id
   vm_name             = var.vm_name
@@ -26,7 +20,6 @@ module "dumper" {
   pool_id             = var.pool_id
   iso_id              = var.iso_id
 
-  # Cloud-init for Ansible access
   enable_cloud_init = var.enable_cloud_init
   ip_address        = var.ip_address
   gateway           = var.gateway

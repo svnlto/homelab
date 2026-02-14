@@ -1,6 +1,4 @@
-# ==============================================================================
-# Dev Test Cluster - Minimal Talos K8s for Testing
-# ==============================================================================
+# Dev test cluster — minimal Talos K8s on LAN VLAN 20.
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -10,7 +8,6 @@ include "provider" {
   path = "${get_terragrunt_dir()}/provider.hcl"
 }
 
-# Dependency on Talos image (must be uploaded first)
 dependency "talos_image" {
   config_path = "../../images"
 }
@@ -23,27 +20,20 @@ locals {
 }
 
 inputs = {
-  # Cluster Identity
   cluster_name     = "test"
   cluster_endpoint = "https://192.168.0.161:6443"
 
-  # Versions (latest stable)
   talos_version      = "v1.12.2"
   kubernetes_version = "v1.35.0"
+  talos_image_id     = dependency.talos_image.outputs.talos_image_id
 
-  # Talos Image (from persistent image storage)
-  talos_image_id = dependency.talos_image.outputs.talos_image_id
-
-  # Network - LAN VLAN 20 (migrate to vmbr32 when K8s VLANs are active)
   network_bridge  = "vmbr20"
   network_gateway = local.vlans.lan.gateway
   dns_servers     = [local.ips.pihole]
   vip_ip          = "192.168.0.160"
 
-  # Proxmox
   datastore_id = "local-zfs"
 
-  # Control Plane - Single node for dev (no HA needed)
   control_plane_nodes = {
     cp1 = {
       node_name    = "din"
@@ -56,7 +46,6 @@ inputs = {
     }
   }
 
-  # Workers - Single node for testing
   worker_nodes = {
     worker1 = {
       node_name       = "din"
@@ -70,9 +59,6 @@ inputs = {
     }
   }
 
-  # Tags
-  tags = ["dev"]
-
-  # Bootstrap - Enable to start the cluster
+  tags             = ["dev"]
   deploy_bootstrap = true
 }

@@ -1,8 +1,3 @@
-# ==============================================================================
-# Jellyfin Media Server
-# ==============================================================================
-
-# Fetch SSH public key from 1Password for Ansible access
 data "onepassword_item" "ssh_key" {
   vault = "Personal"
   title = "proxmox"
@@ -11,7 +6,6 @@ data "onepassword_item" "ssh_key" {
 module "jellyfin" {
   source = "../../../modules/vm"
 
-  # Pass all inputs from terragrunt.hcl
   node_name           = var.node_name
   vm_id               = var.vm_id
   vm_name             = var.vm_name
@@ -26,13 +20,11 @@ module "jellyfin" {
   pool_id             = var.pool_id
   iso_id              = var.iso_id
 
-  # GPU passthrough — Intel Arc A310 with vga=none + serial console
   enable_pci_passthrough = var.enable_pci_passthrough
   pci_mapping_id         = var.pci_mapping_id
   vga_type               = var.vga_type
   enable_serial_console  = var.enable_serial_console
 
-  # Cloud-init for Ansible access
   enable_cloud_init = var.enable_cloud_init
   ip_address        = var.ip_address
   gateway           = var.gateway

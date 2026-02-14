@@ -1,7 +1,3 @@
-# ==============================================================================
-# TrueNAS VM Module - Outputs
-# ==============================================================================
-
 output "vm_id" {
   description = "TrueNAS VM ID"
   value       = proxmox_virtual_environment_vm.truenas.vm_id

@@ -1,11 +1,4 @@
-# ==============================================================================
-# Development Resource Pools
-# ==============================================================================
-# Creates Proxmox resource pools for organizing development VMs
-#
-# Pools:
-#   - dev-storage: Development storage testing VMs
-#   - dev-compute: Development and testing VMs
+# Development Proxmox resource pools (dev-storage, dev-compute).
 
 include "root" {
   path = find_in_parent_folders("root.hcl")

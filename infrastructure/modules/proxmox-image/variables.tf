@@ -1,7 +1,3 @@
-# ==============================================================================
-# Image Source Configuration
-# ==============================================================================
-
 variable "download_url" {
   description = "URL to download the image from (leave empty if using local file)"
   type        = string
@@ -29,10 +25,6 @@ variable "compression_format" {
     error_message = "Compression format must be one of: xz, gz, none"
   }
 }
-
-# ==============================================================================
-# Proxmox Configuration
-# ==============================================================================
 
 variable "proxmox_node" {
   description = "Target Proxmox node name"

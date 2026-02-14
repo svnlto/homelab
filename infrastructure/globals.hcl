@@ -1,9 +1,4 @@
-# ==============================================================================
-# Global Configuration - Single Source of Truth
-# ==============================================================================
-# This file contains all shared configuration used across Proxmox and MikroTik
-# infrastructure. All Terragrunt modules include this file to access these values.
-
+# Global configuration shared across all Terragrunt modules.
 locals {
   environments = {
     prod = {
@@ -74,18 +69,13 @@ locals {
   }
 
   infrastructure_ips = {
-    # WAN/Internet gateway (O2 Homespot)
     gateway = "192.168.8.1"
+    pihole  = "192.168.0.53"
 
-    # DNS
-    pihole = "192.168.0.53"
+    router_mgmt    = "10.10.1.2"
+    router_lan     = "192.168.0.1"
+    router_storage = "10.10.10.1"
 
-    # MikroTik CRS Router (main gateway)
-    router_mgmt    = "10.10.1.2"   # Management VLAN
-    router_lan     = "192.168.0.1" # MikroTik LAN gateway
-    router_storage = "10.10.10.1"  # Storage VLAN gateway
-
-    # Proxmox Nodes
     grogu_mgmt    = "192.168.0.10"
     grogu_storage = "10.10.10.10"
     grogu_idrac   = "10.10.1.10"
@@ -94,22 +84,17 @@ locals {
     din_storage = "10.10.10.11"
     din_idrac   = "10.10.1.11"
 
-    # Arr Media Stack
     arr_stack         = "192.168.0.50"
     arr_stack_storage = "10.10.10.50"
 
-    # Jellyfin Media Server
     jellyfin         = "192.168.0.51"
     jellyfin_storage = "10.10.10.51"
 
-    # Dumper LXC (Tailscale rsync automation)
     dumper         = "192.168.0.52"
     dumper_storage = "10.10.10.52"
 
-    # Proxmox QDevice (corosync-qnetd)
     qdevice = "192.168.0.54"
 
-    # TrueNAS
     truenas_primary_mgmt    = "192.168.0.13"
     truenas_primary_storage = "10.10.10.13"
     truenas_backup_mgmt     = "192.168.0.14"
@@ -180,9 +165,8 @@ locals {
 
   mikrotik = {
     hostname = "nevarro"
-    api_url  = "https://192.168.0.1" # MikroTik REST API (LAN gateway)
+    api_url  = "https://192.168.0.1"
 
-    # WAN interface (standalone, not in bridge)
     wan = {
       interface = "ether1"
       address   = "192.168.8.2/24"
@@ -190,7 +174,6 @@ locals {
       comment   = "WAN to O2 Homespot"
     }
 
-    # Access ports: untagged on their respective VLAN
     access_ports = {
       pihole      = { interface = "ether2", pvid = 20, comment = "Pi-hole DNS" }
       beryl_ap    = { interface = "ether3", pvid = 20, comment = "Beryl AX WiFi AP" }
@@ -199,7 +182,6 @@ locals {
       qdevice     = { interface = "ether6", pvid = 20, comment = "Proxmox QDevice" }
     }
 
-    # Trunk ports: tagged all VLANs (direct to servers, no aggregation switch yet)
     trunk_ports = {
       sfp_plus1 = { interface = "sfp-sfpplus1", comment = "grogu 10GbE" }
       sfp_plus2 = { interface = "sfp-sfpplus2", comment = "din 10GbE" }
@@ -207,19 +189,17 @@ locals {
 
     bridge_name = "bridge-vlans"
 
-    # Subnets allowed to access management services (SSH, HTTPS, WinBox, API-SSL)
     allowed_management_subnets = "192.168.0.0/24,10.10.1.0/24"
   }
 
   proxmox = {
     nodes = {
-      primary   = "din"   # r730xd - Storage + compute
-      secondary = "grogu" # r630 - Compute-focused
+      primary   = "din"
+      secondary = "grogu"
     }
 
     api_url = "https://192.168.0.11:8006/api2/json"
 
-    # Bridge names for VLAN-aware networking
     bridges = {
       storage    = "vmbr10"
       lan        = "vmbr20"
@@ -228,15 +208,14 @@ locals {
       k8s_test   = "vmbr32"
     }
 
-    # VM template ID
     template_vm_id = 9000
 
-    # PCIe Resource Mappings (configured in Proxmox UI)
+    # Proxmox UI resource mappings (Datacenter > Resource Mappings)
     resource_mappings = {
-      truenas_h330 = "truenas-h330" # Dell H330 Mini on din (6×8TB bulk + 6×3TB scratch, internal)
-      truenas_lsi  = "truenas-lsi"  # Dell PERC H200E on din → MD1220 (24×900GB fast)
-      md1200_hba   = "md1200-hba"   # HPE H241 on grogu → MD1200 (12×8TB backup)
-      arc_a310     = "arc-a310"     # Intel Arc A310 GPU on grogu
+      truenas_h330 = "truenas-h330"
+      truenas_lsi  = "truenas-lsi"
+      md1200_hba   = "md1200-hba"
+      arc_a310     = "arc-a310"
     }
   }
 
@@ -244,7 +223,7 @@ locals {
     version  = "25.10.1"
     url      = "https://download.truenas.com/TrueNAS-SCALE-Goldeye/25.10.1/TrueNAS-SCALE-25.10.1.iso"
     filename = "TrueNAS-SCALE-25.10.1.iso"
-    checksum = "sha256:PLACEHOLDER" # Add actual checksum
+    checksum = "sha256:PLACEHOLDER" # TODO: add actual checksum
 
     primary = {
       vm_id     = 300
@@ -278,7 +257,7 @@ locals {
   versions = {
     terraform  = "1.14.1"
     terragrunt = "0.71.6"
-    ansible    = "latest" # From nixpkgs-unstable
+    ansible    = "latest"
   }
 
   common_tags = {
@@ -287,8 +266,7 @@ locals {
     backup     = "restic-b2"
   }
 
-  # Backblaze B2 Remote State Configuration
-  # S3-compatible backend for Terragrunt state storage
+  # Backblaze B2 state backend (S3-compatible)
   backend = {
     bucket_name = "svnlto-homelab-terraform-state"
     region      = "eu-central-003"

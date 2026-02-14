@@ -1,6 +1,4 @@
-# ==============================================================================
-# Generic VM Module - Main Configuration
-# ==============================================================================
+# Generic Proxmox VM with support for UEFI, cloud-init, PCI passthrough, and dual networking.
 
 locals {
   is_uefi     = var.boot_mode == "uefi"
@@ -42,7 +40,6 @@ resource "proxmox_virtual_environment_vm" "vm" {
     type = "l26"
   }
 
-  # UEFI firmware disk
   dynamic "efi_disk" {
     for_each = local.is_uefi ? [1] : []
     content {
@@ -52,7 +49,6 @@ resource "proxmox_virtual_environment_vm" "vm" {
     }
   }
 
-  # ISO boot media
   dynamic "cdrom" {
     for_each = local.is_iso_boot ? [1] : []
     content {
@@ -74,7 +70,6 @@ resource "proxmox_virtual_environment_vm" "vm" {
     }
   }
 
-  # Primary network interface
   network_device {
     bridge      = var.network_bridge
     mac_address = var.mac_address
@@ -82,7 +77,6 @@ resource "proxmox_virtual_environment_vm" "vm" {
     model       = "virtio"
   }
 
-  # Optional second network interface
   dynamic "network_device" {
     for_each = var.enable_dual_network ? [1] : []
     content {
@@ -92,7 +86,6 @@ resource "proxmox_virtual_environment_vm" "vm" {
     }
   }
 
-  # Boot disk (ISO install: empty disk; disk image: pre-loaded)
   disk {
     datastore_id = var.boot_disk_storage
     file_format  = "raw"
@@ -105,7 +98,6 @@ resource "proxmox_virtual_environment_vm" "vm" {
     cache        = "none"
   }
 
-  # Additional data disks
   dynamic "disk" {
     for_each = var.additional_disks
     content {
@@ -120,7 +112,6 @@ resource "proxmox_virtual_environment_vm" "vm" {
     }
   }
 
-  # Optional PCI passthrough
   dynamic "hostpci" {
     for_each = var.enable_pci_passthrough ? [1] : []
     content {
@@ -131,7 +122,6 @@ resource "proxmox_virtual_environment_vm" "vm" {
     }
   }
 
-  # Optional cloud-init
   dynamic "initialization" {
     for_each = var.enable_cloud_init ? [1] : []
     content {
@@ -156,7 +146,6 @@ resource "proxmox_virtual_environment_vm" "vm" {
     }
   }
 
-  # QEMU guest agent
   dynamic "agent" {
     for_each = var.enable_qemu_agent ? [1] : []
     content {
@@ -164,8 +153,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
     }
   }
 
-  # Lifecycle - ignore changes made outside Terraform
-  # (nixos-anywhere repartitions disk, CD-ROM removed after install, manual HBA additions)
+  # Ignore external changes (nixos-anywhere repartitions, CD-ROM ejected, manual HBA additions)
   lifecycle {
     ignore_changes = [
       cdrom,

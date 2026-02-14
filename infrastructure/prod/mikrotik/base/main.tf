@@ -4,7 +4,7 @@ resource "routeros_interface_bridge" "main" {
   comment        = "VLAN-aware bridge for homelab infrastructure"
 }
 
-# Jumbo frames on SFP+ trunk ports for storage VLAN (10GbE)
+# Jumbo frames on SFP+ trunk ports (10GbE storage VLAN)
 resource "routeros_interface_ethernet" "sfp_mtu" {
   for_each = var.trunk_ports
 
@@ -15,8 +15,7 @@ resource "routeros_interface_ethernet" "sfp_mtu" {
   comment      = each.value.comment
 }
 
-# Access ports: untagged on their PVID VLAN
-# depends_on ensures VLAN memberships exist before ports join the filtered bridge
+# Access ports — untagged on their PVID VLAN
 resource "routeros_interface_bridge_port" "access_ports" {
   for_each = var.access_ports
 
@@ -28,7 +27,7 @@ resource "routeros_interface_bridge_port" "access_ports" {
   depends_on = [routeros_interface_bridge_vlan.vlan_membership]
 }
 
-# Trunk ports: carry all VLANs tagged
+# Trunk ports — carry all VLANs tagged
 resource "routeros_interface_bridge_port" "trunk_ports" {
   for_each = var.trunk_ports
 
@@ -62,21 +61,21 @@ resource "routeros_ip_settings" "routing" {
   rp_filter = "loose"
 }
 
-# WAN IP on ether1 (standalone, not in bridge)
+# WAN (standalone, not in bridge)
 resource "routeros_ip_address" "wan" {
   address   = var.wan_address
   interface = var.wan_interface
   comment   = "WAN to O2 Homespot"
 }
 
-# Default route to internet via O2 Homespot
+# Default route
 resource "routeros_ip_route" "default" {
   dst_address = "0.0.0.0/0"
   gateway     = var.wan_gateway
   comment     = "Default route to internet via O2 Homespot"
 }
 
-# VLAN bridge membership: trunk ports tagged, access ports untagged on their VLAN
+# VLAN bridge membership
 resource "routeros_interface_bridge_vlan" "vlan_membership" {
   for_each = var.vlans
 
@@ -93,9 +92,7 @@ resource "routeros_interface_bridge_vlan" "vlan_membership" {
   comment = "VLAN ${each.value.id} (${each.value.name})"
 }
 
-# =============================================================================
-# Service hardening — disable insecure services, restrict management access
-# =============================================================================
+# Service hardening
 
 resource "routeros_ip_service" "ftp" {
   numbers  = "ftp"

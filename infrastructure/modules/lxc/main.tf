@@ -1,6 +1,4 @@
-# ==============================================================================
-# LXC Container Module - Main Configuration
-# ==============================================================================
+# NixOS LXC container with optional dual networking and NFS support.
 
 resource "proxmox_virtual_environment_container" "container" {
   description   = var.container_description
@@ -42,13 +40,11 @@ resource "proxmox_virtual_environment_container" "container" {
     size         = var.disk_size_gb
   }
 
-  # Primary network interface (LAN)
   network_interface {
     name   = "eth0"
     bridge = var.network_bridge
   }
 
-  # Secondary network interface (storage VLAN)
   dynamic "network_interface" {
     for_each = var.secondary_bridge != null ? [1] : []
     content {
@@ -81,10 +77,10 @@ resource "proxmox_virtual_environment_container" "container" {
     }
   }
 
-  # Lifecycle - ignore manual changes made in Proxmox UI
+  # Ignore manual network changes
   lifecycle {
     ignore_changes = [
-      network_interface, # Network changes made manually
+      network_interface,
     ]
   }
 }
