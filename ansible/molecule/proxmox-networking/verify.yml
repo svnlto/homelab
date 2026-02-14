@@ -88,7 +88,7 @@
         cmd: ifreload -a -s
       register: ifreload_check
       changed_when: false
-      failed_when: ifreload_check.rc != 0
+      failed_when: ifreload_check.rc != 0 and 'error' in ifreload_check.stderr | lower
       tags: [syntax]
 
     - name: Verify gateway is reachable

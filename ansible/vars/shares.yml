@@ -170,6 +170,16 @@ smb_shares:
     purpose: DEFAULT_SHARE
     comment: "Manual file archive"
 
+  - name: Media
+    path: /mnt/bulk/media
+    purpose: DEFAULT_SHARE
+    comment: "Movies, TV, music, books"
+
+  - name: Photos
+    path: /mnt/bulk/photos
+    purpose: DEFAULT_SHARE
+    comment: "Photo library"
+
 storage_users:
   - name: media
     uid: 1000

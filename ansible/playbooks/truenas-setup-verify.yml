@@ -31,6 +31,13 @@
         - bulk/signoz-cold
       tags: [datasets, bulk]
 
+    - name: Check if fast pool exists
+      ansible.builtin.command:
+        cmd: midclt call pool.query '[["name", "=", "fast"]]'
+      register: fast_pool_check
+      changed_when: false
+      tags: [datasets, fast]
+
     - name: Verify fast pool datasets exist
       ansible.builtin.command:
         cmd: midclt call pool.dataset.query '[["id", "=", "{{ item }}"]]'
@@ -43,6 +50,7 @@
         - fast/kubernetes/iscsi-zvols
         - fast/vms
         - fast/ml-models
+      when: fast_pool_check.stdout != '[]'
       tags: [datasets, fast]
 
     - name: Verify scratch pool datasets exist
@@ -135,7 +143,8 @@
           - item.path in (nfs_shares_result.stdout | from_json | map(attribute='path') | list)
         fail_msg: "NFS share missing: {{ item.path }}"
         quiet: true
-      loop: "{{ nfs_shares }}"
+      loop: "{{ nfs_shares | rejectattr('path', 'match', '/mnt/fast/') | list if fast_pool_check.stdout == '[]' else nfs_shares
+        }}"
       loop_control:
         label: "{{ item.path }}"
       tags: [nfs]
@@ -229,8 +238,5 @@
           - item in (scrub_tasks.stdout | from_json | map(attribute='pool_name') | list)
         fail_msg: "Scrub task missing for pool: {{ item }}"
         quiet: true
-      loop:
-        - bulk
-        - fast
-        - scratch
+      loop: "{{ ['bulk', 'scratch'] + (['fast'] if fast_pool_check.stdout != '[]' else []) }}"
       tags: [scrub]

@@ -87,6 +87,13 @@
       when: proxmox_ssh_public_key is defined
       tags: [ssh]
 
+    - name: Harden SSH configuration
+      ansible.builtin.include_role:
+        name: security
+        apply:
+          tags: [ssh]
+      tags: [ssh]
+
     - name: Allow unsupported SFP+ modules
       ansible.builtin.include_role:
         name: proxmox_configure

@@ -45,30 +45,40 @@ in {
 
     unitConfig.RequiresMountsFor = dumpDir;
 
-    path = [ pkgs.rsync pkgs.openssh ];
+    path = [ pkgs.rsync pkgs.openssh pkgs.tailscale ];
 
     serviceConfig = {
       Type = "oneshot";
+      User = "dumper";
+      Group = "dumper";
       EnvironmentFile = "/etc/dumper/rsync.env";
       ExecStart = pkgs.writeShellScript "rsync-photos" ''
         set -euo pipefail
+
+        # Check if remote host is reachable via Tailscale
+        if ! tailscale ping --timeout=5s "''${REMOTE_HOST}" >/dev/null 2>&1; then
+          echo "Remote host ''${REMOTE_HOST} is not reachable, skipping sync"
+          exit 0
+        fi
+
+        echo "Remote host reachable, starting sync"
         rsync -azP --partial \
           --rsync-path="sudo /usr/bin/rsync" \
-          -e "ssh -o StrictHostKeyChecking=accept-new" \
+          -e "ssh -i /var/lib/dumper/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new" \
           "''${REMOTE_HOST}:''${REMOTE_PATH}" \
           ${dumpDir}/
       '';
     };
   };
 
-  # Daily timer for rsync
+  # Check every 15 minutes, sync only when remote host is online
   systemd.timers.rsync-photos = {
-    description = "Daily rsync of photos from remote machine";
+    description = "Periodic rsync of photos from remote machine";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnCalendar = "daily";
+      OnBootSec = "5min";
+      OnUnitActiveSec = "15min";
       Persistent = true;
-      RandomizedDelaySec = "1h";
     };
   };
 }
