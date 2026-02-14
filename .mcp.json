@@ -35,9 +35,9 @@
       "env": {
         "PROXMOX_HOST": "192.168.0.10",
         "PROXMOX_USER": "terraform@pam",
-        "PROXMOX_TOKEN_NAME": "${PROXMOX_TOKEN_ID}",
+        "PROXMOX_TOKEN_NAME": "terraform",
         "PROXMOX_TOKEN_VALUE": "${PROXMOX_TOKEN_SECRET}",
-        "PROXMOX_ALLOW_ELEVATED": "false"
+        "PROXMOX_ALLOW_ELEVATED": "true"
       }
     },
     "terragrunt-docs": {

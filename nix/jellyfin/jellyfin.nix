@@ -1,7 +1,8 @@
 { pkgs, constants, ... }:
 
 let
-  dataDir = "/mnt/arr-config";
+  dataDir = "/var/lib/jellyfin-data";
+  nfsConfigDir = "/mnt/arr-config";
   mediaDir = "/mnt/media";
   composeDir = "/opt/stacks/jellyfin";
 
@@ -40,8 +41,8 @@ in {
   # NFS mounts from TrueNAS
   # ---------------------------------------------------------------------------
 
-  # Config data — regular mount (required for service startup)
-  fileSystems.${dataDir} = {
+  # NFS config mount — kept for initial data migration, not used at runtime
+  fileSystems.${nfsConfigDir} = {
     device = "${truenasStorageIp}:/mnt/bulk/arr-config";
     fsType = "nfs";
     options = [
@@ -151,6 +152,7 @@ in {
           - ${dataDir}/jellyfin/config:/config
           - ${dataDir}/jellyfin/cache:/cache
           - ${mediaDir}:/data/media
+        # Config on local disk — SQLite doesn't work on NFS
         ports:
           - 8096:8096
         devices:
@@ -171,7 +173,7 @@ in {
           - PGID=${pgid}
           - TZ=${tz}
         volumes:
-          - ${dataDir}/jellyseerr:/app/config
+          - ${dataDir}/jellyseerr/config:/app/config
         ports:
           - 5055:5055
         healthcheck:
@@ -194,7 +196,7 @@ in {
           - JELLYSEERR_PASSWORD=''${JELLYSEERR_PASSWORD}
           - CRONTAB=0 6 * * *
         volumes:
-          - ${dataDir}/jellyfin-auto-collections:/app/config
+          - ${dataDir}/jellyfin-auto-collections/config:/app/config
         depends_on:
           jellyfin:
             condition: service_healthy
@@ -207,7 +209,7 @@ in {
   environment.etc."jellyfin/env.template".text = ''
     # Jellyfin Stack Environment Configuration
     # Edit this file with your actual credentials
-    # This file persists on TrueNAS NFS — survives NixOS rebuilds
+    # This file persists in /var/lib/jellyfin-data — survives NixOS rebuilds
 
     TIMEZONE=${tz}
 
@@ -225,16 +227,16 @@ in {
   # Systemd services
   # ---------------------------------------------------------------------------
 
-  # Initialize NFS directories and seed configs on first boot
+  # Initialize local directories and migrate data from NFS on first boot
   systemd.services.jellyfin-init = {
     description = "Initialize Jellyfin stack directories and configs";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
 
-    unitConfig.RequiresMountsFor = "${dataDir} ${mediaDir}";
+    unitConfig.RequiresMountsFor = "${nfsConfigDir} ${mediaDir}";
 
-    path = [ pkgs.coreutils ];
+    path = [ pkgs.coreutils pkgs.rsync ];
 
     serviceConfig = {
       Type = "oneshot";
@@ -242,16 +244,48 @@ in {
       ExecStart = pkgs.writeShellScript "jellyfin-init" ''
         set -euo pipefail
 
-        # Create service directories on NFS
+        # Create local directories
         mkdir -p ${dataDir}/jellyfin/config
         mkdir -p ${dataDir}/jellyfin/cache
-        mkdir -p ${dataDir}/jellyseerr
-        mkdir -p ${dataDir}/jellyfin-auto-collections
+        mkdir -p ${dataDir}/jellyseerr/config
+        mkdir -p ${dataDir}/jellyfin-auto-collections/config
+
+        # Migrate from NFS to local storage (one-time)
+        if [ ! -f ${dataDir}/.migrated ]; then
+          echo "Migrating Jellyfin data from NFS to local storage..."
+
+          if [ -d ${nfsConfigDir}/jellyfin/config ] && [ -f ${nfsConfigDir}/jellyfin/config/data/jellyfin.db ]; then
+            rsync -a ${nfsConfigDir}/jellyfin/config/ ${dataDir}/jellyfin/config/
+            echo "Migrated jellyfin config"
+          fi
+
+          if [ -d ${nfsConfigDir}/jellyfin/cache ]; then
+            rsync -a ${nfsConfigDir}/jellyfin/cache/ ${dataDir}/jellyfin/cache/
+            echo "Migrated jellyfin cache"
+          fi
+
+          if [ -d ${nfsConfigDir}/jellyseerr ]; then
+            rsync -a ${nfsConfigDir}/jellyseerr/ ${dataDir}/jellyseerr/config/
+            echo "Migrated jellyseerr config"
+          fi
+
+          if [ -d ${nfsConfigDir}/jellyfin-auto-collections ]; then
+            rsync -a ${nfsConfigDir}/jellyfin-auto-collections/ ${dataDir}/jellyfin-auto-collections/config/
+            echo "Migrated jellyfin-auto-collections config"
+          fi
+
+          touch ${dataDir}/.migrated
+          echo "Migration complete"
+        fi
 
         # Copy .env template if not present
         if [ ! -f ${dataDir}/jellyfin-env ]; then
-          cp /etc/jellyfin/env.template ${dataDir}/jellyfin-env
-          echo "Created ${dataDir}/jellyfin-env from template — edit with your secrets"
+          if [ -f ${nfsConfigDir}/jellyfin-env ]; then
+            cp ${nfsConfigDir}/jellyfin-env ${dataDir}/jellyfin-env
+          else
+            cp /etc/jellyfin/env.template ${dataDir}/jellyfin-env
+            echo "Created ${dataDir}/jellyfin-env from template — edit with your secrets"
+          fi
         fi
 
         # Symlink .env to compose directory
@@ -271,7 +305,7 @@ in {
     requires = [ "docker.service" "jellyfin-init.service" ];
     wantedBy = [ "multi-user.target" ];
 
-    unitConfig.RequiresMountsFor = "${dataDir} ${mediaDir}";
+    unitConfig.RequiresMountsFor = mediaDir;
 
     path = [ pkgs.docker pkgs.docker-compose pkgs.coreutils ];
 
