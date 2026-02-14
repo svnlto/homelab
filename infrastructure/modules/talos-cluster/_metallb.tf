@@ -18,7 +18,7 @@ resource "helm_release" "metallb" {
   name             = "metallb"
   repository       = "https://metallb.github.io/metallb"
   chart            = "metallb"
-  version          = "0.14.9"
+  version          = "0.15.3"
   namespace        = "metallb-system"
   create_namespace = false
   wait             = true
