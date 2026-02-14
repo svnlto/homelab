@@ -14,17 +14,17 @@ let
 
   # Container image versions (pinned for reproducibility)
   images = {
-    gluetun = "qmcgaw/gluetun:v3.40.0";
+    gluetun = "qmcgaw/gluetun:v3.41.1";
     qbittorrent = "lscr.io/linuxserver/qbittorrent:5.1.4-r1-ls431";
     sabnzbd = "lscr.io/linuxserver/sabnzbd:4.5.1-ls223";
     radarr = "lscr.io/linuxserver/radarr:6.0.4.10291-ls288";
     sonarr = "lscr.io/linuxserver/sonarr:4.0.16.2944-ls299";
     lidarr = "ghcr.io/hotio/lidarr:pr-plugins-3.0.0.4856";
     bazarr = "lscr.io/linuxserver/bazarr:v1.5.5-ls336";
-    slskd = "slskd/slskd:0.24.1";
+    slskd = "slskd/slskd:0.24.3";
     prowlarr = "lscr.io/linuxserver/prowlarr:2.3.0.5236-ls133";
-    flaresolverr = "ghcr.io/flaresolverr/flaresolverr:v3.4.5";
-    recyclarr = "ghcr.io/recyclarr/recyclarr:7.4.0";
+    flaresolverr = "ghcr.io/flaresolverr/flaresolverr:v3.4.6";
+    recyclarr = "ghcr.io/recyclarr/recyclarr:7.5.2";
     buildarr = "callum027/buildarr:0.7.8";
     glance = "glanceapp/glance:v0.8.4";
   };
