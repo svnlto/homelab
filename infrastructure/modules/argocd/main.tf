@@ -13,7 +13,7 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     config_path = var.kubeconfig_path
   }
 }
@@ -22,7 +22,7 @@ provider "helm" {
 # ArgoCD Namespace
 # ==============================================================================
 
-resource "kubernetes_namespace" "argocd" {
+resource "kubernetes_namespace_v1" "argocd" {
   metadata {
     name = var.argocd_namespace
   }
@@ -37,13 +37,15 @@ resource "helm_release" "argocd" {
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-cd"
   version    = var.argocd_chart_version
-  namespace  = kubernetes_namespace.argocd.metadata[0].name
+  namespace  = kubernetes_namespace_v1.argocd.metadata[0].name
 
   # Set initial admin password
-  set_sensitive {
-    name  = "configs.secret.argocdServerAdminPassword"
-    value = bcrypt(var.admin_password)
-  }
+  set_sensitive = [
+    {
+      name  = "configs.secret.argocdServerAdminPassword"
+      value = bcrypt(var.admin_password)
+    }
+  ]
 
   # Server configuration
   values = [yamlencode({
@@ -93,7 +95,7 @@ resource "helm_release" "argocd" {
     }
   })]
 
-  depends_on = [kubernetes_namespace.argocd]
+  depends_on = [kubernetes_namespace_v1.argocd]
 }
 
 # ==============================================================================
@@ -163,7 +165,7 @@ resource "null_resource" "root_app" {
 # Spoke Cluster Registration
 # ==============================================================================
 
-resource "kubernetes_secret" "spoke_clusters" {
+resource "kubernetes_secret_v1" "spoke_clusters" {
   for_each = var.spoke_clusters
 
   metadata {
