@@ -134,8 +134,8 @@ nfs_shares:
 
   - path: /mnt/scratch/immich-migration/dump
     comment: "Photo dump from remote machine via rsync (dumper VM)"
-    maproot_user: root
-    maproot_group: wheel
+    mapall_user: root
+    mapall_group: wheel
     networks:
       - 10.10.10.0/24
     ro: false
