@@ -12,12 +12,16 @@ datasets:
     compression: "lz4"
     sync: "standard"
     atime: "off"
+    acltype: "nfsv4"
+    aclmode: "passthrough"
 
   bulk_photos:
     recordsize: "1M"
     compression: "lz4"
     sync: "standard"
     atime: "off"
+    acltype: "nfsv4"
+    aclmode: "passthrough"
 
   bulk_signoz_cold:
     recordsize: "128K"
@@ -54,12 +58,16 @@ datasets:
     compression: "lz4"
     sync: "standard"
     atime: "off"
+    acltype: "nfsv4"
+    aclmode: "passthrough"
     # TODO: Move to fast pool once MD1220 hardware arrives
 
   bulk_archive:
     recordsize: "1M"
     compression: "lz4"
     sync: "standard"
+    acltype: "nfsv4"
+    aclmode: "passthrough"
 
   # Fast pool
   fast_kubernetes_nfs_dynamic:
@@ -100,6 +108,8 @@ datasets:
     sync: "disabled"
     children:
       - incomplete
+    acltype: "nfsv4"
+    aclmode: "passthrough"
 
   scratch_ci_runners:
     recordsize: "128K"
@@ -113,6 +123,13 @@ datasets:
     recordsize: "1M"
     compression: "lz4"
     sync: "disabled"
+
+  scratch_immich_migration:
+    recordsize: "128K"
+    compression: "lz4"
+    sync: "standard"
+    acltype: "nfsv4"
+    aclmode: "passthrough"
 
   scratch_temp:
     recordsize: "128K"

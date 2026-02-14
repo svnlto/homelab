@@ -1,7 +1,8 @@
 { pkgs, constants, ... }:
 
 let
-  dumpDir = "/mnt/dump";
+  scratchDir = "/mnt/scratch";
+  dumpDir = "${scratchDir}/immich-migration";
   inherit (constants) truenasStorageIp;
 in {
   # Tailscale VPN — persistent authentication, no 24h reauth
@@ -18,7 +19,7 @@ in {
   # NFS mount from TrueNAS (scratch pool over storage VLAN)
   # ---------------------------------------------------------------------------
   fileSystems.${dumpDir} = {
-    device = "${truenasStorageIp}:/mnt/scratch/immich-migration/dump";
+    device = "${truenasStorageIp}:/mnt/scratch/immich-migration";
     fsType = "nfs";
     options = [
       "nfsvers=4.2"
@@ -50,7 +51,7 @@ in {
     serviceConfig = {
       Type = "oneshot";
       User = "dumper";
-      Group = "dumper";
+      Group = "media";
       EnvironmentFile = "/etc/dumper/rsync.env";
       ExecStart = pkgs.writeShellScript "rsync-photos" ''
         set -euo pipefail
@@ -63,11 +64,12 @@ in {
         fi
 
         echo "Remote host reachable, starting sync"
+        mkdir -p "${dumpDir}/Photos Library.photoslibrary"
         rsync -azP --partial \
           --rsync-path="sudo /usr/bin/rsync" \
           -e "ssh -i /var/lib/dumper/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new" \
           "''${REMOTE_USER}@''${REMOTE_HOST}:''${REMOTE_PATH}" \
-          ${dumpDir}/
+          "${dumpDir}/Photos Library.photoslibrary/"
       '';
     };
   };

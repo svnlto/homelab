@@ -51,15 +51,18 @@
     ];
   };
 
+  # Media group — matches TrueNAS GID 1000 for NFS UID passthrough
+  users.groups.media.gid = 1000;
+
   # Dedicated service account for rsync operations
   users.users.dumper = {
     isSystemUser = true;
-    group = "dumper";
+    uid = 1003;
+    group = "media";
     home = "/var/lib/dumper";
     createHome = true;
     shell = pkgs.bash;
   };
-  users.groups.dumper = { };
 
   # Enable sudo without password for wheel group
   security.sudo.wheelNeedsPassword = false;

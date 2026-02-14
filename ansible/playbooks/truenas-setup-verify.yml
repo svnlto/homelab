@@ -191,6 +191,102 @@
         label: "{{ item.name }}"
       tags: [users]
 
+    - name: Verify dumper user exists with UID 1003
+      ansible.builtin.command:
+        cmd: midclt call user.query '[["username", "=", "dumper"]]'
+      register: dumper_user_check
+      changed_when: false
+      failed_when: >
+        dumper_user_check.stdout == '[]'
+        or (dumper_user_check.stdout | from_json)[0].uid != 1003
+      tags: [users]
+
+    - name: Query media group ID for membership checks
+      ansible.builtin.command:
+        cmd: midclt call group.query '[["group", "=", "media"]]'
+      register: verify_media_group
+      changed_when: false
+      tags: [users]
+
+    - name: Verify immich is in media group
+      ansible.builtin.command:
+        cmd: midclt call user.query '[["username", "=", "immich"]]'
+      register: immich_user_info
+      changed_when: false
+      failed_when: >
+        immich_user_info.stdout == '[]'
+        or (verify_media_group.stdout | from_json)[0].id not in (immich_user_info.stdout | from_json)[0].groups
+      tags: [users]
+
+    - name: Verify svenlito is in media group
+      ansible.builtin.command:
+        cmd: midclt call user.query '[["username", "=", "svenlito"]]'
+      register: svenlito_user_info
+      changed_when: false
+      failed_when: >
+        svenlito_user_info.stdout == '[]'
+        or (verify_media_group.stdout | from_json)[0].id not in (svenlito_user_info.stdout | from_json)[0].groups
+      tags: [users]
+
+    # NFS shares — verify no mapall (all should use maproot)
+    # TrueNAS API always returns mapall_user/mapall_group as null when not set
+    - name: Verify no NFS shares use mapall
+      ansible.builtin.assert:
+        that:
+          - nfs_shares_result.stdout | from_json | map(attribute='mapall_user') | reject('none') | reject('equalto', '') |
+            list | length == 0
+          - nfs_shares_result.stdout | from_json | map(attribute='mapall_group') | reject('none') | reject('equalto', '')
+            | list | length == 0
+        fail_msg: "Found NFS shares still using mapall — all should use maproot"
+        quiet: true
+      tags: [nfs, acls]
+
+    # Dataset ACL properties
+    - name: Verify service datasets have NFSv4 ACL type
+      ansible.builtin.command:
+        cmd: >-
+          midclt call pool.dataset.query
+          '[["id", "=", "{{ item }}"]]'
+          '{"select": ["acltype", "aclmode"]}'
+      register: acl_props
+      changed_when: false
+      failed_when: >
+        'NFSV4' not in acl_props.stdout
+        or 'PASSTHROUGH' not in acl_props.stdout
+      loop:
+        - bulk/media
+        - bulk/photos
+        - bulk/arr-config
+        - bulk/archive
+        - bulk/backups/timemachine
+        - scratch/downloads/incomplete
+        - scratch/immich-migration
+        - scratch/immich-migration/dump
+      tags: [acls, datasets]
+
+    # NFSv4 ACL entries (getacl defaults to simplified=true, returns BASIC flags)
+    - name: Verify NFSv4 ACLs on service datasets
+      ansible.builtin.command:
+        cmd: midclt call filesystem.getacl '"/mnt/{{ item.path }}"'
+      register: acl_check
+      changed_when: false
+      failed_when: >
+        'FULL_CONTROL' not in acl_check.stdout
+        or 'MODIFY' not in acl_check.stdout
+        or 'INHERIT' not in acl_check.stdout
+      loop:
+        - path: bulk/media
+        - path: bulk/photos
+        - path: bulk/arr-config
+        - path: bulk/archive
+        - path: bulk/backups/timemachine
+        - path: scratch/downloads/incomplete
+        - path: scratch/immich-migration
+        - path: scratch/immich-migration/dump
+      loop_control:
+        label: "{{ item.path }}"
+      tags: [acls]
+
     # Directory structure and permissions
     - name: Verify bulk/media subdirectories exist
       ansible.builtin.stat:

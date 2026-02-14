@@ -3,8 +3,8 @@ nfs_shares:
   # Bulk pool
   - path: /mnt/bulk/media
     comment: "Media + downloads for arr-stack (hardlinks require single dataset)"
-    mapall_user: media
-    mapall_group: media
+    maproot_user: root
+    maproot_group: wheel
     networks:
       - 10.10.10.0/24
       - 192.168.0.0/24
@@ -14,8 +14,8 @@ nfs_shares:
 
   - path: /mnt/bulk/media/movies
     comment: "Movies library (child dataset)"
-    mapall_user: media
-    mapall_group: media
+    maproot_user: root
+    maproot_group: wheel
     networks:
       - 10.10.10.0/24
       - 192.168.0.0/24
@@ -25,8 +25,8 @@ nfs_shares:
 
   - path: /mnt/bulk/media/tv
     comment: "TV library (child dataset)"
-    mapall_user: media
-    mapall_group: media
+    maproot_user: root
+    maproot_group: wheel
     networks:
       - 10.10.10.0/24
       - 192.168.0.0/24
@@ -36,8 +36,8 @@ nfs_shares:
 
   - path: /mnt/bulk/media/music
     comment: "Music library (child dataset)"
-    mapall_user: media
-    mapall_group: media
+    maproot_user: root
+    maproot_group: wheel
     networks:
       - 10.10.10.0/24
       - 192.168.0.0/24
@@ -47,8 +47,8 @@ nfs_shares:
 
   - path: /mnt/bulk/media/books
     comment: "Books library (child dataset)"
-    mapall_user: media
-    mapall_group: media
+    maproot_user: root
+    maproot_group: wheel
     networks:
       - 10.10.10.0/24
       - 192.168.0.0/24
@@ -58,8 +58,8 @@ nfs_shares:
 
   - path: /mnt/bulk/photos
     comment: "Photos for Immich"
-    mapall_user: immich
-    mapall_group: immich
+    maproot_user: root
+    maproot_group: wheel
     networks:
       - 10.10.10.0/24
       - 192.168.0.0/24
@@ -91,8 +91,8 @@ nfs_shares:
   # TODO: Move to /mnt/fast/arr-config once MD1220 hardware arrives
   - path: /mnt/bulk/arr-config
     comment: "Arr stack configuration data (databases, settings)"
-    mapall_user: media
-    mapall_group: media
+    maproot_user: root
+    maproot_group: wheel
     networks:
       - 10.10.10.0/24
       - 192.168.0.0/24
@@ -132,18 +132,26 @@ nfs_shares:
       - 10.0.3.0/24
     ro: false
 
+  - path: /mnt/scratch/immich-migration
+    comment: "Immich migration data (dumper VM)"
+    maproot_user: root
+    maproot_group: wheel
+    networks:
+      - 10.10.10.0/24
+    ro: false
+
   - path: /mnt/scratch/immich-migration/dump
     comment: "Photo dump from remote machine via rsync (dumper VM)"
-    mapall_user: root
-    mapall_group: wheel
+    maproot_user: root
+    maproot_group: wheel
     networks:
       - 10.10.10.0/24
     ro: false
 
   - path: /mnt/scratch/downloads/incomplete
     comment: "Active/incomplete downloads (temp staging, sync=disabled)"
-    mapall_user: media
-    mapall_group: media
+    maproot_user: root
+    maproot_group: wheel
     networks:
       - 10.10.10.0/24
       - 192.168.0.0/24
@@ -180,6 +188,11 @@ smb_shares:
     purpose: DEFAULT_SHARE
     comment: "Photo library"
 
+  - name: Scratch
+    path: /mnt/scratch
+    purpose: DEFAULT_SHARE
+    comment: "Scratch pool"
+
 storage_users:
   - name: media
     uid: 1000
@@ -195,9 +208,51 @@ storage_users:
     home: /nonexistent
     shell: /usr/sbin/nologin
 
+  - name: dumper
+    uid: 1003
+    gid: 1000
+    group: media
+    home: /nonexistent
+    shell: /usr/sbin/nologin
+
 storage_groups:
   - name: media
     gid: 1000
 
   - name: immich
     gid: 1001
+
+# Datasets that get NFSv4 ACLs applied (owner@/group@/everyone@)
+acl_datasets:
+  - path: /mnt/bulk/media
+    uid: 1000
+    gid: 1000
+    everyone_read: true
+  - path: /mnt/bulk/photos
+    uid: 1001
+    gid: 1000
+    everyone_read: true
+  - path: /mnt/bulk/arr-config
+    uid: 1000
+    gid: 1000
+    everyone_read: true
+  - path: /mnt/bulk/archive
+    uid: 1002
+    gid: 1000
+    everyone_read: true
+  - path: /mnt/scratch/downloads/incomplete
+    uid: 1000
+    gid: 1000
+    everyone_read: true
+  - path: /mnt/scratch/immich-migration
+    uid: 1003
+    gid: 1000
+    everyone_read: false
+  - path: /mnt/scratch/immich-migration/dump
+    uid: 1003
+    gid: 1000
+    everyone_read: true
+  - path: /mnt/bulk/backups/timemachine
+    uid: 1002
+    gid: 1002
+    everyone_read: false

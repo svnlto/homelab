@@ -63,20 +63,6 @@
         atime: "OFF"
       tags: [datasets, bulk]
 
-    - name: Set ownership on bulk media dataset root
-      ansible.builtin.command:
-        cmd: >
-          midclt call filesystem.setperm '{
-            "path": "/mnt/bulk/media",
-            "uid": 1000,
-            "gid": 1000,
-            "mode": "0775",
-            "options": {"recursive": false, "traverse": false}
-          }'
-      changed_when: false
-      failed_when: false
-      tags: [datasets, bulk]
-
     - name: Create bulk media subdirectories
       ansible.builtin.command:
         cmd: >
@@ -94,29 +80,6 @@
       changed_when: media_dirs.rc == 0
       failed_when: false
       tags: [datasets, bulk]
-
-    - name: Set ownership on bulk media subdirectories
-      ansible.builtin.command:
-        cmd: >
-          midclt call filesystem.setperm '{
-            "path": "/mnt/bulk/media/{{ item }}",
-            "uid": 1000,
-            "gid": 1000,
-            "mode": "0775",
-            "options": {"recursive": true, "traverse": false}
-          }'
-      loop:
-        - music
-        - movies
-        - tv
-        - books
-        - downloads
-        - downloads/torrents
-        - downloads/usenet
-        - downloads/soulseek
-      changed_when: false
-      failed_when: false
-      tags: [datasets, bulk, fix-perms]
 
     - name: Create bulk photos dataset (Immich)
       arensb.truenas.filesystem:
@@ -257,19 +220,7 @@
         sync: "DISABLED"
       tags: [datasets, scratch, downloads]
 
-    - name: Set ownership on scratch/downloads/incomplete (media:media)
-      ansible.builtin.command:
-        cmd: >
-          midclt call filesystem.setperm '{
-            "path": "/mnt/scratch/downloads/incomplete",
-            "uid": 1000,
-            "gid": 1000,
-            "mode": "0775",
-            "options": {"recursive": false, "traverse": false}
-          }'
-      changed_when: false
-      failed_when: false
-      tags: [datasets, scratch, downloads]
+    # Ownership for scratch/downloads/incomplete is handled by NFSv4 ACLs below
 
     - name: Create scratch CI runners parent dataset
       arensb.truenas.filesystem:
@@ -319,6 +270,25 @@
         compression: "LZ4"
         sync: "DISABLED"
       tags: [datasets, scratch]
+
+    # ACL type/mode on service datasets (must run after dataset creation)
+    - name: Set acltype/aclmode on service datasets
+      ansible.builtin.command:
+        cmd: >
+          midclt call pool.dataset.update
+          '{{ item }}'
+          '{"acltype": "NFSV4", "aclmode": "PASSTHROUGH"}'
+      changed_when: false
+      loop:
+        - bulk/media
+        - bulk/photos
+        - bulk/arr-config
+        - bulk/archive
+        - scratch/downloads
+        - scratch/downloads/incomplete
+        - scratch/immich-migration
+        - scratch/immich-migration/dump
+      tags: [datasets, acls]
 
     # ZFS properties (via midclt — arensb.truenas doesn't support recordsize/sync/quotas)
 
@@ -467,6 +437,49 @@
       changed_when: false
       tags: [properties, scratch, ml]
 
+    # NFSv4 ACLs — owner@ FULL_CONTROL, group@ MODIFY, everyone@ READ (with inheritance)
+    - name: Build ACL entries per dataset
+      ansible.builtin.set_fact:
+        _acl_base:
+          - tag: "owner@"
+            type: ALLOW
+            perms:
+              BASIC: FULL_CONTROL
+            flags:
+              BASIC: INHERIT
+          - tag: "group@"
+            type: ALLOW
+            perms:
+              BASIC: MODIFY
+            flags:
+              BASIC: INHERIT
+        _acl_everyone_read:
+          - tag: "everyone@"
+            type: ALLOW
+            perms:
+              BASIC: READ
+            flags:
+              BASIC: INHERIT
+      tags: [acls]
+
+    - name: Apply NFSv4 ACLs on service datasets
+      ansible.builtin.command:
+        cmd: >
+          midclt call filesystem.setacl
+          '{{ {"path": item.path,
+               "dacl": _acl_base + (_acl_everyone_read if item.everyone_read else []),
+               "uid": item.uid,
+               "gid": item.gid,
+               "acltype": "NFS4",
+               "options": {"recursive": false}}
+             | to_json }}'
+      loop: "{{ acl_datasets }}"
+      loop_control:
+        label: "{{ item.path }}"
+      changed_when: false
+      failed_when: false
+      tags: [acls]
+
     # NFS shares
     - name: Configure NFS service
       arensb.truenas.nfs:
@@ -482,202 +495,19 @@
         enabled: true
       tags: [nfs, services]
 
-    - name: Create NFS share for media and downloads
+    - name: Create NFS shares from variable
       arensb.truenas.sharing_nfs:
-        path: /mnt/bulk/media
-        comment: "Media + downloads for arr-stack (hardlinks)"
-        mapall_user: media
-        mapall_group: media
-        networks:
-          - 10.10.10.0/24
-          - 192.168.0.0/24
-          - 10.0.1.0/24
-          - 10.0.2.0/24
+        path: "{{ item.path }}"
+        comment: "{{ item.comment }}"
+        maproot_user: "{{ item.maproot_user }}"
+        maproot_group: "{{ item.maproot_group }}"
+        networks: "{{ item.networks }}"
+        ro: "{{ item.ro | default(false) }}"
         state: present
+      loop: "{{ nfs_shares }}"
+      loop_control:
+        label: "{{ item.path }}"
       tags: [nfs, shares]
-
-    - name: Create NFS share for media/movies (child dataset)
-      arensb.truenas.sharing_nfs:
-        path: /mnt/bulk/media/movies
-        comment: "Movies library (child dataset)"
-        mapall_user: media
-        mapall_group: media
-        networks:
-          - 10.10.10.0/24
-          - 192.168.0.0/24
-          - 10.0.1.0/24
-          - 10.0.2.0/24
-        state: present
-      tags: [nfs, shares]
-
-    - name: Create NFS share for media/tv (child dataset)
-      arensb.truenas.sharing_nfs:
-        path: /mnt/bulk/media/tv
-        comment: "TV library (child dataset)"
-        mapall_user: media
-        mapall_group: media
-        networks:
-          - 10.10.10.0/24
-          - 192.168.0.0/24
-          - 10.0.1.0/24
-          - 10.0.2.0/24
-        state: present
-      tags: [nfs, shares]
-
-    - name: Create NFS share for media/music (child dataset)
-      arensb.truenas.sharing_nfs:
-        path: /mnt/bulk/media/music
-        comment: "Music library (child dataset)"
-        mapall_user: media
-        mapall_group: media
-        networks:
-          - 10.10.10.0/24
-          - 192.168.0.0/24
-          - 10.0.1.0/24
-          - 10.0.2.0/24
-        state: present
-      tags: [nfs, shares]
-
-    - name: Create NFS share for media/books (child dataset)
-      arensb.truenas.sharing_nfs:
-        path: /mnt/bulk/media/books
-        comment: "Books library (child dataset)"
-        mapall_user: media
-        mapall_group: media
-        networks:
-          - 10.10.10.0/24
-          - 192.168.0.0/24
-          - 10.0.1.0/24
-          - 10.0.2.0/24
-        state: present
-      tags: [nfs, shares]
-
-    - name: Create NFS share for arr-config
-      arensb.truenas.sharing_nfs:
-        path: /mnt/bulk/arr-config
-        comment: "Arr stack configuration data (databases, settings)"
-        mapall_user: media
-        mapall_group: media
-        networks:
-          - 10.10.10.0/24
-          - 192.168.0.0/24
-        state: present
-      tags: [nfs, shares, arr]
-
-    - name: Create NFS share for photos (Immich)
-      arensb.truenas.sharing_nfs:
-        path: /mnt/bulk/photos
-        comment: "Photos for Immich"
-        mapall_user: immich
-        mapall_group: immich
-        networks:
-          - 10.10.10.0/24
-          - 192.168.0.0/24
-          - 10.0.1.0/24
-        state: present
-      tags: [nfs, shares, photos]
-
-    - name: Create NFS share for kubernetes dynamic
-      arensb.truenas.sharing_nfs:
-        path: /mnt/fast/kubernetes/nfs-dynamic
-        comment: "democratic-csi dynamic provisioning"
-        maproot_user: root
-        maproot_group: wheel
-        networks:
-          - 10.10.10.0/24
-          - 10.0.1.0/24
-        state: present
-      tags: [nfs, shares, fast]
-
-    - name: Create NFS share for kubernetes static
-      arensb.truenas.sharing_nfs:
-        path: /mnt/fast/kubernetes/nfs-static
-        comment: "Static PVs for shared configs"
-        maproot_user: root
-        maproot_group: wheel
-        networks:
-          - 10.10.10.0/24
-          - 10.0.1.0/24
-          - 10.0.2.0/24
-          - 10.0.3.0/24
-        state: present
-      tags: [nfs, shares, k8s, fast]
-
-    - name: Create NFS share for bulk kubernetes dynamic
-      arensb.truenas.sharing_nfs:
-        path: /mnt/bulk/kubernetes/nfs-dynamic
-        comment: "democratic-csi bulk pool (Forgejo registry, large app data)"
-        maproot_user: root
-        maproot_group: wheel
-        networks:
-          - 10.10.10.0/24
-          - 10.0.1.0/24
-          - 10.0.2.0/24
-          - 10.0.3.0/24
-        state: present
-      tags: [nfs, shares, k8s, bulk]
-
-    - name: Create NFS share for scratch kubernetes dynamic
-      arensb.truenas.sharing_nfs:
-        path: /mnt/scratch/kubernetes/nfs-dynamic
-        comment: "democratic-csi scratch pool (CI cache, ephemeral data)"
-        maproot_user: root
-        maproot_group: wheel
-        networks:
-          - 10.10.10.0/24
-          - 10.0.1.0/24
-          - 10.0.2.0/24
-          - 10.0.3.0/24
-        state: present
-      tags: [nfs, shares, k8s, scratch]
-
-    - name: Create NFS share for Signoz cold storage
-      arensb.truenas.sharing_nfs:
-        path: /mnt/bulk/signoz-cold
-        comment: "Signoz cold storage (30+ days)"
-        maproot_user: root
-        maproot_group: wheel
-        networks:
-          - 10.10.10.0/24
-          - 10.0.1.0/24
-        state: present
-      tags: [nfs, shares, observability]
-
-    - name: Create NFS share for immich-migration dump (dumper VM)
-      arensb.truenas.sharing_nfs:
-        path: /mnt/scratch/immich-migration/dump
-        comment: "Photo dump from remote machine via rsync (dumper VM)"
-        mapall_user: root
-        mapall_group: wheel
-        networks:
-          - 10.10.10.0/24
-        state: present
-      tags: [nfs, shares, scratch, dumper]
-
-    - name: Create NFS share for scratch downloads (incomplete)
-      arensb.truenas.sharing_nfs:
-        path: /mnt/scratch/downloads/incomplete
-        comment: "Active/incomplete downloads (temp staging)"
-        mapall_user: media
-        mapall_group: media
-        networks:
-          - 10.10.10.0/24
-          - 192.168.0.0/24
-        state: present
-      tags: [nfs, shares, downloads]
-
-    - name: Create NFS share for CI runners
-      arensb.truenas.sharing_nfs:
-        path: /mnt/scratch/ci-runners
-        comment: "Forgejo CI runner cache and artifacts"
-        maproot_user: root
-        maproot_group: wheel
-        networks:
-          - 10.10.10.0/24
-          - 10.0.1.0/24
-          - 10.0.2.0/24
-        state: present
-      tags: [nfs, shares, ci]
 
     # iSCSI
     - name: Configure iSCSI portal (Storage VLAN)
@@ -752,20 +582,7 @@
         label: "{{ item.name }}"
       tags: [smb, shares]
 
-    - name: Set permissions on Time Machine dataset
-      ansible.builtin.command:
-        cmd: >
-          midclt call filesystem.setperm '{
-            "path": "/mnt/bulk/backups/timemachine",
-            "uid": 1002,
-            "gid": 1002,
-            "mode": "0770",
-            "options": {"recursive": false, "traverse": false}
-          }'
-      register: timemachine_perms
-      changed_when: false
-      failed_when: false
-      tags: [smb, bulk, backups]
+    # Time Machine permissions handled by NFSv4 ACL (acl_datasets in shares.yml)
 
     - name: Create Time Machine marker file
       ansible.builtin.command:
@@ -847,6 +664,27 @@
       changed_when: false
       tags: [users]
 
+    - name: Create dumper user (rsync service account)
+      ansible.builtin.command:
+        cmd: >
+          midclt call user.create '{
+            "username": "dumper",
+            "uid": 1003,
+            "group": {{ (media_group_info.stdout | from_json)[0].id }},
+            "home": "/var/empty",
+            "shell": "/usr/sbin/nologin",
+            "full_name": "Dumper Service Account",
+            "password_disabled": true,
+            "smb": false
+          }'
+      register: dumper_create
+      changed_when: "'id' in dumper_create.stdout"
+      failed_when: >
+        dumper_create.rc != 0
+        and 'already exists' not in (dumper_create.stderr | default(''))
+        and 'already exists' not in (dumper_create.stdout | default(''))
+      tags: [users]
+
     - name: Get truenas_admin user info
       ansible.builtin.command:
         cmd: midclt call user.query '[["username", "=", "truenas_admin"]]'
@@ -865,6 +703,48 @@
         - (media_group_info.stdout | from_json) | length > 0
         - (truenas_admin_info.stdout | from_json) | length > 0
         - (media_group_info.stdout | from_json)[0].id not in (truenas_admin_info.stdout | from_json)[0].groups
+      changed_when: true
+      tags: [users]
+
+    - name: Get immich user info
+      ansible.builtin.command:
+        cmd: midclt call user.query '[["username", "=", "immich"]]'
+      register: immich_user_info
+      changed_when: false
+      tags: [users]
+
+    - name: Add immich to media group
+      ansible.builtin.command:
+        cmd: >
+          midclt call user.update
+          {{ (immich_user_info.stdout | from_json)[0].id }}
+          '{"groups": {{ (immich_user_info.stdout | from_json)[0].groups | union([(media_group_info.stdout | from_json)[0].id])
+          | to_json }}}'
+      when:
+        - (media_group_info.stdout | from_json) | length > 0
+        - (immich_user_info.stdout | from_json) | length > 0
+        - (media_group_info.stdout | from_json)[0].id not in (immich_user_info.stdout | from_json)[0].groups
+      changed_when: true
+      tags: [users]
+
+    - name: Get svenlito user info
+      ansible.builtin.command:
+        cmd: midclt call user.query '[["username", "=", "svenlito"]]'
+      register: svenlito_user_info
+      changed_when: false
+      tags: [users]
+
+    - name: Add svenlito to media group
+      ansible.builtin.command:
+        cmd: >
+          midclt call user.update
+          {{ (svenlito_user_info.stdout | from_json)[0].id }}
+          '{"groups": {{ (svenlito_user_info.stdout | from_json)[0].groups | union([(media_group_info.stdout | from_json)[0].id])
+          | to_json }}}'
+      when:
+        - (media_group_info.stdout | from_json) | length > 0
+        - (svenlito_user_info.stdout | from_json) | length > 0
+        - (media_group_info.stdout | from_json)[0].id not in (svenlito_user_info.stdout | from_json)[0].groups
       changed_when: true
       tags: [users]
 
