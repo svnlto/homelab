@@ -1,0 +1,10 @@
+---
+# Default verify — runs all verification playbooks
+- name: Verify Proxmox configuration
+  ansible.builtin.import_playbook: ../proxmox-configure/verify.yml
+
+- name: Verify Proxmox networking
+  ansible.builtin.import_playbook: ../proxmox-networking/verify.yml
+
+- name: Verify TrueNAS setup
+  ansible.builtin.import_playbook: ../../playbooks/truenas-setup-verify.yml

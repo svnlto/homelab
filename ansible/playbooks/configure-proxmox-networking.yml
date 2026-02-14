@@ -1,26 +1,6 @@
 ---
-# ==============================================================================
-# Configure Proxmox Network Bridges for Kubernetes
-# ==============================================================================
-# This playbook configures VLAN bridges on Proxmox hosts for K8s clusters
-#
-# Usage:
-#   ansible-playbook playbooks/configure-proxmox-networking.yml
-#   ansible-playbook playbooks/configure-proxmox-networking.yml --limit grogu
-#   ansible-playbook playbooks/configure-proxmox-networking.yml --check  # Dry run
-#
-# What it does:
-#   - Backs up /etc/network/interfaces
-#   - Configures vmbr10 (VLAN 10 - Storage)
-#   - Configures vmbr20 (VLAN 20 - LAN/Management)
-#   - Configures vmbr30 (VLAN 30 - K8s Shared Services)
-#   - Configures vmbr31 (VLAN 31 - K8s Apps)
-#   - Configures vmbr32 (VLAN 32 - K8s Test)
-#   - Tests config with 'ifreload -a -s'
-#   - Applies config with 'ifreload -a' if test passes
-#
-# IMPORTANT: If SSH connection is lost, use iDRAC to troubleshoot
-# ==============================================================================
+# Configure VLAN bridges on Proxmox hosts.
+# If SSH connection is lost, use iDRAC to troubleshoot.
 
 - name: Configure Proxmox Network Bridges
   hosts: proxmox
@@ -28,7 +8,6 @@
   gather_facts: true
 
   vars:
-    # These can be overridden via --extra-vars
     gateway_ip: "192.168.0.1"
 
   tasks:
@@ -68,18 +47,3 @@
     - name: Check for new bridges
       debug:
         msg: "Bridges configured: {{ ip_addr_output.stdout | regex_findall('vmbr\\d+') | unique | sort }}"
-
-    - name: Display next steps
-      debug:
-        msg: |
-          Network configuration applied successfully!
-
-          Next steps:
-          1. Verify Proxmox web UI is accessible: https://{{ management_ip }}:8006
-          2. Test inter-VLAN routing from Proxmox host
-          3. Deploy Kubernetes clusters using Terraform
-
-          If issues occur:
-          - Use iDRAC: https://{{ storage_ip | replace('10.10.10', '10.10.1') }}
-          - Restore backup: /etc/network/interfaces.backup.*
-          - Reboot if needed

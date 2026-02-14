@@ -5,16 +5,24 @@
       "Bash(pre-commit run:*)",
       "Web Search",
       "Fetch",
-      "Bash(just truenas-setup-check:*)"
+      "Bash(just truenas-setup-check:*)",
+      "Bash(terragrunt plan:*)",
+      "Bash(terragrunt validate:*)",
+      "Bash(terraform fmt:*)",
+      "Bash(terraform validate:*)",
+      "Bash(nix flake check:*)",
+      "Bash(nix fmt:*)"
     ],
     "deny": [
       "Bash(terraform destroy:*)",
       "Bash(terragrunt apply:*)",
-      "Bash(git reset:*)"
+      "Bash(terragrunt destroy:*)",
+      "Bash(terragrunt run --all apply:*)",
+      "Bash(git reset:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(rm -rf:*)"
     ]
   },
-  "enableAllProjectMcpServers": true,
-  "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
-  "BASH_MAX_OUTPUT_LENGTH": "10000",
-  "BASH_DEFAULT_TIMEOUT_MS": "300000"
+  "enableAllProjectMcpServers": true
 }

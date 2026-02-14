@@ -1,8 +1,5 @@
 ---
-# =============================================================================
-# Role: proxmox_configure
-# Configures Proxmox VE after installation
-# =============================================================================
+# Configure Proxmox VE after installation.
 
 - name: Ensure /etc/hosts is correct
   ansible.builtin.include_tasks: hosts.yml

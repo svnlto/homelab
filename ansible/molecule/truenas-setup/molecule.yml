@@ -1,0 +1,36 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: ${MOLECULE_PROJECT_DIRECTORY}/requirements.yml
+
+driver:
+  name: default
+  options:
+    managed: false
+
+platforms:
+  - name: truenas-primary
+    groups:
+      - truenas_primary
+
+provisioner:
+  name: ansible
+  inventory:
+    hosts:
+      truenas_primary:
+        hosts:
+          truenas-primary:
+            ansible_host: 192.168.0.13
+            ansible_user: truenas_admin
+            ansible_become: false
+            ansible_python_interpreter: /usr/bin/python3.11
+            ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+  env:
+    ANSIBLE_CONFIG: ${MOLECULE_PROJECT_DIRECTORY}/ansible.cfg
+  playbooks:
+    converge: converge.yml
+    verify: verify.yml
+
+verifier:
+  name: ansible

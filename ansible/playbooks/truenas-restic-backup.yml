@@ -1,29 +1,6 @@
 ---
-# ==============================================================================
-# Restic Backup to Backblaze B2 - TrueNAS Primary (din)
-# ==============================================================================
-# Purpose: Backup critical data to Backblaze B2 cloud storage
-# Target: TrueNAS SCALE on din (192.168.0.13)
-#
-# Backup Profile 2: Everything Except Movies/TV (~1.5TB)
-# - fast/* (all Kubernetes, databases, app configs)
-# - bulk/photos (all photos)
-# - bulk/music (entire library)
-# - bulk/backups/* (Proxmox, arr-configs, TimeMachine)
-# - bulk/archive
-#
-# Estimated Cost: $7.50/month ($90/year) at $5/TB/month
-#
-# Prerequisites:
-# - Backblaze B2 account created
-# - B2 bucket created (e.g., "homelab-truenas-backup")
-# - B2 application key generated
-# - Secrets fetched from 1Password via .envrc:
-#   - B2_KEY_ID / B2_APPLICATION_KEY (Backblaze B2)
-#   - vault_restic_password (stored in 1Password)
-#
-# Usage:
-#   ansible-playbook playbooks/truenas-restic-backup.yml
+# Setup Restic backup to Backblaze B2 for critical TrueNAS data.
+# Secrets fetched from 1Password via .envrc (B2_KEY_ID, B2_APPLICATION_KEY, vault_restic_password).
 
 - name: Setup Restic backup to Backblaze B2
   hosts: truenas_primary
@@ -36,10 +13,7 @@
     b2_account_key: "{{ vault_b2_account_key }}"
 
   tasks:
-    # ==========================================================================
-    # INSTALL RESTIC
-    # ==========================================================================
-
+    # Install
     - name: Install required packages
       ansible.builtin.apt:
         name:
@@ -57,10 +31,7 @@
         mode: '0700'
       tags: [install]
 
-    # ==========================================================================
-    # B2 CREDENTIALS
-    # ==========================================================================
-
+    # B2 credentials
     - name: Create Restic environment file (B2 credentials)
       ansible.builtin.copy:
         dest: /root/.restic-env
@@ -73,10 +44,7 @@
         no_log: true
       tags: [config]
 
-    # ==========================================================================
-    # INITIALIZE REPOSITORY
-    # ==========================================================================
-
+    # Initialize repository
     - name: Check if Restic repository exists
       ansible.builtin.shell: |
         set -o pipefail
@@ -96,27 +64,18 @@
       changed_when: "'created restic repository' in restic_init.stdout"
       tags: [init]
 
-    # ==========================================================================
-    # BACKUP SCRIPTS
-    # ==========================================================================
-
+    # Backup scripts
     - name: Create critical data backup script (hourly)
       ansible.builtin.copy:
         dest: /root/scripts/restic-backup-critical.sh
         mode: '0700'
         content: |
           #!/bin/bash
-          # Restic Backup: Critical Data (Hourly)
-          # - Kubernetes (includes both NFS PVCs and iSCSI zvols with databases)
-          # - VMs
-          # - ML models
-
           set -e
           source /root/.restic-env
 
           echo "=== Restic Backup: Critical Data ($(date)) ==="
 
-          # Backup critical datasets
           restic backup \
             /mnt/fast/kubernetes \
             /mnt/fast/vms \
@@ -130,7 +89,6 @@
             --exclude=".cache" \
             --verbose
 
-          # Prune old snapshots (aggressive retention for critical data)
           restic forget \
             --tag critical \
             --keep-hourly 48 \
@@ -140,7 +98,6 @@
             --keep-yearly 3 \
             --prune
 
-          # Check repository integrity (weekly)
           if [ "$(date +%u)" -eq 7 ]; then
             echo "Running weekly integrity check..."
             restic check --read-data-subset=5%
@@ -155,15 +112,11 @@
         mode: '0700'
         content: |
           #!/bin/bash
-          # Restic Backup: Photos (Daily)
-          # - All photos from bulk/photos
-
           set -e
           source /root/.restic-env
 
           echo "=== Restic Backup: Photos ($(date)) ==="
 
-          # Backup photos
           restic backup \
             /mnt/bulk/photos \
             --tag photos \
@@ -175,7 +128,6 @@
             --exclude="Thumbs.db" \
             --verbose
 
-          # Prune old snapshots (keep more history for photos)
           restic forget \
             --tag photos \
             --keep-daily 30 \
@@ -193,17 +145,11 @@
         mode: '0700'
         content: |
           #!/bin/bash
-          # Restic Backup: Bulk Data (Daily)
-          # - Music library
-          # - Proxmox backups
-          # - arr-stack configs
-
           set -e
           source /root/.restic-env
 
           echo "=== Restic Backup: Bulk Data ($(date)) ==="
 
-          # Backup music
           restic backup \
             /mnt/bulk/music \
             --tag music \
@@ -213,7 +159,6 @@
             --exclude="lost+found" \
             --verbose
 
-          # Backup Proxmox backups
           restic backup \
             /mnt/bulk/backups/proxmox \
             --tag proxmox \
@@ -222,7 +167,6 @@
             --exclude="*.tmp" \
             --verbose
 
-          # Backup arr-configs
           restic backup \
             /mnt/bulk/backups/arr-configs \
             --tag arr-configs \
@@ -230,7 +174,6 @@
             --tag din \
             --verbose
 
-          # Prune old snapshots
           restic forget \
             --tag music \
             --keep-daily 7 \
@@ -261,16 +204,11 @@
         mode: '0700'
         content: |
           #!/bin/bash
-          # Restic Backup: Archive Data (Weekly)
-          # - TimeMachine backups
-          # - Archive folder
-
           set -e
           source /root/.restic-env
 
           echo "=== Restic Backup: Archive ($(date)) ==="
 
-          # Backup TimeMachine (large, weekly)
           if [ -d /mnt/bulk/backups/timemachine ]; then
             restic backup \
               /mnt/bulk/backups/timemachine \
@@ -283,7 +221,6 @@
               --verbose
           fi
 
-          # Backup archive
           if [ -d /mnt/bulk/archive ]; then
             restic backup \
               /mnt/bulk/archive \
@@ -294,7 +231,6 @@
               --verbose
           fi
 
-          # Prune old snapshots (less frequent for large data)
           restic forget \
             --tag timemachine \
             --keep-weekly 4 \
@@ -312,10 +248,7 @@
           echo "=== Archive backup completed ==="
       tags: [scripts]
 
-    # ==========================================================================
-    # SYSTEMD SERVICES
-    # ==========================================================================
-
+    # Systemd services and timers
     - name: Create systemd service for critical backups
       ansible.builtin.copy:
         dest: /etc/systemd/system/restic-backup-critical.service
@@ -468,10 +401,7 @@
           WantedBy=timers.target
       tags: [systemd]
 
-    # ==========================================================================
-    # ENABLE TIMERS
-    # ==========================================================================
-
+    # Enable timers
     - name: Reload systemd daemon
       ansible.builtin.systemd:
         daemon_reload: true
@@ -489,17 +419,13 @@
         - restic-backup-archive.timer
       tags: [systemd]
 
-    # ==========================================================================
-    # MONITORING & VERIFICATION
-    # ==========================================================================
-
+    # Status check script
     - name: Create Restic status check script
       ansible.builtin.copy:
         dest: /root/scripts/restic-status.sh
         mode: '0755'
         content: |
           #!/bin/bash
-          # Restic Status Check
           source /root/.restic-env
 
           echo "=== Restic Repository Status ==="
@@ -530,64 +456,3 @@
           echo "=== Recent Backup Logs ==="
           journalctl -u restic-backup-*.service -n 20 --no-pager
       tags: [scripts]
-
-    # ==========================================================================
-    # SUMMARY
-    # ==========================================================================
-
-    - name: Display Restic backup configuration summary
-      ansible.builtin.debug:
-        msg: |
-          =======================================================================
-          RESTIC BACKUP TO BACKBLAZE B2 - CONFIGURATION COMPLETE
-          =======================================================================
-          Repository: {{ restic_repo }}
-          Target: TrueNAS Primary (din) - 192.168.0.13
-
-          Backup Schedule:
-          ─────────────────────────────────────────────────────────────────────
-          HOURLY (Critical Data):
-            - /mnt/fast/kubernetes (K8s PVCs + iSCSI zvols with databases)
-            - /mnt/fast/vms (VM disk images)
-            - /mnt/fast/ml-models (Trained ML models)
-            Retention: 48h hourly, 30d daily, 8w weekly, 12m monthly, 3y yearly
-
-          DAILY @ 01:00 (Photos):
-            - /mnt/bulk/photos
-            Retention: 30d daily, 12w weekly, 24m monthly, 10y yearly
-
-          DAILY @ 02:00 (Bulk Data):
-            - /mnt/bulk/music
-            - /mnt/bulk/backups/proxmox
-            - /mnt/bulk/backups/arr-configs
-            Retention: 7d daily, 8w weekly, 6m monthly
-
-          WEEKLY @ Sun 03:00 (Archive):
-            - /mnt/bulk/backups/timemachine
-            - /mnt/bulk/archive
-            Retention: 4w weekly, 6m monthly, 2y yearly
-
-          Excluded:
-            - bulk/media/movies (replaceable)
-            - bulk/media/tv (replaceable)
-            - bulk/media/downloads (temporary)
-
-          Estimated Total: ~1.5TB
-          Monthly Cost: ~$7.50
-          Annual Cost: ~$90
-
-          Useful Commands:
-          ─────────────────────────────────────────────────────────────────────
-          Check status:         just restic-status
-          Manual backup:        just restic-backup-now
-          List snapshots:       just restic-snapshots
-          Restore files:        just restic-restore
-          Check timers:         systemctl list-timers restic-*
-
-          Next Steps:
-          1. Verify B2 credentials are correct
-          2. Wait for initial backup to complete (~hours depending on upload speed)
-          3. Monitor logs: journalctl -u restic-backup-* -f
-          4. Check B2 console for storage usage
-          =======================================================================
-      tags: [info]

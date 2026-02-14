@@ -143,13 +143,18 @@ nixos-update-jellyfin:
     @echo "Rebuilding NixOS on jellyfin..."
     ssh svenlito@192.168.0.51 "sudo nixos-rebuild switch --flake /tmp/nix-config#jellyfin"
 
-# --- NixOS Dumper (Proxmox LXC) ---
+# --- NixOS Dumper (Proxmox VM) ---
 
-# Build NixOS LXC template for dumper
-nixos-build-dumper:
-    @echo "Building NixOS LXC tarball for dumper..."
-    cd nix && nix build .#nixosConfigurations.dumper.config.system.build.tarball
-    @ls -lh nix/result
+# Install NixOS on dumper VM via nixos-anywhere
+nixos-install-dumper ip:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Installing NixOS dumper to VM at {{ip}}..."
+    cd nix && nix --extra-experimental-features "nix-command flakes" run github:nix-community/nixos-anywhere -- \
+      --flake .#dumper \
+      --build-on-remote \
+      root@{{ip}}
+    echo "Done! SSH: ssh svenlito@192.168.0.52"
 
 # Deploy dumper config via SSH
 nixos-update-dumper:
@@ -220,6 +225,24 @@ truenas-ping:
 # Configure primary TrueNAS (datasets, shares, snapshots)
 truenas-setup:
     cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-setup.yml
+
+# --- Molecule Tests ---
+
+# Verify all hosts (Proxmox + TrueNAS)
+verify-all:
+    cd ansible && molecule verify
+
+# Verify primary TrueNAS setup
+truenas-verify:
+    cd ansible && molecule verify -s truenas-setup
+
+# Verify Proxmox node configuration (packages, SSH, passthrough, fan control)
+proxmox-verify:
+    cd ansible && molecule verify -s proxmox-configure
+
+# Verify Proxmox networking (VLAN bridges, IPs, MTU, routing)
+proxmox-verify-networking:
+    cd ansible && molecule verify -s proxmox-networking
 
 # Configure backup TrueNAS
 truenas-backup-setup:

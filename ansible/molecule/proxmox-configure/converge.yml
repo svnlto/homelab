@@ -1,0 +1,13 @@
+---
+- name: Converge — configure Proxmox node
+  hosts: proxmox
+  become: true
+
+  vars:
+    pve_remove_subscription_warning: true
+    configure_pcie_passthrough: true
+    proxmox_ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGAfz+KUctvSo0azvIQhHY2eBvKhT3pHRE0vpNtvpjMY"
+
+  roles:
+    - role: proxmox_configure
+    - role: security

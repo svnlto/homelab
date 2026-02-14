@@ -1,18 +1,19 @@
 # ==============================================================================
-# Dumper LXC Container - Outputs
+# Dumper VM - Outputs
 # ==============================================================================
 
-output "container_id" {
-  description = "Container ID"
-  value       = module.dumper.container_id
+output "vm_id" {
+  value = module.dumper.vm_id
 }
 
-output "container_name" {
-  description = "Container hostname"
-  value       = module.dumper.container_name
+output "vm_name" {
+  value = module.dumper.vm_name
 }
 
 output "node_name" {
-  description = "Proxmox node hosting the container"
-  value       = module.dumper.node_name
+  value = module.dumper.node_name
+}
+
+output "mac_address" {
+  value = module.dumper.mac_address
 }

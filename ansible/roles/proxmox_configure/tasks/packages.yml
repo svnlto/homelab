@@ -1,7 +1,5 @@
 ---
-# =============================================================================
-# Task: Install common packages on Proxmox nodes
-# =============================================================================
+# Install common packages on Proxmox nodes.
 
 - name: Install common packages
   ansible.builtin.apt:

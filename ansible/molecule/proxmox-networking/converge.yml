@@ -1,0 +1,3 @@
+---
+- name: Converge — configure Proxmox networking
+  ansible.builtin.import_playbook: ../../playbooks/configure-proxmox-networking.yml

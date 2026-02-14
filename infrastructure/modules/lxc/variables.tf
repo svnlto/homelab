@@ -36,6 +36,12 @@ variable "pool_id" {
   default     = null
 }
 
+variable "unprivileged" {
+  description = "Run as unprivileged container (disable for NFS mounts, Tailscale)"
+  type        = bool
+  default     = true
+}
+
 # Hardware Configuration
 variable "cores" {
   description = "Number of CPU cores"

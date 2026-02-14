@@ -1,8 +1,4 @@
 ---
-# ==============================================================================
-# Proxmox Network Configuration Handlers
-# ==============================================================================
-
 - name: test network config
   command: ifreload -a -s
   register: network_test
