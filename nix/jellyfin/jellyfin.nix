@@ -16,7 +16,7 @@ let
     jellyfin = "jellyfin/jellyfin:10.11.4";
     jellyseerr = "fallenbagel/jellyseerr:2.7.3";
     jellyfinAutoCollections =
-      "ghcr.io/ghomashudson/jellyfin-auto-collections:latest";
+      "ghcr.io/ghomashudson/jellyfin-auto-collections:5726c4c1ba8c13662404df2c079dc3d9fb7b9d67";
   };
 in {
   # Intel Arc A310 GPU — VA-API hardware transcoding for Jellyfin
