@@ -13,10 +13,6 @@ locals {
 }
 
 inputs = {
-  mikrotik_api_url  = local.mikrotik.api_url
-  mikrotik_username = get_env("MIKROTIK_USERNAME", "")
-  mikrotik_password = get_env("MIKROTIK_PASSWORD", "")
-
   bridge_name  = local.mikrotik.bridge_name
   vlans        = local.vlans
   access_ports = local.mikrotik.access_ports

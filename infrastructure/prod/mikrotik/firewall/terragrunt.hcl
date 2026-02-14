@@ -16,10 +16,6 @@ locals {
 }
 
 inputs = {
-  mikrotik_api_url  = local.mikrotik.api_url
-  mikrotik_username = get_env("MIKROTIK_USERNAME", "")
-  mikrotik_password = get_env("MIKROTIK_PASSWORD", "")
-
   vlan_interfaces = dependency.base.outputs.vlan_interfaces
   wan_interface   = local.mikrotik.wan.interface
 }

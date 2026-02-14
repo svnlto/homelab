@@ -17,10 +17,6 @@ locals {
 }
 
 inputs = {
-  mikrotik_api_url  = local.global_vars.locals.mikrotik.api_url
-  mikrotik_username = get_env("MIKROTIK_USERNAME", "")
-  mikrotik_password = get_env("MIKROTIK_PASSWORD", "")
-
   vlan_name      = local.vlan.name
   vlan_id        = local.vlan.id
   vlan_interface = dependency.base.outputs.vlan_interfaces["k8s_test"]

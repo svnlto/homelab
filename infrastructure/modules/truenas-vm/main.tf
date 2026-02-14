@@ -36,7 +36,7 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   }
 
   efi_disk {
-    datastore_id      = "local-zfs"
+    datastore_id      = var.boot_disk_storage
     pre_enrolled_keys = false
     type              = "4m"
   }

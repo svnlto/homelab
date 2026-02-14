@@ -31,14 +31,42 @@ provider "proxmox" {
     agent    = true
     username = "root"
     node {
-      name    = "din"
-      address = "192.168.0.11"
+      name    = "${local.proxmox.nodes.primary}"
+      address = "${local.global_vars.locals.infrastructure_ips.din_mgmt}"
     }
   }
 }
 
 provider "onepassword" {
   account = "$${var.onepassword_account}"
+}
+EOF
+}
+
+generate "provider_variables" {
+  path      = "provider_variables.tf"
+  if_exists = "overwrite_terragrunt"
+  contents  = <<EOF
+variable "proxmox_api_url" {
+  type        = string
+  description = "Proxmox API URL"
+}
+
+variable "proxmox_api_token_id" {
+  type        = string
+  description = "Proxmox API token ID"
+  sensitive   = true
+}
+
+variable "proxmox_api_token_secret" {
+  type        = string
+  description = "Proxmox API token secret"
+  sensitive   = true
+}
+
+variable "onepassword_account" {
+  type        = string
+  description = "1Password account ID for desktop app integration"
 }
 EOF
 }

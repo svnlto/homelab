@@ -39,15 +39,6 @@ terraform {
     ]
   }
 
-  extra_arguments "format_on_apply" {
-    commands = [
-      "apply",
-      "plan",
-    ]
-
-    arguments = []
-  }
-
   before_hook "before_hook" {
     commands = ["apply", "plan"]
     execute  = ["echo", "Running Terragrunt for ${path_relative_to_include()}"]

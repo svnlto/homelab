@@ -61,6 +61,12 @@ variable "boot_disk_size_gb" {
   default     = 32
 }
 
+variable "boot_disk_storage" {
+  description = "Storage backend for boot disk"
+  type        = string
+  default     = "local-zfs"
+}
+
 variable "network_bridge" {
   description = "Network bridge for VM interfaces"
   type        = string
