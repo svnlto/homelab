@@ -1,8 +1,5 @@
-# ==============================================================================
-# LXC Container Module - Input Variables
-# ==============================================================================
+# LXC container module variables.
 
-# Proxmox Configuration
 variable "node_name" {
   description = "Proxmox node name (e.g., 'din', 'grogu')"
   type        = string
@@ -42,7 +39,6 @@ variable "unprivileged" {
   default     = true
 }
 
-# Hardware Configuration
 variable "cores" {
   description = "Number of CPU cores"
   type        = number
@@ -61,13 +57,11 @@ variable "disk_size_gb" {
   default     = 2
 }
 
-# Template
 variable "template_file_id" {
   description = "LXC template file ID (e.g., 'local:vztmpl/nixos-lxc.tar.xz')"
   type        = string
 }
 
-# Network Configuration
 variable "network_bridge" {
   description = "Network bridge for primary interface"
   type        = string
@@ -80,7 +74,6 @@ variable "secondary_bridge" {
   default     = null
 }
 
-# Initialization
 variable "ip_address" {
   description = "Primary IP address (CIDR format, e.g., '192.168.0.52/24')"
   type        = string

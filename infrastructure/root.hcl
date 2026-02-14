@@ -12,7 +12,6 @@ remote_state {
     key    = "${path_relative_to_include()}/terraform.tfstate"
     region = local.backend.region
 
-    # S3-compatible endpoint for Backblaze B2
     endpoints = {
       s3 = "https://${local.backend.endpoint}"
     }
@@ -61,6 +60,4 @@ terraform {
   }
 }
 
-inputs = {
-  # Each module can override or add to these inputs
-}
+inputs = {}

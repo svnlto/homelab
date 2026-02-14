@@ -34,9 +34,7 @@ resource "routeros_interface_list_member" "zone_members" {
   comment   = "Member of ${each.value.list} zone"
 }
 
-# =============================================================================
-# Input chain — protect the router itself (internet-facing)
-# =============================================================================
+# Input chain
 
 resource "routeros_firewall_filter" "input_accept_established" {
   chain            = "input"
@@ -110,9 +108,7 @@ resource "routeros_firewall_filter" "input_drop_wan" {
   lifecycle { create_before_destroy = true }
 }
 
-# =============================================================================
-# Forward chain — inter-VLAN and internet-bound traffic
-# =============================================================================
+# Forward chain
 
 resource "routeros_firewall_filter" "accept_established" {
   chain            = "forward"
@@ -199,14 +195,11 @@ resource "routeros_firewall_filter" "default_drop" {
   lifecycle { create_before_destroy = true }
 }
 
-# =============================================================================
-# Rule ordering — ensures correct sequence survives updates/recreations
-# =============================================================================
+# Rule ordering — sequence must survive updates/recreations
 
 resource "routeros_move_items" "filter_rules" {
   resource_path = "/ip/firewall/filter"
   sequence = [
-    # Input chain (order matters — evaluated top-to-bottom)
     routeros_firewall_filter.input_accept_established.id,
     routeros_firewall_filter.input_drop_invalid.id,
     routeros_firewall_filter.input_accept_lan.id,
@@ -215,7 +208,6 @@ resource "routeros_move_items" "filter_rules" {
     routeros_firewall_filter.input_accept_storage.id,
     routeros_firewall_filter.input_accept_icmp.id,
     routeros_firewall_filter.input_drop_wan.id,
-    # Forward chain
     routeros_firewall_filter.accept_established.id,
     routeros_firewall_filter.drop_invalid.id,
     routeros_firewall_filter.lan_to_any.id,
@@ -248,7 +240,6 @@ resource "routeros_move_items" "filter_rules" {
   ]
 }
 
-# Source NAT - Masquerade outbound traffic to internet
 resource "routeros_ip_firewall_nat" "masquerade" {
   chain         = "srcnat"
   action        = "masquerade"
@@ -258,9 +249,7 @@ resource "routeros_ip_firewall_nat" "masquerade" {
   lifecycle { create_before_destroy = true }
 }
 
-# =============================================================================
 # MAC server and discovery hardening
-# =============================================================================
 
 resource "routeros_tool_mac_server" "this" {
   allowed_interface_list = routeros_interface_list.zones["lan"].name

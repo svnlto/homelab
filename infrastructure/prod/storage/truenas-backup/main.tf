@@ -1,11 +1,6 @@
-# ==============================================================================
-# TrueNAS Backup Server
-# ==============================================================================
-
 module "truenas_backup" {
   source = "../../../modules/truenas-vm"
 
-  # Pass all inputs from terragrunt.hcl
   node_name           = var.node_name
   vm_id               = var.vm_id
   vm_name             = var.vm_name

@@ -1,11 +1,4 @@
-# ==============================================================================
-# Production Resource Pools
-# ==============================================================================
-# Creates Proxmox resource pools for organizing production VMs
-#
-# Pools:
-#   - prod-storage: TrueNAS Primary, TrueNAS Backup, storage-related VMs
-#   - prod-compute: General compute VMs, applications
+# Production Proxmox resource pools (prod-storage, prod-compute).
 
 include "root" {
   path = find_in_parent_folders("root.hcl")

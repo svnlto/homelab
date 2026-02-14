@@ -1,7 +1,3 @@
-# ==============================================================================
-# Proxmox Resource Pools - Development
-# ==============================================================================
-
 resource "proxmox_virtual_environment_pool" "pools" {
   for_each = var.pools
 

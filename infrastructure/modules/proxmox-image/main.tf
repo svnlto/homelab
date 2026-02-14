@@ -1,11 +1,4 @@
-# ==============================================================================
-# Generic Proxmox Image Module
-# Downloads and uploads ISO/disk images to Proxmox storage
-# ==============================================================================
-
-# ==============================================================================
-# Download Image Locally (Optional - skip if using local file)
-# ==============================================================================
+# Downloads and uploads ISO/disk images to Proxmox storage.
 
 resource "null_resource" "download_image" {
   count = var.download_url != "" ? 1 : 0
@@ -37,10 +30,6 @@ resource "null_resource" "download_image" {
     EOT
   }
 }
-
-# ==============================================================================
-# Upload Image to Proxmox
-# ==============================================================================
 
 resource "proxmox_virtual_environment_file" "image" {
   datastore_id = var.datastore_id

@@ -1,10 +1,4 @@
-# ==============================================================================
-# Arr Media Stack (VMID 200)
-# ==============================================================================
-# Target: din (r730xd) - Primary compute node
-# Purpose: NixOS VM running arr media stack (Sonarr, Radarr, etc.)
-# Network: vmbr20 (LAN VLAN 20) + vmbr10 (Storage VLAN 10)
-# Storage: 32GB boot disk, media/downloads via NFS from TrueNAS
+# Arr media stack (VMID 200) on din — Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd.
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -14,7 +8,6 @@ include "provider" {
   path = find_in_parent_folders("provider.hcl")
 }
 
-# Ensure resource pools are created first
 dependencies {
   paths = ["../../resource-pools"]
 }
@@ -26,26 +19,21 @@ locals {
 }
 
 inputs = {
-  # Basic Configuration
   node_name      = "din"
   vm_id          = 200
   vm_name        = "arr-stack"
   vm_description = "NixOS - Arr Media Stack (Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd)"
   tags           = ["nixos", "arr", "media", "production"]
 
-  # Hardware
   cpu_cores         = 8
   memory_mb         = 6144
   boot_disk_size_gb = 32
 
-  # Network - LAN VLAN 20 + Storage VLAN 10
   network_bridge      = "vmbr20"
   enable_dual_network = true
   secondary_bridge    = "vmbr10"
 
-  # Environment - Resource Pool
   pool_id = local.environments.prod.pools.compute
 
-  # Boot - NixOS ISO (manual install, no cloud-init)
   iso_id = "local:iso/nixos-minimal-x86_64-linux.iso"
 }

@@ -1,8 +1,5 @@
-# ==============================================================================
-# TrueNAS VM Module - Input Variables
-# ==============================================================================
+# TrueNAS VM module variables.
 
-# Proxmox Configuration
 variable "node_name" {
   description = "Proxmox node name (e.g., 'din', 'grogu')"
   type        = string
@@ -36,7 +33,6 @@ variable "pool_id" {
   default     = null
 }
 
-# TrueNAS ISO Configuration
 variable "truenas_version" {
   description = "TrueNAS version (for description)"
   type        = string
@@ -47,7 +43,6 @@ variable "iso_id" {
   type        = string
 }
 
-# Hardware Configuration
 variable "cpu_cores" {
   description = "Number of CPU cores"
   type        = number
@@ -66,7 +61,6 @@ variable "boot_disk_size_gb" {
   default     = 32
 }
 
-# Network Configuration
 variable "network_bridge" {
   description = "Network bridge for VM interfaces"
   type        = string
@@ -84,7 +78,6 @@ variable "vlan_id" {
   default     = null
 }
 
-# Dual Network Configuration
 variable "enable_dual_network" {
   description = "Enable second network interface for storage VLAN"
   type        = bool
@@ -97,7 +90,6 @@ variable "storage_bridge" {
   default     = "vmbr10"
 }
 
-# Network Initialization (optional - for backup server)
 variable "enable_network_init" {
   description = "Enable network initialization via cloud-init"
   type        = bool
@@ -128,7 +120,6 @@ variable "dns_server" {
   default     = null
 }
 
-# HBA Passthrough Configuration (optional - for primary server)
 variable "enable_hostpci" {
   description = "Enable PCI device passthrough (HBA)"
   type        = bool
