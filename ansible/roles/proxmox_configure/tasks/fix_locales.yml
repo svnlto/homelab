@@ -1,8 +1,5 @@
 ---
-# ==============================================================================
-# Fix Locale Settings
-# ==============================================================================
-# Generates missing locales and sets system defaults
+# Generate missing locales and set system defaults.
 
 - name: Check if en_GB.UTF-8 locale is generated
   ansible.builtin.shell: |

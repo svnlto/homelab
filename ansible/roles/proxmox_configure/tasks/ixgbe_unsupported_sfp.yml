@@ -1,9 +1,5 @@
 ---
-# =============================================================================
-# Task: Allow unsupported SFP+ modules in Intel ixgbe driver
-# =============================================================================
-# Intel's ixgbe driver rejects non-Intel SFP+ transceivers by default.
-# This enables third-party modules (e.g., Finisar FTLX8571D3BCL).
+# Allow non-Intel SFP+ transceivers in ixgbe driver (e.g., Finisar FTLX8571D3BCL).
 
 - name: Allow unsupported SFP+ modules in ixgbe driver
   ansible.builtin.copy:

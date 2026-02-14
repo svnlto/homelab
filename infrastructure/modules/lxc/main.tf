@@ -8,7 +8,7 @@ resource "proxmox_virtual_environment_container" "container" {
   tags          = var.tags
   pool_id       = var.pool_id
   vm_id         = var.container_id
-  unprivileged  = true
+  unprivileged  = var.unprivileged
   start_on_boot = true
 
   startup {
@@ -30,9 +30,11 @@ resource "proxmox_virtual_environment_container" "container" {
     dedicated = var.memory_mb
   }
 
-  features {
-    nesting = true
-    keyctl  = true
+  dynamic "features" {
+    for_each = var.unprivileged ? [1] : []
+    content {
+      nesting = true
+    }
   }
 
   disk {

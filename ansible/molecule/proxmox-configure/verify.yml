@@ -1,0 +1,192 @@
+---
+- name: Verify Proxmox node configuration
+  hosts: proxmox
+  become: true
+  gather_facts: false
+
+  tasks:
+    # ==========================================================================
+    # PACKAGES
+    # ==========================================================================
+
+    - name: Verify required packages are installed
+      ansible.builtin.command:
+        cmd: dpkg -l {{ item }}
+      register: pkg_check
+      changed_when: false
+      failed_when: pkg_check.rc != 0
+      loop:
+        - htop
+        - iotop
+        - lshw
+        - sysstat
+        - nvme-cli
+      tags: [packages]
+
+    # ==========================================================================
+    # LOCALE
+    # ==========================================================================
+
+    - name: Verify locale is configured
+      ansible.builtin.command:
+        cmd: locale
+      register: locale_check
+      changed_when: false
+      failed_when: "'en_US.UTF-8' not in locale_check.stdout and 'en_GB.UTF-8' not in locale_check.stdout"
+      tags: [locale]
+
+    # ==========================================================================
+    # SUBSCRIPTION NAG
+    # ==========================================================================
+
+    - name: Check subscription nag is removed from proxmoxlib.js
+      ansible.builtin.command:
+        cmd: grep -c "void({" /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+      register: nag_check
+      changed_when: false
+      failed_when: nag_check.rc != 0
+      tags: [nag]
+
+    # ==========================================================================
+    # PCIe PASSTHROUGH
+    # ==========================================================================
+
+    - name: Verify IOMMU is in kernel cmdline
+      ansible.builtin.command:
+        cmd: cat /proc/cmdline
+      register: cmdline
+      changed_when: false
+      failed_when: "'iommu=on' not in cmdline.stdout"
+      tags: [passthrough]
+
+    - name: Verify VFIO modules are loaded
+      ansible.builtin.shell:
+        cmd: set -o pipefail && lsmod | grep vfio
+      register: vfio_modules
+      changed_when: false
+      failed_when: "'vfio_pci' not in vfio_modules.stdout"
+      tags: [passthrough]
+
+    - name: Verify GPU drivers are blacklisted
+      ansible.builtin.stat:
+        path: /etc/modprobe.d/blacklist-gpu.conf
+      register: blacklist_file
+      failed_when: not blacklist_file.stat.exists
+      tags: [passthrough]
+
+    # ==========================================================================
+    # NTP
+    # ==========================================================================
+
+    - name: Verify chrony is running
+      ansible.builtin.systemd:
+        name: chrony
+      register: chrony_status
+      failed_when: chrony_status.status.ActiveState != "active"
+      tags: [ntp]
+
+    - name: Verify chrony has active sources
+      ansible.builtin.command:
+        cmd: chronyc sources
+      register: chrony_sources
+      changed_when: false
+      failed_when: "'*' not in chrony_sources.stdout and '+' not in chrony_sources.stdout"
+      tags: [ntp]
+
+    # ==========================================================================
+    # SSH
+    # ==========================================================================
+
+    - name: Verify SSH authorized key is deployed
+      ansible.builtin.command:
+        cmd: grep -c "AAAAC3NzaC1lZDI1NTE5" /root/.ssh/authorized_keys
+      register: ssh_key_check
+      changed_when: false
+      failed_when: ssh_key_check.rc != 0
+      tags: [ssh]
+
+    - name: Verify SSH password authentication is disabled
+      ansible.builtin.command:
+        cmd: sshd -T
+      register: sshd_config
+      changed_when: false
+      failed_when: "'passwordauthentication no' not in sshd_config.stdout"
+      tags: [ssh]
+
+    - name: Verify SSH root login is restricted to pubkey
+      ansible.builtin.assert:
+        that:
+          - "'permitrootlogin prohibit-password' in sshd_config.stdout"
+        fail_msg: "Root login should be restricted to pubkey only"
+        quiet: true
+      tags: [ssh]
+
+    # ==========================================================================
+    # DELL FAN CONTROL
+    # ==========================================================================
+
+    - name: Verify dell-fan-control service exists
+      ansible.builtin.stat:
+        path: /etc/systemd/system/dell-fan-control.service
+      register: fan_service
+      failed_when: not fan_service.stat.exists
+      tags: [fan]
+
+    - name: Verify dell-fan-control script exists
+      ansible.builtin.stat:
+        path: /usr/local/bin/dell-fan-control.sh
+      register: fan_script
+      failed_when: not fan_script.stat.exists
+      tags: [fan]
+
+    # ==========================================================================
+    # IXGBE SFP
+    # ==========================================================================
+
+    - name: Verify ixgbe unsupported SFP config exists
+      ansible.builtin.stat:
+        path: /etc/modprobe.d/ixgbe.conf
+      register: ixgbe_conf
+      failed_when: not ixgbe_conf.stat.exists
+      when: configure_ixgbe_unsupported_sfp | default(false)
+      tags: [ixgbe]
+
+    # ==========================================================================
+    # DATACENTER CONFIG
+    # ==========================================================================
+
+    - name: Verify datacenter config has migration network
+      ansible.builtin.command:
+        cmd: grep -c "migration" /etc/pve/datacenter.cfg
+      register: dc_config
+      changed_when: false
+      failed_when: dc_config.rc != 0
+      tags: [datacenter]
+
+    # ==========================================================================
+    # API TOKENS
+    # ==========================================================================
+
+    - name: Verify terraform user exists
+      ansible.builtin.command:
+        cmd: pveum user list --output-format json
+      register: user_list
+      changed_when: false
+      failed_when: "'terraform@pam' not in user_list.stdout"
+      tags: [api-tokens]
+
+    - name: Verify TerraformProv role exists
+      ansible.builtin.shell:
+        cmd: set -o pipefail && pveum role list --output-format json | grep -c TerraformProv
+      register: role_check
+      changed_when: false
+      failed_when: role_check.rc != 0
+      tags: [api-tokens]
+
+    - name: Verify terraform API token exists
+      ansible.builtin.command:
+        cmd: pveum user token list terraform@pam --output-format json
+      register: token_list
+      changed_when: false
+      failed_when: "'terraform' not in token_list.stdout"
+      tags: [api-tokens]

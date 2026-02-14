@@ -1,34 +1,26 @@
 ---
-# TrueNAS ZFS Dataset Properties
-# Hardware: R730xd (din) with 3 pools
-# Based on: docs/truenas-ansible-setup.md
-
 datasets:
-  # ===========================================================================
-  # BULK POOL (~28.6TB, 6x 8TB RAIDZ2)
-  # Purpose: Large files, media, photos, backups, K8s large storage
-  # ===========================================================================
-
+  # Bulk pool
   bulk_kubernetes_nfs_dynamic:
-    recordsize: "128K" # Democratic-CSI provisions PVCs here
-    compression: "lz4" # Forgejo registry, large app data
+    recordsize: "128K"
+    compression: "lz4"
     sync: "standard"
-    quota: "10T" # 10TB quota for large K8s workloads
+    quota: "10T"
 
   bulk_media:
-    recordsize: "1M" # Large sequential reads (movies, music)
+    recordsize: "1M"
     compression: "lz4"
     sync: "standard"
     atime: "off"
 
   bulk_photos:
-    recordsize: "1M" # Large image files (RAW, JPEG)
-    compression: "lz4" # Light compression (photos already compressed)
+    recordsize: "1M"
+    compression: "lz4"
     sync: "standard"
-    atime: "off" # Immich manages metadata
+    atime: "off"
 
   bulk_signoz_cold:
-    recordsize: "128K" # Old observability data (30+ days)
+    recordsize: "128K"
     compression: "zstd"
     sync: "standard"
 
@@ -36,10 +28,10 @@ datasets:
     recordsize: "1M"
     compression: "zstd"
     sync: "standard"
-    quota: "2T" # Per-Mac via SMB
-    casesensitivity: "insensitive" # macOS is case-insensitive (set at creation only)
+    quota: "2T"
+    casesensitivity: "insensitive" # Required for macOS, set at creation only
     acltype: "nfsv4" # Required for SMB/macOS extended attributes
-    aclmode: "passthrough" # Preserve macOS ACLs on permission changes
+    aclmode: "passthrough"
 
   bulk_backups_proxmox:
     recordsize: "1M"
@@ -58,72 +50,59 @@ datasets:
     quota: "100G"
 
   bulk_arr_config:
-    recordsize: "16K" # Mixed small files (SQLite DBs, XML configs)
+    recordsize: "16K"
     compression: "lz4"
     sync: "standard"
     atime: "off"
-    # TODO: Move to fast pool once MD1220 hardware arrives (fast_arr_config)
+    # TODO: Move to fast pool once MD1220 hardware arrives
 
   bulk_archive:
-    recordsize: "1M" # Cold storage
+    recordsize: "1M"
     compression: "lz4"
     sync: "standard"
 
-  # ===========================================================================
-  # FAST POOL (~16TB, 24x 900GB + 2x 128GB SSD SLOG, 3x 8-drive RAIDZ2)
-  # Purpose: Hot data, K8s, databases, VMs, Talos
-  # Layout: 3× 8-drive RAIDZ2 = (8-2) × 3 = 18 drives usable × 900GB = ~16TB
-  # RAIDZ2 = 2-drive fault tolerance per vdev (safer for critical data)
-  # ===========================================================================
-
+  # Fast pool
   fast_kubernetes_nfs_dynamic:
-    recordsize: "16K" # Mixed workloads
+    recordsize: "16K"
     compression: "lz4"
     sync: "standard"
-    quota: "4T" # Reduced to leave ~1TB headroom
+    quota: "4T"
 
   fast_kubernetes_nfs_static:
-    recordsize: "128K" # Shared configs
+    recordsize: "128K"
     compression: "lz4"
     sync: "standard"
 
   fast_kubernetes_iscsi_zvols:
-    # Parent dataset for iSCSI zvols (block storage)
-    # democratic-csi creates zvols here automatically
-    # Properties set via midclt (volblocksize, compression, sync)
     type: "filesystem" # Parent is filesystem, children are zvols
 
   fast_vms:
-    recordsize: "64K" # VM disk images
+    recordsize: "64K"
     compression: "lz4"
     sync: "standard"
 
   fast_ml_models:
-    recordsize: "1M" # Trained ML models
+    recordsize: "1M"
     compression: "lz4"
     sync: "standard"
-    quota: "1T" # Reduced to leave pool headroom
+    quota: "1T"
 
-  # ===========================================================================
-  # SCRATCH POOL (~15TB, 6x 3TB RAIDZ1)
-  # Purpose: Ephemeral data, downloads, CI cache
-  # ===========================================================================
-
+  # Scratch pool
   scratch_kubernetes_nfs_dynamic:
-    recordsize: "128K" # Democratic-CSI provisions PVCs here
-    compression: "lz4" # CI cache, build artifacts (ephemeral)
-    sync: "disabled" # Performance > durability for ephemeral data
-    quota: "8T" # 8TB quota for CI/CD workloads (scratch pool: 12.9TB total)
+    recordsize: "128K"
+    compression: "lz4"
+    sync: "disabled"
+    quota: "8T"
 
   scratch_downloads:
-    recordsize: "16K" # Torrent random writes
-    compression: "off" # Media already compressed
-    sync: "disabled" # Performance > durability
+    recordsize: "16K"
+    compression: "off"
+    sync: "disabled"
     children:
       - incomplete
 
   scratch_ci_runners:
-    recordsize: "128K" # Docker layers, build artifacts
+    recordsize: "128K"
     compression: "lz4"
     sync: "disabled"
     children:
@@ -131,11 +110,11 @@ datasets:
       - artifacts
 
   scratch_ml_datasets:
-    recordsize: "1M" # Training data staging
+    recordsize: "1M"
     compression: "lz4"
     sync: "disabled"
 
   scratch_temp:
-    recordsize: "128K" # General scratch space
+    recordsize: "128K"
     compression: "lz4"
     sync: "disabled"

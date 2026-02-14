@@ -1,7 +1,5 @@
 ---
-# =============================================================================
-# Task: Configure PCIe Passthrough (IOMMU)
-# =============================================================================
+# Configure PCIe passthrough (IOMMU, VFIO, driver blacklisting).
 
 - name: Detect CPU vendor
   ansible.builtin.command: grep -m1 vendor_id /proc/cpuinfo

@@ -1,9 +1,5 @@
 ---
-# ==============================================================================
-# Proxmox Network Bridge Configuration
-# ==============================================================================
-# Configures VLAN bridges on Proxmox hosts for Kubernetes clusters
-# Requires reboot or `ifreload -a` to apply changes
+# Configure VLAN bridges on Proxmox hosts.
 
 - name: Backup current network configuration
   copy:

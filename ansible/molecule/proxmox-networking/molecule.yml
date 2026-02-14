@@ -1,0 +1,35 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: ${MOLECULE_PROJECT_DIRECTORY}/requirements.yml
+
+driver:
+  name: default
+  options:
+    managed: false
+
+platforms:
+  - name: grogu
+    groups:
+      - proxmox
+
+provisioner:
+  name: ansible
+  inventory:
+    hosts:
+      proxmox:
+        hosts:
+          grogu:
+            ansible_host: 192.168.0.10
+            ansible_user: root
+            ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+            ansible_python_interpreter: /usr/bin/python3.13
+  env:
+    ANSIBLE_CONFIG: ${MOLECULE_PROJECT_DIRECTORY}/ansible.cfg
+  playbooks:
+    converge: converge.yml
+    verify: verify.yml
+
+verifier:
+  name: ansible

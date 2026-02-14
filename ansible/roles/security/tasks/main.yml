@@ -1,8 +1,5 @@
 ---
-# =============================================================================
-# Role: security
-# Post-deployment security hardening
-# =============================================================================
+# Post-deployment SSH hardening and firewall.
 
 - name: Ensure SSH directory exists
   ansible.builtin.file:

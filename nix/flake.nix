@@ -64,7 +64,11 @@
 
       dumper = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [ ./dumper/configuration.nix ];
+        modules = [
+          disko.nixosModules.disko
+          ./dumper/disk-config.nix
+          ./dumper/configuration.nix
+        ];
         specialArgs = { constants = import ./common/constants.nix; };
       };
     };

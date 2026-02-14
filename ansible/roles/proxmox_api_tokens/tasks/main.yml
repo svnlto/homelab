@@ -1,8 +1,5 @@
 ---
-# ==============================================================================
-# Proxmox API Tokens - Main Tasks
-# ==============================================================================
-# Creates Terraform API tokens for Proxmox automation
+# Create Terraform API tokens for Proxmox automation.
 
 - name: Check if terraform user exists
   ansible.builtin.command: pveum user list

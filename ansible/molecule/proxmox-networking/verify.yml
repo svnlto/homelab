@@ -1,0 +1,108 @@
+---
+# Verify Proxmox networking configuration.
+
+- name: Verify Proxmox networking configuration
+  hosts: proxmox
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Verify VLAN bridges exist
+      ansible.builtin.command:
+        cmd: ip link show {{ item }}
+      register: bridge_check
+      changed_when: false
+      failed_when: bridge_check.rc != 0
+      loop:
+        - vmbr10
+        - vmbr20
+        - vmbr30
+        - vmbr31
+        - vmbr32
+      tags: [bridges]
+
+    - name: Get vmbr10 IP address (storage VLAN)
+      ansible.builtin.command:
+        cmd: ip -4 addr show vmbr10
+      register: vmbr10_ip
+      changed_when: false
+      tags: [ip]
+
+    - name: Verify vmbr10 has correct storage IP
+      ansible.builtin.assert:
+        that:
+          - "'10.10.10.' in vmbr10_ip.stdout"
+        fail_msg: "vmbr10 should have a 10.10.10.x IP address"
+        quiet: true
+      tags: [ip]
+
+    - name: Get vmbr20 IP address (management VLAN)
+      ansible.builtin.command:
+        cmd: ip -4 addr show vmbr20
+      register: vmbr20_ip
+      changed_when: false
+      tags: [ip]
+
+    - name: Verify vmbr20 has correct management IP
+      ansible.builtin.assert:
+        that:
+          - "'192.168.0.' in vmbr20_ip.stdout"
+        fail_msg: "vmbr20 should have a 192.168.0.x IP address"
+        quiet: true
+      tags: [ip]
+
+    - name: Verify default gateway is configured
+      ansible.builtin.command:
+        cmd: ip route show default
+      register: default_route
+      changed_when: false
+      failed_when: "'192.168.0.1' not in default_route.stdout"
+      tags: [routing]
+
+    - name: Get primary interface MTU
+      ansible.builtin.command:
+        cmd: ip link show nic2
+      register: nic2_link
+      changed_when: false
+      failed_when: nic2_link.rc != 0
+      tags: [mtu]
+
+    - name: Verify jumbo frames (MTU 9000) on primary interface
+      ansible.builtin.assert:
+        that:
+          - "'mtu 9000' in nic2_link.stdout"
+        fail_msg: "Primary interface nic2 should have MTU 9000"
+        quiet: true
+      tags: [mtu]
+
+    - name: Verify network config backup exists
+      ansible.builtin.shell:
+        cmd: set -o pipefail && ls -1 /etc/network/interfaces.backup.* 2>/dev/null | wc -l
+      register: backup_count
+      changed_when: false
+      failed_when: backup_count.stdout | int < 1
+      tags: [backup]
+
+    - name: Verify network config syntax is valid
+      ansible.builtin.command:
+        cmd: ifreload -a -s
+      register: ifreload_check
+      changed_when: false
+      failed_when: ifreload_check.rc != 0
+      tags: [syntax]
+
+    - name: Verify gateway is reachable
+      ansible.builtin.command:
+        cmd: ping -c 1 -W 2 192.168.0.1
+      register: gw_ping
+      changed_when: false
+      failed_when: gw_ping.rc != 0
+      tags: [connectivity]
+
+    - name: Verify DNS (Pi-hole) is reachable
+      ansible.builtin.command:
+        cmd: ping -c 1 -W 2 192.168.0.53
+      register: dns_ping
+      changed_when: false
+      failed_when: dns_ping.rc != 0
+      tags: [connectivity]

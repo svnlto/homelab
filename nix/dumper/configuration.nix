@@ -1,16 +1,20 @@
 { pkgs, modulesPath, constants, ... }: {
-  imports =
-    [ (modulesPath + "/virtualisation/lxc-container.nix") ./dumper.nix ];
+  imports = [ (modulesPath + "/profiles/qemu-guest.nix") ./dumper.nix ];
+
+  # Boot loader (EFI — systemd-boot for UEFI/OVMF VM)
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+  boot.growPartition = true;
 
   # Network configuration
   networking = {
     hostName = "dumper";
     useDHCP = false;
-    interfaces.eth0.ipv4.addresses = [{
+    interfaces.ens18.ipv4.addresses = [{
       address = constants.dumperIp;
       prefixLength = 24;
     }];
-    interfaces.eth1.ipv4.addresses = [{
+    interfaces.ens19.ipv4.addresses = [{
       address = "10.10.10.52";
       prefixLength = 24;
     }];
@@ -34,6 +38,9 @@
       PubkeyAuthentication = true;
     };
   };
+
+  # QEMU guest agent for Proxmox integration
+  services.qemuGuest.enable = true;
 
   # User configuration
   users.users.${constants.username} = {

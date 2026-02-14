@@ -1,5 +1,5 @@
 # ==============================================================================
-# Dumper LXC Container - Input Variables
+# Dumper VM - Input Variables
 # ==============================================================================
 
 # Provider credentials (from provider.hcl)
@@ -25,20 +25,20 @@ variable "onepassword_account" {
   description = "1Password account ID for desktop app integration"
 }
 
-# Container Configuration
+# VM Configuration
 variable "node_name" {
   type = string
 }
 
-variable "container_id" {
+variable "vm_id" {
   type = number
 }
 
-variable "container_name" {
+variable "vm_name" {
   type = string
 }
 
-variable "container_description" {
+variable "vm_description" {
   type    = string
   default = ""
 }
@@ -48,19 +48,19 @@ variable "tags" {
   default = []
 }
 
-variable "cores" {
+variable "cpu_cores" {
   type    = number
-  default = 1
+  default = 4
 }
 
 variable "memory_mb" {
   type    = number
-  default = 512
+  default = 8192
 }
 
-variable "disk_size_gb" {
+variable "boot_disk_size_gb" {
   type    = number
-  default = 2
+  default = 32
 }
 
 variable "network_bridge" {
@@ -68,13 +68,14 @@ variable "network_bridge" {
   default = "vmbr20"
 }
 
-variable "secondary_bridge" {
-  type    = string
-  default = null
+variable "enable_dual_network" {
+  type    = bool
+  default = false
 }
 
-variable "template_file_id" {
-  type = string
+variable "secondary_bridge" {
+  type    = string
+  default = "vmbr10"
 }
 
 variable "pool_id" {
@@ -82,7 +83,17 @@ variable "pool_id" {
   default = null
 }
 
-# Initialization
+variable "iso_id" {
+  type    = string
+  default = null
+}
+
+# Cloud-init
+variable "enable_cloud_init" {
+  type    = bool
+  default = false
+}
+
 variable "ip_address" {
   type    = string
   default = null
@@ -93,12 +104,12 @@ variable "gateway" {
   default = null
 }
 
-variable "storage_ip" {
+variable "nameserver" {
   type    = string
   default = null
 }
 
-variable "dns_servers" {
-  type    = list(string)
+variable "username" {
+  type    = string
   default = null
 }

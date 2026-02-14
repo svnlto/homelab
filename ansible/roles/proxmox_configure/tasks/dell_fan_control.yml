@@ -1,9 +1,5 @@
 ---
-# =============================================================================
-# Task: Configure Dell Fan Control
-# =============================================================================
-# Installs and configures IPMI-based fan speed control for Dell servers
-# Automatically adjusts fan speed based on inlet temperature
+# IPMI-based fan speed control for Dell servers.
 
 - name: Install ipmitool
   ansible.builtin.apt:

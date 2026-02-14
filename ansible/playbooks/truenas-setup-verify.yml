@@ -1,0 +1,236 @@
+---
+# Verify TrueNAS SCALE setup applied correctly.
+# Run after truenas-setup.yml to validate expected state.
+
+- name: Verify TrueNAS SCALE setup on din (primary)
+  hosts: truenas_primary
+  gather_facts: false
+
+  vars_files:
+    - ../vars/shares.yml
+
+  tasks:
+    # Datasets
+    - name: Verify bulk pool datasets exist
+      ansible.builtin.command:
+        cmd: midclt call pool.dataset.query '[["id", "=", "{{ item }}"]]'
+      register: bulk_datasets
+      changed_when: false
+      failed_when: "'[]' == bulk_datasets.stdout"
+      loop:
+        - bulk/media
+        - bulk/photos
+        - bulk/kubernetes/nfs-dynamic
+        - bulk/backups
+        - bulk/backups/proxmox
+        - bulk/backups/restic-repo
+        - bulk/backups/forgejo
+        - bulk/backups/timemachine
+        - bulk/arr-config
+        - bulk/archive
+        - bulk/signoz-cold
+      tags: [datasets, bulk]
+
+    - name: Verify fast pool datasets exist
+      ansible.builtin.command:
+        cmd: midclt call pool.dataset.query '[["id", "=", "{{ item }}"]]'
+      register: fast_datasets
+      changed_when: false
+      failed_when: "'[]' == fast_datasets.stdout"
+      loop:
+        - fast/kubernetes/nfs-dynamic
+        - fast/kubernetes/nfs-static
+        - fast/kubernetes/iscsi-zvols
+        - fast/vms
+        - fast/ml-models
+      tags: [datasets, fast]
+
+    - name: Verify scratch pool datasets exist
+      ansible.builtin.command:
+        cmd: midclt call pool.dataset.query '[["id", "=", "{{ item }}"]]'
+      register: scratch_datasets
+      changed_when: false
+      failed_when: "'[]' == scratch_datasets.stdout"
+      loop:
+        - scratch/kubernetes/nfs-dynamic
+        - scratch/downloads/incomplete
+        - scratch/ci-runners/cache
+        - scratch/ci-runners/artifacts
+        - scratch/ml-datasets
+        - scratch/temp
+        - scratch/immich-migration
+        - scratch/immich-migration/dump
+      tags: [datasets, scratch]
+
+    # Dataset properties
+    - name: Query bulk/media recordsize
+      ansible.builtin.command:
+        cmd: >-
+          midclt call pool.dataset.query
+          '[["id", "=", "bulk/media"]]'
+          '{"select": ["recordsize"]}'
+      register: media_recordsize
+      changed_when: false
+      failed_when: "'1M' not in media_recordsize.stdout"
+      tags: [properties, bulk]
+
+    - name: Query bulk/photos recordsize
+      ansible.builtin.command:
+        cmd: >-
+          midclt call pool.dataset.query
+          '[["id", "=", "bulk/photos"]]'
+          '{"select": ["recordsize"]}'
+      register: photos_recordsize
+      changed_when: false
+      failed_when: "'1M' not in photos_recordsize.stdout"
+      tags: [properties, bulk]
+
+    - name: Query bulk/arr-config recordsize
+      ansible.builtin.command:
+        cmd: >-
+          midclt call pool.dataset.query
+          '[["id", "=", "bulk/arr-config"]]'
+          '{"select": ["recordsize"]}'
+      register: arr_recordsize
+      changed_when: false
+      failed_when: "'16K' not in arr_recordsize.stdout"
+      tags: [properties, bulk]
+
+    # Services
+    - name: Verify NFS service is running
+      ansible.builtin.command:
+        cmd: midclt call service.query '[["service", "=", "nfs"]]'
+      register: nfs_service
+      changed_when: false
+      failed_when: "'RUNNING' not in nfs_service.stdout"
+      tags: [services, nfs]
+
+    - name: Verify iSCSI service is running
+      ansible.builtin.command:
+        cmd: midclt call service.query '[["service", "=", "iscsitarget"]]'
+      register: iscsi_service
+      changed_when: false
+      failed_when: "'RUNNING' not in iscsi_service.stdout"
+      tags: [services, iscsi]
+
+    - name: Verify SMB service is running
+      ansible.builtin.command:
+        cmd: midclt call service.query '[["service", "=", "cifs"]]'
+      register: smb_service
+      changed_when: false
+      failed_when: "'RUNNING' not in smb_service.stdout"
+      tags: [services, smb]
+
+    # NFS shares
+    - name: Query all NFS shares
+      ansible.builtin.command:
+        cmd: midclt call sharing.nfs.query
+      register: nfs_shares_result
+      changed_when: false
+      tags: [nfs]
+
+    - name: Verify expected NFS share paths exist
+      ansible.builtin.assert:
+        that:
+          - item.path in (nfs_shares_result.stdout | from_json | map(attribute='path') | list)
+        fail_msg: "NFS share missing: {{ item.path }}"
+        quiet: true
+      loop: "{{ nfs_shares }}"
+      loop_control:
+        label: "{{ item.path }}"
+      tags: [nfs]
+
+    # SMB shares
+    - name: Query all SMB shares
+      ansible.builtin.command:
+        cmd: midclt call sharing.smb.query
+      register: smb_shares_result
+      changed_when: false
+      tags: [smb]
+
+    - name: Verify expected SMB share names exist
+      ansible.builtin.assert:
+        that:
+          - item.name in (smb_shares_result.stdout | from_json | map(attribute='name') | list)
+        fail_msg: "SMB share missing: {{ item.name }}"
+        quiet: true
+      loop: "{{ smb_shares }}"
+      loop_control:
+        label: "{{ item.name }}"
+      tags: [smb]
+
+    # Users and groups
+    - name: Verify storage users exist
+      ansible.builtin.command:
+        cmd: midclt call user.query '[["username", "=", "{{ item.name }}"]]'
+      register: user_check
+      changed_when: false
+      failed_when: "'[]' == user_check.stdout"
+      loop: "{{ storage_users }}"
+      loop_control:
+        label: "{{ item.name }}"
+      tags: [users]
+
+    - name: Verify storage groups exist
+      ansible.builtin.command:
+        cmd: midclt call group.query '[["group", "=", "{{ item.name }}"]]'
+      register: group_check
+      changed_when: false
+      failed_when: "'[]' == group_check.stdout"
+      loop: "{{ storage_groups }}"
+      loop_control:
+        label: "{{ item.name }}"
+      tags: [users]
+
+    # Directory structure and permissions
+    - name: Verify bulk/media subdirectories exist
+      ansible.builtin.stat:
+        path: "/mnt/bulk/media/{{ item }}"
+      register: media_dirs
+      failed_when: not media_dirs.stat.exists
+      loop:
+        - movies
+        - tv
+        - music
+        - books
+        - downloads
+        - downloads/torrents
+        - downloads/usenet
+        - downloads/soulseek
+      tags: [permissions, bulk]
+
+    - name: Check bulk/media ownership is media:media (1000:1000)
+      ansible.builtin.stat:
+        path: /mnt/bulk/media
+      register: media_stat
+      failed_when: media_stat.stat.uid != 1000 or media_stat.stat.gid != 1000
+      tags: [permissions, bulk]
+
+    # Network
+    - name: Verify storage VLAN interface has correct IP
+      ansible.builtin.command:
+        cmd: midclt call interface.query '[["name", "=", "enp6s19"]]'
+      register: storage_iface
+      changed_when: false
+      failed_when: "'10.10.10.13' not in storage_iface.stdout"
+      tags: [network]
+
+    # Scrub tasks
+    - name: Query scrub tasks
+      ansible.builtin.command:
+        cmd: midclt call pool.scrub.query
+      register: scrub_tasks
+      changed_when: false
+      tags: [scrub]
+
+    - name: Verify scrub tasks exist for all pools
+      ansible.builtin.assert:
+        that:
+          - item in (scrub_tasks.stdout | from_json | map(attribute='pool_name') | list)
+        fail_msg: "Scrub task missing for pool: {{ item }}"
+        quiet: true
+      loop:
+        - bulk
+        - fast
+        - scratch
+      tags: [scrub]

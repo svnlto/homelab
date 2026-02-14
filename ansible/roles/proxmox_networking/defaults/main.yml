@@ -1,20 +1,6 @@
 ---
-# ==============================================================================
-# Proxmox Networking Role - Default Variables
-# ==============================================================================
-
-# Gateway IP (MikroTik CRS310 router)
 gateway_ip: "192.168.0.1"
-
-# Storage IP (VLAN 10) - Override per host in inventory
-storage_ip: "10.10.10.10" # grogu: .10, din: .11
-
-# Management IP (VLAN 20) - Override per host in inventory
-management_ip: "192.168.0.10" # grogu: .10, din: .11
-
-# Physical interface for all VLANs (X520 10GbE)
-# Note: Interface name varies by host - use host_vars to override if needed
-primary_interface: "nic2" # din: nic2, grogu: may differ
-
-# MTU for storage network (jumbo frames)
+storage_ip: "10.10.10.10"
+management_ip: "192.168.0.10"
+primary_interface: "nic2"
 storage_mtu: 9000

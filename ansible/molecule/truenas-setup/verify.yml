@@ -1,0 +1,4 @@
+---
+# Molecule verify — imports the verification playbook
+- name: Import truenas-setup verification
+  ansible.builtin.import_playbook: ../../playbooks/truenas-setup-verify.yml

@@ -1,0 +1,4 @@
+---
+# Converge — runs the actual truenas-setup.yml playbook
+- name: Import truenas-setup playbook
+  ansible.builtin.import_playbook: ../../playbooks/truenas-setup.yml

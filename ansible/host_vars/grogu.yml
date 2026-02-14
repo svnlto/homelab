@@ -1,36 +1,13 @@
 ---
 # Host-specific configuration for grogu (r630)
 
-# ============================================================================
-# PCIe Device Inventory
-# ============================================================================
-# Storage Controllers:
-#   - HPE H241 (external SAS3) → MD1200 disk shelf (12×8TB backup)
-#     Passed through to TrueNAS Backup VM 301 as "md1200-hba"
-#
-# GPU:
-#   - Intel Arc A310 Eco (low-profile) for Jellyfin transcoding
-#     Passed through to K8s worker VM
-#
-# Network Interfaces (X520/I350 rNDC):
-#   - 10GbE SFP+ ports → Proxmox host VLAN trunk
-#   - 1GbE ports → Unused
-
-# ============================================================================
-# PCIe Passthrough Configuration
-# ============================================================================
-# Intel Arc A310 - Auto-bind to vfio-pci for GPU passthrough
+# PCIe passthrough: Intel Arc A310 for Jellyfin transcoding
 pci_device_ids: "8086:56a6"
 vfio_blacklist_drivers: [i915, xe]
 
-# Intel Arc FLR (Function Level Reset) workaround
-# Arc GPUs report FLR support but the implementation hangs QEMU on device reset.
-# The hookscript clears reset_method before VM start to prevent the hang.
+# Intel Arc FLR workaround — clears reset_method before VM start to prevent QEMU hang
 intel_arc_pci_addresses: ["0000:05:00.0"]
 intel_arc_vm_ids: [210]
 
-# ============================================================================
-# Network Driver Configuration
-# ============================================================================
-# Intel ixgbe rejects non-Intel SFP+ transceivers (Finisar FTLX8571D3BCL)
+# Allow non-Intel SFP+ transceivers
 configure_ixgbe_unsupported_sfp: true

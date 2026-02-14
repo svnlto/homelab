@@ -1,37 +1,26 @@
 ---
-# TrueNAS NFS and SMB Share Configurations
-# Hardware: R730xd (din) with 3 pools (bulk, fast, scratch)
-# Based on: docs/truenas-ansible-setup.md
-
-# ==============================================================================
-# NFS SHARES
-# ==============================================================================
-
 nfs_shares:
-  # ---------------------------------------------------------------------------
-  # BULK POOL - Large files, media, photos
-  # ---------------------------------------------------------------------------
+  # Bulk pool
   - path: /mnt/bulk/media
     comment: "Media + downloads for arr-stack (hardlinks require single dataset)"
     mapall_user: media
     mapall_group: media
     networks:
-      - 10.10.10.0/24 # Storage VLAN (primary)
-      - 192.168.0.0/24 # LAN (arr-stack)
-      - 10.0.1.0/24 # K8s VLAN 30 (if Jellyfin runs on k8s)
-      - 10.0.2.0/24 # K8s VLAN 31
-    ro: false # Read-write: arr apps hardlink downloads → media libraries
+      - 10.10.10.0/24
+      - 192.168.0.0/24
+      - 10.0.1.0/24
+      - 10.0.2.0/24
+    ro: false
 
-  # Child ZFS datasets need their own NFS shares (NFS can't cross dataset boundaries)
   - path: /mnt/bulk/media/movies
     comment: "Movies library (child dataset)"
     mapall_user: media
     mapall_group: media
     networks:
-      - 10.10.10.0/24 # Storage VLAN (primary)
-      - 192.168.0.0/24 # LAN (arr-stack)
-      - 10.0.1.0/24 # K8s VLAN 30
-      - 10.0.2.0/24 # K8s VLAN 31
+      - 10.10.10.0/24
+      - 192.168.0.0/24
+      - 10.0.1.0/24
+      - 10.0.2.0/24
     ro: false
 
   - path: /mnt/bulk/media/tv
@@ -39,10 +28,10 @@ nfs_shares:
     mapall_user: media
     mapall_group: media
     networks:
-      - 10.10.10.0/24 # Storage VLAN (primary)
-      - 192.168.0.0/24 # LAN (arr-stack)
-      - 10.0.1.0/24 # K8s VLAN 30
-      - 10.0.2.0/24 # K8s VLAN 31
+      - 10.10.10.0/24
+      - 192.168.0.0/24
+      - 10.0.1.0/24
+      - 10.0.2.0/24
     ro: false
 
   - path: /mnt/bulk/media/music
@@ -50,10 +39,10 @@ nfs_shares:
     mapall_user: media
     mapall_group: media
     networks:
-      - 10.10.10.0/24 # Storage VLAN (primary)
-      - 192.168.0.0/24 # LAN (arr-stack)
-      - 10.0.1.0/24 # K8s VLAN 30
-      - 10.0.2.0/24 # K8s VLAN 31
+      - 10.10.10.0/24
+      - 192.168.0.0/24
+      - 10.0.1.0/24
+      - 10.0.2.0/24
     ro: false
 
   - path: /mnt/bulk/media/books
@@ -61,10 +50,10 @@ nfs_shares:
     mapall_user: media
     mapall_group: media
     networks:
-      - 10.10.10.0/24 # Storage VLAN (primary)
-      - 192.168.0.0/24 # LAN (arr-stack)
-      - 10.0.1.0/24 # K8s VLAN 30
-      - 10.0.2.0/24 # K8s VLAN 31
+      - 10.10.10.0/24
+      - 192.168.0.0/24
+      - 10.0.1.0/24
+      - 10.0.2.0/24
     ro: false
 
   - path: /mnt/bulk/photos
@@ -72,10 +61,10 @@ nfs_shares:
     mapall_user: immich
     mapall_group: immich
     networks:
-      - 10.10.10.0/24 # Storage VLAN (primary)
-      - 192.168.0.0/24 # LAN (Immich)
-      - 10.0.1.0/24 # K8s VLAN 30
-      - 10.0.2.0/24 # K8s VLAN 31
+      - 10.10.10.0/24
+      - 192.168.0.0/24
+      - 10.0.1.0/24
+      - 10.0.2.0/24
     ro: false
 
   - path: /mnt/bulk/kubernetes/nfs-dynamic
@@ -83,10 +72,10 @@ nfs_shares:
     maproot_user: root
     maproot_group: wheel
     networks:
-      - 10.10.10.0/24 # Storage VLAN
-      - 10.0.1.0/24 # K8s VLAN 30
-      - 10.0.2.0/24 # K8s VLAN 31
-      - 10.0.3.0/24 # K8s VLAN 32 (test)
+      - 10.10.10.0/24
+      - 10.0.1.0/24
+      - 10.0.2.0/24
+      - 10.0.3.0/24
     ro: false
 
   - path: /mnt/bulk/signoz-cold
@@ -94,21 +83,19 @@ nfs_shares:
     maproot_user: root
     maproot_group: wheel
     networks:
-      - 10.10.10.0/24 # Storage VLAN
-      - 10.0.1.0/24 # K8s VLAN 30
+      - 10.10.10.0/24
+      - 10.0.1.0/24
     ro: false
 
-  # ---------------------------------------------------------------------------
-  # FAST POOL - Hot data, K8s, VMs, arr config
-  # ---------------------------------------------------------------------------
+  # Fast pool
   # TODO: Move to /mnt/fast/arr-config once MD1220 hardware arrives
   - path: /mnt/bulk/arr-config
     comment: "Arr stack configuration data (databases, settings)"
     mapall_user: media
     mapall_group: media
     networks:
-      - 10.10.10.0/24 # Storage VLAN (primary)
-      - 192.168.0.0/24 # LAN (arr-stack VM)
+      - 10.10.10.0/24
+      - 192.168.0.0/24
     ro: false
 
   - path: /mnt/fast/kubernetes/nfs-dynamic
@@ -116,10 +103,10 @@ nfs_shares:
     maproot_user: root
     maproot_group: wheel
     networks:
-      - 10.10.10.0/24 # Storage VLAN
-      - 10.0.1.0/24 # K8s VLAN 30
-      - 10.0.2.0/24 # K8s VLAN 31
-      - 10.0.3.0/24 # K8s VLAN 32 (test)
+      - 10.10.10.0/24
+      - 10.0.1.0/24
+      - 10.0.2.0/24
+      - 10.0.3.0/24
     ro: false
 
   - path: /mnt/fast/kubernetes/nfs-static
@@ -127,24 +114,30 @@ nfs_shares:
     maproot_user: root
     maproot_group: wheel
     networks:
-      - 10.10.10.0/24 # Storage VLAN
-      - 10.0.1.0/24 # K8s VLAN 30
-      - 10.0.2.0/24 # K8s VLAN 31
-      - 10.0.3.0/24 # K8s VLAN 32 (test)
+      - 10.10.10.0/24
+      - 10.0.1.0/24
+      - 10.0.2.0/24
+      - 10.0.3.0/24
     ro: false
 
-  # ---------------------------------------------------------------------------
-  # SCRATCH POOL - Ephemeral data, downloads, CI cache
-  # ---------------------------------------------------------------------------
+  # Scratch pool
   - path: /mnt/scratch/kubernetes/nfs-dynamic
     comment: "democratic-csi scratch pool (CI cache, ephemeral data)"
     maproot_user: root
     maproot_group: wheel
     networks:
-      - 10.10.10.0/24 # Storage VLAN
-      - 10.0.1.0/24 # K8s VLAN 30
-      - 10.0.2.0/24 # K8s VLAN 31
-      - 10.0.3.0/24 # K8s VLAN 32 (test)
+      - 10.10.10.0/24
+      - 10.0.1.0/24
+      - 10.0.2.0/24
+      - 10.0.3.0/24
+    ro: false
+
+  - path: /mnt/scratch/immich-migration/dump
+    comment: "Photo dump from remote machine via rsync (dumper VM)"
+    maproot_user: root
+    maproot_group: wheel
+    networks:
+      - 10.10.10.0/24
     ro: false
 
   - path: /mnt/scratch/downloads/incomplete
@@ -152,8 +145,8 @@ nfs_shares:
     mapall_user: media
     mapall_group: media
     networks:
-      - 10.10.10.0/24 # Storage VLAN
-      - 192.168.0.0/24 # LAN (arr-stack)
+      - 10.10.10.0/24
+      - 192.168.0.0/24
     ro: false
 
   - path: /mnt/scratch/ci-runners
@@ -161,12 +154,11 @@ nfs_shares:
     maproot_user: root
     maproot_group: wheel
     networks:
-      - 10.10.10.0/24 # Storage VLAN
-      - 10.0.1.0/24 # K8s VLAN 30
-      - 10.0.2.0/24 # K8s VLAN 31
+      - 10.10.10.0/24
+      - 10.0.1.0/24
+      - 10.0.2.0/24
     ro: false
 
-# SMB Shares
 smb_shares:
   - name: TimeMachine
     path: /mnt/bulk/backups/timemachine
@@ -178,7 +170,6 @@ smb_shares:
     purpose: DEFAULT_SHARE
     comment: "Manual file archive"
 
-# Users and Groups
 storage_users:
   - name: media
     uid: 1000

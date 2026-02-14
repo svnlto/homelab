@@ -1,0 +1,17 @@
+# Terragrunt cache and state
+**/.terragrunt-cache/
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Nix build outputs
+result
+result-*
+
+# Vagrant
+.vagrant/
+
+# Large/binary files
+*.iso
+*.img
+*.qcow2

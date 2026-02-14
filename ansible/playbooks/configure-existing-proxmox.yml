@@ -1,31 +1,6 @@
 ---
-# =============================================================================
-# Playbook: Configure Existing Proxmox Nodes
-# =============================================================================
-# Run this on Proxmox nodes that were installed from the official ISO
-# to apply common configuration (subscription nag removal, SSH keys, etc.)
-# =============================================================================
-#
-# Usage:
-#   # Configure all nodes
-#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml
-#
-#   # Configure specific node
-#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml -l grogu
-#
-#   # Only remove subscription nag
-#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags nag
-#
-#   # Configure PCIe passthrough
-#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags passthrough
-#
-#   # Configure Dell fan control only
-#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags fan
-#
-#   # Create/rotate Terraform API tokens
-#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags api-tokens
-#   ansible-playbook -i inventory.ini playbooks/configure-existing-proxmox.yml --tags api-tokens -e rotate_tokens=true
-# =============================================================================
+# Configure Proxmox VE nodes after ISO installation.
+# Applies common config: packages, locale, subscription nag, SSH, passthrough, fan control.
 
 - name: Configure Existing Proxmox Nodes
   hosts: proxmox
@@ -155,19 +130,14 @@
     - name: Display completion message
       ansible.builtin.debug:
         msg:
-          - "✓ Configuration complete for {{ inventory_hostname }}"
+          - "Configuration complete for {{ inventory_hostname }}"
           - "Access: https://{{ ansible_host }}:8006"
-          - "{% if configure_pcie_passthrough %}⚠ REBOOT REQUIRED for PCIe passthrough changes{% endif %}"
+          - "{% if configure_pcie_passthrough %}REBOOT REQUIRED for PCIe passthrough changes{% endif %}"
 
     - name: Reminder to reload environment
       ansible.builtin.debug:
         msg:
-          - "========================================="
           - "API Tokens saved to 1Password"
-          - "========================================="
-          - ""
-          - "Reload direnv to pick up new tokens:"
-          - "  direnv allow"
-          - ""
+          - "Reload direnv to pick up new tokens: direnv allow"
       run_once: true
       tags: [api-tokens]

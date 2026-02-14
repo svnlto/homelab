@@ -1,7 +1,5 @@
 ---
-# =============================================================================
-# Task: Remove Proxmox Subscription Warning
-# =============================================================================
+# Remove Proxmox subscription warning from web UI.
 
 - name: Check if proxmoxlib.js exists
   ansible.builtin.stat:

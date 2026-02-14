@@ -27,6 +27,7 @@
           buildInputs = with pkgs; [
             ansible
             ansible-lint
+            python3Packages.molecule
             pre-commit
             tflint
             vagrant
@@ -37,6 +38,11 @@
             just
             terragrunt
             terraform
+            # MCP server runtimes
+            nodejs
+            deno
+            cargo
+            go
           ];
 
           shellHook = ''
@@ -44,9 +50,6 @@
             export PATH="${pkgs.qemu}/bin:$PATH"
 
             echo "Homelab Development Environment"
-            terraform version | head -1
-            terragrunt --version | head -1
-            ansible --version | head -1
           '';
         };
       });
