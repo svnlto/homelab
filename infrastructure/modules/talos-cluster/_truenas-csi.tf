@@ -26,7 +26,7 @@ resource "helm_release" "truenas_nfs" {
   name             = "zfs-nfs"
   repository       = "https://democratic-csi.github.io/charts/"
   chart            = "democratic-csi"
-  version          = "0.14.6"
+  version          = "0.15.1"
   namespace        = "democratic-csi"
   create_namespace = false
   wait             = true
@@ -116,7 +116,7 @@ resource "helm_release" "truenas_iscsi" {
   name             = "zfs-iscsi"
   repository       = "https://democratic-csi.github.io/charts/"
   chart            = "democratic-csi"
-  version          = "0.14.6"
+  version          = "0.15.1"
   namespace        = "democratic-csi"
   create_namespace = false
   wait             = true
