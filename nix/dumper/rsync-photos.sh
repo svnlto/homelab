@@ -37,7 +37,7 @@ else
 fi
 
 echo "Starting rsync of $(wc -l < "${FILE_LIST}") files to ${DUMP_DIR}${REMOTE_PATH}"
-rsync -rltv --partial --omit-dir-times \
+rsync -rltv --partial --inplace --omit-dir-times \
   --files-from="${FILE_LIST}" \
   --rsync-path="sudo /usr/bin/rsync" \
   -e "ssh ${SSH_OPTS[*]}" \
