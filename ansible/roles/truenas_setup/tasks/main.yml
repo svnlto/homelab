@@ -1,0 +1,42 @@
+---
+# Configure TrueNAS SCALE primary storage (din).
+# Pools must be created manually via midclt before running this.
+
+- name: Check if fast pool exists
+  ansible.builtin.command:
+    cmd: midclt call pool.query '[["name", "=", "fast"]]'
+  register: fast_pool_check
+  changed_when: false
+  tags: [always]
+
+- name: Network configuration
+  ansible.builtin.include_tasks: network.yml
+  tags: [network]
+
+- name: Dataset creation
+  ansible.builtin.include_tasks: datasets.yml
+  tags: [datasets]
+
+- name: ZFS properties
+  ansible.builtin.include_tasks: properties.yml
+  tags: [properties]
+
+- name: NFSv4 ACLs
+  ansible.builtin.include_tasks: acls.yml
+  tags: [acls]
+
+- name: NFS, iSCSI, and SMB shares
+  ansible.builtin.include_tasks: shares.yml
+  tags: [shares]
+
+- name: Users and groups
+  ansible.builtin.include_tasks: users.yml
+  tags: [users]
+
+- name: Snapshot tasks
+  ansible.builtin.include_tasks: snapshots.yml
+  tags: [snapshots]
+
+- name: Scrub tasks
+  ansible.builtin.include_tasks: scrubs.yml
+  tags: [scrub]

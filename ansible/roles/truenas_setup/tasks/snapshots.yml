@@ -1,0 +1,153 @@
+---
+# Snapshot tasks (query-before-create to avoid duplicates)
+
+- name: Query existing snapshot tasks
+  ansible.builtin.command:
+    cmd: midclt call pool.snapshottask.query
+  register: existing_snapshots
+  changed_when: false
+  tags: [snapshots]
+
+- name: Build list of existing snapshot task datasets
+  ansible.builtin.set_fact:
+    existing_snapshot_datasets: >-
+      {{ existing_snapshots.stdout | from_json | map(attribute='dataset') | list }}
+  tags: [snapshots]
+
+- name: Create snapshot task for bulk/media (daily, keep 7)
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.snapshottask.create '{
+        "dataset": "bulk/media",
+        "recursive": true,
+        "lifetime_value": 7,
+        "lifetime_unit": "DAY",
+        "naming_schema": "daily-%Y-%m-%d_%H-%M",
+        "schedule": {
+          "minute": "0",
+          "hour": "2",
+          "dom": "*",
+          "month": "*",
+          "dow": "*"
+        },
+        "enabled": true
+      }'
+  when: "'bulk/media' not in existing_snapshot_datasets"
+  changed_when: true
+  tags: [snapshots]
+
+- name: Create snapshot task for bulk/arr-config (daily, keep 14)
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.snapshottask.create '{
+        "dataset": "bulk/arr-config",
+        "recursive": true,
+        "lifetime_value": 14,
+        "lifetime_unit": "DAY",
+        "naming_schema": "daily-%Y-%m-%d_%H-%M",
+        "schedule": {
+          "minute": "0",
+          "hour": "4",
+          "dom": "*",
+          "month": "*",
+          "dow": "*"
+        },
+        "enabled": true
+      }'
+  when: "'bulk/arr-config' not in existing_snapshot_datasets"
+  changed_when: true
+  tags: [snapshots, arr]
+
+- name: Create snapshot task for bulk/photos (daily, keep 30)
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.snapshottask.create '{
+        "dataset": "bulk/photos",
+        "recursive": true,
+        "lifetime_value": 30,
+        "lifetime_unit": "DAY",
+        "naming_schema": "daily-%Y-%m-%d_%H-%M",
+        "schedule": {
+          "minute": "0",
+          "hour": "3",
+          "dom": "*",
+          "month": "*",
+          "dow": "*"
+        },
+        "enabled": true
+      }'
+  when: "'bulk/photos' not in existing_snapshot_datasets"
+  changed_when: true
+  tags: [snapshots, photos]
+
+- name: Create snapshot task for fast/kubernetes (hourly, keep 24)
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.snapshottask.create '{
+        "dataset": "fast/kubernetes",
+        "recursive": true,
+        "lifetime_value": 24,
+        "lifetime_unit": "HOUR",
+        "naming_schema": "auto-%Y-%m-%d_%H-%M",
+        "schedule": {
+          "minute": "0",
+          "hour": "*",
+          "dom": "*",
+          "month": "*",
+          "dow": "*"
+        },
+        "enabled": true
+      }'
+  when:
+    - fast_pool_check.stdout != '[]'
+    - "'fast/kubernetes' not in existing_snapshot_datasets"
+  changed_when: true
+  tags: [snapshots, fast]
+
+- name: Create snapshot task for fast/vms (every 4 hours, keep 6)
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.snapshottask.create '{
+        "dataset": "fast/vms",
+        "recursive": true,
+        "lifetime_value": 6,
+        "lifetime_unit": "HOUR",
+        "naming_schema": "auto-%Y-%m-%d_%H-%M",
+        "schedule": {
+          "minute": "0",
+          "hour": "*/4",
+          "dom": "*",
+          "month": "*",
+          "dow": "*"
+        },
+        "enabled": true
+      }'
+  when:
+    - fast_pool_check.stdout != '[]'
+    - "'fast/vms' not in existing_snapshot_datasets"
+  changed_when: true
+  tags: [snapshots, fast, vms]
+
+- name: Create snapshot task for fast/ml-models (daily, keep 7)
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.snapshottask.create '{
+        "dataset": "fast/ml-models",
+        "recursive": true,
+        "lifetime_value": 7,
+        "lifetime_unit": "DAY",
+        "naming_schema": "daily-%Y-%m-%d_%H-%M",
+        "schedule": {
+          "minute": "0",
+          "hour": "5",
+          "dom": "*",
+          "month": "*",
+          "dow": "*"
+        },
+        "enabled": true
+      }'
+  when:
+    - fast_pool_check.stdout != '[]'
+    - "'fast/ml-models' not in existing_snapshot_datasets"
+  changed_when: true
+  tags: [snapshots, fast, ml]

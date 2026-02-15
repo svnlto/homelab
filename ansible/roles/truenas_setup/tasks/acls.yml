@@ -1,0 +1,43 @@
+---
+# NFSv4 ACLs — owner@ FULL_CONTROL, group@ MODIFY, everyone@ READ (with inheritance)
+
+- name: Build ACL entries per dataset
+  ansible.builtin.set_fact:
+    _acl_base:
+      - tag: "owner@"
+        type: ALLOW
+        perms:
+          BASIC: FULL_CONTROL
+        flags:
+          BASIC: INHERIT
+      - tag: "group@"
+        type: ALLOW
+        perms:
+          BASIC: MODIFY
+        flags:
+          BASIC: INHERIT
+    _acl_everyone_read:
+      - tag: "everyone@"
+        type: ALLOW
+        perms:
+          BASIC: READ
+        flags:
+          BASIC: INHERIT
+  tags: [acls]
+
+- name: Apply NFSv4 ACLs on service datasets
+  ansible.builtin.command:
+    cmd: >
+      midclt call filesystem.setacl
+      '{{ {"path": item.path,
+           "dacl": _acl_base + (_acl_everyone_read if item.everyone_read else []),
+           "uid": item.uid,
+           "gid": item.gid,
+           "acltype": "NFS4",
+           "options": {"recursive": false}}
+         | to_json }}'
+  loop: "{{ acl_datasets }}"
+  loop_control:
+    label: "{{ item.path }}"
+  changed_when: false
+  tags: [acls]

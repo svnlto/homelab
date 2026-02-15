@@ -36,7 +36,7 @@
         cmd: midclt call pool.query '[["name", "=", "fast"]]'
       register: fast_pool_check
       changed_when: false
-      tags: [datasets, fast]
+      tags: [always]
 
     - name: Verify fast pool datasets exist
       ansible.builtin.command:
@@ -62,12 +62,13 @@
       loop:
         - scratch/kubernetes/nfs-dynamic
         - scratch/downloads/incomplete
+        - scratch/downloads/complete
         - scratch/ci-runners/cache
         - scratch/ci-runners/artifacts
         - scratch/ml-datasets
         - scratch/temp
         - scratch/immich-migration
-        - scratch/immich-migration/dump
+        - scratch/dump
       tags: [datasets, scratch]
 
     # Dataset properties
@@ -242,7 +243,7 @@
       tags: [nfs, acls]
 
     # Dataset ACL properties
-    - name: Verify service datasets have NFSv4 ACL type
+    - name: Verify service datasets have NFSv4 ACL type (passthrough)
       ansible.builtin.command:
         cmd: >-
           midclt call pool.dataset.query
@@ -258,10 +259,24 @@
         - bulk/photos
         - bulk/arr-config
         - bulk/archive
-        - bulk/backups/timemachine
-        - scratch/downloads/incomplete
+        - scratch
+        - scratch/downloads
+        - scratch/downloads/complete
         - scratch/immich-migration
-        - scratch/immich-migration/dump
+        - scratch/dump
+      tags: [acls, datasets]
+
+    - name: Verify Time Machine dataset has NFSv4 ACL type (restricted)
+      ansible.builtin.command:
+        cmd: >-
+          midclt call pool.dataset.query
+          '[["id", "=", "bulk/backups/timemachine"]]'
+          '{"select": ["acltype", "aclmode"]}'
+      register: tm_acl_props
+      changed_when: false
+      failed_when: >
+        'NFSV4' not in tm_acl_props.stdout
+        or 'RESTRICTED' not in tm_acl_props.stdout
       tags: [acls, datasets]
 
     # NFSv4 ACL entries (getacl defaults to simplified=true, returns BASIC flags)
@@ -271,18 +286,27 @@
       register: acl_check
       changed_when: false
       failed_when: >
-        'FULL_CONTROL' not in acl_check.stdout
-        or 'MODIFY' not in acl_check.stdout
-        or 'INHERIT' not in acl_check.stdout
+        (acl_check.stdout | from_json).acl
+        | selectattr('tag', 'equalto', 'owner@')
+        | selectattr('perms.BASIC', 'defined')
+        | selectattr('perms.BASIC', 'equalto', 'FULL_CONTROL')
+        | list | length == 0
+        or
+        (acl_check.stdout | from_json).acl
+        | selectattr('tag', 'equalto', 'group@')
+        | selectattr('perms.BASIC', 'defined')
+        | selectattr('perms.BASIC', 'equalto', 'MODIFY')
+        | list | length == 0
       loop:
         - path: bulk/media
         - path: bulk/photos
         - path: bulk/arr-config
         - path: bulk/archive
-        - path: bulk/backups/timemachine
-        - path: scratch/downloads/incomplete
+        - path: scratch/downloads
+        - path: scratch/downloads/complete
         - path: scratch/immich-migration
-        - path: scratch/immich-migration/dump
+        - path: scratch/dump
+      # bulk/backups/timemachine excluded — SMB manages its own ACLs
       loop_control:
         label: "{{ item.path }}"
       tags: [acls]
@@ -298,10 +322,6 @@
         - tv
         - music
         - books
-        - downloads
-        - downloads/torrents
-        - downloads/usenet
-        - downloads/soulseek
       tags: [permissions, bulk]
 
     - name: Check bulk/media ownership is media:media (1000:1000)
@@ -336,3 +356,59 @@
         quiet: true
       loop: "{{ ['bulk', 'scratch'] + (['fast'] if fast_pool_check.stdout != '[]' else []) }}"
       tags: [scrub]
+
+    # Snapshot tasks
+    - name: Query snapshot tasks
+      ansible.builtin.command:
+        cmd: midclt call pool.snapshottask.query
+      register: snapshot_tasks
+      changed_when: false
+      tags: [snapshots]
+
+    - name: Verify snapshot tasks exist for expected datasets
+      ansible.builtin.assert:
+        that:
+          - item in (snapshot_tasks.stdout | from_json | map(attribute='dataset') | list)
+        fail_msg: "Snapshot task missing for dataset: {{ item }}"
+        quiet: true
+      loop: >-
+        {{ ['bulk/media', 'bulk/arr-config', 'bulk/photos']
+           + (['fast/kubernetes', 'fast/vms', 'fast/ml-models'] if fast_pool_check.stdout != '[]' else []) }}
+      tags: [snapshots]
+
+    # iSCSI portal and initiator (only relevant when fast pool exists)
+    - name: Query iSCSI portals
+      ansible.builtin.command:
+        cmd: midclt call iscsi.portal.query
+      register: iscsi_portals
+      changed_when: false
+      when: fast_pool_check.stdout != '[]'
+      tags: [iscsi]
+
+    - name: Verify iSCSI portal exists on storage VLAN
+      ansible.builtin.assert:
+        that:
+          - iscsi_portals.stdout | from_json | length > 0
+          - "'10.10.10.13' in (iscsi_portals.stdout | from_json | map(attribute='listen') | flatten | map(attribute='ip')
+            | list)"
+        fail_msg: "iSCSI portal missing or not listening on 10.10.10.13"
+        quiet: true
+      when: fast_pool_check.stdout != '[]'
+      tags: [iscsi]
+
+    - name: Query iSCSI initiator groups
+      ansible.builtin.command:
+        cmd: midclt call iscsi.initiator.query
+      register: iscsi_initiators
+      changed_when: false
+      when: fast_pool_check.stdout != '[]'
+      tags: [iscsi]
+
+    - name: Verify iSCSI initiator group exists with K8s networks
+      ansible.builtin.assert:
+        that:
+          - iscsi_initiators.stdout | from_json | length > 0
+        fail_msg: "iSCSI initiator group missing"
+        quiet: true
+      when: fast_pool_check.stdout != '[]'
+      tags: [iscsi]

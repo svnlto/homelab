@@ -1,0 +1,155 @@
+---
+# Users, groups, and group memberships
+
+- name: Create media group
+  arensb.truenas.group:
+    name: media
+    gid: 1000
+  tags: [users]
+
+- name: Create media user
+  arensb.truenas.user:
+    name: media
+    uid: 1000
+    group: media
+    home: /var/empty
+    shell: /usr/sbin/nologin
+    comment: "Media Service Account"
+    password: "*"
+    smb: false
+  tags: [users]
+
+- name: Create immich group
+  arensb.truenas.group:
+    name: immich
+    gid: 1001
+  tags: [users, photos]
+
+- name: Create immich user
+  arensb.truenas.user:
+    name: immich
+    uid: 1001
+    group: immich
+    home: /var/empty
+    shell: /usr/sbin/nologin
+    comment: "Immich Service Account"
+    password: "*"
+    smb: false
+  tags: [users, photos]
+
+- name: Create svenlito group for SMB access
+  arensb.truenas.group:
+    name: svenlito
+    gid: 1002
+  tags: [users, smb]
+
+- name: Validate TRUENAS_SMB_PASSWORD is set
+  ansible.builtin.assert:
+    that:
+      - lookup('env', 'TRUENAS_SMB_PASSWORD') | length > 0
+    fail_msg: "TRUENAS_SMB_PASSWORD environment variable must be set"
+    quiet: true
+  tags: [users, smb]
+
+- name: Create svenlito user for SMB/Time Machine
+  arensb.truenas.user:
+    name: svenlito
+    uid: 1002
+    group: svenlito
+    home: /mnt/bulk/backups
+    shell: /usr/bin/bash
+    comment: "Sven Lito"
+    password: "{{ lookup('env', 'TRUENAS_SMB_PASSWORD') }}"
+    smb: true
+  tags: [users, smb]
+
+- name: Get media group ID
+  ansible.builtin.command:
+    cmd: midclt call group.query '[["group", "=", "media"]]'
+  register: media_group_info
+  changed_when: false
+  tags: [users]
+
+- name: Create dumper user (rsync service account)
+  ansible.builtin.command:
+    cmd: >
+      midclt call user.create '{
+        "username": "dumper",
+        "uid": 1003,
+        "group": {{ (media_group_info.stdout | from_json)[0].id }},
+        "home": "/var/empty",
+        "shell": "/usr/sbin/nologin",
+        "full_name": "Dumper Service Account",
+        "password_disabled": true,
+        "smb": false
+      }'
+  register: dumper_create
+  changed_when: "'id' in dumper_create.stdout"
+  failed_when: >
+    dumper_create.rc != 0
+    and 'already exists' not in (dumper_create.stderr | default(''))
+    and 'already exists' not in (dumper_create.stdout | default(''))
+  tags: [users]
+
+- name: Get truenas_admin user info
+  ansible.builtin.command:
+    cmd: midclt call user.query '[["username", "=", "truenas_admin"]]'
+  register: truenas_admin_info
+  changed_when: false
+  tags: [users]
+
+- name: Add truenas_admin to media group (preserving existing groups)
+  ansible.builtin.command:
+    cmd: >
+      midclt call user.update
+      {{ (truenas_admin_info.stdout | from_json)[0].id }}
+      '{"groups": {{ (truenas_admin_info.stdout | from_json)[0].groups | union([(media_group_info.stdout | from_json)[0].id])
+      | to_json }}}'
+  when:
+    - (media_group_info.stdout | from_json) | length > 0
+    - (truenas_admin_info.stdout | from_json) | length > 0
+    - (media_group_info.stdout | from_json)[0].id not in (truenas_admin_info.stdout | from_json)[0].groups
+  changed_when: true
+  tags: [users]
+
+- name: Get immich user info
+  ansible.builtin.command:
+    cmd: midclt call user.query '[["username", "=", "immich"]]'
+  register: immich_user_info
+  changed_when: false
+  tags: [users]
+
+- name: Add immich to media group
+  ansible.builtin.command:
+    cmd: >
+      midclt call user.update
+      {{ (immich_user_info.stdout | from_json)[0].id }}
+      '{"groups": {{ (immich_user_info.stdout | from_json)[0].groups | union([(media_group_info.stdout | from_json)[0].id])
+      | to_json }}}'
+  when:
+    - (media_group_info.stdout | from_json) | length > 0
+    - (immich_user_info.stdout | from_json) | length > 0
+    - (media_group_info.stdout | from_json)[0].id not in (immich_user_info.stdout | from_json)[0].groups
+  changed_when: true
+  tags: [users]
+
+- name: Get svenlito user info
+  ansible.builtin.command:
+    cmd: midclt call user.query '[["username", "=", "svenlito"]]'
+  register: svenlito_user_info
+  changed_when: false
+  tags: [users]
+
+- name: Add svenlito to media group
+  ansible.builtin.command:
+    cmd: >
+      midclt call user.update
+      {{ (svenlito_user_info.stdout | from_json)[0].id }}
+      '{"groups": {{ (svenlito_user_info.stdout | from_json)[0].groups | union([(media_group_info.stdout | from_json)[0].id])
+      | to_json }}}'
+  when:
+    - (media_group_info.stdout | from_json) | length > 0
+    - (svenlito_user_info.stdout | from_json) | length > 0
+    - (media_group_info.stdout | from_json)[0].id not in (svenlito_user_info.stdout | from_json)[0].groups
+  changed_when: true
+  tags: [users]

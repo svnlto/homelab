@@ -1,0 +1,147 @@
+---
+# NFS, iSCSI, and SMB shares
+
+# NFS shares
+- name: Configure NFS service
+  arensb.truenas.nfs:
+    servers: 4
+    protocols:
+      - NFSV4
+  tags: [nfs, services]
+
+- name: Enable NFS service
+  arensb.truenas.service:
+    name: nfs
+    state: started
+    enabled: true
+  tags: [nfs, services]
+
+- name: Create NFS shares from variable
+  arensb.truenas.sharing_nfs:
+    path: "{{ item.path }}"
+    comment: "{{ item.comment }}"
+    maproot_user: "{{ item.maproot_user }}"
+    maproot_group: "{{ item.maproot_group }}"
+    networks: "{{ item.networks }}"
+    readonly: "{{ item.readonly | default(false) }}"
+    state: present
+  loop: >-
+    {{ nfs_shares | rejectattr('path', 'match', '/mnt/fast/')
+       | list if fast_pool_check.stdout == '[]' else nfs_shares }}
+  loop_control:
+    label: "{{ item.path }}"
+  tags: [nfs, shares]
+
+# iSCSI (query-before-create to avoid duplicates)
+- name: Query existing iSCSI portals
+  ansible.builtin.command:
+    cmd: midclt call iscsi.portal.query
+  register: existing_iscsi_portals
+  changed_when: false
+  tags: [iscsi]
+
+- name: Configure iSCSI portal (Storage VLAN)
+  ansible.builtin.command:
+    cmd: >
+      midclt call iscsi.portal.create '{
+        "comment": "Storage VLAN Portal",
+        "listen": [{"ip": "10.10.10.13"}]
+      }'
+  when: >
+    '10.10.10.13' not in
+    (existing_iscsi_portals.stdout | from_json
+     | map(attribute='listen') | flatten
+     | map(attribute='ip') | list)
+  changed_when: true
+  tags: [iscsi]
+
+- name: Query existing iSCSI initiator groups
+  ansible.builtin.command:
+    cmd: midclt call iscsi.initiator.query
+  register: existing_iscsi_initiators
+  changed_when: false
+  tags: [iscsi]
+
+- name: Configure iSCSI initiator group (allow K8s nodes)
+  ansible.builtin.command:
+    cmd: >
+      midclt call iscsi.initiator.create '{
+        "comment": "Kubernetes Nodes",
+        "initiators": []
+      }'
+  when: (existing_iscsi_initiators.stdout | from_json | length) == 0
+  changed_when: true
+  tags: [iscsi]
+
+- name: Enable iSCSI service
+  arensb.truenas.service:
+    name: iscsitarget
+    state: started
+    enabled: true
+  tags: [iscsi, services]
+
+# SMB shares
+- name: Enable Apple SMB2/3 protocol extensions
+  ansible.builtin.command:
+    cmd: >
+      midclt call smb.update '{
+        "aapl_extensions": true
+      }'
+  register: smb_config
+  changed_when: false
+  failed_when: false
+  tags: [smb, services]
+
+- name: Enable SMB service
+  arensb.truenas.service:
+    name: cifs
+    state: started
+    enabled: true
+  tags: [smb, services]
+
+- name: Create Time Machine SMB share
+  arensb.truenas.sharing_smb:
+    name: TimeMachine
+    path: /mnt/bulk/backups/timemachine
+    purpose: ENHANCED_TIMEMACHINE
+    comment: "macOS Time Machine backups"
+    state: present
+  tags: [smb, shares]
+
+- name: Create SMB shares from variable
+  arensb.truenas.sharing_smb:
+    name: "{{ item.name }}"
+    path: "{{ item.path }}"
+    purpose: "{{ item.purpose }}"
+    comment: "{{ item.comment }}"
+    state: present
+  loop: "{{ smb_shares | rejectattr('name', 'equalto', 'TimeMachine') | list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: [smb, shares]
+
+# Time Machine permissions handled by NFSv4 ACL (acl_datasets in shares.yml)
+
+- name: Check if Time Machine marker file exists
+  ansible.builtin.command:
+    cmd: >
+      midclt call filesystem.stat
+      '/mnt/bulk/backups/timemachine/.com.apple.timemachine.supported'
+  register: tm_marker
+  changed_when: false
+  failed_when: false
+  tags: [smb, bulk, backups]
+
+- name: Create Time Machine marker file
+  ansible.builtin.command:
+    cmd: >
+      midclt call filesystem.file_receive
+      '/mnt/bulk/backups/timemachine/.com.apple.timemachine.supported'
+      'Cg=='
+      '{"mode": 420}'
+  when: tm_marker.rc != 0
+  changed_when: true
+  tags: [smb, bulk, backups]
+
+# Time Machine quota is enforced at ZFS dataset level (bulk/backups/timemachine, 2TB)
+# The SMB timemachine_quota parameter was removed in recent TrueNAS SCALE versions

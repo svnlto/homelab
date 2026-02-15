@@ -1,6 +1,11 @@
 ---
 nfs_shares:
+  # All shares use maproot_user: root because arr-stack containers run as root
+  # and need full NFS write access. K8s democratic-csi also requires root maproot.
+
   # Bulk pool
+  # Parent + child exports needed: arr-stack mounts parent for cross-directory hardlinks,
+  # Jellyfin/Plex mount individual libraries for scoped access.
   - path: /mnt/bulk/media
     comment: "Media + downloads for arr-stack (hardlinks require single dataset)"
     maproot_user: root
@@ -10,7 +15,7 @@ nfs_shares:
       - 192.168.0.0/24
       - 10.0.1.0/24
       - 10.0.2.0/24
-    ro: false
+    readonly: false
 
   - path: /mnt/bulk/media/movies
     comment: "Movies library (child dataset)"
@@ -21,7 +26,7 @@ nfs_shares:
       - 192.168.0.0/24
       - 10.0.1.0/24
       - 10.0.2.0/24
-    ro: false
+    readonly: false
 
   - path: /mnt/bulk/media/tv
     comment: "TV library (child dataset)"
@@ -32,7 +37,7 @@ nfs_shares:
       - 192.168.0.0/24
       - 10.0.1.0/24
       - 10.0.2.0/24
-    ro: false
+    readonly: false
 
   - path: /mnt/bulk/media/music
     comment: "Music library (child dataset)"
@@ -43,7 +48,7 @@ nfs_shares:
       - 192.168.0.0/24
       - 10.0.1.0/24
       - 10.0.2.0/24
-    ro: false
+    readonly: false
 
   - path: /mnt/bulk/media/books
     comment: "Books library (child dataset)"
@@ -54,7 +59,7 @@ nfs_shares:
       - 192.168.0.0/24
       - 10.0.1.0/24
       - 10.0.2.0/24
-    ro: false
+    readonly: false
 
   - path: /mnt/bulk/photos
     comment: "Photos for Immich"
@@ -65,7 +70,7 @@ nfs_shares:
       - 192.168.0.0/24
       - 10.0.1.0/24
       - 10.0.2.0/24
-    ro: false
+    readonly: false
 
   - path: /mnt/bulk/kubernetes/nfs-dynamic
     comment: "democratic-csi bulk pool (Forgejo registry, large app data)"
@@ -76,7 +81,7 @@ nfs_shares:
       - 10.0.1.0/24
       - 10.0.2.0/24
       - 10.0.3.0/24
-    ro: false
+    readonly: false
 
   - path: /mnt/bulk/signoz-cold
     comment: "Signoz cold storage (30+ days)"
@@ -85,7 +90,7 @@ nfs_shares:
     networks:
       - 10.10.10.0/24
       - 10.0.1.0/24
-    ro: false
+    readonly: false
 
   # Fast pool
   # TODO: Move to /mnt/fast/arr-config once MD1220 hardware arrives
@@ -96,7 +101,7 @@ nfs_shares:
     networks:
       - 10.10.10.0/24
       - 192.168.0.0/24
-    ro: false
+    readonly: false
 
   - path: /mnt/fast/kubernetes/nfs-dynamic
     comment: "democratic-csi NFS dynamic provisioning"
@@ -107,7 +112,7 @@ nfs_shares:
       - 10.0.1.0/24
       - 10.0.2.0/24
       - 10.0.3.0/24
-    ro: false
+    readonly: false
 
   - path: /mnt/fast/kubernetes/nfs-static
     comment: "Static PVs for shared configs"
@@ -118,7 +123,7 @@ nfs_shares:
       - 10.0.1.0/24
       - 10.0.2.0/24
       - 10.0.3.0/24
-    ro: false
+    readonly: false
 
   # Scratch pool
   - path: /mnt/scratch/kubernetes/nfs-dynamic
@@ -130,32 +135,24 @@ nfs_shares:
       - 10.0.1.0/24
       - 10.0.2.0/24
       - 10.0.3.0/24
-    ro: false
+    readonly: false
 
-  - path: /mnt/scratch/immich-migration
-    comment: "Immich migration data (dumper VM)"
-    maproot_user: root
-    maproot_group: wheel
-    networks:
-      - 10.10.10.0/24
-    ro: false
-
-  - path: /mnt/scratch/immich-migration/dump
+  - path: /mnt/scratch/dump
     comment: "Photo dump from remote machine via rsync (dumper VM)"
     maproot_user: root
     maproot_group: wheel
     networks:
       - 10.10.10.0/24
-    ro: false
+    readonly: false
 
-  - path: /mnt/scratch/downloads/incomplete
-    comment: "Active/incomplete downloads (temp staging, sync=disabled)"
+  - path: /mnt/scratch/downloads
+    comment: "Downloads pool (incomplete + complete, sync=disabled)"
     maproot_user: root
     maproot_group: wheel
     networks:
       - 10.10.10.0/24
       - 192.168.0.0/24
-    ro: false
+    readonly: false
 
   - path: /mnt/scratch/ci-runners
     comment: "Forgejo CI runner cache and artifacts"
@@ -165,7 +162,7 @@ nfs_shares:
       - 10.10.10.0/24
       - 10.0.1.0/24
       - 10.0.2.0/24
-    ro: false
+    readonly: false
 
 smb_shares:
   - name: TimeMachine
@@ -240,15 +237,15 @@ acl_datasets:
     uid: 1002
     gid: 1000
     everyone_read: true
-  - path: /mnt/scratch/downloads/incomplete
+  - path: /mnt/scratch
+    uid: 0
+    gid: 0
+    everyone_read: true
+  - path: /mnt/scratch/downloads
     uid: 1000
     gid: 1000
     everyone_read: true
-  - path: /mnt/scratch/immich-migration
-    uid: 1003
-    gid: 1000
-    everyone_read: false
-  - path: /mnt/scratch/immich-migration/dump
+  - path: /mnt/scratch/dump
     uid: 1003
     gid: 1000
     everyone_read: true

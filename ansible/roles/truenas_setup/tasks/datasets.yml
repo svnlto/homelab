@@ -1,0 +1,256 @@
+---
+# All pool datasets + acltype/aclmode
+
+# Bulk pool datasets
+- name: Create bulk kubernetes parent dataset
+  arensb.truenas.filesystem:
+    name: "bulk/kubernetes"
+    state: present
+    compression: "LZ4"
+  tags: [datasets, bulk, k8s]
+
+- name: Create bulk kubernetes NFS dynamic dataset
+  arensb.truenas.filesystem:
+    name: "bulk/kubernetes/nfs-dynamic"
+    state: present
+    compression: "LZ4"
+  tags: [datasets, bulk, k8s]
+
+- name: Create bulk media parent dataset
+  arensb.truenas.filesystem:
+    name: "bulk/media"
+    state: present
+    compression: "LZ4"
+    atime: "OFF"
+  tags: [datasets, bulk]
+
+- name: Create bulk media subdirectories
+  ansible.builtin.command:
+    cmd: >
+      midclt call filesystem.mkdir '{"path": "/mnt/bulk/media/{{ item }}"}'
+  loop:
+    - music
+    - movies
+    - tv
+    - books
+  register: media_dirs
+  changed_when: media_dirs.rc == 0
+  failed_when: >
+    media_dirs.rc != 0
+    and 'already exists' not in (media_dirs.stderr | default(''))
+    and 'already exists' not in (media_dirs.stdout | default(''))
+    and 'exists' not in (media_dirs.stderr | default(''))
+  tags: [datasets, bulk]
+
+- name: Create bulk photos dataset (Immich)
+  arensb.truenas.filesystem:
+    name: "bulk/photos"
+    state: present
+    compression: "LZ4"
+    atime: "OFF"
+  tags: [datasets, bulk, photos]
+
+- name: Create bulk signoz cold storage dataset
+  arensb.truenas.filesystem:
+    name: "bulk/signoz-cold"
+    state: present
+    compression: "ZSTD"
+  tags: [datasets, bulk, observability]
+
+- name: Create bulk backups parent dataset
+  arensb.truenas.filesystem:
+    name: "bulk/backups"
+    state: present
+    compression: "ZSTD"
+  tags: [datasets, bulk, backups]
+
+- name: Create bulk backup datasets
+  arensb.truenas.filesystem:
+    name: "bulk/backups/{{ item }}"
+    state: present
+    compression: "ZSTD"
+  loop:
+    - proxmox
+    - restic-repo
+    - forgejo
+  tags: [datasets, bulk, backups]
+
+- name: Create bulk/backups/timemachine dataset (case-insensitive for macOS)
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.create '{
+        "name": "bulk/backups/timemachine",
+        "compression": "ZSTD",
+        "casesensitivity": "INSENSITIVE",
+        "acltype": "NFSV4",
+        "aclmode": "PASSTHROUGH"
+      }'
+  register: tm_dataset_create
+  changed_when: tm_dataset_create.rc == 0
+  failed_when: >
+    tm_dataset_create.rc != 0
+    and 'already exists' not in (tm_dataset_create.stderr | default(''))
+    and 'already exists' not in (tm_dataset_create.stdout | default(''))
+  tags: [datasets, bulk, backups, timemachine]
+
+- name: Create bulk arr-config dataset
+  arensb.truenas.filesystem:
+    name: "bulk/arr-config"
+    state: present
+    compression: "LZ4"
+    atime: "OFF"
+  tags: [datasets, bulk, arr]
+  # TODO: Move to fast/arr-config once MD1220 hardware arrives
+
+- name: Create bulk archive dataset
+  arensb.truenas.filesystem:
+    name: "bulk/archive"
+    state: present
+    compression: "LZ4"
+  tags: [datasets, bulk]
+
+# Fast pool datasets
+- name: Create fast kubernetes parent dataset
+  arensb.truenas.filesystem:
+    name: "fast/kubernetes"
+    state: present
+    compression: "LZ4"
+  tags: [datasets, fast, k8s]
+
+- name: Create fast kubernetes NFS datasets
+  arensb.truenas.filesystem:
+    name: "fast/kubernetes/{{ item }}"
+    state: present
+    compression: "LZ4"
+  loop:
+    - nfs-dynamic
+    - nfs-static
+  tags: [datasets, fast, k8s]
+
+- name: Create fast kubernetes iSCSI parent dataset
+  arensb.truenas.filesystem:
+    name: "fast/kubernetes/iscsi-zvols"
+    state: present
+    compression: "LZ4"
+  tags: [datasets, fast, k8s, iscsi]
+
+- name: Create fast VMs dataset
+  arensb.truenas.filesystem:
+    name: "fast/vms"
+    state: present
+    compression: "LZ4"
+  tags: [datasets, fast, vms]
+
+- name: Create fast ML models dataset
+  arensb.truenas.filesystem:
+    name: "fast/ml-models"
+    state: present
+    compression: "LZ4"
+  tags: [datasets, fast, ml]
+
+# Scratch pool datasets
+- name: Create scratch kubernetes parent dataset
+  arensb.truenas.filesystem:
+    name: "scratch/kubernetes"
+    state: present
+    compression: "LZ4"
+    sync: "DISABLED"
+  tags: [datasets, scratch, k8s]
+
+- name: Create scratch kubernetes NFS dynamic dataset
+  arensb.truenas.filesystem:
+    name: "scratch/kubernetes/nfs-dynamic"
+    state: present
+    compression: "LZ4"
+    sync: "DISABLED"
+  tags: [datasets, scratch, k8s]
+
+- name: Create scratch downloads parent dataset
+  arensb.truenas.filesystem:
+    name: "scratch/downloads"
+    state: present
+    compression: "OFF"
+    sync: "DISABLED"
+  tags: [datasets, scratch, downloads]
+
+- name: Create scratch downloads subdirectories
+  ansible.builtin.command:
+    cmd: >
+      midclt call filesystem.mkdir '{"path": "/mnt/scratch/downloads/{{ item }}"}'
+  loop:
+    - incomplete
+    - complete
+    - complete/torrents
+    - complete/usenet
+    - complete/soulseek
+  register: scratch_dl_dirs
+  changed_when: scratch_dl_dirs.rc == 0
+  failed_when: >
+    scratch_dl_dirs.rc != 0
+    and 'already exists' not in (scratch_dl_dirs.stderr | default(''))
+    and 'already exists' not in (scratch_dl_dirs.stdout | default(''))
+    and 'exists' not in (scratch_dl_dirs.stderr | default(''))
+  tags: [datasets, scratch, downloads]
+
+# Ownership for scratch/downloads is handled by NFSv4 ACLs below
+
+- name: Create scratch CI runners parent dataset
+  arensb.truenas.filesystem:
+    name: "scratch/ci-runners"
+    state: present
+    compression: "LZ4"
+    sync: "DISABLED"
+  tags: [datasets, scratch, ci]
+
+- name: Create scratch CI runners child datasets
+  arensb.truenas.filesystem:
+    name: "scratch/ci-runners/{{ item }}"
+    state: present
+    compression: "LZ4"
+    sync: "DISABLED"
+  loop:
+    - cache
+    - artifacts
+  tags: [datasets, scratch, ci]
+
+- name: Create scratch ML datasets dataset
+  arensb.truenas.filesystem:
+    name: "scratch/ml-datasets"
+    state: present
+    compression: "LZ4"
+    sync: "DISABLED"
+  tags: [datasets, scratch, ml]
+
+- name: Create scratch dump dataset
+  arensb.truenas.filesystem:
+    name: "scratch/dump"
+    state: present
+    compression: "LZ4"
+  tags: [datasets, scratch, dumper]
+
+- name: Create scratch temp dataset
+  arensb.truenas.filesystem:
+    name: "scratch/temp"
+    state: present
+    compression: "LZ4"
+    sync: "DISABLED"
+  tags: [datasets, scratch]
+
+# ACL type/mode on service datasets (must run after dataset creation)
+- name: Set acltype/aclmode on service datasets
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      '{{ item }}'
+      '{"acltype": "NFSV4", "aclmode": "PASSTHROUGH"}'
+  changed_when: false
+  failed_when: false
+  loop:
+    - bulk/media
+    - bulk/photos
+    - bulk/arr-config
+    - bulk/archive
+    - scratch
+    - scratch/downloads
+    - scratch/dump
+  tags: [datasets, acls]
