@@ -37,6 +37,7 @@ in {
   # ---------------------------------------------------------------------------
   # Secrets in /etc/dumper/rsync.env (pushed via `just dumper-secrets`):
   #   REMOTE_HOST=100.x.x.x
+  #   REMOTE_USER=admin
   #   REMOTE_PATH=/path/to/photos/
 
   systemd.services.rsync-photos = {

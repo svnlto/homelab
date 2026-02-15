@@ -168,11 +168,13 @@ dumper-secrets:
     #!/usr/bin/env bash
     set -euo pipefail
     REMOTE_HOST=$(op read 'op://Personal/Dumper Rsync Config/remote_host')
+    REMOTE_USER=$(op read 'op://Personal/Dumper Rsync Config/remote_user')
     REMOTE_PATH=$(op read 'op://Personal/Dumper Rsync Config/remote_path')
-    ssh svenlito@192.168.0.52 "sudo mkdir -p /etc/dumper && sudo tee /etc/dumper/rsync.env > /dev/null" <<EOF
-    REMOTE_HOST=${REMOTE_HOST}
-    REMOTE_PATH=${REMOTE_PATH}
-    EOF
+    TMPFILE=$(mktemp)
+    trap 'rm -f "${TMPFILE}"' EXIT
+    printf '%s\n' "REMOTE_HOST=${REMOTE_HOST}" "REMOTE_USER=${REMOTE_USER}" "REMOTE_PATH=${REMOTE_PATH}" > "${TMPFILE}"
+    scp "${TMPFILE}" svenlito@192.168.0.52:/tmp/rsync.env
+    ssh svenlito@192.168.0.52 "sudo mkdir -p /etc/dumper && sudo mv /tmp/rsync.env /etc/dumper/rsync.env"
     echo "Secrets pushed to dumper:/etc/dumper/rsync.env"
 
 # --- Ansible ---
