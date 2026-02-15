@@ -1,0 +1,12 @@
+---
+# Storage VLAN interface configuration
+
+- name: Configure storage VLAN interface (enp6s19)
+  ansible.builtin.command:
+    cmd: >
+      midclt call interface.update enp6s19 '{"aliases": [{"type": "INET", "address": "10.10.10.13", "netmask": 24}]}'
+  register: storage_iface
+  changed_when: "'enp6s19' in storage_iface.stdout"
+  failed_when: "storage_iface.rc != 0 and 'does not exist' not in storage_iface.stderr"
+  notify: Commit network changes
+  tags: [network]

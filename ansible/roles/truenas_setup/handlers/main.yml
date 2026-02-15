@@ -1,0 +1,13 @@
+---
+- name: Commit network changes
+  ansible.builtin.command:
+    cmd: midclt call interface.commit
+  changed_when: true
+  notify: Checkin network changes
+  tags: [network]
+
+- name: Checkin network changes
+  ansible.builtin.command:
+    cmd: midclt call interface.checkin
+  changed_when: false
+  tags: [network]

@@ -1,0 +1,44 @@
+---
+# Pool scrub tasks
+
+- name: Configure weekly scrub for bulk pool
+  arensb.truenas.pool_scrub_task:
+    pool: bulk
+    threshold: 35
+    description: "Weekly scrub - bulk"
+    minute: "0"
+    hour: "0"
+    day: "*"
+    month: "*"
+    weekday: "sun"
+    enabled: true
+  tags: [scrub]
+  failed_when: false
+
+- name: Configure weekly scrub for fast pool
+  arensb.truenas.pool_scrub_task:
+    pool: fast
+    threshold: 35
+    description: "Weekly scrub - fast"
+    minute: "0"
+    hour: "3"
+    day: "*"
+    month: "*"
+    weekday: "sun"
+    enabled: true
+  tags: [scrub]
+  failed_when: false
+
+- name: Configure weekly scrub for scratch pool
+  arensb.truenas.pool_scrub_task:
+    pool: scratch
+    threshold: 35
+    description: "Weekly scrub - scratch"
+    minute: "0"
+    hour: "6"
+    day: "*"
+    month: "*"
+    weekday: "sun"
+    enabled: true
+  tags: [scrub]
+  failed_when: false

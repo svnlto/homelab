@@ -1,8 +1,7 @@
 { pkgs, constants, ... }:
 
 let
-  scratchDir = "/mnt/scratch";
-  dumpDir = "${scratchDir}/immich-migration";
+  dumpDir = "/mnt/dump";
   inherit (constants) truenasStorageIp;
 in {
   # Tailscale VPN — persistent authentication, no 24h reauth
@@ -19,7 +18,7 @@ in {
   # NFS mount from TrueNAS (scratch pool over storage VLAN)
   # ---------------------------------------------------------------------------
   fileSystems.${dumpDir} = {
-    device = "${truenasStorageIp}:/mnt/scratch/immich-migration";
+    device = "${truenasStorageIp}:/mnt/scratch/dump";
     fsType = "nfs";
     options = [
       "nfsvers=4.2"
@@ -64,12 +63,11 @@ in {
         fi
 
         echo "Remote host reachable, starting sync"
-        mkdir -p "${dumpDir}/Photos Library.photoslibrary"
         rsync -azP --partial \
           --rsync-path="sudo /usr/bin/rsync" \
           -e "ssh -i /var/lib/dumper/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new" \
           "''${REMOTE_USER}@''${REMOTE_HOST}:''${REMOTE_PATH}" \
-          "${dumpDir}/Photos Library.photoslibrary/"
+          "${dumpDir}''${REMOTE_PATH}"
       '';
     };
   };

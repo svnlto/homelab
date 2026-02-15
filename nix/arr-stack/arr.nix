@@ -132,9 +132,9 @@ in {
     ];
   };
 
-  # Scratch — persistent mount (active/incomplete downloads)
+  # Scratch — downloads pool (incomplete + complete, sync=disabled for performance)
   fileSystems.${scratchDir} = {
-    device = "${truenasStorageIp}:/mnt/scratch/downloads/incomplete";
+    device = "${truenasStorageIp}:/mnt/scratch/downloads";
     fsType = "nfs";
     options = [
       "nfsvers=4.2"
@@ -242,6 +242,7 @@ in {
         volumes:
           - ${dataDir}/radarr:/config
           - ${mediaDir}:/data/media
+          - ${scratchDir}:/data-scratch
         depends_on:
           gluetun:
             condition: service_healthy
@@ -258,6 +259,7 @@ in {
         volumes:
           - ${dataDir}/sonarr:/config
           - ${mediaDir}:/data/media
+          - ${scratchDir}:/data-scratch
         depends_on:
           gluetun:
             condition: service_healthy
@@ -274,6 +276,7 @@ in {
         volumes:
           - ${dataDir}/lidarr:/config
           - ${mediaDir}:/data/media
+          - ${scratchDir}:/data-scratch
         depends_on:
           gluetun:
             condition: service_healthy
@@ -290,6 +293,7 @@ in {
         volumes:
           - ${dataDir}/bazarr:/config
           - ${mediaDir}:/data/media
+          - ${scratchDir}:/data-scratch
         depends_on:
           - gluetun
         restart: unless-stopped
@@ -304,7 +308,8 @@ in {
           - TZ=${tz}
         volumes:
           - ${dataDir}/slskd:/app
-          - ${mediaDir}/downloads/soulseek:/downloads
+          - ${scratchDir}/complete/soulseek:/downloads
+          - ${scratchDir}/incomplete:/incomplete
           - ${mediaDir}/music:/music:ro
         depends_on:
           - gluetun
@@ -427,8 +432,8 @@ in {
     Accepted=true
 
     [BitTorrent]
-    Session\DefaultSavePath=/data/media/downloads/torrents
-    Session\TempPath=/data-scratch
+    Session\DefaultSavePath=/data-scratch/complete/torrents
+    Session\TempPath=/data-scratch/incomplete
     Session\TempPathEnabled=true
     Session\Port=6881
     Session\QueueingSystemEnabled=true
@@ -457,8 +462,8 @@ in {
     [misc]
     host = 0.0.0.0
     port = 8080
-    download_dir = /data-scratch
-    complete_dir = /data/media/downloads/usenet
+    download_dir = /data-scratch/incomplete
+    complete_dir = /data-scratch/complete/usenet
     permissions = 0775
     auto_browser = 0
     replace_illegal = 1
@@ -502,7 +507,7 @@ in {
 
     directories:
       downloads: /downloads
-      incomplete: /app/incomplete
+      incomplete: /incomplete
 
     soulseek:
       listen_port: 58485
@@ -692,16 +697,12 @@ in {
         mkdir -p ${dataDir}/recyclarr
         mkdir -p ${dataDir}/buildarr
         mkdir -p ${dataDir}/glance
-        # Ensure download directories exist on media mount
-        mkdir -p ${mediaDir}/downloads/torrents
-        mkdir -p ${mediaDir}/downloads/usenet
-        mkdir -p ${mediaDir}/downloads/soulseek
-        chown -R 1000:1000 ${mediaDir}/downloads
-
-        # Symlink old incomplete path to scratch mount so queued jobs still work
-        # (containers see /data/media/downloads/incomplete → /data-scratch)
-        rm -rf ${mediaDir}/downloads/incomplete
-        ln -sf /data-scratch ${mediaDir}/downloads/incomplete
+        # Ensure download directories exist on scratch mount
+        mkdir -p ${scratchDir}/incomplete
+        mkdir -p ${scratchDir}/complete/torrents
+        mkdir -p ${scratchDir}/complete/usenet
+        mkdir -p ${scratchDir}/complete/soulseek
+        chown -R 1000:1000 ${scratchDir}/incomplete ${scratchDir}/complete
 
         # Copy .env template if not present
         if [ ! -f ${dataDir}/env ]; then
@@ -724,15 +725,17 @@ in {
         # Note: qBittorrent stores runtime config in parent dir, not config/ subdir
         QB_CONF="${dataDir}/qbittorrent/qBittorrent/qBittorrent.conf"
         if [ -f "$QB_CONF" ]; then
-          sed -i 's|Session\\TempPath=.*|Session\\TempPath=/data-scratch|' "$QB_CONF"
+          sed -i 's|Session\\TempPath=.*|Session\\TempPath=/data-scratch/incomplete|' "$QB_CONF"
           sed -i 's|Session\\TempPathEnabled=.*|Session\\TempPathEnabled=true|' "$QB_CONF"
-          sed -i 's|Session\\DefaultSavePath=.*|Session\\DefaultSavePath=/data/media/downloads/torrents|' "$QB_CONF"
+          sed -i 's|Session\\DefaultSavePath=.*|Session\\DefaultSavePath=/data-scratch/complete/torrents|' "$QB_CONF"
+          sed -i 's|Downloads\\TempPath=.*|Downloads\\TempPath=/data-scratch/incomplete|' "$QB_CONF"
+          sed -i 's|Downloads\\SavePath=.*|Downloads\\SavePath=/data-scratch/complete/torrents/|' "$QB_CONF"
         fi
 
         SAB_CONF="${dataDir}/sabnzbd/sabnzbd.ini"
         if [ -f "$SAB_CONF" ]; then
-          sed -i 's|^download_dir = .*|download_dir = /data-scratch|' "$SAB_CONF"
-          sed -i 's|^complete_dir = .*|complete_dir = /data/media/downloads/usenet|' "$SAB_CONF"
+          sed -i 's|^download_dir = .*|download_dir = /data-scratch/incomplete|' "$SAB_CONF"
+          sed -i 's|^complete_dir = .*|complete_dir = /data-scratch/complete/usenet|' "$SAB_CONF"
         fi
 
         # Symlink .env to compose directory
@@ -763,13 +766,6 @@ in {
       ExecStartPre = "${pkgs.docker-compose}/bin/docker-compose up -d";
       ExecStart = pkgs.writeShellScript "arr-stack-monitor" ''
         set -euo pipefail
-
-        # Wait for containers to initialize, then create compatibility symlinks
-        # Old queued jobs reference /data/downloads/* but mount is now at /data/media
-        sleep 15
-        for ctr in sabnzbd qbittorrent; do
-          docker exec "$ctr" sh -c 'mkdir -p /data && ln -sfn /data/media/downloads /data/downloads' 2>/dev/null || true
-        done
 
         # Monitor loop — exits non-zero if critical containers are down,
         # which triggers systemd Restart=on-failure

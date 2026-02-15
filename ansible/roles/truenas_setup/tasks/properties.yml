@@ -1,0 +1,146 @@
+---
+# ZFS properties (via midclt — arensb.truenas doesn't support recordsize/sync/quotas)
+
+- name: Set bulk/kubernetes/nfs-dynamic properties
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'bulk/kubernetes/nfs-dynamic'
+      '{"recordsize": "128K", "quota": 10995116277760}'
+  changed_when: false
+  tags: [properties, bulk, k8s]
+
+- name: Set bulk/media recordsize to 1M
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'bulk/media'
+      '{"recordsize": "1M"}'
+  changed_when: false
+  tags: [properties, bulk]
+
+- name: Set bulk/photos recordsize to 1M
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'bulk/photos'
+      '{"recordsize": "1M"}'
+  changed_when: false
+  tags: [properties, bulk, photos]
+
+- name: Set bulk/arr-config recordsize to 16K
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'bulk/arr-config'
+      '{"recordsize": "16K"}'
+  changed_when: false
+  tags: [properties, bulk, arr]
+
+- name: Set bulk/signoz-cold recordsize to 128K
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'bulk/signoz-cold'
+      '{"recordsize": "128K"}'
+  changed_when: false
+  tags: [properties, bulk, observability]
+
+- name: Set bulk/backups/timemachine properties
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'bulk/backups/timemachine'
+      '{"quota": 2199023255552, "acltype": "NFSV4", "aclmode": "RESTRICTED"}'
+  changed_when: false
+  tags: [properties, bulk, backups, timemachine]
+
+- name: Set bulk/backups/forgejo quota (100GB)
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'bulk/backups/forgejo'
+      '{"quota": 107374182400}'
+  changed_when: false
+  tags: [properties, bulk, backups, forgejo]
+
+- name: Set fast/kubernetes/nfs-dynamic properties
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'fast/kubernetes/nfs-dynamic'
+      '{"recordsize": "16K", "quota": 4398046511104}'
+  changed_when: false
+  tags: [properties, fast, k8s]
+
+- name: Set fast/kubernetes/nfs-static recordsize to 128K
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'fast/kubernetes/nfs-static'
+      '{"recordsize": "128K"}'
+  changed_when: false
+  tags: [properties, fast, k8s]
+
+- name: Set fast/kubernetes/iscsi-zvols properties
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'fast/kubernetes/iscsi-zvols'
+      '{"compression": "LZ4", "sync": "STANDARD"}'
+  changed_when: false
+  tags: [properties, fast, k8s, iscsi]
+
+- name: Set fast/vms recordsize to 64K
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'fast/vms'
+      '{"recordsize": "64K"}'
+  changed_when: false
+  tags: [properties, fast, vms]
+
+- name: Set fast/ml-models properties
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'fast/ml-models'
+      '{"recordsize": "1M", "quota": 1099511627776}'
+  changed_when: false
+  tags: [properties, fast, ml]
+
+- name: Set scratch/kubernetes/nfs-dynamic properties
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'scratch/kubernetes/nfs-dynamic'
+      '{"recordsize": "128K", "quota": 8796093022208}'
+  changed_when: false
+  tags: [properties, scratch, k8s]
+
+- name: Set scratch/downloads recordsize to 128K
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'scratch/downloads'
+      '{"recordsize": "128K"}'
+  changed_when: false
+  tags: [properties, scratch, downloads]
+
+- name: Set scratch/ci-runners/cache recordsize to 128K
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'scratch/ci-runners/cache'
+      '{"recordsize": "128K"}'
+  changed_when: false
+  tags: [properties, scratch, ci]
+
+- name: Set scratch/ml-datasets recordsize to 1M
+  ansible.builtin.command:
+    cmd: >
+      midclt call pool.dataset.update
+      'scratch/ml-datasets'
+      '{"recordsize": "1M"}'
+  changed_when: false
+  tags: [properties, scratch, ml]

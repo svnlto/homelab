@@ -33,16 +33,16 @@ datasets:
     compression: "zstd"
     sync: "standard"
     quota: "2T"
-    casesensitivity: "insensitive" # Required for macOS, set at creation only
-    acltype: "nfsv4" # Required for SMB/macOS extended attributes
-    aclmode: "passthrough"
+    casesensitivity: "insensitive"
+    acltype: "nfsv4"
+    aclmode: "restricted"
 
   bulk_backups_proxmox:
     recordsize: "1M"
     compression: "zstd"
     sync: "standard"
 
-  bulk_backups_restic:
+  bulk_backups_restic_repo:
     recordsize: "128K"
     compression: "off" # Restic handles own compression
     sync: "standard"
@@ -83,6 +83,7 @@ datasets:
 
   fast_kubernetes_iscsi_zvols:
     type: "filesystem" # Parent is filesystem, children are zvols
+    compression: "lz4"
 
   fast_vms:
     recordsize: "64K"
@@ -103,11 +104,12 @@ datasets:
     quota: "8T"
 
   scratch_downloads:
-    recordsize: "16K"
+    recordsize: "128K"
     compression: "off"
     sync: "disabled"
     children:
       - incomplete
+      - complete
     acltype: "nfsv4"
     aclmode: "passthrough"
 
@@ -123,6 +125,13 @@ datasets:
     recordsize: "1M"
     compression: "lz4"
     sync: "disabled"
+
+  scratch_dump:
+    recordsize: "128K"
+    compression: "lz4"
+    sync: "standard"
+    acltype: "nfsv4"
+    aclmode: "passthrough"
 
   scratch_immich_migration:
     recordsize: "128K"
