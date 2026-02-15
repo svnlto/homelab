@@ -2,7 +2,7 @@
 # shellcheck disable=SC2029  # REMOTE_PATH is intentionally expanded client-side
 # Environment variables from /etc/dumper/rsync.env:
 #   REMOTE_HOST=100.x.x.x
-#   REMOTE_USER=<user>
+#   REMOTE_USER=admin
 #   REMOTE_PATH=/path/to/photos/
 
 DUMP_DIR="/mnt/dump"
@@ -24,7 +24,7 @@ if [ ! -f "${FILE_LIST}" ] || \
    [ "$(( $(date +%s) - $(stat -c %Y "${FILE_LIST}") ))" -gt ${FILE_LIST_MAX_AGE} ]; then
   echo "Building remote file list..."
   ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" \
-    "find '${REMOTE_PATH}' \
+    "sudo find '${REMOTE_PATH}' \
       -path '*/scopes' -prune -o \
       -path '*/.photoslibrary/private' -prune -o \
       -type f -print" \
@@ -39,7 +39,7 @@ fi
 echo "Starting rsync of $(wc -l < "${FILE_LIST}") files to ${DUMP_DIR}${REMOTE_PATH}"
 rsync -rltv --partial --omit-dir-times \
   --files-from="${FILE_LIST}" \
-  --rsync-path="/usr/bin/rsync" \
+  --rsync-path="sudo /usr/bin/rsync" \
   -e "ssh ${SSH_OPTS[*]}" \
   "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}" \
   "${DUMP_DIR}${REMOTE_PATH}"
