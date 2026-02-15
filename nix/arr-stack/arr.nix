@@ -308,9 +308,8 @@ in {
           - TZ=${tz}
         volumes:
           - ${dataDir}/slskd:/app
-          - ${scratchDir}/complete/soulseek:/downloads
-          - ${scratchDir}/incomplete:/incomplete
-          - ${mediaDir}/music:/music:ro
+          - ${scratchDir}:/data-scratch
+          - ${mediaDir}:/data/media:ro
         depends_on:
           - gluetun
         restart: unless-stopped
@@ -506,8 +505,8 @@ in {
         password: slskd
 
     directories:
-      downloads: /downloads
-      incomplete: /incomplete
+      downloads: /data-scratch/complete/soulseek
+      incomplete: /data-scratch/incomplete
 
     soulseek:
       listen_port: 58485
@@ -516,7 +515,7 @@ in {
 
     shares:
       directories:
-        - /music
+        - /data/media/music
       filters:
         - \.ini$
         - Thumbs.db$

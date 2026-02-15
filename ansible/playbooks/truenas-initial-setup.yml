@@ -4,7 +4,7 @@
 # After this playbook, SSH keys will be configured for passwordless access.
 
 - name: Initial TrueNAS SCALE Configuration
-  hosts: truenas_primary
+  hosts: truenas_primary,truenas_secondary
   gather_facts: true
 
   vars:
