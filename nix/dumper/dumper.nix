@@ -3,6 +3,8 @@
 let
   dumpDir = "/mnt/dump";
   inherit (constants) truenasStorageIp;
+  rsyncScript =
+    pkgs.writeShellScript "rsync-photos" (builtins.readFile ./rsync-photos.sh);
 in {
   # Tailscale VPN — persistent authentication, no 24h reauth
   services.tailscale = {
@@ -45,30 +47,21 @@ in {
 
     unitConfig.RequiresMountsFor = dumpDir;
 
-    path = [ pkgs.rsync pkgs.openssh pkgs.tailscale pkgs.gnugrep ];
+    path = [
+      pkgs.rsync
+      pkgs.openssh
+      pkgs.tailscale
+      pkgs.gnugrep
+      pkgs.findutils
+      pkgs.coreutils
+    ];
 
     serviceConfig = {
-      Type = "oneshot";
+      Type = "exec";
       User = "dumper";
       Group = "media";
       EnvironmentFile = "/etc/dumper/rsync.env";
-      ExecStart = pkgs.writeShellScript "rsync-photos" ''
-        set -euo pipefail
-
-        # Check if remote host is reachable via Tailscale (DERP relay is fine)
-        PING_OUT=$(tailscale ping --timeout=30s --c=1 "''${REMOTE_HOST}" 2>&1 || true)
-        if ! echo "$PING_OUT" | grep -q "pong"; then
-          echo "Remote host ''${REMOTE_HOST} is not reachable, skipping sync"
-          exit 0
-        fi
-
-        echo "Remote host reachable, starting sync"
-        rsync -azP --partial \
-          --rsync-path="sudo /usr/bin/rsync" \
-          -e "ssh -i /var/lib/dumper/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new" \
-          "''${REMOTE_USER}@''${REMOTE_HOST}:''${REMOTE_PATH}" \
-          "${dumpDir}''${REMOTE_PATH}"
-      '';
+      ExecStart = rsyncScript;
     };
   };
 
