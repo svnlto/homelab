@@ -1,0 +1,32 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ingress.yaml
+
+helmCharts:
+  - name: signoz
+    repo: https://charts.signoz.io
+    version: "0.111.0"
+    releaseName: signoz
+    namespace: signoz
+    valuesInline:
+      global:
+        storageClass: truenas-nfs-rwx
+      clickhouse:
+        persistence:
+          size: 20Gi
+      zookeeper:
+        persistence:
+          size: 5Gi
+      signoz:
+        persistence:
+          size: 1Gi
+      frontend:
+        service:
+          type: ClusterIP
+
+commonLabels:
+  app.kubernetes.io/name: signoz
+  app.kubernetes.io/component: observability
