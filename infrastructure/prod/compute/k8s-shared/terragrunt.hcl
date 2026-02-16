@@ -99,7 +99,7 @@ inputs = {
 
   # Democratic-CSI — TrueNAS primary (storage VLAN)
   truenas_api_url     = "https://${local.ips.truenas_primary_storage}"
-  truenas_api_key     = "" # TODO: generate API key on TrueNAS, store in 1Password
+  truenas_api_key     = get_env("TF_VAR_truenas_api_key", "")
   truenas_nfs_dataset = "bulk/kubernetes/nfs-dynamic"
 
   # iSCSI deferred — will configure when fast pool is available
