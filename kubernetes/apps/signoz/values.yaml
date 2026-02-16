@@ -1,0 +1,28 @@
+---
+global:
+  storageClass: truenas-nfs-rwx
+
+clickhouse:
+  persistence:
+    size: 20Gi
+
+zookeeper:
+  persistence:
+    size: 5Gi
+
+signoz:
+  persistence:
+    size: 1Gi
+
+frontend:
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    className: traefik
+    hosts:
+      - host: signoz.k8s.local
+        paths:
+          - path: /
+            pathType: Prefix
+            port: 3301
