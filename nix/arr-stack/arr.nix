@@ -21,7 +21,7 @@ let
     sonarr = "lscr.io/linuxserver/sonarr:4.0.16.2944-ls299";
     lidarr = "ghcr.io/hotio/lidarr:pr-plugins-3.0.0.4856";
     bazarr = "lscr.io/linuxserver/bazarr:v1.5.5-ls336";
-    slskd = "slskd/slskd:0.24.3";
+    slskd = "slskd/slskd:0.24.4";
     prowlarr = "lscr.io/linuxserver/prowlarr:2.3.0.5236-ls133";
     flaresolverr = "ghcr.io/flaresolverr/flaresolverr:v3.4.6";
     recyclarr = "ghcr.io/recyclarr/recyclarr:7.5.2";
