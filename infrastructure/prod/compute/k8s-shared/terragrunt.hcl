@@ -128,10 +128,10 @@ inputs = {
   tailscale_oauth_client_secret = dependency.tailscale.outputs.k8s_oauth_client_secret
   tailscale_hostname            = local.k8s.tailscale_hostname
 
-  # Traefik ACME (staging first — switch to production when verified)
+  # Traefik ACME (production Let's Encrypt)
   traefik_acme_enabled  = true
   traefik_acme_email    = get_env("TF_VAR_acme_email", "")
-  traefik_acme_server   = "https://acme-staging-v02.api.letsencrypt.org/directory"
+  traefik_acme_server   = "https://acme-v02.api.letsencrypt.org/directory"
   cloudns_auth_id       = get_env("TF_VAR_cloudns_auth_id", "")
   cloudns_auth_password = get_env("TF_VAR_cloudns_auth_password", "")
 }
