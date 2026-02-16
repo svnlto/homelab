@@ -1,4 +1,4 @@
-module "test_cluster" {
+module "k8s_shared" {
   source = "../../../modules/talos-cluster"
 
   cluster_name     = var.cluster_name
@@ -20,4 +20,11 @@ module "test_cluster" {
 
   tags             = var.tags
   deploy_bootstrap = var.deploy_bootstrap
+
+  truenas_api_url       = var.truenas_api_url
+  truenas_api_key       = var.truenas_api_key
+  truenas_nfs_dataset   = var.truenas_nfs_dataset
+  truenas_iscsi_portal  = var.truenas_iscsi_portal
+  truenas_iscsi_dataset = var.truenas_iscsi_dataset
+  metallb_ip_range      = var.metallb_ip_range
 }

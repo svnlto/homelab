@@ -34,6 +34,12 @@ variable "admin_password" {
   sensitive   = true
 }
 
+variable "server_service_type" {
+  description = "Service type for ArgoCD server (ClusterIP or LoadBalancer)"
+  type        = string
+  default     = "ClusterIP"
+}
+
 variable "ingress_enabled" {
   description = "Enable ingress for ArgoCD UI"
   type        = bool

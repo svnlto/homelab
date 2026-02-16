@@ -157,6 +157,32 @@ resource "routeros_firewall_filter" "k8s_to_wan" {
   lifecycle { create_before_destroy = true }
 }
 
+resource "routeros_firewall_filter" "k8s_to_lan_dns" {
+  chain              = "forward"
+  action             = "accept"
+  in_interface_list  = routeros_interface_list.zones["k8s"].name
+  out_interface_list = routeros_interface_list.zones["lan"].name
+  protocol           = "udp"
+  dst_port           = "53"
+  dst_address        = var.pihole_ip
+  comment            = "K8s clusters can reach Pi-hole DNS"
+
+  lifecycle { create_before_destroy = true }
+}
+
+resource "routeros_firewall_filter" "k8s_to_lan_dns_tcp" {
+  chain              = "forward"
+  action             = "accept"
+  in_interface_list  = routeros_interface_list.zones["k8s"].name
+  out_interface_list = routeros_interface_list.zones["lan"].name
+  protocol           = "tcp"
+  dst_port           = "53"
+  dst_address        = var.pihole_ip
+  comment            = "K8s clusters can reach Pi-hole DNS (TCP)"
+
+  lifecycle { create_before_destroy = true }
+}
+
 resource "routeros_firewall_filter" "k8s_isolation" {
   chain              = "forward"
   action             = "drop"
@@ -213,6 +239,8 @@ resource "routeros_move_items" "filter_rules" {
     routeros_firewall_filter.lan_to_any.id,
     routeros_firewall_filter.k8s_to_storage.id,
     routeros_firewall_filter.k8s_to_wan.id,
+    routeros_firewall_filter.k8s_to_lan_dns.id,
+    routeros_firewall_filter.k8s_to_lan_dns_tcp.id,
     routeros_firewall_filter.k8s_isolation.id,
     routeros_firewall_filter.mgmt_to_wan.id,
     routeros_firewall_filter.storage_to_wan.id,
@@ -233,6 +261,8 @@ resource "routeros_move_items" "filter_rules" {
     routeros_firewall_filter.lan_to_any,
     routeros_firewall_filter.k8s_to_storage,
     routeros_firewall_filter.k8s_to_wan,
+    routeros_firewall_filter.k8s_to_lan_dns,
+    routeros_firewall_filter.k8s_to_lan_dns_tcp,
     routeros_firewall_filter.k8s_isolation,
     routeros_firewall_filter.mgmt_to_wan,
     routeros_firewall_filter.storage_to_wan,

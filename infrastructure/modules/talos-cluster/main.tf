@@ -92,6 +92,8 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
 resource "proxmox_virtual_environment_vm" "worker" {
   for_each = var.worker_nodes
 
+  depends_on = [proxmox_virtual_environment_vm.control_plane]
+
   name        = each.value.hostname
   node_name   = each.value.node_name
   vm_id       = each.value.vm_id
@@ -216,6 +218,36 @@ resource "talos_machine_bootstrap" "cluster" {
   node                 = split("/", values(var.control_plane_nodes)[0].ip_address)[0]
 
   depends_on = [talos_machine_configuration_apply.control_plane]
+}
+
+# ==============================================================================
+# Cluster Health Gate — blocks until API, etcd, and all nodes are Ready
+# ==============================================================================
+
+data "talos_cluster_health" "cluster" {
+  count = var.deploy_bootstrap ? 1 : 0
+
+  client_configuration = talos_machine_secrets.cluster.client_configuration
+
+  control_plane_nodes = [
+    for node in values(var.control_plane_nodes) : split("/", node.ip_address)[0]
+  ]
+
+  worker_nodes = [
+    for node in values(var.worker_nodes) : split("/", node.ip_address)[0]
+  ]
+
+  endpoints = [for node in values(var.control_plane_nodes) : split("/", node.ip_address)[0]]
+
+  timeouts = {
+    read = "10m"
+  }
+
+  depends_on = [
+    talos_machine_bootstrap.cluster,
+    talos_machine_configuration_apply.control_plane,
+    talos_machine_configuration_apply.worker,
+  ]
 }
 
 # ==============================================================================

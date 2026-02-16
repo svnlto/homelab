@@ -1,7 +1,7 @@
 data "talos_client_configuration" "talosconfig" {
   cluster_name         = var.cluster_name
   client_configuration = talos_machine_secrets.cluster.client_configuration
-  endpoints            = [split("/", values(var.control_plane_nodes)[0].ip_address)[0]]
+  endpoints            = [for node in values(var.control_plane_nodes) : split("/", node.ip_address)[0]]
 }
 
 # ==============================================================================
@@ -32,6 +32,9 @@ data "talos_machine_configuration" "control_plane" {
                   gateway = var.network_gateway
                 }
               ]
+              vip = {
+                ip = var.vip_ip
+              }
             }
           ]
           nameservers = var.dns_servers

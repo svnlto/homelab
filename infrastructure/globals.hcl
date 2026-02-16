@@ -216,11 +216,10 @@ locals {
 
     template_vm_id = 9000
 
-    # Proxmox UI resource mappings (Datacenter > Resource Mappings)
+    # Proxmox PCI resource mappings (managed by Ansible, see host_vars/)
     resource_mappings = {
       truenas_h330 = "truenas-h330"
       truenas_lsi  = "truenas-lsi"
-      md1200_hba   = "md1200-hba"
       arc_a310     = "arc-a310"
     }
   }
@@ -259,6 +258,10 @@ locals {
     filename = "nixos-minimal-x86_64-linux.iso"
   }
 
+  talos = {
+    version      = "v1.12.2"
+    schematic_id = "dc7b152cb3ea99b821fcb7340ce7168313ce393d663740b791c36f6e95fc8586"
+  }
 
   versions = {
     terraform  = "1.14.1"

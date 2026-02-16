@@ -49,3 +49,13 @@ variable "datastore_id" {
   type        = string
   description = "Datastore for ISO storage"
 }
+
+variable "talos_version" {
+  type        = string
+  description = "Talos Linux version"
+}
+
+variable "talos_schematic_id" {
+  type        = string
+  description = "Talos Image Factory schematic ID"
+}

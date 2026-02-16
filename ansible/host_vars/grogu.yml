@@ -9,5 +9,14 @@ vfio_blacklist_drivers: [i915, xe]
 intel_arc_pci_addresses: ["0000:05:00.0"]
 intel_arc_vm_ids: [210]
 
+# Proxmox PCI resource mappings (Datacenter > Resource Mappings)
+pci_resource_mappings:
+  arc-a310:
+    description: "Intel Arc A310 for Jellyfin transcoding"
+    device_id: "8086:56a6"
+    iommu_group: 27
+    path: "0000:05:00.0"
+    subsystem_id: "172f:4019"
+
 # Allow non-Intel SFP+ transceivers
 configure_ixgbe_unsupported_sfp: true

@@ -1,0 +1,10 @@
+{% for host in ansible_play_hosts_all %}
+{% if hostvars[host].pci_resource_mappings is defined %}
+{% for name, mapping in hostvars[host].pci_resource_mappings.items() %}
+{{ name }}
+	map id={{ mapping.device_id }},iommugroup={{ mapping.iommu_group }},node={{ host }},path={{ mapping.path }},subsystem-id={{ mapping.subsystem_id }}
+	description {{ mapping.description }}
+
+{% endfor %}
+{% endif %}
+{% endfor %}

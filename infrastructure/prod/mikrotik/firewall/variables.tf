@@ -7,3 +7,8 @@ variable "vlan_interfaces" {
 variable "wan_interface" {
   type = string
 }
+
+variable "pihole_ip" {
+  description = "Pi-hole IP address for DNS firewall rules"
+  type        = string
+}
