@@ -31,5 +31,10 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
 
-  ignoreDifferences: []
+  ignoreDifferences:
+    - group: clickhouse.altinity.com
+      kind: ClickHouseInstallation
+      jsonPointers:
+        - /status
