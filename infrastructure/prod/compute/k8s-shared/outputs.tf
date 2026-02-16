@@ -37,3 +37,8 @@ output "kubeconfig_raw" {
   value       = module.k8s_shared.kubeconfig_raw
   sensitive   = true
 }
+
+output "traefik_tailscale_ip" {
+  description = "Tailscale IP assigned to Traefik"
+  value       = module.k8s_shared.traefik_tailscale_ip
+}

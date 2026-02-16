@@ -84,3 +84,11 @@ output "bootstrap_deployed" {
   description = "Whether bootstrap components were deployed"
   value       = var.deploy_bootstrap
 }
+
+output "traefik_tailscale_ip" {
+  description = "Tailscale IP assigned to Traefik (if Tailscale is enabled)"
+  value = try(
+    [for ing in data.kubernetes_service_v1.traefik_tailscale[0].status[0].load_balancer[0].ingress : ing.ip if ing.ip != ""][0],
+    null
+  )
+}

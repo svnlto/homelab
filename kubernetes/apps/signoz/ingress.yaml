@@ -4,9 +4,14 @@ kind: Ingress
 metadata:
   name: signoz
   namespace: signoz
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
 spec:
+  tls:
+    - hosts:
+        - signoz.shared.h.svenlito.com
   rules:
-    - host: signoz.k8s.local
+    - host: signoz.shared.h.svenlito.com
       http:
         paths:
           - path: /

@@ -34,4 +34,12 @@ patches:
     patch: |-
       - op: replace
         path: /spec/rules/0/host
-        value: whoami.k8s.local
+        value: whoami.shared.h.svenlito.com
+      - op: add
+        path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.tls.certresolver
+        value: letsencrypt
+      - op: add
+        path: /spec/tls
+        value:
+          - hosts:
+              - whoami.shared.h.svenlito.com

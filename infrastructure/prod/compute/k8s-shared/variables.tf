@@ -111,3 +111,52 @@ variable "traefik_enabled" {
   type    = bool
   default = false
 }
+
+variable "tailscale_enabled" {
+  type    = bool
+  default = false
+}
+
+variable "tailscale_oauth_client_id" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
+
+variable "tailscale_oauth_client_secret" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
+
+variable "tailscale_hostname" {
+  type    = string
+  default = "traefik"
+}
+
+variable "traefik_acme_enabled" {
+  type    = bool
+  default = false
+}
+
+variable "traefik_acme_email" {
+  type    = string
+  default = ""
+}
+
+variable "traefik_acme_server" {
+  type    = string
+  default = "https://acme-staging-v02.api.letsencrypt.org/directory"
+}
+
+variable "cloudns_auth_id" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
+
+variable "cloudns_auth_password" {
+  type      = string
+  sensitive = true
+  default   = ""
+}

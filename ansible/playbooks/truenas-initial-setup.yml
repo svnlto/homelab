@@ -55,7 +55,7 @@
     # SSH key authentication
     - name: Read SSH public key from 1Password
       ansible.builtin.command:
-        cmd: op read "op://Personal/proxmox/public key"
+        cmd: op read "op://Homelab/proxmox/public key"
       register: local_ssh_key
       delegate_to: localhost
       become: false

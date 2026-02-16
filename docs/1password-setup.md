@@ -162,8 +162,8 @@ Fields:
 
 ```bash
 # Test fetching Proxmox credentials
-op read "op://Personal/Proxmox API Token/token_id"
-op read "op://Personal/Proxmox API Token/token_secret"
+op read "op://Homelab/Proxmox API Token/token_id"
+op read "op://Homelab/Proxmox API Token/token_secret"
 
 # Should return the values you saved (may prompt for Touch ID first)
 ```
@@ -229,24 +229,24 @@ For your reference, here are the paths used in `.envrc`:
 
 ```bash
 # Proxmox
-op://Personal/Proxmox API Token/token_id
-op://Personal/Proxmox API Token/token_secret
+op://Homelab/Proxmox API Token/token_id
+op://Homelab/Proxmox API Token/token_secret
 
 # MikroTik
-op://Personal/MikroTik Router/username
-op://Personal/MikroTik Router/password
+op://Homelab/MikroTik Router/username
+op://Homelab/MikroTik Router/password
 
 # Backblaze B2
-op://Personal/Backblaze B2/key_id
-op://Personal/Backblaze B2/application_key
+op://Homelab/Backblaze B2/key_id
+op://Homelab/Backblaze B2/application_key
 
 # OpenVPN
-op://Personal/OpenVPN/username
-op://Personal/OpenVPN/password
+op://Homelab/OpenVPN/username
+op://Homelab/OpenVPN/password
 
 # Soulseek
-op://Personal/Soulseek/username
-op://Personal/Soulseek/password
+op://Homelab/Soulseek/username
+op://Homelab/Soulseek/password
 ```
 
 **Path Format**: `op://<vault>/<item-name>/<field-name>`
@@ -413,7 +413,7 @@ Use this checklist to track your migration:
 - [ ] Create "Backblaze B2" item (for future use)
 - [ ] Create "OpenVPN" item
 - [ ] Create "Soulseek" item
-- [ ] Test CLI access (`op read "op://Personal/Proxmox API Token/token_id"`)
+- [ ] Test CLI access (`op read "op://Homelab/Proxmox API Token/token_id"`)
 - [ ] Reload direnv (`cd .. && cd ~/Projects/homelab`)
 - [ ] Verify secrets loaded (`echo $PROXMOX_TOKEN_ID`)
 - [ ] Test Terragrunt (`terragrunt plan` in any module)

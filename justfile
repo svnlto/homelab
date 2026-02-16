@@ -167,9 +167,9 @@ nixos-update-dumper:
 dumper-secrets:
     #!/usr/bin/env bash
     set -euo pipefail
-    REMOTE_HOST=$(op read 'op://Personal/Dumper Rsync Config/remote_host')
-    REMOTE_USER=$(op read 'op://Personal/Dumper Rsync Config/remote_user')
-    REMOTE_PATH=$(op read 'op://Personal/Dumper Rsync Config/remote_path')
+    REMOTE_HOST=$(op read 'op://Homelab/Dumper Rsync Config/remote_host')
+    REMOTE_USER=$(op read 'op://Homelab/Dumper Rsync Config/remote_user')
+    REMOTE_PATH=$(op read 'op://Homelab/Dumper Rsync Config/remote_path')
     TMPFILE=$(mktemp)
     trap 'rm -f "${TMPFILE}"' EXIT
     printf '%s\n' "REMOTE_HOST=${REMOTE_HOST}" "REMOTE_USER=${REMOTE_USER}" "REMOTE_PATH=${REMOTE_PATH}" > "${TMPFILE}"
@@ -217,7 +217,7 @@ proxmox-rotate-api-tokens:
 
 # View tokens from 1Password
 proxmox-view-tokens:
-    @op read "op://Personal/Proxmox API Token/token_id" 2>/dev/null && op read "op://Personal/Proxmox API Token/token_secret" 2>/dev/null || echo "Failed to read tokens from 1Password"
+    @op read "op://Homelab/Proxmox API Token/token_id" 2>/dev/null && op read "op://Homelab/Proxmox API Token/token_secret" 2>/dev/null || echo "Failed to read tokens from 1Password"
 
 # --- TrueNAS ---
 

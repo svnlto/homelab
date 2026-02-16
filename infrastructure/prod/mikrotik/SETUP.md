@@ -53,7 +53,7 @@ Ensure RouterOS is v7.13 or later.
 ```
 
 Store password in 1Password item `MikroTik Terraform API` (credential field).
-`.envrc` fetches it via: `op read "op://Personal/MikroTik Terraform API/credential"`
+`.envrc` fetches it via: `op read "op://Homelab/MikroTik Terraform API/credential"`
 
 ### Step 5: Enable REST API with SSL
 
