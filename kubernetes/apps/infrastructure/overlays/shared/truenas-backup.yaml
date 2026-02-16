@@ -18,7 +18,7 @@ metadata:
   namespace: infrastructure
 subsets:
   - addresses:
-      - ip: 192.168.0.14
+      - ip: 10.10.10.14
     ports:
       - port: 443
         name: https
