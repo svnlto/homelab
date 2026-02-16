@@ -27,4 +27,5 @@ module "k8s_shared" {
   truenas_iscsi_portal  = var.truenas_iscsi_portal
   truenas_iscsi_dataset = var.truenas_iscsi_dataset
   metallb_ip_range      = var.metallb_ip_range
+  traefik_enabled       = var.traefik_enabled
 }
