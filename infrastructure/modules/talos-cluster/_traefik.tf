@@ -98,9 +98,9 @@ resource "helm_release" "traefik" {
           enabled = true
         }
       }
-      serversTransport = {
-        insecureSkipVerify = true
-      }
+      additionalArguments = [
+        "--serversTransport.insecureSkipVerify=true",
+      ]
     }),
     # ACME + ClouDNS + persistence (separate yamlencode to avoid type mismatch)
     var.traefik_acme_enabled ? yamlencode({
