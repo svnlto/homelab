@@ -6,20 +6,20 @@ kind: Kustomization
 bases:
   - ../../base
 
-# Namespace for test cluster
-namespace: whoami-test
+# Namespace for shared cluster
+namespace: whoami
 
-# Test-specific labels
+# Shared cluster labels
 commonLabels:
-  environment: test
-  cluster: test
+  environment: production
+  cluster: shared
 
-# Test-specific annotations
+# Shared cluster annotations
 commonAnnotations:
   deployed-by: argocd
-  cluster: test-cluster
+  cluster: shared
 
-# Patches for test environment
+# Patches for shared environment
 patches:
   - target:
       kind: Deployment
