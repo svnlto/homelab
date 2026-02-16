@@ -106,3 +106,8 @@ variable "metallb_ip_range" {
   type    = string
   default = ""
 }
+
+variable "traefik_enabled" {
+  type    = bool
+  default = false
+}

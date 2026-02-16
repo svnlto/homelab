@@ -153,3 +153,9 @@ variable "metallb_ip_range" {
   type        = string
   default     = ""
 }
+
+variable "traefik_enabled" {
+  description = "Deploy Traefik ingress controller"
+  type        = bool
+  default     = false
+}

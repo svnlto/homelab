@@ -107,4 +107,7 @@ inputs = {
 
   # MetalLB
   metallb_ip_range = "${local.k8s.metallb_start}-${local.k8s.metallb_end}"
+
+  # Traefik
+  traefik_enabled = true
 }
