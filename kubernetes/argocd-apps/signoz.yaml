@@ -19,6 +19,11 @@ spec:
     - repoURL: https://github.com/svnlto/homelab
       targetRevision: HEAD
       ref: values
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      path: kubernetes/apps/signoz
+      directory:
+        include: "ingress.yaml"
 
   destination:
     server: https://kubernetes.default.svc

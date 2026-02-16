@@ -17,12 +17,3 @@ signoz:
 frontend:
   service:
     type: ClusterIP
-  ingress:
-    enabled: true
-    className: traefik
-    hosts:
-      - host: signoz.k8s.local
-        paths:
-          - path: /
-            pathType: Prefix
-            port: 3301
