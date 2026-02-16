@@ -29,9 +29,9 @@ patches:
         path: /spec/replicas
         value: 1
   - target:
-      kind: Service
+      kind: Ingress
       name: whoami
     patch: |-
       - op: replace
-        path: /spec/type
-        value: LoadBalancer
+        path: /spec/rules/0/host
+        value: whoami.k8s.local
