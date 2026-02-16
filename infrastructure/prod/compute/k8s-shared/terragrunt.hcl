@@ -88,9 +88,9 @@ inputs = {
       vm_id           = 410
       hostname        = "shared-worker1"
       ip_address      = "${local.k8s.worker_start}/24"
-      cpu_cores       = 4
-      memory_mb       = 16384
-      disk_size_gb    = 100
+      cpu_cores       = 8
+      memory_mb       = 8192
+      disk_size_gb    = 50
       gpu_passthrough = false
     }
     worker2 = {
@@ -98,9 +98,9 @@ inputs = {
       vm_id           = 411
       hostname        = "shared-worker2"
       ip_address      = "10.0.1.22/24"
-      cpu_cores       = 4
-      memory_mb       = 16384
-      disk_size_gb    = 100
+      cpu_cores       = 8
+      memory_mb       = 8192
+      disk_size_gb    = 50
       gpu_passthrough = false
     }
   }
