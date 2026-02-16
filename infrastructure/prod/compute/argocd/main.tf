@@ -8,6 +8,7 @@ module "argocd" {
   repo_branch          = var.repo_branch
   root_app_path        = var.root_app_path
   admin_password       = var.admin_password
+  server_service_type  = var.server_service_type
   ingress_enabled      = var.ingress_enabled
   ingress_host         = var.ingress_host
   spoke_clusters       = var.spoke_clusters

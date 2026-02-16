@@ -13,6 +13,7 @@ locals {
   proxmox     = local.global_vars.locals.proxmox
   truenas     = local.global_vars.locals.truenas
   nixos       = local.global_vars.locals.nixos
+  talos       = local.global_vars.locals.talos
 }
 
 inputs = {
@@ -22,6 +23,9 @@ inputs = {
 
   nixos_url      = local.nixos.iso_url
   nixos_filename = local.nixos.filename
+
+  talos_version      = local.talos.version
+  talos_schematic_id = local.talos.schematic_id
 
   proxmox_node_primary   = local.proxmox.nodes.primary
   proxmox_node_secondary = local.proxmox.nodes.secondary

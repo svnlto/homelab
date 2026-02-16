@@ -280,7 +280,7 @@ tg-fmt:
     cd infrastructure && terragrunt run --all fmt
 
 tg-apply-module MODULE:
-    cd infrastructure/{{MODULE}} && terragrunt apply
+    cd infrastructure/{{MODULE}} && terragrunt apply -auto-approve
 
 tg-plan-module MODULE:
     cd infrastructure/{{MODULE}} && terragrunt plan
@@ -293,6 +293,23 @@ tg-graph:
 
 tg-list:
     @find infrastructure -name "terragrunt.hcl" -not -path "*/.terragrunt-cache/*" | sed 's|infrastructure/||g' | sed 's|/terragrunt.hcl||g' | sort
+
+# --- Kubernetes ---
+
+# Clean up orphan ZFS datasets from destroyed/failed Talos VMs (VMIDs 4xx)
+k8s-cleanup-zfs:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for host in 192.168.0.11 192.168.0.10; do
+        echo "Checking $(ssh root@$host hostname)..."
+        ssh root@$host 'zfs list -H -o name | grep -E "vm-(4[0-9]{2})-" | while read ds; do
+            vmid=$(echo "$ds" | sed "s/.*vm-\([0-9]*\)-.*/\1/")
+            if ! qm status "$vmid" >/dev/null 2>&1; then
+                echo "  Destroying orphan: $ds"
+                zfs destroy "$ds"
+            fi
+        done' || true
+    done
 
 # --- Utilities ---
 

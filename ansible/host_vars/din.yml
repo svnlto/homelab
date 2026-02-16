@@ -5,5 +5,20 @@
 pci_device_ids: "1000:0097,1000:0072"
 vfio_blacklist_drivers: [mpt3sas, mpt2sas]
 
+# Proxmox PCI resource mappings (Datacenter > Resource Mappings)
+pci_resource_mappings:
+  truenas-h330:
+    description: "LSI SAS3008 H330 Mini for TrueNAS VM 300"
+    device_id: "1000:0097"
+    iommu_group: 27
+    path: "0000:02:00.0"
+    subsystem_id: "1028:1f53"
+  truenas-lsi:
+    description: "Dell PERC H200E for TrueNAS VM 300 to MD1220"
+    device_id: "1000:0072"
+    iommu_group: 28
+    path: "0000:03:00.0"
+    subsystem_id: "1028:1f78"
+
 # Allow non-Intel SFP+ transceivers
 configure_ixgbe_unsupported_sfp: true

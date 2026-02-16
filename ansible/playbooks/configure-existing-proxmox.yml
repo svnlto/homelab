@@ -101,6 +101,15 @@
       when: configure_ixgbe_unsupported_sfp | default(false)
       tags: [ixgbe]
 
+    - name: Configure PCI resource mappings
+      ansible.builtin.include_role:
+        name: proxmox_configure
+        tasks_from: pci_resource_mappings.yml
+        apply:
+          tags: [passthrough, pci-mappings]
+      when: pci_resource_mappings is defined and pci_resource_mappings | length > 0
+      tags: [passthrough, pci-mappings]
+
     - name: Configure Dell fan control
       ansible.builtin.include_role:
         name: proxmox_configure

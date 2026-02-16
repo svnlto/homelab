@@ -50,6 +50,10 @@ resource "helm_release" "argocd" {
   # Server configuration
   values = [yamlencode({
     server = {
+      service = {
+        type = var.server_service_type
+      }
+
       # Enable ingress if configured
       ingress = {
         enabled = var.ingress_enabled
