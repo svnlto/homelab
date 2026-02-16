@@ -30,11 +30,5 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true
-      - RespectIgnoreDifferences=true
 
-  ignoreDifferences:
-    - group: clickhouse.altinity.com
-      kind: ClickHouseInstallation
-      jsonPointers:
-        - /status
+  ignoreDifferences: []
