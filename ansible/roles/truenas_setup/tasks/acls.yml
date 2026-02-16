@@ -1,5 +1,8 @@
 ---
 # NFSv4 ACLs — owner@ FULL_CONTROL, group@ MODIFY, everyone@ READ (with inheritance)
+# Uses explicit permissions (not BASIC presets) so Samba vfs_ixnas produces trivial ACLs
+# that macOS Finder can read. BASIC presets create non-trivial ACLs that break Finder
+# attribute fetching over SMB (Synapse EINVAL errors).
 
 - name: Build ACL entries per dataset
   ansible.builtin.set_fact:
@@ -7,20 +10,59 @@
       - tag: "owner@"
         type: ALLOW
         perms:
-          BASIC: FULL_CONTROL
+          READ_DATA: true
+          WRITE_DATA: true
+          APPEND_DATA: true
+          READ_NAMED_ATTRS: true
+          WRITE_NAMED_ATTRS: true
+          EXECUTE: true
+          DELETE: true
+          DELETE_CHILD: true
+          READ_ATTRIBUTES: true
+          WRITE_ATTRIBUTES: true
+          READ_ACL: true
+          WRITE_ACL: true
+          WRITE_OWNER: true
+          SYNCHRONIZE: true
         flags:
           BASIC: INHERIT
       - tag: "group@"
         type: ALLOW
         perms:
-          BASIC: MODIFY
+          READ_DATA: true
+          WRITE_DATA: true
+          APPEND_DATA: true
+          READ_NAMED_ATTRS: true
+          WRITE_NAMED_ATTRS: true
+          EXECUTE: true
+          DELETE: false
+          DELETE_CHILD: false
+          READ_ATTRIBUTES: true
+          WRITE_ATTRIBUTES: true
+          READ_ACL: true
+          WRITE_ACL: false
+          WRITE_OWNER: false
+          SYNCHRONIZE: true
         flags:
           BASIC: INHERIT
     _acl_everyone_read:
       - tag: "everyone@"
         type: ALLOW
         perms:
-          BASIC: READ
+          READ_DATA: true
+          WRITE_DATA: false
+          APPEND_DATA: false
+          READ_NAMED_ATTRS: true
+          WRITE_NAMED_ATTRS: false
+          EXECUTE: true
+          DELETE: false
+          DELETE_CHILD: false
+          READ_ATTRIBUTES: true
+          WRITE_ATTRIBUTES: false
+          READ_ACL: true
+          WRITE_ACL: false
+          WRITE_OWNER: false
+          SYNCHRONIZE: true
         flags:
           BASIC: INHERIT
   tags: [acls]
@@ -34,7 +76,7 @@
            "uid": item.uid,
            "gid": item.gid,
            "acltype": "NFS4",
-           "options": {"recursive": false}}
+           "options": {"recursive": true, "traverse": true}}
          | to_json }}'
   loop: "{{ acl_datasets }}"
   loop_control:
