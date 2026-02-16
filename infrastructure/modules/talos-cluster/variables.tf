@@ -159,3 +159,63 @@ variable "traefik_enabled" {
   type        = bool
   default     = false
 }
+
+# Tailscale
+variable "tailscale_enabled" {
+  description = "Deploy Tailscale Kubernetes operator"
+  type        = bool
+  default     = false
+}
+
+variable "tailscale_oauth_client_id" {
+  description = "Tailscale OAuth client ID for the Kubernetes operator"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "tailscale_oauth_client_secret" {
+  description = "Tailscale OAuth client secret for the Kubernetes operator"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "tailscale_hostname" {
+  description = "Tailscale hostname for the Traefik service (unique per cluster)"
+  type        = string
+  default     = "traefik"
+}
+
+# Traefik ACME
+variable "traefik_acme_enabled" {
+  description = "Enable ACME certificate resolver in Traefik"
+  type        = bool
+  default     = false
+}
+
+variable "traefik_acme_email" {
+  description = "Email for Let's Encrypt ACME registration"
+  type        = string
+  default     = ""
+}
+
+variable "traefik_acme_server" {
+  description = "ACME server URL (use staging for testing)"
+  type        = string
+  default     = "https://acme-staging-v02.api.letsencrypt.org/directory"
+}
+
+variable "cloudns_auth_id" {
+  description = "ClouDNS sub-auth-id for DNS-01 ACME challenge"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "cloudns_auth_password" {
+  description = "ClouDNS password for DNS-01 ACME challenge"
+  type        = string
+  sensitive   = true
+  default     = ""
+}

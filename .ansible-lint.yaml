@@ -12,7 +12,7 @@ exclude_paths:
   - .pre-commit/
   - venv/
   - terraform/
-  - '*/templates/*.j2' # Jinja2 templates can have intentional spacing
+  - "*/templates/*.j2" # Jinja2 templates can have intentional spacing
 
 # Enable checking of specific files
 kinds:
@@ -46,10 +46,6 @@ offline: false
 
 # Use progressive mode for gradual adoption
 progressive: false
-
-# Write violations to file
-# write_list:
-#   - all
 
 # Profile to use (min, basic, moderate, safety, shared, production)
 profile: production

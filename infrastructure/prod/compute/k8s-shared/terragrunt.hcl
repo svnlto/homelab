@@ -18,6 +18,17 @@ dependency "images" {
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 }
 
+dependency "tailscale" {
+  config_path = "../../tailscale/acl"
+
+  mock_outputs = {
+    k8s_oauth_client_id     = "mock-client-id"
+    k8s_oauth_client_secret = "mock-client-secret"
+  }
+  mock_outputs_merge_strategy_with_state = "shallow"
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
+}
+
 locals {
   global_vars = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
   vlans       = local.global_vars.locals.vlans
@@ -110,4 +121,17 @@ inputs = {
 
   # Traefik
   traefik_enabled = true
+
+  # Tailscale (OAuth client created by prod/tailscale/acl module)
+  tailscale_enabled             = true
+  tailscale_oauth_client_id     = dependency.tailscale.outputs.k8s_oauth_client_id
+  tailscale_oauth_client_secret = dependency.tailscale.outputs.k8s_oauth_client_secret
+  tailscale_hostname            = local.k8s.tailscale_hostname
+
+  # Traefik ACME (staging first — switch to production when verified)
+  traefik_acme_enabled  = true
+  traefik_acme_email    = get_env("TF_VAR_acme_email", "")
+  traefik_acme_server   = "https://acme-staging-v02.api.letsencrypt.org/directory"
+  cloudns_auth_id       = get_env("TF_VAR_cloudns_auth_id", "")
+  cloudns_auth_password = get_env("TF_VAR_cloudns_auth_password", "")
 }

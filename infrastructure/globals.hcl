@@ -131,35 +131,46 @@ locals {
     }
   }
 
+  dns = {
+    domain            = "svenlito.com"
+    homelab_subdomain = "h"
+  }
+
   k8s_clusters = {
     shared = {
-      vip           = "10.0.1.10"
-      control_start = "10.0.1.11"
-      control_end   = "10.0.1.13"
-      worker_start  = "10.0.1.21"
-      worker_end    = "10.0.1.29"
-      metallb_start = "10.0.1.100"
-      metallb_end   = "10.0.1.150"
+      vip                = "10.0.1.10"
+      control_start      = "10.0.1.11"
+      control_end        = "10.0.1.13"
+      worker_start       = "10.0.1.21"
+      worker_end         = "10.0.1.29"
+      metallb_start      = "10.0.1.100"
+      metallb_end        = "10.0.1.150"
+      fqdn_suffix        = "shared.h.svenlito.com"
+      tailscale_hostname = "traefik-shared"
     }
 
     apps = {
-      vip           = "10.0.2.10"
-      control_start = "10.0.2.11"
-      control_end   = "10.0.2.13"
-      worker_start  = "10.0.2.21"
-      worker_end    = "10.0.2.29"
-      metallb_start = "10.0.2.100"
-      metallb_end   = "10.0.2.150"
+      vip                = "10.0.2.10"
+      control_start      = "10.0.2.11"
+      control_end        = "10.0.2.13"
+      worker_start       = "10.0.2.21"
+      worker_end         = "10.0.2.29"
+      metallb_start      = "10.0.2.100"
+      metallb_end        = "10.0.2.150"
+      fqdn_suffix        = "apps.h.svenlito.com"
+      tailscale_hostname = "traefik-apps"
     }
 
     test = {
-      vip           = "10.0.3.10"
-      control_start = "10.0.3.11"
-      control_end   = "10.0.3.13"
-      worker_start  = "10.0.3.21"
-      worker_end    = "10.0.3.23"
-      metallb_start = "10.0.3.100"
-      metallb_end   = "10.0.3.150"
+      vip                = "10.0.3.10"
+      control_start      = "10.0.3.11"
+      control_end        = "10.0.3.13"
+      worker_start       = "10.0.3.21"
+      worker_end         = "10.0.3.23"
+      metallb_start      = "10.0.3.100"
+      metallb_end        = "10.0.3.150"
+      fqdn_suffix        = "test.h.svenlito.com"
+      tailscale_hostname = "traefik-test"
     }
   }
 

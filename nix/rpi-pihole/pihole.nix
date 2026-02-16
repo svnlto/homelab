@@ -26,6 +26,10 @@
       Type = "oneshot";
       RemainAfterExit = true;
       WorkingDirectory = "/opt/pihole";
+      # Copy dnsmasq configs with --dereference to resolve NixOS /etc/static/ symlinks.
+      # Docker containers can't follow symlinks outside the volume mount.
+      ExecStartPre =
+        "${pkgs.coreutils}/bin/cp --dereference --update /etc/pihole/05-homelab.conf /opt/pihole/etc-dnsmasq.d/05-homelab.conf";
       ExecStart = "${pkgs.docker-compose}/bin/docker-compose up -d";
       ExecStop = "${pkgs.docker-compose}/bin/docker-compose down";
       Restart = "on-failure";
@@ -121,6 +125,16 @@
       forward-addr: 193.19.108.2@853#dns.mullvad.net
   '';
 
+  # Split DNS: resolve *.h.svenlito.com to cluster Traefik MetalLB IPs for LAN clients
+  # dnsmasq address= is a wildcard — matches the domain and all subdomains
+  environment.etc."pihole/05-homelab.conf".text = ''
+    # K8s shared cluster: *.shared.h.svenlito.com → Traefik MetalLB IP
+    address=/shared.h.svenlito.com/10.0.1.102
+    # Future clusters (uncomment when deployed):
+    # address=/apps.h.svenlito.com/10.0.2.x
+    # address=/test.h.svenlito.com/10.0.3.x
+  '';
+
   # Copy docker-compose.yml and configs to working directory
   systemd.tmpfiles.rules = [
     "d /opt/pihole 0755 root root -"
@@ -129,6 +143,9 @@
     "d /opt/unbound 0755 root root -"
     "L+ /opt/pihole/docker-compose.yml - - - - /etc/pihole/docker-compose.yml"
     "L+ /opt/unbound/unbound.conf - - - - /etc/unbound/unbound.conf"
+    # Note: dnsmasq configs are copied (not symlinked) because Docker containers
+    # can't follow NixOS symlinks to /etc/static/. The pihole service ExecStartPre
+    # handles the copy with --dereference to resolve symlinks.
   ];
 
   # Prometheus node exporter for monitoring

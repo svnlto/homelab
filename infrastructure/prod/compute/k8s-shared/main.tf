@@ -28,4 +28,17 @@ module "k8s_shared" {
   truenas_iscsi_dataset = var.truenas_iscsi_dataset
   metallb_ip_range      = var.metallb_ip_range
   traefik_enabled       = var.traefik_enabled
+
+  # Tailscale
+  tailscale_enabled             = var.tailscale_enabled
+  tailscale_oauth_client_id     = var.tailscale_oauth_client_id
+  tailscale_oauth_client_secret = var.tailscale_oauth_client_secret
+  tailscale_hostname            = var.tailscale_hostname
+
+  # Traefik ACME
+  traefik_acme_enabled  = var.traefik_acme_enabled
+  traefik_acme_email    = var.traefik_acme_email
+  traefik_acme_server   = var.traefik_acme_server
+  cloudns_auth_id       = var.cloudns_auth_id
+  cloudns_auth_password = var.cloudns_auth_password
 }
