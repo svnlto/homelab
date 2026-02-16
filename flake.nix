@@ -38,6 +38,8 @@
             just
             terragrunt
             terraform
+            kubernetes-helm
+            kubectl
             # MCP server runtimes
             nodejs
             deno
@@ -48,8 +50,6 @@
           shellHook = ''
             export QEMU_DIR="${pkgs.qemu}/share/qemu"
             export PATH="${pkgs.qemu}/bin:$PATH"
-
-            echo "Homelab Development Environment"
           '';
         };
       });

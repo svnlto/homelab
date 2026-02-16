@@ -1,0 +1,76 @@
+---
+# Create a TrueNAS API key for democratic-csi (Kubernetes persistent volumes).
+
+- name: Check if API key already exists
+  ansible.builtin.command:
+    cmd: midclt call api_key.query '[["name", "=", "{{ truenas_api_key_name }}"]]'
+  register: key_check
+  changed_when: false
+
+- name: Set key exists fact
+  ansible.builtin.set_fact:
+    key_exists: "{{ (key_check.stdout | from_json | length) > 0 }}"
+
+- name: Create API key
+  ansible.builtin.command:
+    cmd: >
+      midclt call api_key.create
+      '{"name": "{{ truenas_api_key_name }}", "username": "{{ ansible_user }}"}'
+  register: key_create
+  when: not key_exists
+  changed_when: true
+
+- name: Parse API key from output # noqa no-handler
+  ansible.builtin.set_fact:
+    truenas_api_key: "{{ (key_create.stdout | from_json).key }}"
+  when: key_create.changed
+
+- name: Save API key to 1Password # noqa no-handler
+  delegate_to: localhost
+  become: false
+  ansible.builtin.command:
+    argv:
+      - op
+      - item
+      - create
+      - --category=password
+      - --title={{ truenas_1password_item }}
+      - --vault=Personal
+      - credential={{ truenas_api_key }}
+  when: key_create.changed
+  changed_when: true
+  register: op_create
+  failed_when: false
+
+- name: Update existing 1Password item if create failed # noqa no-handler
+  delegate_to: localhost
+  become: false
+  ansible.builtin.command:
+    argv:
+      - op
+      - item
+      - edit
+      - "{{ truenas_1password_item }}"
+      - --vault=Personal
+      - credential={{ truenas_api_key }}
+  when: key_create.changed and op_create.rc != 0
+  changed_when: true
+
+- name: Display result # noqa no-handler
+  ansible.builtin.debug:
+    msg: |
+      ========================================
+      TrueNAS API Key Created: {{ inventory_hostname }}
+      ========================================
+
+      Key name: {{ truenas_api_key_name }}
+      Saved to 1Password: {{ truenas_1password_item }}
+
+      Reload with: direnv allow
+      ========================================
+  when: key_create.changed
+
+- name: Key already exists
+  ansible.builtin.debug:
+    msg: "API key '{{ truenas_api_key_name }}' already exists on {{ inventory_hostname }}. Delete it first to regenerate."
+  when: key_exists

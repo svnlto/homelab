@@ -15,4 +15,5 @@
     middleware_method: client
 
   roles:
+    - role: truenas_api_key
     - role: truenas_setup
