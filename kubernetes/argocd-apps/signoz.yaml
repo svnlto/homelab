@@ -9,10 +9,16 @@ metadata:
 spec:
   project: default
 
-  source:
-    repoURL: https://github.com/svnlto/homelab
-    targetRevision: HEAD
-    path: kubernetes/apps/signoz/overlays/shared
+  sources:
+    - repoURL: https://charts.signoz.io
+      chart: signoz
+      targetRevision: "0.111.0"
+      helm:
+        valueFiles:
+          - $values/kubernetes/apps/signoz/values.yaml
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      ref: values
 
   destination:
     server: https://kubernetes.default.svc
