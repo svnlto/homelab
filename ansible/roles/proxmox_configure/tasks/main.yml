@@ -25,6 +25,9 @@
 - name: Configure Dell fan control
   ansible.builtin.include_tasks: dell_fan_control.yml
 
+- name: Configure Dell enclosure fan control
+  ansible.builtin.include_tasks: dell_enclosure_fan_control.yml
+
 - name: Configure datacenter settings (migration network, keyboard)
   ansible.builtin.template:
     src: datacenter.cfg.j2

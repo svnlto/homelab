@@ -1,0 +1,44 @@
+#!/bin/bash
+# Dell MD1200/MD1220 Enclosure Fan Control
+# Controls fan speed via EMM debug serial port (MN657 cable)
+# SES (sg_ses) cannot control these fans - the EMM firmware ignores SES commands
+
+SERIAL_DEVICE="{{ enclosure_serial_device | default('/dev/ttyS1') }}"
+FAN_SPEED="{{ enclosure_fan_speed | default(15) }}"
+SAFE_SPEED=25
+
+configure_serial() {
+    stty -F "$SERIAL_DEVICE" 38400 cs8 -cstopb -parenb ixon ixoff
+}
+
+send_speed() {
+    local speed="$1"
+    local i
+    # Send multiple times for reliability — EMM sometimes misses commands
+    for i in $(seq 1 5); do
+        echo "set_speed $speed" > "$SERIAL_DEVICE"
+        sleep 1
+    done
+}
+
+restore_safe_speed() {
+    echo "Restoring enclosure fans to ${SAFE_SPEED}%..."
+    send_speed "$SAFE_SPEED"
+    exit 0
+}
+
+trap restore_safe_speed SIGTERM SIGINT
+
+if [ ! -c "$SERIAL_DEVICE" ]; then
+    echo "Error: Serial device $SERIAL_DEVICE not found"
+    exit 1
+fi
+
+configure_serial
+
+echo "Setting enclosure fan speed to ${FAN_SPEED}% via ${SERIAL_DEVICE}"
+
+while true; do
+    send_speed "$FAN_SPEED"
+    sleep 60
+done

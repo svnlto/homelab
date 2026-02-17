@@ -26,3 +26,9 @@
     name: dell-fan-control
     state: restarted
     daemon_reload: true
+
+- name: Restart dell-enclosure-fan-control
+  ansible.builtin.systemd:
+    name: dell-enclosure-fan-control
+    state: restarted
+    daemon_reload: true
