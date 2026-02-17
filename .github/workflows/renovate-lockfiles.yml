@@ -98,6 +98,9 @@ jobs:
         with:
           repo: gruntwork-io/terragrunt
           tag: v0.97.0
+          extension-matching: disable
+          rename-to: terragrunt
+          chmod: 0755
 
       - name: Generate Terragrunt files
         if: hashFiles(format('{0}/terragrunt.hcl', matrix.dir)) != ''
