@@ -31,6 +31,10 @@
       ExecStartPre =
         "${pkgs.coreutils}/bin/cp --dereference --update /etc/pihole/05-homelab.conf /opt/pihole/etc-dnsmasq.d/05-homelab.conf";
       ExecStart = "${pkgs.docker-compose}/bin/docker-compose up -d";
+      # Pi-hole v6 only reads FTLCONF_ env vars on first init.
+      # Ensure listeningMode is always ALL so non-local subnets (K8s VLANs) can query DNS.
+      ExecStartPost =
+        "${pkgs.docker}/bin/docker exec pihole pihole-FTL --config dns.listeningMode ALL";
       ExecStop = "${pkgs.docker-compose}/bin/docker-compose down";
       Restart = "on-failure";
       RestartSec = "10s";
