@@ -49,10 +49,12 @@ jobs:
 
       - name: Update lock files
         working-directory: infrastructure
+        env:
+          TG_PROVIDER_CACHE: "1"
+          TG_QUEUE_IGNORE_ERRORS: "1"
+          TG_QUEUE_IGNORE_DAG_ORDER: "1"
         run: |
-          terragrunt run --all --provider-cache \
-            -- init -upgrade -backend=false
-          terragrunt run --all --provider-cache --no-auto-init \
+          terragrunt run --all \
             -- providers lock \
             -platform=linux_amd64 \
             -platform=darwin_arm64
