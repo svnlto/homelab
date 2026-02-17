@@ -116,6 +116,14 @@
         tasks_from: dell_fan_control.yml
       tags: [fan]
 
+    - name: Configure Dell enclosure fan control
+      ansible.builtin.include_role:
+        name: proxmox_configure
+        tasks_from: dell_enclosure_fan_control.yml
+        apply:
+          tags: [enclosure-fan]
+      tags: [enclosure-fan]
+
     - name: Create Terraform API tokens
       ansible.builtin.include_role:
         name: proxmox_api_tokens
@@ -128,6 +136,12 @@
       ansible.builtin.systemd:
         name: chrony
         state: restarted
+
+    - name: Restart dell-enclosure-fan-control
+      ansible.builtin.systemd:
+        name: dell-enclosure-fan-control
+        state: restarted
+        daemon_reload: true
 
     - name: Update GRUB
       ansible.builtin.command: update-grub

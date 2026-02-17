@@ -1,0 +1,31 @@
+---
+# Serial-based fan speed control for Dell MD1200/MD1220 disk enclosures.
+# Only runs on hosts with enclosure_serial_device defined.
+
+- name: Deploy Dell enclosure fan control script
+  ansible.builtin.template:
+    src: dell-enclosure-fan-control.sh.j2
+    dest: /usr/local/bin/dell-enclosure-fan-control.sh
+    owner: root
+    group: root
+    mode: '0755'
+  when: enclosure_serial_device is defined
+  notify: Restart dell-enclosure-fan-control
+
+- name: Deploy Dell enclosure fan control systemd service
+  ansible.builtin.template:
+    src: dell-enclosure-fan-control.service.j2
+    dest: /etc/systemd/system/dell-enclosure-fan-control.service
+    owner: root
+    group: root
+    mode: '0644'
+  when: enclosure_serial_device is defined
+  notify: Restart dell-enclosure-fan-control
+
+- name: Enable and start Dell enclosure fan control service
+  ansible.builtin.systemd:
+    name: dell-enclosure-fan-control
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: enclosure_serial_device is defined

@@ -1,0 +1,12 @@
+[Unit]
+Description=Dell Enclosure Fan Control (MD1200/MD1220)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/dell-enclosure-fan-control.sh
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

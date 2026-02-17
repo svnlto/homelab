@@ -254,6 +254,11 @@ truenas-backup-setup:
 truenas-replication:
     cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-replication.yml
 
+# Set enclosure fan speeds (MD1200/MD1220)
+enclosure-fan:
+    cd ansible && ansible-playbook -i inventory.ini \
+      playbooks/configure-existing-proxmox.yml --tags enclosure-fan
+
 # --- Restic Backup (B2) ---
 
 restic-setup:

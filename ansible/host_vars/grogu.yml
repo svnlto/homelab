@@ -26,3 +26,7 @@ pci_resource_mappings:
 
 # Allow non-Intel SFP+ transceivers
 configure_ixgbe_unsupported_sfp: true
+
+# Dell MD1200 enclosure fan control via EMM serial port
+enclosure_serial_device: "/dev/ttyS1"
+enclosure_fan_speed: 15
