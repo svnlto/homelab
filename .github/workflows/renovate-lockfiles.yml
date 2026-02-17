@@ -50,7 +50,7 @@ jobs:
       - name: Update lock files
         working-directory: infrastructure
         run: |
-          terragrunt run --all --provider-cache --terragrunt-no-auto-init \
+          terragrunt run --all --provider-cache --no-auto-init \
             -- providers lock \
             -platform=linux_amd64 \
             -platform=darwin_arm64
