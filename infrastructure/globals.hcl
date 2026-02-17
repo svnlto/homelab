@@ -201,6 +201,12 @@ locals {
     bridge_name = "bridge-vlans"
 
     allowed_management_subnets = "192.168.0.0/24,10.10.1.0/24"
+
+    qos = {
+      download_limit = "95M"
+      upload_limit   = "40M"
+      bulk_hosts     = ["192.168.0.50"]
+    }
   }
 
   vm_ids = {
@@ -231,6 +237,7 @@ locals {
     resource_mappings = {
       truenas_h330 = "truenas-h330"
       truenas_lsi  = "truenas-lsi"
+      truenas_h241 = "truenas-h241"
       arc_a310     = "arc-a310"
     }
   }
