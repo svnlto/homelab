@@ -43,6 +43,11 @@ data "talos_machine_configuration" "control_plane" {
           disk  = "/dev/sda"
           image = "factory.talos.dev/nocloud-installer/dc7b152cb3ea99b821fcb7340ce7168313ce393d663740b791c36f6e95fc8586:${var.talos_version}"
         }
+        sysctls = {
+          "net.ipv6.conf.all.disable_ipv6"     = "1"
+          "net.ipv6.conf.default.disable_ipv6" = "1"
+          "net.ipv6.conf.lo.disable_ipv6"      = "1"
+        }
         features = {
           kubernetesTalosAPIAccess = {
             enabled                     = true
@@ -104,9 +109,16 @@ data "talos_machine_configuration" "worker" {
           disk  = "/dev/sda"
           image = "factory.talos.dev/nocloud-installer/dc7b152cb3ea99b821fcb7340ce7168313ce393d663740b791c36f6e95fc8586:${var.talos_version}"
         }
-        sysctls = each.value.gpu_passthrough ? {
-          "kernel.modules_disabled" = "0"
-        } : {}
+        sysctls = merge(
+          {
+            "net.ipv6.conf.all.disable_ipv6"     = "1"
+            "net.ipv6.conf.default.disable_ipv6" = "1"
+            "net.ipv6.conf.lo.disable_ipv6"      = "1"
+          },
+          each.value.gpu_passthrough ? {
+            "kernel.modules_disabled" = "0"
+          } : {}
+        )
       }
     })
   ]
