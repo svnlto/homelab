@@ -43,7 +43,7 @@ jobs:
         uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2 # v2
         with:
           repo: minamijoyo/tfupdate
-          tag: v0.8.5
+          tag: v0.9.3
 
       - name: Sync provider versions
         run: .github/scripts/sync-provider-versions.sh
