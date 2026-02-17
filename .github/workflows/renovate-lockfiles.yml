@@ -16,6 +16,16 @@ jobs:
     if: >-
       startsWith(github.head_ref, 'renovate/terraform')
       || startsWith(github.head_ref, 'renovate/hashicorp-terraform')
+    strategy:
+      max-parallel: 1
+      matrix:
+        dir:
+          - infrastructure/modules/talos-cluster
+          - infrastructure/modules/argocd
+          - infrastructure/modules/proxmox-image
+          - infrastructure/modules/truenas-vm
+          - infrastructure/modules/vm
+
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -29,15 +39,6 @@ jobs:
           terraform_version: "1.14.1"
           terraform_wrapper: false
 
-      - name: Install Terragrunt
-        uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2 # v2
-        with:
-          repo: gruntwork-io/terragrunt
-          tag: v0.97.0
-          extension-matching: disable
-          rename-to: terragrunt
-          chmod: 0755
-
       - name: Install tfupdate
         uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2 # v2
         with:
@@ -47,15 +48,10 @@ jobs:
       - name: Sync provider versions
         run: .github/scripts/sync-provider-versions.sh
 
-      - name: Update lock files
-        working-directory: infrastructure
-        env:
-          TG_PROVIDER_CACHE: "1"
-          TG_QUEUE_IGNORE_ERRORS: "1"
-          TG_QUEUE_IGNORE_DAG_ORDER: "1"
+      - name: Update provider lock file
+        working-directory: ${{ matrix.dir }}
         run: |
-          terragrunt run --all \
-            -- providers lock \
+          terraform providers lock \
             -platform=linux_amd64 \
             -platform=darwin_arm64
 
