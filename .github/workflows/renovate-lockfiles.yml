@@ -94,7 +94,6 @@ jobs:
           terraform_wrapper: false
 
       - name: Install Terragrunt
-        if: hashFiles(format('{0}/terragrunt.hcl', matrix.dir)) != ''
         uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2 # v2
         with:
           repo: gruntwork-io/terragrunt
