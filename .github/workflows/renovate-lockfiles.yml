@@ -20,40 +20,18 @@ jobs:
       max-parallel: 1
       matrix:
         dir:
-          # Modules (have versions.tf)
           - infrastructure/modules/talos-cluster
           - infrastructure/modules/argocd
           - infrastructure/modules/proxmox-image
           - infrastructure/modules/truenas-vm
           - infrastructure/modules/vm
-          # Terragrunt consuming modules
-          - infrastructure/prod/resource-pools
-          - infrastructure/prod/images
-          - infrastructure/prod/compute/arr-stack
-          - infrastructure/prod/compute/argocd
-          - infrastructure/prod/compute/dumper
-          - infrastructure/prod/compute/jellyfin
-          - infrastructure/prod/compute/k8s-shared
-          - infrastructure/prod/compute/k8s-apps
-          - infrastructure/prod/storage/truenas-primary
-          - infrastructure/prod/storage/truenas-backup
-          - infrastructure/prod/mikrotik/base
-          - infrastructure/prod/mikrotik/dns
-          - infrastructure/prod/mikrotik/firewall
-          - infrastructure/prod/mikrotik/dhcp/vlan-20-lan
-          - infrastructure/prod/mikrotik/dhcp/vlan-30-k8s-shared
-          - infrastructure/prod/mikrotik/dhcp/vlan-31-k8s-apps
-          - infrastructure/prod/mikrotik/dhcp/vlan-32-k8s-test
-          - infrastructure/prod/tailscale/acl
-          - infrastructure/prod/dns/cloudns
-          - infrastructure/dev/resource-pools
-          - infrastructure/dev/images
 
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 2
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
@@ -67,19 +45,8 @@ jobs:
           repo: minamijoyo/tfupdate
           tag: v0.8.5
 
-      - name: Install Terragrunt
-        uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2 # v2
-        with:
-          repo: gruntwork-io/terragrunt
-          tag: v0.71.6
-
       - name: Sync provider versions
         run: .github/scripts/sync-provider-versions.sh
-
-      - name: Generate Terragrunt files
-        if: hashFiles(format('{0}/terragrunt.hcl', matrix.dir)) != ''
-        working-directory: ${{ matrix.dir }}
-        run: terragrunt init -backend=false
 
       - name: Update provider lock file
         working-directory: ${{ matrix.dir }}
@@ -88,7 +55,7 @@ jobs:
             -platform=linux_amd64 \
             -platform=darwin_arm64
 
-      - name: Commit lock files
+      - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
         with:
           commit_message: "chore: sync provider versions and update lock files"
