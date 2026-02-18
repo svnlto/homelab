@@ -7,7 +7,6 @@ resources:
   - pv-nfs.yaml
   - pvc-nfs.yaml
   - pvc-cache.yaml
-  - pvc-tailscale.yaml
 
 commonLabels:
   app.kubernetes.io/name: dumper

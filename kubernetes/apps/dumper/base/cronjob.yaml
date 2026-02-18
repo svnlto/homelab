@@ -14,11 +14,6 @@ spec:
       template:
         spec:
           restartPolicy: Never
-          securityContext:
-            runAsNonRoot: true
-            fsGroup: 1000
-            seccompProfile:
-              type: RuntimeDefault
 
           initContainers:
             - name: tailscale
@@ -31,9 +26,9 @@ spec:
                       name: tailscale-auth
                       key: TS_AUTHKEY
                 - name: TS_STATE_DIR
-                  value: /tmp/tailscale
+                  value: /var/lib/tailscale
                 - name: TS_USERSPACE
-                  value: "true"
+                  value: "false"
                 - name: TS_HOSTNAME
                   value: dumper-k8s
                 - name: TS_ACCEPT_DNS
@@ -41,11 +36,14 @@ spec:
                 - name: TS_KUBE_SECRET
                   value: ""
               securityContext:
-                runAsUser: 1000
-                runAsGroup: 1000
-                allowPrivilegeEscalation: false
                 capabilities:
-                  drop: ["ALL"]
+                  add:
+                    - NET_ADMIN
+              volumeMounts:
+                - name: tailscale-state
+                  mountPath: /var/lib/tailscale
+                - name: dev-tun
+                  mountPath: /dev/net/tun
 
           containers:
             - name: dumper
@@ -61,9 +59,6 @@ spec:
               securityContext:
                 runAsUser: 1003
                 runAsGroup: 1000
-                allowPrivilegeEscalation: false
-                capabilities:
-                  drop: ["ALL"]
               volumeMounts:
                 - name: nfs-dump
                   mountPath: /mnt/dump
@@ -80,6 +75,12 @@ spec:
             - name: cache
               persistentVolumeClaim:
                 claimName: dumper-cache
+            - name: tailscale-state
+              emptyDir: {}
+            - name: dev-tun
+              hostPath:
+                path: /dev/net/tun
+                type: CharDevice
             - name: ssh-key
               secret:
                 secretName: dumper-ssh-key
