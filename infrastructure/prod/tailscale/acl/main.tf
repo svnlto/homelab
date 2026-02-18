@@ -30,7 +30,15 @@ resource "tailscale_acl" "this" {
         dst    = ["tag:k8s"]
         users  = ["autogroup:nonroot"]
       },
-      // K8s dumper CronJob can SSH to rsync source devices
+      // Admins can SSH into dumper-src-tagged devices
+      {
+        action = "check"
+        src    = ["autogroup:admin"]
+        dst    = ["tag:dumper-src"]
+        users  = ["autogroup:nonroot", "root"]
+      },
+      // K8s dumper CronJob pods can SSH into dumper-src for rsync
+      // Tagged device → tagged device requires action = "accept" (check not supported)
       {
         action = "accept"
         src    = ["tag:k8s"]
