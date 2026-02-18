@@ -41,8 +41,10 @@
             ];
           };
           extraCommands = ''
-            mkdir -p app
+            mkdir -p app tmp etc
             cp ${./dumper/rsync-photos-k8s.sh} app/rsync-photos.sh
+            echo "dumper:x:1003:1000:dumper:/tmp:/bin/bash" >> etc/passwd
+            echo "dumper:x:1000:" >> etc/group
           '';
         };
 
