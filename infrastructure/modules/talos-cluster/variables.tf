@@ -131,9 +131,21 @@ variable "truenas_api_key" {
 
 
 variable "truenas_nfs_dataset" {
-  description = "TrueNAS ZFS dataset for NFS"
+  description = "TrueNAS ZFS dataset for NFS (bulk pool)"
   type        = string
   default     = "pool/kubernetes"
+}
+
+variable "truenas_nfs_fast_dataset" {
+  description = "TrueNAS ZFS dataset for NFS (fast pool, 10K SAS)"
+  type        = string
+  default     = ""
+}
+
+variable "truenas_nfs_scratch_dataset" {
+  description = "TrueNAS ZFS dataset for NFS (scratch pool, temporary)"
+  type        = string
+  default     = ""
 }
 
 variable "truenas_iscsi_portal" {

@@ -288,14 +288,14 @@ tg-validate:
 tg-fmt:
     cd infrastructure && terragrunt run --all fmt
 
-tg-apply-module MODULE:
-    cd infrastructure/{{MODULE}} && terragrunt apply -auto-approve
+tg-apply-module MODULE *ARGS:
+    cd infrastructure/{{MODULE}} && terragrunt apply -auto-approve {{ARGS}}
 
-tg-plan-module MODULE:
-    cd infrastructure/{{MODULE}} && terragrunt plan
+tg-plan-module MODULE *ARGS:
+    cd infrastructure/{{MODULE}} && terragrunt plan {{ARGS}}
 
-tg-destroy-module MODULE:
-    cd infrastructure/{{MODULE}} && terragrunt destroy
+tg-destroy-module MODULE *ARGS:
+    cd infrastructure/{{MODULE}} && terragrunt destroy {{ARGS}}
 
 tg-graph:
     cd infrastructure && terragrunt dag graph

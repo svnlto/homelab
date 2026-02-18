@@ -38,7 +38,7 @@ Physical Layer
 ├─ R730xd (din)
 │  ├─ Proxmox VE (2× 256GB NVMe mirror)
 │  ├─ TrueNAS VM (VMID 300)
-│  │  ├─ fast:  24× 900GB 10K SAS (3× RAIDZ2) + 2× 128GB SLOG
+│  │  ├─ fast:  21× 900GB 10K SAS (3× 7-wide RAIDZ2) + 2× 120GB SLOG
 │  │  ├─ bulk:  6× 8TB HGST (RAIDZ2)
 │  │  └─ scratch: 6× 3TB (RAIDZ1)
 │  └─ Talos K8s nodes (VMs on local-zfs)
@@ -50,7 +50,7 @@ Physical Layer
 │  └─ Jellyfin + Intel Arc A310 GPU
 │
 └─ MD1220/MD1200 disk shelves
-   ├─ MD1220 (24× 2.5" SAS) → din → fast pool
+   ├─ MD1220 (21× 2.5" SAS + 2× SSD) → din → fast pool
    └─ MD1200 (12× 3.5" SAS) → grogu → backup pool
 
 Network Layer (VLANs)
@@ -300,7 +300,7 @@ Currently:
        ├─ Creates VMID 300 on din
        ├─ Attaches H330 HBA (5× 8TB drives)
        ├─ Dual-homed networking (VLAN 10 + 20)
-       └─ Manual: Attach LSI 9201-8e (24× 900GB)
+       └─ Manual: Attach LSI 9201-8e (21× 900GB + 2× 120GB SSD)
 
 2. Manual pool creation
    └─ docs/truenas-pool-setup.md

@@ -44,21 +44,21 @@ Based on our previous conversations:
 │                      R730xd "din" — PRIMARY TRUENAS                             │
 └─────────────────────────────────────────────────────────────────────────────────┘
 
-    POOL: fast (READY NOW)
+    POOL: fast (DEPLOYED)
     ═══════════════════════
-    Location: MD1220 (24× 2.5" bays)
-    Drives:   24× 900GB 10K SAS
-    Layout:   4× 6-drive RAIDZ2
-    Usable:   ~16TB
+    Location: MD1220 (24× 2.5" bays, 3 slots empty — drives failed during NetApp reformat)
+    Drives:   21× 900GB 10K SAS + 2× 120GB Intel SSD (SLOG)
+    Layout:   3× 7-drive RAIDZ2 + mirrored SLOG
+    Usable:   ~14TB
     Purpose:  Primary working pool — Kubernetes, VMs, databases
 
-        ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
-        │ raidz2  │ │ raidz2  │ │ raidz2  │ │ raidz2  │
-        │ 6×900GB │ │ 6×900GB │ │ 6×900GB │ │ 6×900GB │
-        └─────────┘ └─────────┘ └─────────┘ └─────────┘
+        ┌─────────┐ ┌─────────┐ ┌─────────┐   ┌────────┐
+        │ raidz2  │ │ raidz2  │ │ raidz2  │   │  SLOG  │
+        │ 7×900GB │ │ 7×900GB │ │ 7×900GB │   │ mirror │
+        └─────────┘ └─────────┘ └─────────┘   └────────┘
 
-    Expansion: If 1.2TB drives acquired, keep as hot spares or
-               gradually replace 900GB drives as they age.
+    Expansion: If replacement 900GB drives acquired, add to
+               existing vdevs or keep as hot spares.
 
 
     POOL: bulk (6× 7.15TB — DEPLOYED)
@@ -151,10 +151,10 @@ Based on our previous conversations:
 
 | Pool | Drives | Layout | Raw | Usable | Status |
 |------|--------|--------|-----|--------|--------|
-| **fast** | 24× 900GB 10K SAS | 3× RAIDZ2 (8-wide) + SLOG | ~20TB | ~16TB | Ready now |
+| **fast** | 21× 900GB 10K SAS | 3× RAIDZ2 (7-wide) + SLOG | ~17.1TB | ~14TB | Deployed |
 | **bulk** | 6× 7.15TB | 1× RAIDZ2 (6-wide) | 42.9TB | 25.3TB | Ready now |
 | **scratch** | 6× 2.73TB | 1× RAIDZ1 (6-wide) | 16.4TB | 12.9TB | Ready now |
-| SLOG | 2× 128GB SSD | Mirror | — | — | Attached to fast pool |
+| SLOG | 2× 120GB SSD | Mirror | — | — | Attached to fast pool |
 | Boot | 1× 256GB SATA | Single | — | — | Already configured |
 
 ### Future Expansion Notes
@@ -738,18 +738,22 @@ midclt call disk.query | jq '.[] | select(.size > 7000000000000) | {name, serial
 midclt call disk.query | jq '.[] | select(.size > 800000000000 and .size < 1000000000000) | {name, serial}'
 ```
 
-### Fast Pool (24× 900GB 10K SAS in MD1220)
+### Fast Pool (21× 900GB 10K SAS in MD1220) — DEPLOYED
 
 ```bash
-# Create 4× 6-drive RAIDZ2 vdevs (~16TB usable)
+# Create 3× 7-drive RAIDZ2 vdevs + mirrored SLOG (~14TB usable)
+# Note: Originally 24 drives, 3 failed during NetApp 520→512 byte sector reformatting
+# midclt call pool.create accepts device names (e.g. "sdo") not /dev/disk/by-id/ paths
 midclt call pool.create '{
   "name": "fast",
   "topology": {
     "data": [
-      {"type": "RAIDZ2", "disks": ["disk1", "disk2", "disk3", "disk4", "disk5", "disk6"]},
-      {"type": "RAIDZ2", "disks": ["disk7", "disk8", "disk9", "disk10", "disk11", "disk12"]},
-      {"type": "RAIDZ2", "disks": ["disk13", "disk14", "disk15", "disk16", "disk17", "disk18"]},
-      {"type": "RAIDZ2", "disks": ["disk19", "disk20", "disk21", "disk22", "disk23", "disk24"]}
+      {"type": "RAIDZ2", "disks": ["disk1", "disk2", "disk3", "disk4", "disk5", "disk6", "disk7"]},
+      {"type": "RAIDZ2", "disks": ["disk8", "disk9", "disk10", "disk11", "disk12", "disk13", "disk14"]},
+      {"type": "RAIDZ2", "disks": ["disk15", "disk16", "disk17", "disk18", "disk19", "disk20", "disk21"]}
+    ],
+    "log": [
+      {"type": "MIRROR", "disks": ["ssd1", "ssd2"]}
     ]
   }
 }'

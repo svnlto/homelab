@@ -6,7 +6,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: truenas-nfs-rwx
+  storageClassName: truenas-nfs-bulk
   resources:
     requests:
       storage: 100Mi

@@ -21,13 +21,15 @@ module "k8s_shared" {
   tags             = var.tags
   deploy_bootstrap = var.deploy_bootstrap
 
-  truenas_api_url       = var.truenas_api_url
-  truenas_api_key       = var.truenas_api_key
-  truenas_nfs_dataset   = var.truenas_nfs_dataset
-  truenas_iscsi_portal  = var.truenas_iscsi_portal
-  truenas_iscsi_dataset = var.truenas_iscsi_dataset
-  metallb_ip_range      = var.metallb_ip_range
-  traefik_enabled       = var.traefik_enabled
+  truenas_api_url             = var.truenas_api_url
+  truenas_api_key             = var.truenas_api_key
+  truenas_nfs_dataset         = var.truenas_nfs_dataset
+  truenas_nfs_fast_dataset    = var.truenas_nfs_fast_dataset
+  truenas_nfs_scratch_dataset = var.truenas_nfs_scratch_dataset
+  truenas_iscsi_portal        = var.truenas_iscsi_portal
+  truenas_iscsi_dataset       = var.truenas_iscsi_dataset
+  metallb_ip_range            = var.metallb_ip_range
+  traefik_enabled             = var.traefik_enabled
 
   # Tailscale
   tailscale_enabled             = var.tailscale_enabled
