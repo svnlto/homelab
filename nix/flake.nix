@@ -26,6 +26,7 @@
             openssh
             tailscale
             gnugrep
+            gnused
             findutils
             coreutils
             bash
