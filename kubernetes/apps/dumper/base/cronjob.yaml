@@ -84,8 +84,7 @@ spec:
               persistentVolumeClaim:
                 claimName: dumper-cache
             - name: tailscale-state
-              persistentVolumeClaim:
-                claimName: tailscale-state
+              emptyDir: {}
             - name: ssh-key
               secret:
                 secretName: dumper-ssh-key
