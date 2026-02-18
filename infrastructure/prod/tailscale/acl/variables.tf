@@ -2,7 +2,8 @@ variable "acl_tags" {
   description = "Tag owners mapping (tag name without 'tag:' prefix → list of owners)"
   type        = map(list(string))
   default = {
-    k8s = ["autogroup:admin"]
+    "k8s"        = ["autogroup:admin"]
+    "dumper-src" = ["autogroup:admin"]
   }
 }
 
