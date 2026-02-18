@@ -1,0 +1,74 @@
+---
+# Post-install configuration for Proxmox Backup Server.
+# Assumes PBS is already installed via ISO console.
+
+- name: Configure storage NIC
+  ansible.builtin.template:
+    src: storage-interface.j2
+    dest: /etc/network/interfaces.d/{{ pbs_storage_interface }}
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Bring up storage interface
+
+- name: Flush handlers (bring up storage NIC before NFS mount)
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure storage interface is up
+  ansible.builtin.command:
+    cmd: ip link set {{ pbs_storage_interface }} up
+  changed_when: false
+
+- name: Check if enterprise repo exists
+  ansible.builtin.stat:
+    path: "{{ pbs_enterprise_repo }}"
+  register: enterprise_repo
+
+- name: Disable enterprise repo
+  ansible.builtin.file:
+    path: "{{ pbs_enterprise_repo }}"
+    state: absent
+  when: enterprise_repo.stat.exists
+
+- name: Add PBS no-subscription repository
+  ansible.builtin.apt_repository:
+    repo: "deb http://download.proxmox.com/debian/pbs bookworm pbs-no-subscription"
+    filename: pbs-no-subscription
+    state: present
+
+- name: Install NFS client
+  ansible.builtin.apt:
+    name: nfs-common
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create NFS mount point
+  ansible.builtin.file:
+    path: "{{ pbs_nfs_mountpoint }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Mount NFS datastore
+  ansible.posix.mount:
+    src: "{{ pbs_nfs_server }}:{{ pbs_nfs_path }}"
+    path: "{{ pbs_nfs_mountpoint }}"
+    fstype: nfs
+    opts: vers=4,defaults
+    state: mounted
+
+- name: Check if PBS datastore exists
+  ansible.builtin.command:
+    cmd: proxmox-backup-manager datastore list --output-format json
+  register: pbs_datastores
+  changed_when: false
+
+- name: Create PBS datastore
+  ansible.builtin.command:
+    cmd: >-
+      proxmox-backup-manager datastore create
+      {{ pbs_datastore_name }} {{ pbs_nfs_mountpoint }}
+  when: pbs_datastore_name not in (pbs_datastores.stdout | from_json | map(attribute='name') | list)
+  changed_when: true

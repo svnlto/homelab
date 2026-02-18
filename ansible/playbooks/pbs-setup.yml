@@ -1,0 +1,52 @@
+---
+# Configure Proxmox Backup Server post-install.
+# Run after PBS is installed via ISO console.
+
+- name: Configure Proxmox Backup Server
+  hosts: pbs
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Display PBS information
+      ansible.builtin.debug:
+        msg:
+          - "Configuring: {{ inventory_hostname }}"
+          - "IP: {{ ansible_host }}"
+          - "PBS Web UI: https://{{ ansible_host }}:8007"
+
+    - name: Verify PBS is installed
+      ansible.builtin.stat:
+        path: /usr/sbin/proxmox-backup-manager
+      register: pbm_stat
+      failed_when: not pbm_stat.stat.exists
+
+    - name: Add SSH public key to root authorized_keys
+      ansible.posix.authorized_key:
+        user: root
+        key: "{{ proxmox_ssh_public_key }}"
+        state: present
+      when: proxmox_ssh_public_key is defined
+      tags: [ssh]
+
+    - name: Harden SSH configuration
+      ansible.builtin.include_role:
+        name: security
+        apply:
+          tags: [ssh]
+      tags: [ssh]
+
+  roles:
+    - role: pbs_configure
+
+  post_tasks:
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg:
+          - "PBS configuration complete!"
+          - "Web UI: https://{{ ansible_host }}:8007"
+          - "Datastore: {{ pbs_datastore_name }} at {{ pbs_nfs_mountpoint }}"
+          - ""
+          - "Next steps:"
+          - "  1. Add PBS storage in PVE UI (Datacenter > Storage > Add > PBS)"
+          - "  2. Create backup jobs for VMs 200, 202, 210"

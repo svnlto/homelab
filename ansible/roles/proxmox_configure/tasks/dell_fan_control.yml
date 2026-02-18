@@ -7,6 +7,14 @@
     state: present
     update_cache: true
 
+- name: Disable openipmi SysV service (not needed, suppresses boot warnings)
+  ansible.builtin.systemd:
+    name: openipmi
+    enabled: false
+    state: stopped
+    masked: true
+  failed_when: false
+
 - name: Deploy Dell fan control script
   ansible.builtin.template:
     src: dell-fan-control.sh.j2

@@ -1,0 +1,10 @@
+---
+- name: Restart networking
+  ansible.builtin.systemd:
+    name: networking
+    state: restarted
+
+- name: Bring up storage interface
+  ansible.builtin.command:
+    cmd: ifup {{ pbs_storage_interface }}
+  changed_when: true
