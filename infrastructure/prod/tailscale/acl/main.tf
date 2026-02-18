@@ -29,6 +29,13 @@ resource "tailscale_acl" "this" {
         src    = ["autogroup:admin"]
         dst    = ["tag:k8s"]
         users  = ["autogroup:nonroot"]
+      },
+      // K8s dumper CronJob can SSH to rsync source devices
+      {
+        action = "accept"
+        src    = ["tag:k8s"]
+        dst    = ["tag:dumper-src"]
+        users  = ["autogroup:nonroot", "root"]
       }
     ]
 
