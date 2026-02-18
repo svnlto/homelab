@@ -90,9 +90,6 @@ locals {
     jellyfin         = "192.168.0.51"
     jellyfin_storage = "10.10.10.51"
 
-    dumper         = "192.168.0.52"
-    dumper_storage = "10.10.10.52"
-
     qdevice = "192.168.0.54"
 
     pbs         = "192.168.0.55"
@@ -214,7 +211,6 @@ locals {
 
   vm_ids = {
     arr_stack = 200
-    dumper    = 202
     jellyfin  = 210
     pbs       = 220
   }
