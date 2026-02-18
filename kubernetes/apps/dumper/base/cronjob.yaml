@@ -37,6 +37,8 @@ spec:
                   value: dumper-k8s
                 - name: TS_ACCEPT_DNS
                   value: "false"
+                - name: TS_KUBE_SECRET
+                  value: ""
               securityContext:
                 runAsUser: 1000
                 runAsGroup: 1000
