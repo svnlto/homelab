@@ -20,6 +20,5 @@ module "truenas_primary" {
   management_gateway  = var.management_gateway
   storage_ip          = var.storage_ip
   dns_server          = var.dns_server
-  enable_hostpci      = var.enable_hostpci
-  hostpci_mapping     = var.hostpci_mapping
+  hostpci_mappings    = var.hostpci_mappings
 }

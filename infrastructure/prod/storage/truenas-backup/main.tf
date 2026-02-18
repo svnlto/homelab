@@ -20,4 +20,5 @@ module "truenas_backup" {
   management_gateway  = var.management_gateway
   storage_ip          = var.storage_ip
   dns_server          = var.dns_server
+  hostpci_mappings    = var.hostpci_mappings
 }

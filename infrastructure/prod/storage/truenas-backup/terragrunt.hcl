@@ -1,4 +1,4 @@
-# TrueNAS Backup (VMID 301) on grogu — MD1200 HBA passthrough added manually in Proxmox UI.
+# TrueNAS Backup (VMID 301) on grogu — HP H241 HBA passthrough for MD1200 shelf.
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -46,4 +46,8 @@ inputs = {
   management_gateway  = local.vlans.lan.gateway
   storage_ip          = "${local.ips.truenas_backup_storage}/24"
   dns_server          = local.ips.pihole
+
+  hostpci_mappings = [
+    local.proxmox.resource_mappings.truenas_h241,
+  ]
 }
