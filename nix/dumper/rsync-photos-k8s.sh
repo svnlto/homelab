@@ -16,7 +16,7 @@ STATE_DIR="/cache"
 FILE_LIST="${STATE_DIR}/rsync-filelist.txt"
 FILE_LIST_MAX_AGE=86400 # rebuild if older than 24h
 
-SSH_OPTS=(-i /secrets/ssh/id_ed25519 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3)
+SSH_OPTS=(-i /secrets/ssh/id_ed25519 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=10)
 
 # Send a structured log record to the OTEL collector via HTTP/JSON.
 # Usage: otel_log SEVERITY "message" [key=value ...]
@@ -126,6 +126,7 @@ otel_log INFO "Rsync started" \
 
 RSYNC_START=$SECONDS
 if rsync -rltv --partial --inplace --omit-dir-times \
+  --compress --progress --timeout=300 \
   --chmod=D755,F644 \
   --files-from="${FILE_LIST}" \
   --rsync-path="sudo /usr/bin/rsync" \
