@@ -1,0 +1,41 @@
+---
+name: Build Dumper Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "nix/dumper/**"
+      - "nix/flake.nix"
+      - "nix/flake.lock"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build and Push OCI Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Build image
+        run: nix build ./nix#dumper-image
+
+      - name: Load and push image
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker load < result
+          SHA_TAG="ghcr.io/svnlto/dumper:${{ github.sha }}"
+          docker tag ghcr.io/svnlto/dumper:latest "${SHA_TAG}"
+          echo "${GITHUB_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ghcr.io/svnlto/dumper:latest
+          docker push "${SHA_TAG}"
