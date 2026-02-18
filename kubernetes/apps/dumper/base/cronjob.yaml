@@ -28,24 +28,23 @@ spec:
                 - name: TS_STATE_DIR
                   value: /var/lib/tailscale
                 - name: TS_USERSPACE
-                  value: "false"
+                  value: "true"
                 - name: TS_HOSTNAME
                   value: dumper-k8s
                 - name: TS_ACCEPT_DNS
                   value: "false"
-              securityContext:
-                capabilities:
-                  add:
-                    - NET_ADMIN
               volumeMounts:
                 - name: tailscale-state
                   mountPath: /var/lib/tailscale
-                - name: dev-tun
-                  mountPath: /dev/net/tun
 
           containers:
             - name: dumper
               image: ghcr.io/svnlto/dumper:latest
+              env:
+                - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                  value: http://signoz-otel-collector.signoz.svc:4318
+                - name: OTEL_SERVICE_NAME
+                  value: dumper
               envFrom:
                 - secretRef:
                     name: dumper-config
@@ -71,10 +70,6 @@ spec:
             - name: tailscale-state
               persistentVolumeClaim:
                 claimName: tailscale-state
-            - name: dev-tun
-              hostPath:
-                path: /dev/net/tun
-                type: CharDevice
             - name: ssh-key
               secret:
                 secretName: dumper-ssh-key
