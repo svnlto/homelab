@@ -46,9 +46,6 @@ spec:
                 allowPrivilegeEscalation: false
                 capabilities:
                   drop: ["ALL"]
-              volumeMounts:
-                - name: tailscale-state
-                  mountPath: /tmp/tailscale
 
           containers:
             - name: dumper
@@ -83,8 +80,6 @@ spec:
             - name: cache
               persistentVolumeClaim:
                 claimName: dumper-cache
-            - name: tailscale-state
-              emptyDir: {}
             - name: ssh-key
               secret:
                 secretName: dumper-ssh-key
