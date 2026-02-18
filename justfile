@@ -143,40 +143,6 @@ nixos-update-jellyfin:
     @echo "Rebuilding NixOS on jellyfin..."
     ssh svenlito@192.168.0.51 "sudo nixos-rebuild switch --flake /tmp/nix-config#jellyfin"
 
-# --- NixOS Dumper (Proxmox VM) ---
-
-# Install NixOS on dumper VM via nixos-anywhere
-nixos-install-dumper ip:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "Installing NixOS dumper to VM at {{ip}}..."
-    cd nix && nix --extra-experimental-features "nix-command flakes" run github:nix-community/nixos-anywhere -- \
-      --flake .#dumper \
-      --build-on-remote \
-      root@{{ip}}
-    echo "Done! SSH: ssh svenlito@192.168.0.52"
-
-# Deploy dumper config via SSH
-nixos-update-dumper:
-    @echo "Syncing NixOS config to dumper..."
-    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.52:/tmp/nix-config/
-    @echo "Rebuilding NixOS on dumper..."
-    ssh svenlito@192.168.0.52 "sudo nixos-rebuild switch --flake /tmp/nix-config#dumper"
-
-# Populate dumper secrets from 1Password
-dumper-secrets:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    REMOTE_HOST=$(op read 'op://Homelab/Dumper Rsync Config/remote_host')
-    REMOTE_USER=$(op read 'op://Homelab/Dumper Rsync Config/remote_user')
-    REMOTE_PATH=$(op read 'op://Homelab/Dumper Rsync Config/remote_path')
-    TMPFILE=$(mktemp)
-    trap 'rm -f "${TMPFILE}"' EXIT
-    printf '%s\n' "REMOTE_HOST=${REMOTE_HOST}" "REMOTE_USER=${REMOTE_USER}" "REMOTE_PATH=${REMOTE_PATH}" > "${TMPFILE}"
-    scp "${TMPFILE}" svenlito@192.168.0.52:/tmp/rsync.env
-    ssh svenlito@192.168.0.52 "sudo mkdir -p /etc/dumper && sudo mv /tmp/rsync.env /etc/dumper/rsync.env"
-    echo "Secrets pushed to dumper:/etc/dumper/rsync.env"
-
 # --- Ansible ---
 
 ansible-lint:

@@ -146,7 +146,7 @@ nfs_shares:
     readonly: false
 
   - path: /mnt/scratch/dump
-    comment: "Photo dump from remote machine via rsync (dumper VM)"
+    comment: "Photo dump from remote machine via rsync (K8s CronJob)"
     maproot_user: root
     maproot_group: wheel
     networks:
