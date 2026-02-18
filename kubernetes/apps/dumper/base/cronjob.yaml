@@ -35,6 +35,8 @@ spec:
                   value: "false"
                 - name: TS_KUBE_SECRET
                   value: ""
+                - name: TS_SOCKET
+                  value: /var/run/tailscale/tailscaled.sock
               securityContext:
                 capabilities:
                   add:
@@ -42,6 +44,8 @@ spec:
               volumeMounts:
                 - name: tailscale-state
                   mountPath: /var/lib/tailscale
+                - name: tailscale-socket
+                  mountPath: /var/run/tailscale
                 - name: dev-tun
                   mountPath: /dev/net/tun
 
@@ -53,6 +57,8 @@ spec:
                   value: http://signoz-otel-collector.signoz.svc:4318
                 - name: OTEL_SERVICE_NAME
                   value: dumper
+                - name: TS_SOCKET
+                  value: /var/run/tailscale/tailscaled.sock
               envFrom:
                 - secretRef:
                     name: dumper-config
@@ -67,6 +73,9 @@ spec:
                 - name: ssh-key
                   mountPath: /secrets/ssh
                   readOnly: true
+                - name: tailscale-socket
+                  mountPath: /var/run/tailscale
+                  readOnly: true
 
           volumes:
             - name: nfs-dump
@@ -76,6 +85,8 @@ spec:
               persistentVolumeClaim:
                 claimName: dumper-cache
             - name: tailscale-state
+              emptyDir: {}
+            - name: tailscale-socket
               emptyDir: {}
             - name: dev-tun
               hostPath:
