@@ -7,10 +7,10 @@ Complete guide for creating the 3-pool ZFS configuration on TrueNAS SCALE runnin
 | Component | Drives | Layout | Raw | Usable | Purpose |
 |-----------|--------|--------|-----|--------|---------|
 | **Proxmox OS** | 2× 256GB NVMe | Mirror | — | — | Hypervisor boot (includes Talos images on local-zfs) |
-| **fast** | 24× 900GB + 2× 128GB SSD | 3× 8-drive RAIDZ2 + mirrored SLOG | ~20TB | ~16TB | K8s PVCs (iSCSI), VMs, databases, ML models |
+| **fast** | 21× 900GB + 2× 120GB SSD | 3× 7-drive RAIDZ2 + mirrored SLOG | ~17.1TB | ~14TB | K8s PVCs (iSCSI), VMs, databases, ML models |
 | **bulk** | 6× 7.15TB (limited by smallest) | 1× 6-drive RAIDZ2 | 42.9TB | 25.3TB | Media, photos, cold observability data |
 | **scratch** | 6× 2.73TB (limited by smallest) | 1× 6-drive RAIDZ1 | 16.4TB | 12.9TB | Downloads, CI cache, ML datasets staging |
-| **Total** | | | **~79TB** | **~54TB** | |
+| **Total** | | | **~76TB** | **~52TB** | |
 
 ## Pre-Flight Checks
 
@@ -44,59 +44,31 @@ midclt call disk.get_unused | jq '.[] | {name, identifier, size, model}'
 **Kubernetes needs this immediately for PVCs and databases.**
 
 ```bash
-# Create 3× 8-drive RAIDZ2 with mirrored SLOG
-# Replace disk paths with actual /dev/disk/by-id/... values from query above
+# Create 3× 7-drive RAIDZ2 with mirrored SLOG
+# Note: Originally 24× 900GB drives, 3 failed during sector reformatting (NetApp 520→512 byte)
+# midclt call pool.create accepts device names (e.g. "sdo") not /dev/disk/by-id/ paths
+# Use `midclt call disk.get_unused | jq ...` to find current device names
 midclt call pool.create '{
   "name": "fast",
   "topology": {
     "data": [
       {
         "type": "RAIDZ2",
-        "disks": [
-          "/dev/disk/by-id/... (900GB #1)",
-          "/dev/disk/by-id/... (900GB #2)",
-          "/dev/disk/by-id/... (900GB #3)",
-          "/dev/disk/by-id/... (900GB #4)",
-          "/dev/disk/by-id/... (900GB #5)",
-          "/dev/disk/by-id/... (900GB #6)",
-          "/dev/disk/by-id/... (900GB #7)",
-          "/dev/disk/by-id/... (900GB #8)"
-        ]
+        "disks": ["disk1", "disk2", "disk3", "disk4", "disk5", "disk6", "disk7"]
       },
       {
         "type": "RAIDZ2",
-        "disks": [
-          "/dev/disk/by-id/... (900GB #9)",
-          "/dev/disk/by-id/... (900GB #10)",
-          "/dev/disk/by-id/... (900GB #11)",
-          "/dev/disk/by-id/... (900GB #12)",
-          "/dev/disk/by-id/... (900GB #13)",
-          "/dev/disk/by-id/... (900GB #14)",
-          "/dev/disk/by-id/... (900GB #15)",
-          "/dev/disk/by-id/... (900GB #16)"
-        ]
+        "disks": ["disk8", "disk9", "disk10", "disk11", "disk12", "disk13", "disk14"]
       },
       {
         "type": "RAIDZ2",
-        "disks": [
-          "/dev/disk/by-id/... (900GB #17)",
-          "/dev/disk/by-id/... (900GB #18)",
-          "/dev/disk/by-id/... (900GB #19)",
-          "/dev/disk/by-id/... (900GB #20)",
-          "/dev/disk/by-id/... (900GB #21)",
-          "/dev/disk/by-id/... (900GB #22)",
-          "/dev/disk/by-id/... (900GB #23)",
-          "/dev/disk/by-id/... (900GB #24)"
-        ]
+        "disks": ["disk15", "disk16", "disk17", "disk18", "disk19", "disk20", "disk21"]
       }
     ],
     "log": [
       {
         "type": "MIRROR",
-        "disks": [
-          "/dev/disk/by-id/... (128GB SSD #1 - rear SFF bay)",
-          "/dev/disk/by-id/... (128GB SSD #2 - rear SFF bay)"
-        ]
+        "disks": ["ssd1", "ssd2"]
       }
     ]
   },
@@ -107,15 +79,15 @@ midclt call pool.create '{
 **Why RAIDZ2 not RAIDZ1?**
 - RAIDZ1 = only 1-drive fault tolerance (risky for critical K8s data)
 - RAIDZ2 = 2-drive fault tolerance per vdev (safe for databases)
-- Tradeoff: Lose 2TB capacity (18TB → 16TB) for much better protection
+- Tradeoff: Lose capacity to parity for much better protection
 
 **Verify fast pool**:
 ```bash
 zpool status fast
 # Should show:
-#   - 3 RAIDZ2 vdevs (8 drives each)
+#   - 3 RAIDZ2 vdevs (7 drives each)
 #   - 1 mirror log vdev (2 SSDs)
-#   - ~16TB usable
+#   - ~14TB usable
 ```
 
 ### Step 2: Create Bulk Pool
@@ -226,7 +198,7 @@ zpool list
 # Expected output:
 # NAME      SIZE  ALLOC   FREE  CKPOINT  EXPANDSZ   FRAG    CAP  DEDUP    HEALTH
 # bulk     42.9T  1.21G  42.9T     -         -      0%     0%   1.00x    ONLINE
-# fast     20.0T    0    20.0T     -         -      0%     0%   1.00x    ONLINE
+# fast     17.1T    0    17.1T     -         -      0%     0%   1.00x    ONLINE
 # scratch  16.4T  1.05M  16.4T     -         -      0%     0%   1.00x    ONLINE
 
 # List available capacity for datasets
@@ -235,7 +207,7 @@ zfs list -o name,avail,used,refer,mountpoint | grep -E "^(bulk|fast|scratch)"
 # Expected output:
 # NAME      AVAIL  USED  REFER  MOUNTPOINT
 # bulk      25.3T  734M   170K  /mnt/bulk
-# fast      16.0T  512M   170K  /mnt/fast
+# fast      14.0T  512M   170K  /mnt/fast
 # scratch   12.9T  863K   153K  /mnt/scratch
 
 # Check SLOG is attached to fast pool
@@ -286,7 +258,7 @@ bulk/
 └── archive/                           # Cold storage
 ```
 
-### Fast Pool (~16TB)
+### Fast Pool (~14TB)
 ```
 fast/
 ├── kubernetes/
@@ -380,12 +352,12 @@ scratch/
 
 ## Capacity Planning
 
-### Fast Pool (16TB) - Reduced Quotas for Headroom ✅
+### Fast Pool (14TB) - Reduced Quotas for Headroom ✅
 - Kubernetes NFS dynamic: **4TB quota** (reduced from 6TB)
-- iSCSI zvols (databases): ~6TB (PostgreSQL, MySQL, ClickHouse)
+- iSCSI zvols (databases): ~4TB (PostgreSQL, MySQL, ClickHouse)
 - VMs: ~2TB
 - ML models: **1TB quota** (reduced from 2TB)
-- **Reserve**: **~3TB headroom (19%)** ← Safe margin
+- **Reserve**: **~3TB headroom (21%)** ← Safe margin
 
 **Why headroom matters**: ZFS performance degrades above 90% full, COW needs free space for writes.
 
@@ -439,7 +411,7 @@ zpool events -v
 ## Next Steps
 
 1. ✅ Create pools (this document)
-2. ⬜ Run Ansible playbook to create datasets/shares
+2. ✅ Run Ansible playbook to create datasets/shares
 3. ⬜ Deploy democratic-csi in Kubernetes (3 instances: fast-iscsi, fast-nfs, bulk-nfs, scratch-nfs)
 4. ⬜ Configure replication to grogu backup pool
 5. ⬜ Set up Restic offsite backup to B2

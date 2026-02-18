@@ -106,7 +106,7 @@
 │  │      │           ├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤                      │  │  │
 │  │      │           │C│D│E│F│G│H│I│J│K│L│M│N│                      │  │  │
 │  │      │           └─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘                      │  │  │
-│  │      │ 24× 900GB SAS (fast) → din PERC H200E                    │  │  │
+│  │      │ 21× 900GB SAS + 2× 120GB SSD (fast) → din PERC H200E     │  │  │
 │  │      │ Dual EMM  │  Dual PSU  │  TrueNAS Primary VM             │  │  │
 │  │      └──────────────────────────────────────────────────────────┘  │  │
 │  └────────────────────────────────────────────────────────────────────┘  │
@@ -246,7 +246,7 @@ Gateway, NAT, firewall, DHCP, DNS forwarding. Managed via Terragrunt.
 | R630 (grogu) — 2× E5-2699v3, 256GB, 2× SSD | 150W | 350W |
 | MD1200 — 12× 8TB 3.5" SATA | 100W | 150W |
 | R730xd (din) — 2× E5-2680v3, 128GB, 12× internal drives | 200W | 400W |
-| MD1220 — 24× 900GB 2.5" 10K SAS | 150W | 200W |
+| MD1220 — 21× 900GB + 2× 120GB SSD 2.5" SAS/SATA | 150W | 200W |
 | Network — CRS310, 2× Pi 4B, Beryl AX, Homespot | 40W | 50W |
 | **Total** | **~640W** | **~1150W** |
 

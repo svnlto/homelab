@@ -213,7 +213,7 @@ When `deploy_bootstrap = true`:
    - Hubble observability included
    - Connects to localhost:7445 (KubePrism)
 2. **Democratic-CSI**: Deployed via Helm if `truenas_api_key` is provided
-   - NFS storage class: `truenas-nfs-rwx` (ReadWriteMany)
+   - NFS storage classes: `truenas-nfs-bulk`, `truenas-nfs-fast`, `truenas-nfs-scratch`
    - iSCSI storage class: `truenas-iscsi-rwo` (ReadWriteOnce, default)
 3. **MetalLB**: Deployed via Helm if `metallb_ip_range` is provided
    - L2 announcement mode for bare-metal LoadBalancer services

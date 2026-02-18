@@ -109,12 +109,15 @@ inputs = {
   deploy_bootstrap = true
 
   # Democratic-CSI — TrueNAS primary (storage VLAN)
-  truenas_api_url     = "https://${local.ips.truenas_primary_storage}"
-  truenas_api_key     = get_env("TF_VAR_truenas_api_key", "")
-  truenas_nfs_dataset = "bulk/kubernetes/nfs-dynamic"
+  truenas_api_url             = "https://${local.ips.truenas_primary_storage}"
+  truenas_api_key             = get_env("TF_VAR_truenas_api_key", "")
+  truenas_nfs_dataset         = "bulk/kubernetes/nfs-dynamic"
+  truenas_nfs_fast_dataset    = "fast/kubernetes/nfs-dynamic"
+  truenas_nfs_scratch_dataset = "scratch/kubernetes/nfs-dynamic"
 
-  # iSCSI deferred
-  truenas_iscsi_portal = ""
+  # iSCSI — fast pool (10K SAS)
+  truenas_iscsi_portal  = "10.10.10.13:3260"
+  truenas_iscsi_dataset = "fast/kubernetes/iscsi-zvols"
 
   # MetalLB
   metallb_ip_range = "${local.k8s.metallb_start}-${local.k8s.metallb_end}"

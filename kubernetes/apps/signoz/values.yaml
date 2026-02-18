@@ -1,6 +1,6 @@
 ---
 global:
-  storageClass: truenas-nfs-rwx
+  storageClass: truenas-nfs-bulk
 
 clickhouse:
   persistence:

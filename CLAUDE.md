@@ -87,7 +87,7 @@ infrastructure/
 │   ├── images/              # Centralized ISO downloads (TrueNAS, NixOS)
 │   ├── compute/arr-stack/   # NixOS arr media stack VM
 │   ├── storage/
-│   │   ├── truenas-primary/ # VMID 300 on din (5×8TB + 24×900GB)
+│   │   ├── truenas-primary/ # VMID 300 on din (5×8TB + 21×900GB)
 │   │   └── truenas-backup/  # VMID 301 on grogu (8×3TB)
 │   └── mikrotik/            # Router: base, dhcp, firewall, dns
 └── dev/

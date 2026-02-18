@@ -40,6 +40,7 @@
             terraform
             kubernetes-helm
             kubectl
+            talosctl
             # MCP server runtimes
             nodejs
             deno

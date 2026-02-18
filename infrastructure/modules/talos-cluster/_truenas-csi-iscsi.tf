@@ -18,6 +18,12 @@ resource "helm_release" "truenas_iscsi_csi" {
     csiDriver = {
       name = "org.democratic-csi.iscsi"
     }
+    # Talos has /etc as read-only with bind mounts; default "Directory" type check fails
+    node = {
+      driver = {
+        iscsiDirHostPathType = ""
+      }
+    }
     storageClasses = [
       {
         name                 = "truenas-iscsi-rwo"
