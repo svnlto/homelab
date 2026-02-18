@@ -30,6 +30,8 @@
             coreutils
             bash
             cacert
+            curl
+            jq
           ];
           config = {
             Cmd = [ "/bin/bash" "/app/rsync-photos.sh" ];
