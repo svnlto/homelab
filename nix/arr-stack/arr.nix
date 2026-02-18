@@ -1,7 +1,8 @@
 { pkgs, constants, ... }:
 
 let
-  dataDir = "/mnt/arr-config";
+  dataDir = "/var/lib/arr-data";
+  nfsConfigDir = "/mnt/arr-config";
   mediaDir = "/mnt/media";
   scratchDir = "/mnt/scratch";
   composeDir = "/opt/stacks/arr";
@@ -49,9 +50,8 @@ in {
   # NFS mounts from TrueNAS
   # ---------------------------------------------------------------------------
 
-  # Config data — regular mount (required for service startup)
-  # TODO: Move to fast/arr-config once MD1220 hardware arrives
-  fileSystems.${dataDir} = {
+  # NFS config mount — kept for initial data migration, not used at runtime
+  fileSystems.${nfsConfigDir} = {
     device = "${truenasStorageIp}:/mnt/bulk/arr-config";
     fsType = "nfs";
     options = [
@@ -60,6 +60,7 @@ in {
       "rsize=131072"
       "wsize=131072"
       "hard"
+      "nofail"
       "_netdev"
     ];
   };
@@ -75,6 +76,7 @@ in {
       "rsize=131072"
       "wsize=131072"
       "hard"
+      "nofail"
       "_netdev"
     ];
   };
@@ -89,6 +91,7 @@ in {
       "rsize=131072"
       "wsize=131072"
       "hard"
+      "nofail"
       "_netdev"
     ];
   };
@@ -102,6 +105,7 @@ in {
       "rsize=131072"
       "wsize=131072"
       "hard"
+      "nofail"
       "_netdev"
     ];
   };
@@ -115,6 +119,7 @@ in {
       "rsize=131072"
       "wsize=131072"
       "hard"
+      "nofail"
       "_netdev"
     ];
   };
@@ -128,6 +133,7 @@ in {
       "rsize=131072"
       "wsize=131072"
       "hard"
+      "nofail"
       "_netdev"
     ];
   };
@@ -142,6 +148,7 @@ in {
       "rsize=131072"
       "wsize=131072"
       "hard"
+      "nofail"
       "_netdev"
     ];
   };
@@ -396,12 +403,12 @@ in {
   '';
 
   # ---------------------------------------------------------------------------
-  # Environment template — copied to NFS on first boot, user edits with secrets
+  # Environment template — copied to local disk on first boot, user edits with secrets
   # ---------------------------------------------------------------------------
   environment.etc."arr/env.template".text = ''
     # Arr Stack Environment Configuration
     # Edit this file with your actual credentials
-    # This file persists on TrueNAS NFS — survives NixOS rebuilds
+    # This file persists in /var/lib/arr-data — survives NixOS rebuilds
 
     TIMEZONE=${tz}
 
@@ -666,16 +673,16 @@ in {
   # Systemd services
   # ---------------------------------------------------------------------------
 
-  # Initialize NFS directories and seed configs on first boot
+  # Initialize local directories and migrate data from NFS on first boot
   systemd.services.arr-init = {
     description = "Initialize arr stack directories and configs";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
 
-    unitConfig.RequiresMountsFor = "${dataDir} ${mediaDir} ${scratchDir}";
+    unitConfig.RequiresMountsFor = "${nfsConfigDir} ${mediaDir} ${scratchDir}";
 
-    path = [ pkgs.coreutils pkgs.gnused ];
+    path = [ pkgs.coreutils pkgs.gnused pkgs.rsync ];
 
     serviceConfig = {
       Type = "oneshot";
@@ -683,7 +690,7 @@ in {
       ExecStart = pkgs.writeShellScript "arr-init" ''
         set -euo pipefail
 
-        # Create service directories on NFS
+        # Create local directories
         mkdir -p ${dataDir}/gluetun
         mkdir -p ${dataDir}/qbittorrent/qBittorrent/config
         mkdir -p ${dataDir}/sabnzbd
@@ -696,6 +703,22 @@ in {
         mkdir -p ${dataDir}/recyclarr
         mkdir -p ${dataDir}/buildarr
         mkdir -p ${dataDir}/glance
+
+        # Migrate from NFS to local storage (one-time)
+        if [ ! -f ${dataDir}/.migrated ]; then
+          echo "Migrating arr data from NFS to local storage..."
+
+          for app in gluetun qbittorrent sabnzbd radarr sonarr lidarr bazarr slskd prowlarr recyclarr buildarr glance; do
+            if [ -d ${nfsConfigDir}/$app ]; then
+              rsync -a ${nfsConfigDir}/$app/ ${dataDir}/$app/
+              echo "Migrated $app"
+            fi
+          done
+
+          touch ${dataDir}/.migrated
+          echo "Migration complete"
+        fi
+
         # Ensure download directories exist on scratch mount
         mkdir -p ${scratchDir}/incomplete
         mkdir -p ${scratchDir}/complete/torrents
@@ -705,8 +728,12 @@ in {
 
         # Copy .env template if not present
         if [ ! -f ${dataDir}/env ]; then
-          cp /etc/arr/env.template ${dataDir}/env
-          echo "Created ${dataDir}/env from template — edit with your secrets"
+          if [ -f ${nfsConfigDir}/env ]; then
+            cp ${nfsConfigDir}/env ${dataDir}/env
+          else
+            cp /etc/arr/env.template ${dataDir}/env
+            echo "Created ${dataDir}/env from template — edit with your secrets"
+          fi
         fi
 
         # Copy initial configs if not present (apps modify these at runtime)
@@ -755,7 +782,7 @@ in {
     requires = [ "docker.service" "arr-init.service" ];
     wantedBy = [ "multi-user.target" ];
 
-    unitConfig.RequiresMountsFor = "${dataDir} ${mediaDir} ${scratchDir}";
+    unitConfig.RequiresMountsFor = "${mediaDir} ${scratchDir}";
 
     path = [ pkgs.docker pkgs.docker-compose pkgs.coreutils ];
 

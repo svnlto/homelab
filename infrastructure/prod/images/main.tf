@@ -79,3 +79,16 @@ module "talos_image_grogu" {
   content_type     = "iso"
   proxmox_filename = "talos-${var.talos_schematic_id}-${var.talos_version}-nocloud.img"
 }
+
+module "pbs_iso_grogu" {
+  source = "../../modules/proxmox-image"
+
+  download_url       = var.pbs_url
+  image_name         = var.pbs_filename
+  compression_format = "none"
+
+  proxmox_node     = var.proxmox_node_secondary
+  datastore_id     = var.datastore_id
+  content_type     = "iso"
+  proxmox_filename = var.pbs_filename
+}

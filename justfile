@@ -250,6 +250,10 @@ proxmox-verify-networking:
 truenas-backup-setup:
     cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-backup-setup.yml
 
+# Configure Proxmox Backup Server (post-install)
+pbs-setup:
+    cd ansible && ansible-playbook -i inventory.ini playbooks/pbs-setup.yml
+
 # Setup ZFS replication (din -> grogu)
 truenas-replication:
     cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-replication.yml

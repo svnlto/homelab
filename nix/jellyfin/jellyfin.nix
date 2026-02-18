@@ -16,8 +16,6 @@ let
   images = {
     jellyfin = "jellyfin/jellyfin:10.11.4";
     jellyseerr = "fallenbagel/jellyseerr:2.7.3";
-    jellyfinAutoCollections =
-      "ghcr.io/ghomashudson/jellyfin-auto-collections:5726c4c1ba8c13662404df2c079dc3d9fb7b9d67";
   };
 in {
   # Intel Arc A310 GPU — VA-API hardware transcoding for Jellyfin
@@ -184,23 +182,6 @@ in {
           start_period: 30s
         restart: unless-stopped
 
-      jellyfin-auto-collections:
-        image: ${images.jellyfinAutoCollections}
-        container_name: jellyfin-auto-collections
-        environment:
-          - TZ=${tz}
-          - JELLYFIN_SERVER_URL=http://jellyfin:8096
-          - JELLYFIN_API_KEY=''${JELLYFIN_API_KEY}
-          - JELLYFIN_USER_ID=''${JELLYFIN_USER_ID}
-          - JELLYSEERR_EMAIL=''${JELLYSEERR_EMAIL}
-          - JELLYSEERR_PASSWORD=''${JELLYSEERR_PASSWORD}
-          - CRONTAB=0 6 * * *
-        volumes:
-          - ${dataDir}/jellyfin-auto-collections/config:/app/config
-        depends_on:
-          jellyfin:
-            condition: service_healthy
-        restart: unless-stopped
   '';
 
   # ---------------------------------------------------------------------------
@@ -215,11 +196,6 @@ in {
 
     # Jellyfin
     JELLYFIN_API_KEY=
-    JELLYFIN_USER_ID=
-
-    # Jellyseerr
-    JELLYSEERR_EMAIL=
-    JELLYSEERR_PASSWORD=
 
   '';
 
@@ -248,8 +224,6 @@ in {
         mkdir -p ${dataDir}/jellyfin/config
         mkdir -p ${dataDir}/jellyfin/cache
         mkdir -p ${dataDir}/jellyseerr/config
-        mkdir -p ${dataDir}/jellyfin-auto-collections/config
-
         # Migrate from NFS to local storage (one-time)
         if [ ! -f ${dataDir}/.migrated ]; then
           echo "Migrating Jellyfin data from NFS to local storage..."
@@ -267,11 +241,6 @@ in {
           if [ -d ${nfsConfigDir}/jellyseerr ]; then
             rsync -a ${nfsConfigDir}/jellyseerr/ ${dataDir}/jellyseerr/config/
             echo "Migrated jellyseerr config"
-          fi
-
-          if [ -d ${nfsConfigDir}/jellyfin-auto-collections ]; then
-            rsync -a ${nfsConfigDir}/jellyfin-auto-collections/ ${dataDir}/jellyfin-auto-collections/config/
-            echo "Migrated jellyfin-auto-collections config"
           fi
 
           touch ${dataDir}/.migrated

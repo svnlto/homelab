@@ -137,6 +137,14 @@ nfs_shares:
       - 10.0.3.0/24
     readonly: false
 
+  - path: /mnt/bulk/backups/proxmox
+    comment: "PBS backups (Proxmox Backup Server)"
+    maproot_user: root
+    maproot_group: wheel
+    networks:
+      - 10.10.10.0/24
+    readonly: false
+
   - path: /mnt/scratch/dump
     comment: "Photo dump from remote machine via rsync (dumper VM)"
     maproot_user: root

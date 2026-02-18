@@ -59,3 +59,14 @@ variable "talos_schematic_id" {
   type        = string
   description = "Talos Image Factory schematic ID"
 }
+
+# PBS ISO
+variable "pbs_url" {
+  type        = string
+  description = "Proxmox Backup Server ISO download URL"
+}
+
+variable "pbs_filename" {
+  type        = string
+  description = "Proxmox Backup Server ISO filename"
+}

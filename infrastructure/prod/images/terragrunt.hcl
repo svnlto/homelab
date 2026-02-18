@@ -14,6 +14,7 @@ locals {
   truenas     = local.global_vars.locals.truenas
   nixos       = local.global_vars.locals.nixos
   talos       = local.global_vars.locals.talos
+  pbs         = local.global_vars.locals.pbs
 }
 
 inputs = {
@@ -26,6 +27,9 @@ inputs = {
 
   talos_version      = local.talos.version
   talos_schematic_id = local.talos.schematic_id
+
+  pbs_url      = local.pbs.iso_url
+  pbs_filename = local.pbs.filename
 
   proxmox_node_primary   = local.proxmox.nodes.primary
   proxmox_node_secondary = local.proxmox.nodes.secondary
