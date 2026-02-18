@@ -31,7 +31,7 @@ spec:
                       name: tailscale-auth
                       key: TS_AUTHKEY
                 - name: TS_STATE_DIR
-                  value: /var/lib/tailscale
+                  value: /tmp/tailscale
                 - name: TS_USERSPACE
                   value: "true"
                 - name: TS_HOSTNAME
@@ -48,7 +48,7 @@ spec:
                   drop: ["ALL"]
               volumeMounts:
                 - name: tailscale-state
-                  mountPath: /var/lib/tailscale
+                  mountPath: /tmp/tailscale
 
           containers:
             - name: dumper
