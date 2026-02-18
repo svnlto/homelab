@@ -77,12 +77,12 @@ resource "proxmox_virtual_environment_vm" "truenas" {
     cache        = "none"
   }
 
-  # Optional HBA passthrough
+  # HBA passthrough (one block per mapping)
   dynamic "hostpci" {
-    for_each = var.enable_hostpci ? [1] : []
+    for_each = var.hostpci_mappings
     content {
-      device  = "hostpci0"
-      mapping = var.hostpci_mapping
+      device  = "hostpci${hostpci.key}"
+      mapping = hostpci.value
       pcie    = true
       rombar  = true
     }
@@ -114,13 +114,16 @@ resource "proxmox_virtual_environment_vm" "truenas" {
     }
   }
 
-  # Ignore manual changes (ejected ISO, HBA devices added in UI)
+  # Ignore manual changes (ejected ISO, disk additions, USB devices)
+  # hostpci kept in ignore_changes due to bpg/proxmox provider bug:
+  # phantom disk with null interface in state blocks applies
   lifecycle {
     ignore_changes = [
       cdrom,
       disk,
       hostpci,
       network_device,
+      usb,
     ]
   }
 }

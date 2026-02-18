@@ -1,4 +1,4 @@
-# TrueNAS Primary (VMID 300) on din — H330 Mini passthrough, second HBA added manually in UI.
+# TrueNAS Primary (VMID 300) on din — H330 Mini (internal) + H200E (MD1220 shelf) passthrough.
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -47,6 +47,8 @@ inputs = {
   storage_ip          = "${local.ips.truenas_primary_storage}/24"
   dns_server          = local.ips.pihole
 
-  enable_hostpci  = true
-  hostpci_mapping = local.proxmox.resource_mappings.truenas_h330
+  hostpci_mappings = [
+    local.proxmox.resource_mappings.truenas_h330,
+    local.proxmox.resource_mappings.truenas_lsi,
+  ]
 }

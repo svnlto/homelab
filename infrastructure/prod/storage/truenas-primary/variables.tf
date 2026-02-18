@@ -84,11 +84,7 @@ variable "dns_server" {
   default = null
 }
 
-variable "enable_hostpci" {
-  type = bool
-}
-
-variable "hostpci_mapping" {
-  type    = string
-  default = null
+variable "hostpci_mappings" {
+  type    = list(string)
+  default = []
 }

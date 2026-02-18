@@ -126,14 +126,8 @@ variable "dns_server" {
   default     = null
 }
 
-variable "enable_hostpci" {
-  description = "Enable PCI device passthrough (HBA)"
-  type        = bool
-  default     = false
-}
-
-variable "hostpci_mapping" {
-  description = "Host PCI device mapping name (Proxmox resource mapping)"
-  type        = string
-  default     = null
+variable "hostpci_mappings" {
+  description = "List of Proxmox PCI resource mapping names for HBA passthrough"
+  type        = list(string)
+  default     = []
 }
