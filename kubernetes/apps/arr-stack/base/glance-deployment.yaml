@@ -39,7 +39,14 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /app/config
+            - name: default-config
+              mountPath: /app/config/glance.yml
+              subPath: glance.yml
+              readOnly: true
       volumes:
         - name: config
           persistentVolumeClaim:
             claimName: glance-config
+        - name: default-config
+          configMap:
+            name: glance-config-default

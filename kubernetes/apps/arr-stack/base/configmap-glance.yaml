@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: glance-config-default
+data:
+  glance.yml: |
+    pages:
+      - name: Arr Stack
+        columns:
+          - size: full
+            widgets:
+              - type: monitor
+                cache: 1m
+                title: Services
+                sites:
+                  - title: Radarr
+                    url: http://radarr.arr-stack.svc:7878
+                    icon: si:radarr
+                  - title: Sonarr
+                    url: http://sonarr.arr-stack.svc:8989
+                    icon: si:sonarr
+                  - title: Lidarr
+                    url: http://lidarr.arr-stack.svc:8686
+                    icon: si:lidarr
+                  - title: Bazarr
+                    url: http://bazarr.arr-stack.svc:6767
+                    icon: si:bazarr
+                  - title: Prowlarr
+                    url: http://downloaders.arr-stack.svc:9696
+                    icon: si:prowlarr
+                  - title: qBittorrent
+                    url: http://downloaders.arr-stack.svc:8701
+                    icon: si:qbittorrent
+                  - title: SABnzbd
+                    url: http://downloaders.arr-stack.svc:8080
+                    icon: si:sabnzbd
+                  - title: Slskd
+                    url: http://downloaders.arr-stack.svc:5030
