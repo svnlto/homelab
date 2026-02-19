@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: arr-lidarr-config
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: arr-stack
+    name: lidarr-config
+  nfs:
+    server: 10.10.10.13
+    path: /mnt/fast/kubernetes/nfs-dynamic/pvc-7eac0bab-35c0-4f17-8608-90206bca43ec

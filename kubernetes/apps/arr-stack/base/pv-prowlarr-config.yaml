@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: arr-prowlarr-config
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: arr-stack
+    name: prowlarr-config
+  nfs:
+    server: 10.10.10.13
+    path: /mnt/fast/kubernetes/nfs-dynamic/pvc-cae64dc1-43bb-421d-af40-64c6bb8d9dfb

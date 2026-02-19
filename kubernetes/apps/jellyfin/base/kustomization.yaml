@@ -1,0 +1,37 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Namespace (privileged PSA for GPU hostPath + privileged containers)
+  - namespace.yaml
+
+  # Static NFS PVs (media)
+  - pv-media-movies.yaml
+  - pv-media-tv.yaml
+  - pv-media-music.yaml
+  - pv-media-books.yaml
+
+  # Static NFS PVs (app config)
+  - pv-jellyfin-config.yaml
+  - pv-jellyfin-cache.yaml
+  - pv-jellyseerr-config.yaml
+
+  # Static NFS PVCs (media)
+  - pvc-media-movies.yaml
+  - pvc-media-tv.yaml
+  - pvc-media-music.yaml
+  - pvc-media-books.yaml
+
+  # Static config PVCs
+  - pvc-jellyfin-config.yaml
+  - pvc-jellyfin-cache.yaml
+  - pvc-jellyseerr-config.yaml
+
+  # Jellyfin (GPU transcoding)
+  - jellyfin-deployment.yaml
+  - jellyfin-service.yaml
+
+  # Jellyseerr (media requests)
+  - jellyseerr-deployment.yaml
+  - jellyseerr-service.yaml

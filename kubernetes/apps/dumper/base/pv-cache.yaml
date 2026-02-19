@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dumper-cache
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: dumper
+    name: dumper-cache
+  nfs:
+    server: 10.10.10.13
+    path: /mnt/bulk/kubernetes/nfs-dynamic/pvc-c44edf8b-0bfc-4d0f-a9b4-f36c6129263b

@@ -35,6 +35,7 @@ locals {
   proxmox     = local.global_vars.locals.proxmox
   ips         = local.global_vars.locals.infrastructure_ips
   k8s         = local.global_vars.locals.k8s_clusters.shared
+  talos       = local.global_vars.locals.talos
 }
 
 inputs = {
@@ -44,6 +45,7 @@ inputs = {
   talos_version      = "v1.12.2"
   kubernetes_version = "v1.35.0"
   talos_image_id     = dependency.images.outputs.talos_image_id_din
+  talos_schematic_id = local.talos.schematic_id
 
   network_bridge  = local.proxmox.bridges.k8s_shared
   network_gateway = local.vlans.k8s_shared.gateway
@@ -94,14 +96,15 @@ inputs = {
       gpu_passthrough = false
     }
     worker2 = {
-      node_name       = "grogu"
-      vm_id           = 411
-      hostname        = "shared-worker2"
-      ip_address      = "10.0.1.22/24"
-      cpu_cores       = 8
-      memory_mb       = 8192
-      disk_size_gb    = 50
-      gpu_passthrough = false
+      node_name           = "grogu"
+      vm_id               = 411
+      hostname            = "shared-worker2"
+      ip_address          = "10.0.1.22/24"
+      cpu_cores           = 8
+      memory_mb           = 8192
+      disk_size_gb        = 50
+      gpu_passthrough     = true
+      gpu_mapping_id      = local.proxmox.resource_mappings.arc_a310
     }
   }
 

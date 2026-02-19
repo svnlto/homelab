@@ -3,21 +3,37 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  # Static NFS PVs
+  # Namespace
+  - namespace.yaml
+
+  # Static NFS PVs (media + scratch)
   - pv-media-movies.yaml
   - pv-media-tv.yaml
   - pv-media-music.yaml
   - pv-media-books.yaml
   - pv-scratch.yaml
 
-  # Static NFS PVCs
+  # Static NFS PVs (app config)
+  - pv-sonarr-config.yaml
+  - pv-radarr-config.yaml
+  - pv-lidarr-config.yaml
+  - pv-bazarr-config.yaml
+  - pv-prowlarr-config.yaml
+  - pv-sabnzbd-config.yaml
+  - pv-qbittorrent-config.yaml
+  - pv-slskd-config.yaml
+  - pv-recyclarr-config.yaml
+  - pv-buildarr-config.yaml
+  - pv-glance-config.yaml
+
+  # Static NFS PVCs (media + scratch)
   - pvc-media-movies.yaml
   - pvc-media-tv.yaml
   - pvc-media-music.yaml
   - pvc-media-books.yaml
   - pvc-scratch.yaml
 
-  # Dynamic config PVCs
+  # Static config PVCs
   - pvc-gluetun-config.yaml
   - pvc-qbittorrent-config.yaml
   - pvc-sabnzbd-config.yaml

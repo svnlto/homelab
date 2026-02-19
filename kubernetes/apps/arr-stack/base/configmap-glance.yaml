@@ -15,25 +15,25 @@ data:
                 title: Services
                 sites:
                   - title: Radarr
-                    url: http://radarr.arr-stack.svc:7878
+                    url: http://radarr.shared.h.svenlito.com:7878
                     icon: si:radarr
                   - title: Sonarr
-                    url: http://sonarr.arr-stack.svc:8989
+                    url: http://sonarr.shared.h.svenlito.com:8989
                     icon: si:sonarr
                   - title: Lidarr
-                    url: http://lidarr.arr-stack.svc:8686
+                    url: http://lidarr..shared.h.svenlito.com:8686
                     icon: si:lidarr
                   - title: Bazarr
-                    url: http://bazarr.arr-stack.svc:6767
+                    url: http://bazarr.shared.h.svenlito.com:6767
                     icon: si:bazarr
                   - title: Prowlarr
-                    url: http://downloaders.arr-stack.svc:9696
+                    url: http://prowlarr.shared.h.svenlito.com:9696
                     icon: si:prowlarr
                   - title: qBittorrent
-                    url: http://downloaders.arr-stack.svc:8701
+                    url: http://qbittorrent.shared.h.svenlito.com:8701
                     icon: si:qbittorrent
                   - title: SABnzbd
-                    url: http://downloaders.arr-stack.svc:8080
+                    url: http://sabnzbd.shared.h.svenlito.com:8080
                     icon: si:sabnzbd
                   - title: Slskd
-                    url: http://downloaders.arr-stack.svc:5030
+                    url: http://slskd.shared.h.svenlito.com:5030

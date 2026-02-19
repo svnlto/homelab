@@ -41,7 +41,7 @@ data "talos_machine_configuration" "control_plane" {
         }
         install = {
           disk  = "/dev/sda"
-          image = "factory.talos.dev/nocloud-installer/dc7b152cb3ea99b821fcb7340ce7168313ce393d663740b791c36f6e95fc8586:${var.talos_version}"
+          image = "factory.talos.dev/nocloud-installer/${var.talos_schematic_id}:${var.talos_version}"
         }
         sysctls = {
           "net.ipv6.conf.all.disable_ipv6"     = "1"
@@ -107,8 +107,19 @@ data "talos_machine_configuration" "worker" {
         }
         install = {
           disk  = "/dev/sda"
-          image = "factory.talos.dev/nocloud-installer/dc7b152cb3ea99b821fcb7340ce7168313ce393d663740b791c36f6e95fc8586:${var.talos_version}"
+          image = "factory.talos.dev/nocloud-installer/${var.talos_schematic_id}:${var.talos_version}"
+          extraKernelArgs = each.value.gpu_passthrough ? [
+            "pci=realloc",
+            "i915.force_probe=56a6",
+          ] : []
         }
+        kernel = each.value.gpu_passthrough ? {
+          modules = [
+            {
+              name = "i915"
+            }
+          ]
+        } : {}
         sysctls = merge(
           {
             "net.ipv6.conf.all.disable_ipv6"     = "1"

@@ -6,7 +6,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: truenas-nfs-fast
+  storageClassName: ""
+  volumeName: arr-slskd-config
   resources:
     requests:
-      storage: 1Gi
+      storage: 2Gi
