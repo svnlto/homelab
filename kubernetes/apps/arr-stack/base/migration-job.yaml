@@ -22,7 +22,7 @@ spec:
 
               echo "Starting arr-stack config migration..."
 
-              for app in gluetun qbittorrent sabnzbd slskd prowlarr radarr sonarr lidarr bazarr recyclarr buildarr glance; do
+              for app in gluetun qbittorrent sabnzbd prowlarr radarr sonarr lidarr bazarr recyclarr buildarr glance; do
                 src="/source/$app"
                 dst="/dest/$app"
                 if [ -d "$src" ] && [ "$(ls -A "$src" 2>/dev/null)" ]; then
@@ -32,6 +32,16 @@ spec:
                 else
                   echo "  Skipping $app (no source data)"
                 fi
+              done
+
+              # Slskd: copy config only, skip incomplete/downloads (transient data on scratch)
+              echo "Migrating slskd (config only)..."
+              for item in /source/slskd/*; do
+                name=$(basename "$item")
+                case "$name" in
+                  incomplete|downloads) echo "  Skipping slskd/$name (scratch data)" ;;
+                  *) cp -a "$item" "/dest/slskd/$name"; echo "  Copied slskd/$name" ;;
+                esac
               done
 
               echo "Migration complete!"
