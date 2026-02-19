@@ -56,3 +56,8 @@ resources:
   # Dashboard
   - glance-deployment.yaml
   - glance-service.yaml
+
+  # Migration (remove after successful migration)
+  - pv-migration-source.yaml
+  - pvc-migration-source.yaml
+  - migration-job.yaml
