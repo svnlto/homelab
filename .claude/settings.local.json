@@ -3,8 +3,8 @@
   "permissions": {
     "allow": [
       "Bash(pre-commit run:*)",
-      "Web Search",
-      "Fetch",
+      "WebSearch",
+      "WebFetch",
       "Bash(just truenas-setup-check:*)",
       "Bash(terragrunt plan:*)",
       "Bash(terragrunt validate:*)",

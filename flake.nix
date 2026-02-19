@@ -51,6 +51,7 @@
           shellHook = ''
             export QEMU_DIR="${pkgs.qemu}/share/qemu"
             export PATH="${pkgs.qemu}/bin:$PATH"
+            export K9S_CONFIG_DIR=~/.config/k9s
           '';
         };
       });

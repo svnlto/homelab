@@ -101,6 +101,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
   tags = concat(["talos", "kubernetes", "worker", var.cluster_name, "terraform"],
   each.value.gpu_passthrough ? ["gpu"] : [], var.tags)
   on_boot = true
+  started = true
 
   bios            = "ovmf"
   machine         = "q35"
@@ -127,13 +128,21 @@ resource "proxmox_virtual_environment_vm" "worker" {
 
     # Wait for guest agent to report non-loopback IPv4 before completing VM creation
     wait_for_ip {
-      ipv4 = true
+      ipv4 = !each.value.gpu_passthrough
+    }
+  }
+
+  dynamic "serial_device" {
+    for_each = each.value.gpu_passthrough ? [1] : []
+
+    content {
+      device = "socket"
     }
   }
 
   vga {
-    type   = "virtio"
-    memory = 32
+    type   = each.value.gpu_passthrough ? "serial0" : "virtio"
+    memory = 4
   }
 
   efi_disk {

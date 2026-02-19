@@ -57,15 +57,22 @@ variable "control_plane_nodes" {
 
 variable "worker_nodes" {
   type = map(object({
-    node_name       = string
-    vm_id           = number
-    hostname        = string
-    ip_address      = string
-    cpu_cores       = number
-    memory_mb       = number
-    disk_size_gb    = number
-    gpu_passthrough = bool
+    node_name           = string
+    vm_id               = number
+    hostname            = string
+    ip_address          = string
+    cpu_cores           = number
+    memory_mb           = number
+    disk_size_gb        = number
+    gpu_passthrough     = bool
+    gpu_mapping_id      = optional(string, "")
+    hook_script_file_id = optional(string, "")
   }))
+}
+
+variable "talos_schematic_id" {
+  description = "Talos Factory schematic ID"
+  type        = string
 }
 
 variable "tags" {

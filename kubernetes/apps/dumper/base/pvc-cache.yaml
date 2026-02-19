@@ -6,7 +6,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: truenas-nfs-bulk
+  storageClassName: ""
+  volumeName: dumper-cache
   resources:
     requests:
-      storage: 100Mi
+      storage: 1Gi

@@ -84,9 +84,6 @@ locals {
     din_storage = "10.10.10.11"
     din_idrac   = "10.10.1.11"
 
-    arr_stack         = "192.168.0.50"
-    arr_stack_storage = "10.10.10.50"
-
     jellyfin         = "192.168.0.51"
     jellyfin_storage = "10.10.10.51"
 
@@ -210,7 +207,6 @@ locals {
   }
 
   vm_ids = {
-    arr_stack = 200
     jellyfin  = 210
     pbs       = 220
   }
@@ -283,8 +279,10 @@ locals {
   }
 
   talos = {
-    version      = "v1.12.2"
-    schematic_id = "dc7b152cb3ea99b821fcb7340ce7168313ce393d663740b791c36f6e95fc8586"
+    version = "v1.12.2"
+    # Schematic includes: siderolabs/i915-ucode + siderolabs/intel-ucode
+    # (Intel GPU firmware — passive on non-GPU nodes, safe for all cluster nodes)
+    schematic_id = "97bf8e92fc6bba0f03928b859c08295d7615737b29db06a97be51dc63004e403"
   }
 
   versions = {

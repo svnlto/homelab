@@ -6,7 +6,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: truenas-nfs-fast
+  storageClassName: ""
+  volumeName: arr-recyclarr-config
   resources:
     requests:
-      storage: 2Gi
+      storage: 1Gi

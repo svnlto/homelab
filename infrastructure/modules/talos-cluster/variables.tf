@@ -87,18 +87,24 @@ variable "control_plane_nodes" {
 variable "worker_nodes" {
   description = "Map of worker node configurations"
   type = map(object({
-    node_name       = string
-    vm_id           = number
-    hostname        = string
-    ip_address      = string # CIDR format
-    cpu_cores       = number
-    memory_mb       = number
-    disk_size_gb    = number
-    gpu_passthrough = optional(bool, false)
-    gpu_mapping_id  = optional(string, "")
+    node_name           = string
+    vm_id               = number
+    hostname            = string
+    ip_address          = string # CIDR format
+    cpu_cores           = number
+    memory_mb           = number
+    disk_size_gb        = number
+    gpu_passthrough     = optional(bool, false)
+    gpu_mapping_id      = optional(string, "")
+    hook_script_file_id = optional(string, "")
   }))
 
   default = {}
+}
+
+variable "talos_schematic_id" {
+  description = "Talos Factory schematic ID (determines system extensions in the install image)"
+  type        = string
 }
 
 

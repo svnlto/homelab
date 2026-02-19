@@ -17,6 +17,7 @@ module "k8s_apps" {
 
   control_plane_nodes = var.control_plane_nodes
   worker_nodes        = var.worker_nodes
+  talos_schematic_id  = var.talos_schematic_id
 
   tags             = var.tags
   deploy_bootstrap = var.deploy_bootstrap

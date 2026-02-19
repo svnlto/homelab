@@ -6,7 +6,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: truenas-nfs-fast
+  storageClassName: ""
+  volumeName: arr-lidarr-config
   resources:
     requests:
       storage: 5Gi

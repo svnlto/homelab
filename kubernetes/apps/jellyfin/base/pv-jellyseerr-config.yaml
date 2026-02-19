@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyseerr-config
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: jellyfin
+    name: jellyseerr-config
+  nfs:
+    server: 10.10.10.13
+    path: /mnt/fast/kubernetes/nfs-dynamic/pvc-5af7a2ae-39fc-4d3f-8bb5-0de455f16b68

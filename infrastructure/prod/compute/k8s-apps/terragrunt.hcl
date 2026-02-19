@@ -35,6 +35,7 @@ locals {
   proxmox     = local.global_vars.locals.proxmox
   ips         = local.global_vars.locals.infrastructure_ips
   k8s         = local.global_vars.locals.k8s_clusters.apps
+  talos       = local.global_vars.locals.talos
 }
 
 inputs = {
@@ -44,6 +45,7 @@ inputs = {
   talos_version      = "v1.12.2"
   kubernetes_version = "v1.35.0"
   talos_image_id     = dependency.images.outputs.talos_image_id_grogu
+  talos_schematic_id = local.talos.schematic_id
 
   network_bridge  = local.proxmox.bridges.k8s_apps
   network_gateway = local.vlans.k8s_apps.gateway
