@@ -86,4 +86,4 @@ data:
     sed -i "s/__PROWLARR_API_KEY__/$PROWLARR_API_KEY/g" /config/buildarr.yml
     sed -i "s/__LIDARR_API_KEY__/$LIDARR_API_KEY/g" /config/buildarr.yml
     sed -i "s/__BAZARR_API_KEY__/$BAZARR_API_KEY/g" /config/buildarr.yml
-    exec "$@"
+    exec buildarr "$@"
