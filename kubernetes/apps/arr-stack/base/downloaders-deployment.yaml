@@ -78,6 +78,8 @@ spec:
               value: 30s
             - name: HEALTH_VPN_DURATION_ADDITION
               value: 30s
+            - name: FIREWALL_INPUT_PORTS
+              value: "8701,8080,9696,8191,5030"
           livenessProbe:
             exec:
               command:
