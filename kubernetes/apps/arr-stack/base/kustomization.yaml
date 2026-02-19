@@ -1,0 +1,58 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Static NFS PVs
+  - pv-media-movies.yaml
+  - pv-media-tv.yaml
+  - pv-media-music.yaml
+  - pv-media-books.yaml
+  - pv-scratch.yaml
+
+  # Static NFS PVCs
+  - pvc-media-movies.yaml
+  - pvc-media-tv.yaml
+  - pvc-media-music.yaml
+  - pvc-media-books.yaml
+  - pvc-scratch.yaml
+
+  # Dynamic config PVCs
+  - pvc-gluetun-config.yaml
+  - pvc-qbittorrent-config.yaml
+  - pvc-sabnzbd-config.yaml
+  - pvc-slskd-config.yaml
+  - pvc-prowlarr-config.yaml
+  - pvc-radarr-config.yaml
+  - pvc-sonarr-config.yaml
+  - pvc-lidarr-config.yaml
+  - pvc-bazarr-config.yaml
+  - pvc-recyclarr-config.yaml
+  - pvc-buildarr-config.yaml
+  - pvc-glance-config.yaml
+
+  # ConfigMaps
+  - configmap-recyclarr.yaml
+  - configmap-buildarr.yaml
+
+  # Downloaders (Gluetun + qBit + SABnzbd + Slskd + Prowlarr + FlareSolverr)
+  - downloaders-deployment.yaml
+  - downloaders-service.yaml
+
+  # Arr apps
+  - radarr-deployment.yaml
+  - radarr-service.yaml
+  - sonarr-deployment.yaml
+  - sonarr-service.yaml
+  - lidarr-deployment.yaml
+  - lidarr-service.yaml
+  - bazarr-deployment.yaml
+  - bazarr-service.yaml
+
+  # Config tools
+  - recyclarr-cronjob.yaml
+  - buildarr-deployment.yaml
+
+  # Dashboard
+  - glance-deployment.yaml
+  - glance-service.yaml

@@ -1,0 +1,110 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: arr-stack
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+spec:
+  tls:
+    - hosts:
+        - qbittorrent.shared.h.svenlito.com
+        - sabnzbd.shared.h.svenlito.com
+        - prowlarr.shared.h.svenlito.com
+        - slskd.shared.h.svenlito.com
+        - radarr.shared.h.svenlito.com
+        - sonarr.shared.h.svenlito.com
+        - lidarr.shared.h.svenlito.com
+        - bazarr.shared.h.svenlito.com
+        - glance.shared.h.svenlito.com
+  rules:
+    - host: qbittorrent.shared.h.svenlito.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: downloaders
+                port:
+                  name: qbittorrent
+    - host: sabnzbd.shared.h.svenlito.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: downloaders
+                port:
+                  name: sabnzbd
+    - host: prowlarr.shared.h.svenlito.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: downloaders
+                port:
+                  name: prowlarr
+    - host: slskd.shared.h.svenlito.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: downloaders
+                port:
+                  name: slskd
+    - host: radarr.shared.h.svenlito.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: radarr
+                port:
+                  name: http
+    - host: sonarr.shared.h.svenlito.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sonarr
+                port:
+                  name: http
+    - host: lidarr.shared.h.svenlito.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lidarr
+                port:
+                  name: http
+    - host: bazarr.shared.h.svenlito.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bazarr
+                port:
+                  name: http
+    - host: glance.shared.h.svenlito.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: glance
+                port:
+                  name: http
