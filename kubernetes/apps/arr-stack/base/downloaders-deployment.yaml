@@ -80,6 +80,8 @@ spec:
               value: 30s
             - name: FIREWALL_INPUT_PORTS
               value: "8701,8080,9696,8191,5030"
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              value: "10.96.0.0/12,10.244.0.0/16"
           livenessProbe:
             exec:
               command:
