@@ -46,7 +46,7 @@
         "stdio"
       ],
       "env": {
-        "ARGOCD_BASE_URL": "https://argocd.homelab.local/api/v1",
+        "ARGOCD_BASE_URL": "https://10.0.1.101/api/v1",
         "ARGOCD_API_TOKEN": "${ARGOCD_API_TOKEN}"
       }
     },
