@@ -42,6 +42,7 @@
             kubectl
             talosctl
             k9s
+            vcluster
             # MCP server runtimes
             nodejs
             deno
