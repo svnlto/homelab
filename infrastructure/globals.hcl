@@ -202,7 +202,7 @@ locals {
     qos = {
       download_limit = "95M"
       upload_limit   = "40M"
-      bulk_hosts     = ["192.168.0.50"]
+      bulk_hosts     = ["10.0.1.0/24"]
     }
   }
 

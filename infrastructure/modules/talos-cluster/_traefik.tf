@@ -44,6 +44,9 @@ resource "helm_release" "traefik" {
   # Base values
   values = [
     yamlencode({
+      deployment = {
+        strategy = "Recreate"
+      }
       service = merge(
         { type = "LoadBalancer" },
         var.tailscale_enabled ? {
@@ -63,6 +66,14 @@ resource "helm_release" "traefik" {
           {
             port        = 8000
             exposedPort = 80
+            http = {
+              redirections = {
+                entryPoint = {
+                  to     = "websecure"
+                  scheme = "https"
+                }
+              }
+            }
           },
           var.tailscale_enabled ? {
             expose = {
