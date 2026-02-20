@@ -10,7 +10,7 @@ fi
 direnv allow "$CLAUDE_PROJECT_DIR" 2>/dev/null || true
 
 # Evaluate direnv for the project directory
-eval "$(direnv export bash 2>/dev/null)"
+eval "$(direnv export zsh 2>/dev/null)"
 
 # Persist environment variables for all subsequent Bash calls in this session
 if [[ -n "${CLAUDE_ENV_FILE:-}" ]]; then
