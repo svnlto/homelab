@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: signoz
+  name: signoz-k8s-infra
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -11,19 +11,14 @@ spec:
 
   sources:
     - repoURL: https://charts.signoz.io
-      chart: signoz
-      targetRevision: "0.112.0"
+      chart: k8s-infra
+      targetRevision: "0.15.0"
       helm:
         valueFiles:
-          - $values/kubernetes/apps/signoz/values.yaml
+          - $values/kubernetes/apps/signoz-k8s-infra/values.yaml
     - repoURL: https://github.com/svnlto/homelab
       targetRevision: HEAD
       ref: values
-    - repoURL: https://github.com/svnlto/homelab
-      targetRevision: HEAD
-      path: kubernetes/apps/signoz
-      directory:
-        include: "ingress.yaml"
 
   destination:
     server: https://kubernetes.default.svc
@@ -35,5 +30,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-
-  ignoreDifferences: []
