@@ -8,8 +8,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: ""
-  volumeName: jellyseerr-config
+  storageClassName: truenas-nfs-fast
   resources:
     requests:
       storage: 2Gi
