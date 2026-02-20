@@ -1,0 +1,44 @@
+---
+presets:
+  otlpExporter:
+    enabled: true
+  logsCollection:
+    enabled: true
+  hostMetrics:
+    enabled: true
+  kubeletMetrics:
+    enabled: true
+  kubernetesAttributes:
+    enabled: true
+  clusterMetrics:
+    enabled: true
+  k8sEvents:
+    enabled: true
+
+otelAgent:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+  config:
+    exporters:
+      otlp:
+        endpoint: "signoz-otel-collector.signoz.svc.cluster.local:4317"
+        tls:
+          insecure: true
+
+otelDeployment:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+  config:
+    exporters:
+      otlp:
+        endpoint: "signoz-otel-collector.signoz.svc.cluster.local:4317"
+        tls:
+          insecure: true
