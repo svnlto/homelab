@@ -280,9 +280,9 @@ locals {
 
   talos = {
     version = "v1.12.2"
-    # Schematic includes: siderolabs/i915-ucode + siderolabs/intel-ucode
-    # (Intel GPU firmware — passive on non-GPU nodes, safe for all cluster nodes)
-    schematic_id = "97bf8e92fc6bba0f03928b859c08295d7615737b29db06a97be51dc63004e403"
+    # Schematic includes: siderolabs/i915-ucode, siderolabs/intel-ucode,
+    # siderolabs/iscsi-tools, siderolabs/qemu-guest-agent
+    schematic_id = "930a00fbcce4d3bcd531c92e13d24412df7b676f818004fbbdfeb693e4dcb649"
   }
 
   versions = {
