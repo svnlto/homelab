@@ -52,6 +52,12 @@ variable "dns_servers" {
   default     = ["192.168.0.53"]
 }
 
+variable "ntp_servers" {
+  description = "NTP servers for cluster nodes (use IPs to avoid DNS dependency at boot)"
+  type        = list(string)
+  default     = ["192.168.0.53"]
+}
+
 variable "vip_ip" {
   description = "Virtual IP for HA control plane (without CIDR)"
   type        = string

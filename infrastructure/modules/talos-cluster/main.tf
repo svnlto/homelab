@@ -37,15 +37,7 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
   }
 
   agent {
-    enabled = true
-    trim    = true
-    type    = "virtio"
-    timeout = "5m" # Wait up to 5 minutes for agent
-
-    # Wait for guest agent to report non-loopback IPv4 before completing VM creation
-    wait_for_ip {
-      ipv4 = true
-    }
+    enabled = false
   }
 
   vga {
@@ -121,15 +113,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
   }
 
   agent {
-    enabled = true
-    trim    = true
-    type    = "virtio"
-    timeout = "5m" # Wait up to 5 minutes for agent
-
-    # Wait for guest agent to report non-loopback IPv4 before completing VM creation
-    wait_for_ip {
-      ipv4 = !each.value.gpu_passthrough
-    }
+    enabled = false
   }
 
   dynamic "serial_device" {

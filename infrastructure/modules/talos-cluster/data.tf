@@ -39,6 +39,9 @@ data "talos_machine_configuration" "control_plane" {
           ]
           nameservers = var.dns_servers
         }
+        time = {
+          servers = var.ntp_servers
+        }
         install = {
           disk  = "/dev/sda"
           image = "factory.talos.dev/nocloud-installer/${var.talos_schematic_id}:${var.talos_version}"
@@ -104,6 +107,9 @@ data "talos_machine_configuration" "worker" {
             }
           ]
           nameservers = var.dns_servers
+        }
+        time = {
+          servers = var.ntp_servers
         }
         install = {
           disk  = "/dev/sda"

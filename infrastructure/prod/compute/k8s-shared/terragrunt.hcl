@@ -49,7 +49,8 @@ inputs = {
 
   network_bridge  = local.proxmox.bridges.k8s_shared
   network_gateway = local.vlans.k8s_shared.gateway
-  dns_servers     = [local.ips.pihole]
+  dns_servers     = [local.ips.pihole, "1.1.1.1"]
+  ntp_servers     = [local.ips.pihole, "time.cloudflare.com"]
   vip_ip          = local.k8s.vip
 
   datastore_id = "local-zfs"
