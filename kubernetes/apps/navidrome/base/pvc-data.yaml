@@ -8,8 +8,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: ""
-  volumeName: navidrome-data
+  storageClassName: truenas-nfs-fast
   resources:
     requests:
       storage: 1Gi
