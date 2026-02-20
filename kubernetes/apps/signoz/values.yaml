@@ -7,7 +7,7 @@
 # For custom apps, set OTEL_EXPORTER_OTLP_ENDPOINT to the gRPC endpoint above.
 
 global:
-  storageClass: truenas-nfs-bulk
+  storageClass: truenas-iscsi-rwo
 
 clickhouse:
   persistence:
