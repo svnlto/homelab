@@ -49,6 +49,19 @@ resource "helm_release" "argocd" {
 
   # Server configuration
   values = [yamlencode({
+    # Exclude Cilium auto-generated resources from tracking
+    configs = {
+      cm = {
+        "resource.exclusions" = yamlencode([
+          {
+            apiGroups = ["cilium.io"]
+            kinds     = ["CiliumIdentity"]
+            clusters  = ["*"]
+          }
+        ])
+      }
+    }
+
     server = {
       service = {
         type = var.server_service_type
