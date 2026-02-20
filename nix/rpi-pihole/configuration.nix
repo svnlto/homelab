@@ -23,6 +23,7 @@
       ];
       allowedUDPPorts = [
         53 # DNS
+        123 # NTP
       ];
     };
   };
@@ -88,6 +89,17 @@
     SystemMaxUse=30M
     RuntimeMaxUse=30M
   '';
+
+  # NTP server for the network (K8s nodes use this to avoid DNS-dependent NTP)
+  services.chrony = {
+    enable = true;
+    servers = [ "time.cloudflare.com" "time.google.com" ];
+    extraConfig = ''
+      # Allow NTP clients from all local subnets
+      allow 192.168.0.0/24
+      allow 10.0.0.0/8
+    '';
+  };
 
   # Timezone
   time.timeZone = constants.timezone;
