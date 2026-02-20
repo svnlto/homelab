@@ -41,6 +41,7 @@
             kubernetes-helm
             kubectl
             talosctl
+            k9s
             # MCP server runtimes
             nodejs
             deno
@@ -52,6 +53,20 @@
             export QEMU_DIR="${pkgs.qemu}/share/qemu"
             export PATH="${pkgs.qemu}/bin:$PATH"
             export K9S_CONFIG_DIR=~/.config/k9s
+
+            # Kubernetes context — merge kubeconfigs from all Talos clusters
+            KUBE_SHARED="$PWD/infrastructure/prod/compute/k8s-shared/configs/kubeconfig-shared"
+            KUBE_APPS="$PWD/infrastructure/prod/compute/k8s-apps/configs/kubeconfig-apps"
+            KUBECONFIG_PATHS=""
+            [ -f "$KUBE_SHARED" ] && KUBECONFIG_PATHS="$KUBE_SHARED"
+            [ -f "$KUBE_APPS" ] && KUBECONFIG_PATHS="''${KUBECONFIG_PATHS:+$KUBECONFIG_PATHS:}$KUBE_APPS"
+            [ -n "$KUBECONFIG_PATHS" ] && export KUBECONFIG="$KUBECONFIG_PATHS"
+
+            # Talos context
+            TALOS_SHARED="$PWD/infrastructure/prod/compute/k8s-shared/configs/talosconfig-shared"
+            TALOS_APPS="$PWD/infrastructure/prod/compute/k8s-apps/configs/talosconfig-apps"
+            [ -f "$TALOS_SHARED" ] && export TALOSCONFIG="$TALOS_SHARED"
+            [ -f "$TALOS_APPS" ] && export TALOSCONFIG="$TALOS_APPS"
           '';
         };
       });
