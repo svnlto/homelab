@@ -15,7 +15,7 @@
   # Pi-hole systemd service
   systemd.services.pihole = {
     description = "Pi-hole DNS Server";
-    after = [ "docker.service" "network-online.target" ];
+    after = [ "docker.service" "network-online.target" "chronyd.service" ];
     wants = [ "network-online.target" ];
     requires = [ "docker.service" ];
     wantedBy = [ "multi-user.target" ];
@@ -50,6 +50,8 @@
           FTLCONF_LOCAL_IPV4: "192.168.0.53"
           PIHOLE_DNS_: "127.0.0.1#5335"
           FTLCONF_dns_listeningMode: "all"
+          FTLCONF_ntp_ipv4_active: "false"
+          FTLCONF_ntp_ipv6_active: "false"
         volumes:
           - /opt/pihole/etc-pihole:/etc/pihole
           - /opt/pihole/etc-dnsmasq.d:/etc/dnsmasq.d
