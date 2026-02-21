@@ -27,7 +27,6 @@
         - bulk/backups/forgejo
         - bulk/backups/timemachine
         - bulk/archive
-        - bulk/signoz-cold
       tags: [datasets, bulk]
 
     - name: Check if fast pool exists

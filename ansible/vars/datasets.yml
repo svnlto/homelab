@@ -23,11 +23,6 @@ datasets:
     acltype: "nfsv4"
     aclmode: "passthrough"
 
-  bulk_signoz_cold:
-    recordsize: "128K"
-    compression: "zstd"
-    sync: "standard"
-
   bulk_backups_timemachine:
     recordsize: "1M"
     compression: "zstd"

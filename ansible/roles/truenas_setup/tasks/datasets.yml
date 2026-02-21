@@ -50,13 +50,6 @@
     atime: "OFF"
   tags: [datasets, bulk, photos]
 
-- name: Create bulk signoz cold storage dataset
-  arensb.truenas.filesystem:
-    name: "bulk/signoz-cold"
-    state: present
-    compression: "ZSTD"
-  tags: [datasets, bulk, observability]
-
 - name: Create bulk backups parent dataset
   arensb.truenas.filesystem:
     name: "bulk/backups"
