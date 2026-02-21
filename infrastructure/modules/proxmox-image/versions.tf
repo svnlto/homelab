@@ -1,14 +1,14 @@
 terraform {
-  required_version = ">= 1.0"
+  required_version = "1.14.5"
 
   required_providers {
     proxmox = {
       source  = "bpg/proxmox"
-      version = "~> 0.96.0"
+      version = "0.96.0"
     }
     null = {
       source  = "hashicorp/null"
-      version = "~> 3.2"
+      version = "3.2.4"
     }
   }
 }
