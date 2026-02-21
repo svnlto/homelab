@@ -51,15 +51,6 @@
       "datasourceTemplate": "docker"
     },
     {
-      // Match multi-line jellyfinAutoCollections (value on next line)
-      "customType": "regex",
-      "fileMatch": ["^nix/arr-stack/arr\\.nix$"],
-      "matchStrings": [
-        "jellyfinAutoCollections\\s*=\\s*\\n\\s*\"(?<depName>[^\"]+?):(?<currentValue>[^\"]+?)\";"
-      ],
-      "datasourceTemplate": "docker"
-    },
-    {
       // Pi-hole version in constants.nix (Docker Hub pihole/pihole)
       "customType": "regex",
       "fileMatch": ["^nix/common/constants\\.nix$"],
@@ -128,10 +119,5 @@
       "enabled": false
     },
 
-    // jellyfin-auto-collections has no versioned releases, pin digest only
-    {
-      "matchPackageNames": ["ghcr.io/ghomashudson/jellyfin-auto-collections"],
-      "pinDigests": true
-    }
   ]
 }
