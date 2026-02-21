@@ -49,6 +49,28 @@
           '';
         };
 
+      packages.x86_64-linux.osxphotos-export-image =
+        pkgs-x86.dockerTools.buildLayeredImage {
+          name = "ghcr.io/svnlto/osxphotos-export";
+          tag = "latest";
+          contents = with pkgs-x86; [
+            python312Packages.osxphotos
+            gnugrep
+            coreutils
+            bash
+            curl
+            jq
+          ];
+          config = { Cmd = [ "/bin/bash" "/app/export-photos.sh" ]; };
+          extraCommands = ''
+            mkdir -p app etc
+            mkdir -p -m 1777 tmp
+            cp ${./osxphotos-export/export-photos.sh} app/export-photos.sh
+            echo "export:x:1003:1000:export:/tmp:/bin/bash" >> etc/passwd
+            echo "export:x:1000:" >> etc/group
+          '';
+        };
+
       nixosConfigurations = {
         rpi-pihole = nixpkgs.lib.nixosSystem {
           system = "aarch64-linux";
