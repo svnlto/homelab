@@ -10,7 +10,7 @@ Homelab infrastructure automation using NixOS, Terragrunt, and Ansible:
 - **Proxmox VE**: Terragrunt-based VM deployment with environment separation (prod/dev)
 - **TrueNAS SCALE**: ZFS-based network storage (Terragrunt VMs + Ansible configuration)
 - **MikroTik**: Router configuration via Terragrunt (VLANs, firewall, DHCP)
-- **Arr Stack**: NixOS media automation VM on Proxmox (deployed via nixos-anywhere)
+- **Kubernetes**: Talos K8s cluster on Proxmox with ArgoCD GitOps (arr-stack, Jellyfin, etc.)
 
 **Critical Design Principle**: Raspberry Pi runs DNS (Pi-hole) independently of Proxmox
 so DNS stays operational during Proxmox maintenance.
@@ -39,7 +39,7 @@ just nixos-build-qdevice                 # Build SD image
 just nixos-flash-qdevice /dev/rdiskX     # Flash to SD card
 just nixos-deploy-qdevice               # Deploy config via SSH
 
-# Arr Stack (Proxmox VM at 192.168.0.50)
+# Arr Stack (legacy NixOS config, now runs on K8s)
 just nixos-install-arr-stack <ip>        # Initial install via nixos-anywhere
 just nixos-update-arr-stack              # Deploy config via SSH
 ```
@@ -85,7 +85,10 @@ infrastructure/
 │   ├── provider.hcl         # Proxmox provider (credentials from 1Password)
 │   ├── resource-pools/      # Proxmox pool management
 │   ├── images/              # Centralized ISO downloads (TrueNAS, NixOS)
-│   ├── compute/arr-stack/   # NixOS arr media stack VM
+│   ├── compute/k8s-shared/  # Talos K8s cluster (VLAN 30)
+│   ├── compute/jellyfin/    # Jellyfin VM with Arc A310 GPU passthrough
+│   ├── compute/pbs/         # Proxmox Backup Server VM
+│   ├── compute/argocd/      # ArgoCD on k8s-shared
 │   ├── storage/
 │   │   ├── truenas-primary/ # VMID 300 on din (5×8TB + 21×900GB)
 │   │   └── truenas-backup/  # VMID 301 on grogu (8×3TB)
@@ -121,6 +124,24 @@ nix/
 - Unbound forwards DNS-over-TLS to Mullvad (`194.242.2.2@853`)
 - Arr stack uses disko for declarative disk partitioning, deployed via nixos-anywhere
 
+### Kubernetes (ArgoCD GitOps)
+
+```text
+kubernetes/
+├── argocd-apps/             # ArgoCD Application manifests (one per app)
+└── apps/
+    ├── arr-stack/            # Media automation (Sonarr, Radarr, Prowlarr, etc.)
+    ├── jellyfin/             # Media server + Jellyseerr
+    ├── infrastructure/       # democratic-csi StorageClasses
+    ├── dumper/               # Photo dump CronJob
+    └── navidrome/            # Music server
+```
+
+- Single Talos cluster (`k8s-shared`, VLAN 30) managed via Terragrunt
+- ArgoCD watches `kubernetes/` directory for app-of-apps pattern
+- Apps use Kustomize with base/overlays structure (overlays per cluster)
+- Storage via democratic-csi (NFS + iSCSI from TrueNAS)
+
 ### TrueNAS Deployment (3-phase)
 
 1. **Terragrunt**: Creates VMs with HBA passthrough (`just tg-apply-module prod/storage/truenas-primary`)
@@ -146,7 +167,6 @@ SSH uses 1Password SSH agent. See `docs/1password-setup.md` for setup.
 | MikroTik (nevarro)| 192.168.0.1    | —                 | 192.168.8.2      |
 | Pi-hole (RPi)     | 192.168.0.53   | —                 | —                |
 | QDevice (RPi)     | 192.168.0.54   | —                 | —                |
-| Arr Stack         | 192.168.0.50   | —                 | —                |
 | grogu (r630)      | 192.168.0.10   | 10.10.10.10       | —                |
 | din (r730xd)      | 192.168.0.11   | 10.10.10.11       | —                |
 | TrueNAS Primary   | 192.168.0.13   | 10.10.10.13       | —                |
@@ -166,7 +186,7 @@ Pinned via Nix flakes (`flake.nix`):
 - Terraform 1.14.1 (from nixpkgs-terraform)
 - Terragrunt (from nixpkgs)
 - Ansible (from nixpkgs-unstable)
-- Proxmox Provider 0.95.0 (bpg/proxmox)
+- Proxmox Provider 0.96.0 (bpg/proxmox)
 
 ## Pre-commit Hooks
 
