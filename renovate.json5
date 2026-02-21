@@ -27,11 +27,9 @@
     "labels": ["security"]
   },
 
-  // Skip legacy/generated paths
+  // Skip generated paths
   "ignorePaths": [
-    "archive/**",
-    ".terragrunt-cache/**",
-    "packer/**"
+    ".terragrunt-cache/**"
   ],
 
   // Keep Terraform lock files up to date
@@ -115,6 +113,13 @@
     {
       "matchUpdateTypes": ["major"],
       "labels": ["dependencies", "major"]
+    },
+
+    // Disable digest pinning for custom regex-managed Nix files —
+    // Nix string format ("image:tag") has no place for @sha256: digests
+    {
+      "matchManagers": ["custom.regex"],
+      "pinDigests": false
     },
 
     // Ignore lidarr — uses non-standard pr-plugins-* versioning from hotio
