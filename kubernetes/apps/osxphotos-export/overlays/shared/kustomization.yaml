@@ -1,0 +1,16 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+namespace: osxphotos-export
+
+commonLabels:
+  environment: production
+  cluster: shared
+
+commonAnnotations:
+  deployed-by: argocd
+  cluster: shared

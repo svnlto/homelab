@@ -1,0 +1,41 @@
+---
+name: Build OSXPhotos Export Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "nix/osxphotos-export/**"
+      - "nix/flake.nix"
+      - "nix/flake.lock"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build and Push OCI Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Build image
+        run: nix build ./nix#osxphotos-export-image
+
+      - name: Load and push image
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker load < result
+          SHA_TAG="ghcr.io/svnlto/osxphotos-export:${{ github.sha }}"
+          docker tag ghcr.io/svnlto/osxphotos-export:latest "${SHA_TAG}"
+          echo "${GITHUB_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ghcr.io/svnlto/osxphotos-export:latest
+          docker push "${SHA_TAG}"
