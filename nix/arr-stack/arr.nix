@@ -25,7 +25,7 @@ let
     slskd = "slskd/slskd:0.24.4";
     prowlarr = "lscr.io/linuxserver/prowlarr:2.3.0.5236-ls133";
     flaresolverr = "ghcr.io/flaresolverr/flaresolverr:v3.4.6";
-    recyclarr = "ghcr.io/recyclarr/recyclarr:7.5.2";
+    recyclarr = "ghcr.io/recyclarr/recyclarr:8.1.0";
     buildarr = "callum027/buildarr:0.7.8";
     glance = "glanceapp/glance:v0.8.4";
   };
