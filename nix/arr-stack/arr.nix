@@ -2,7 +2,6 @@
 
 let
   dataDir = "/var/lib/arr-data";
-  nfsConfigDir = "/mnt/arr-config";
   mediaDir = "/mnt/media";
   scratchDir = "/mnt/scratch";
   composeDir = "/opt/stacks/arr";
@@ -49,21 +48,6 @@ in {
   # ---------------------------------------------------------------------------
   # NFS mounts from TrueNAS
   # ---------------------------------------------------------------------------
-
-  # NFS config mount — kept for initial data migration, not used at runtime
-  fileSystems.${nfsConfigDir} = {
-    device = "${truenasStorageIp}:/mnt/bulk/arr-config";
-    fsType = "nfs";
-    options = [
-      "nfsvers=4.2"
-      "sec=sys"
-      "rsize=131072"
-      "wsize=131072"
-      "hard"
-      "nofail"
-      "_netdev"
-    ];
-  };
 
   # Media — parent mount (NFS can't cross ZFS dataset boundaries,
   # so child datasets are mounted explicitly below)
@@ -673,16 +657,16 @@ in {
   # Systemd services
   # ---------------------------------------------------------------------------
 
-  # Initialize local directories and migrate data from NFS on first boot
+  # Initialize local directories on first boot
   systemd.services.arr-init = {
     description = "Initialize arr stack directories and configs";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
 
-    unitConfig.RequiresMountsFor = "${nfsConfigDir} ${mediaDir} ${scratchDir}";
+    unitConfig.RequiresMountsFor = "${mediaDir} ${scratchDir}";
 
-    path = [ pkgs.coreutils pkgs.gnused pkgs.rsync ];
+    path = [ pkgs.coreutils pkgs.gnused ];
 
     serviceConfig = {
       Type = "oneshot";
@@ -704,21 +688,6 @@ in {
         mkdir -p ${dataDir}/buildarr
         mkdir -p ${dataDir}/glance
 
-        # Migrate from NFS to local storage (one-time)
-        if [ ! -f ${dataDir}/.migrated ]; then
-          echo "Migrating arr data from NFS to local storage..."
-
-          for app in gluetun qbittorrent sabnzbd radarr sonarr lidarr bazarr slskd prowlarr recyclarr buildarr glance; do
-            if [ -d ${nfsConfigDir}/$app ]; then
-              rsync -a ${nfsConfigDir}/$app/ ${dataDir}/$app/
-              echo "Migrated $app"
-            fi
-          done
-
-          touch ${dataDir}/.migrated
-          echo "Migration complete"
-        fi
-
         # Ensure download directories exist on scratch mount
         mkdir -p ${scratchDir}/incomplete
         mkdir -p ${scratchDir}/complete/torrents
@@ -728,12 +697,8 @@ in {
 
         # Copy .env template if not present
         if [ ! -f ${dataDir}/env ]; then
-          if [ -f ${nfsConfigDir}/env ]; then
-            cp ${nfsConfigDir}/env ${dataDir}/env
-          else
-            cp /etc/arr/env.template ${dataDir}/env
-            echo "Created ${dataDir}/env from template — edit with your secrets"
-          fi
+          cp /etc/arr/env.template ${dataDir}/env
+          echo "Created ${dataDir}/env from template — edit with your secrets"
         fi
 
         # Copy initial configs if not present (apps modify these at runtime)

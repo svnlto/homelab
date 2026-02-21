@@ -93,15 +93,6 @@
     and 'already exists' not in (tm_dataset_create.stdout | default(''))
   tags: [datasets, bulk, backups, timemachine]
 
-- name: Create bulk arr-config dataset
-  arensb.truenas.filesystem:
-    name: "bulk/arr-config"
-    state: present
-    compression: "LZ4"
-    atime: "OFF"
-  tags: [datasets, bulk, arr]
-  # TODO: Move to fast/arr-config once MD1220 hardware arrives
-
 - name: Create bulk archive dataset
   arensb.truenas.filesystem:
     name: "bulk/archive"
@@ -248,7 +239,6 @@
   loop:
     - bulk/media
     - bulk/photos
-    - bulk/arr-config
     - bulk/archive
     - scratch
     - scratch/downloads

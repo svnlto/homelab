@@ -28,15 +28,6 @@
   changed_when: false
   tags: [properties, bulk, photos]
 
-- name: Set bulk/arr-config recordsize to 16K
-  ansible.builtin.command:
-    cmd: >
-      midclt call pool.dataset.update
-      'bulk/arr-config'
-      '{"recordsize": "16K"}'
-  changed_when: false
-  tags: [properties, bulk, arr]
-
 - name: Set bulk/signoz-cold recordsize to 128K
   ansible.builtin.command:
     cmd: >
