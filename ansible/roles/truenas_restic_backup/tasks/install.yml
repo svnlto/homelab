@@ -1,0 +1,15 @@
+---
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - restic
+      - curl
+      - jq
+    state: present
+    update_cache: true
+
+- name: Create scripts directory
+  ansible.builtin.file:
+    path: "{{ restic_scripts_dir }}"
+    state: directory
+    mode: "0700"

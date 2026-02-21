@@ -1,0 +1,24 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+source {{ restic_env_file }}
+
+echo "=== Restic Repository Status ==="
+restic stats --mode raw-data
+
+echo ""
+echo "=== Recent Snapshots by Tag ==="
+{% for job in restic_backup_jobs %}
+{% for set in job.backup_sets %}
+echo ""
+echo "{{ set.tags[0] | capitalize }}:"
+restic snapshots --tag {{ set.tags[0] }} --last
+{% endfor %}
+{% endfor %}
+
+echo ""
+echo "=== Timer Status ==="
+systemctl status restic-backup-*.timer --no-pager
+
+echo ""
+echo "=== Recent Backup Logs ==="
+journalctl -u restic-backup-*.service -n 20 --no-pager

@@ -1,0 +1,3 @@
+---
+restic_scripts_dir: /root/scripts
+restic_env_file: /root/.restic-env

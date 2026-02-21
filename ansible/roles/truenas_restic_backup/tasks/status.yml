@@ -1,0 +1,6 @@
+---
+- name: Create Restic status check script
+  ansible.builtin.template:
+    src: restic-status.sh.j2
+    dest: "{{ restic_scripts_dir }}/restic-status.sh"
+    mode: "0755"

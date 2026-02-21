@@ -1,0 +1,34 @@
+---
+- name: Create systemd service for {{ job.description }}
+  ansible.builtin.template:
+    src: restic-backup.service.j2
+    dest: /etc/systemd/system/restic-backup-{{ job.name }}.service
+    mode: "0644"
+  loop: "{{ restic_backup_jobs }}"
+  loop_control:
+    loop_var: job
+    label: "{{ job.name }}"
+  notify: Reload systemd daemon
+
+- name: Create systemd timer for {{ job.description }}
+  ansible.builtin.template:
+    src: restic-backup.timer.j2
+    dest: /etc/systemd/system/restic-backup-{{ job.name }}.timer
+    mode: "0644"
+  loop: "{{ restic_backup_jobs }}"
+  loop_control:
+    loop_var: job
+    label: "{{ job.name }}"
+  notify: Reload systemd daemon
+
+- name: Flush handlers to reload systemd before enabling timers
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start Restic backup timers
+  ansible.builtin.systemd:
+    name: "restic-backup-{{ item.name }}.timer"
+    enabled: true
+    state: started
+  loop: "{{ restic_backup_jobs }}"
+  loop_control:
+    label: "{{ item.name }}"

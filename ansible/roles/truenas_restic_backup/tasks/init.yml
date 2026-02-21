@@ -1,0 +1,17 @@
+---
+- name: Check if Restic repository exists
+  ansible.builtin.shell: |
+    set -o pipefail
+    source {{ restic_env_file }}
+    restic snapshots --json 2>/dev/null | jq -r 'length'
+  register: restic_check
+  changed_when: false
+  failed_when: false
+
+- name: Initialize Restic repository on B2
+  ansible.builtin.shell: |
+    source {{ restic_env_file }}
+    restic init
+  when: restic_check.rc != 0
+  register: restic_init
+  changed_when: "'created restic repository' in restic_init.stdout"

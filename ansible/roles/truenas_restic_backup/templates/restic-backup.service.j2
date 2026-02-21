@@ -1,0 +1,15 @@
+{{ ansible_managed | comment }}
+[Unit]
+Description=Restic Backup - {{ job.description }}
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart={{ restic_scripts_dir }}/restic-backup-{{ job.name }}.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=restic-{{ job.name }}
+
+[Install]
+WantedBy=multi-user.target
