@@ -63,11 +63,11 @@
             [ -f "$KUBE_APPS" ] && KUBECONFIG_PATHS="''${KUBECONFIG_PATHS:+$KUBECONFIG_PATHS:}$KUBE_APPS"
             [ -n "$KUBECONFIG_PATHS" ] && export KUBECONFIG="$KUBECONFIG_PATHS"
 
-            # Talos context
+            # Talos context — defaults to shared cluster, use talosctl config context to switch
             TALOS_SHARED="$PWD/infrastructure/prod/compute/k8s-shared/configs/talosconfig-shared"
             TALOS_APPS="$PWD/infrastructure/prod/compute/k8s-apps/configs/talosconfig-apps"
-            [ -f "$TALOS_SHARED" ] && export TALOSCONFIG="$TALOS_SHARED"
             [ -f "$TALOS_APPS" ] && export TALOSCONFIG="$TALOS_APPS"
+            [ -f "$TALOS_SHARED" ] && export TALOSCONFIG="$TALOS_SHARED"
           '';
         };
       });
