@@ -120,5 +120,11 @@
       "enabled": false
     },
 
+    // Digest lookup not supported for this GitHub Action
+    {
+      "matchPackageNames": ["jaxxstorm/action-install-gh-release"],
+      "pinDigests": false
+    },
+
   ]
 }
