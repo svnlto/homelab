@@ -59,8 +59,7 @@
       failed_when: "'[]' == scratch_datasets.stdout"
       loop:
         - scratch/kubernetes/nfs-dynamic
-        - scratch/downloads/incomplete
-        - scratch/downloads/complete
+        - scratch/downloads
         - scratch/ci-runners/cache
         - scratch/ci-runners/artifacts
         - scratch/ml-datasets
@@ -247,7 +246,6 @@
         - bulk/archive
         - scratch
         - scratch/downloads
-        - scratch/downloads/complete
         - scratch/immich-migration
         - scratch/dump
       tags: [acls, datasets]
@@ -265,30 +263,28 @@
         or 'RESTRICTED' not in tm_acl_props.stdout
       tags: [acls, datasets]
 
-    # NFSv4 ACL entries (getacl defaults to simplified=true, returns BASIC flags)
+    # NFSv4 ACL entries — owner@ must have FULL_CONTROL, group@ must have
+    # write access (BASIC: MODIFY or expanded WRITE_DATA + READ_DATA perms)
     - name: Verify NFSv4 ACLs on service datasets
       ansible.builtin.command:
         cmd: midclt call filesystem.getacl '"/mnt/{{ item.path }}"'
       register: acl_check
       changed_when: false
+      vars:
+        _acl: "{{ acl_check.stdout | from_json }}"
+        _owner: "{{ _acl.acl | selectattr('tag', 'equalto', 'owner@') | first }}"
+        _group: "{{ _acl.acl | selectattr('tag', 'equalto', 'group@') | first }}"
       failed_when: >
-        (acl_check.stdout | from_json).acl
-        | selectattr('tag', 'equalto', 'owner@')
-        | selectattr('perms.BASIC', 'defined')
-        | selectattr('perms.BASIC', 'equalto', 'FULL_CONTROL')
-        | list | length == 0
+        (_owner.perms.BASIC | default('') != 'FULL_CONTROL')
         or
-        (acl_check.stdout | from_json).acl
-        | selectattr('tag', 'equalto', 'group@')
-        | selectattr('perms.BASIC', 'defined')
-        | selectattr('perms.BASIC', 'equalto', 'MODIFY')
-        | list | length == 0
+        (_group.perms.BASIC | default('') != 'MODIFY'
+         and not (_group.perms.WRITE_DATA | default(false)
+                  and _group.perms.READ_DATA | default(false)))
       loop:
         - path: bulk/media
         - path: bulk/photos
         - path: bulk/archive
         - path: scratch/downloads
-        - path: scratch/downloads/complete
         - path: scratch/immich-migration
         - path: scratch/dump
       # bulk/backups/timemachine excluded — SMB manages its own ACLs
