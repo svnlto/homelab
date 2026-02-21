@@ -133,7 +133,6 @@
     # K8s shared cluster: *.shared.h.svenlito.com → Traefik MetalLB IP
     address=/shared.h.svenlito.com/10.0.1.100
     # Future clusters (uncomment when deployed):
-    # address=/apps.h.svenlito.com/10.0.2.x
     # address=/test.h.svenlito.com/10.0.3.x
   '';
 

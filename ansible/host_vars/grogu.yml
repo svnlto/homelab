@@ -14,7 +14,7 @@ pci_resource_mappings:
   arc-a310:
     description: "Intel Arc A310 for Jellyfin transcoding"
     device_id: "8086:56a6"
-    iommu_group: 28
+    iommu_group: 29
     path: "0000:05:00.0"
     subsystem_id: "172f:4019"
   truenas-h241:
