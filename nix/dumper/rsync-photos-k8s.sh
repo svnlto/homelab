@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2029  # REMOTE_PATH is intentionally expanded client-side
-# K8s CronJob variant of rsync-photos.sh
+# Long-running rsync sync script for K8s Deployment.
+# Syncs continuously, reconnecting on failure.
 # Environment variables from dumper-config Secret:
 #   REMOTE_HOST=100.x.x.x
 #   REMOTE_USER=admin
@@ -8,6 +9,9 @@
 # Environment variables for OTLP logging:
 #   OTEL_EXPORTER_OTLP_ENDPOINT=http://signoz-otel-collector.signoz.svc:4318
 #   OTEL_SERVICE_NAME=dumper
+# Environment variables for tuning:
+#   SYNC_INTERVAL=3600   (seconds between successful syncs)
+#   RETRY_INTERVAL=300   (seconds to wait after a failure)
 
 set -euo pipefail
 
@@ -15,8 +19,24 @@ DUMP_DIR="/mnt/dump"
 STATE_DIR="/cache"
 FILE_LIST="${STATE_DIR}/rsync-filelist.txt"
 FILE_LIST_MAX_AGE=86400 # rebuild if older than 24h
+SYNC_INTERVAL="${SYNC_INTERVAL:-3600}"
+RETRY_INTERVAL="${RETRY_INTERVAL:-300}"
 
 SSH_OPTS=(-i /secrets/ssh/id_ed25519 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=10)
+
+# Format bytes into a human-readable string (B, KB, MB, GB)
+_human_bytes() {
+  local bytes=$1
+  if [ "$bytes" -ge 1073741824 ]; then
+    echo "$(( bytes / 1073741824 )).$(( (bytes % 1073741824) * 10 / 1073741824 )) GB"
+  elif [ "$bytes" -ge 1048576 ]; then
+    echo "$(( bytes / 1048576 )).$(( (bytes % 1048576) * 10 / 1048576 )) MB"
+  elif [ "$bytes" -ge 1024 ]; then
+    echo "$(( bytes / 1024 )) KB"
+  else
+    echo "${bytes} B"
+  fi
+}
 
 # Send a structured log record to the OTEL collector via HTTP/JSON.
 # Usage: otel_log SEVERITY "message" [key=value ...]
@@ -52,7 +72,7 @@ otel_log() {
         resource: {
           attributes: [
             {key: "service.name", value: {stringValue: $svc}},
-            {key: "k8s.cronjob.name", value: {stringValue: "dumper"}}
+            {key: "k8s.deployment.name", value: {stringValue: "dumper"}}
           ]
         },
         scopeLogs: [{
@@ -92,116 +112,150 @@ if ! tailscale status >/dev/null 2>&1; then
   exit 1
 fi
 
-# Check if remote host is reachable via Tailscale (DERP relay is fine)
-PING_OUT=$(tailscale ping --timeout=30s --c=1 "${REMOTE_HOST}" 2>&1 || true)
-if ! echo "$PING_OUT" | grep -q "pong"; then
-  echo "Remote host ${REMOTE_HOST} is not reachable, skipping sync"
-  otel_log WARN "Remote host unreachable, skipping sync" \
-    "sync.status=skipped" "remote.host=${REMOTE_HOST}"
-  exit 0
-fi
+# ── Main sync loop ──────────────────────────────────────────────────
+while true; do
 
-# Rebuild file list if missing or older than threshold
-if [ ! -f "${FILE_LIST}" ] ||
-  [ "$(($(date +%s) - $(stat -c %Y "${FILE_LIST}")))" -gt ${FILE_LIST_MAX_AGE} ]; then
-  echo "Building remote file list..."
-  ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" \
-    "sudo find '${REMOTE_PATH}' \
-      -type f -print" |
-    sed "s|^${REMOTE_PATH}||" \
-      >"${FILE_LIST}.tmp"
-  mv "${FILE_LIST}.tmp" "${FILE_LIST}"
-  FILE_COUNT=$(wc -l <"${FILE_LIST}")
-  echo "File list rebuilt: ${FILE_COUNT} files"
-  otel_log INFO "File list rebuilt" \
-    "files.count=${FILE_COUNT}" "remote.host=${REMOTE_HOST}"
-else
-  echo "File list cached ($(wc -l <"${FILE_LIST}") files, max age ${FILE_LIST_MAX_AGE}s)"
-fi
-
-FILE_COUNT=$(wc -l <"${FILE_LIST}")
-echo "Starting rsync of ${FILE_COUNT} files to ${DUMP_DIR}${REMOTE_PATH}"
-otel_log INFO "Rsync started" \
-  "files.count=${FILE_COUNT}" "remote.host=${REMOTE_HOST}"
-
-RSYNC_START=$SECONDS
-RSYNC_LOG="${STATE_DIR}/rsync-transfer.log"
-RSYNC_ERR="${STATE_DIR}/rsync-error.log"
-PROGRESS_INTERVAL=60 # send progress OTel log every 60 seconds
-
-# Background progress reporter: reads rsync's itemized output to track
-# files checked (skipped + transferred) and show the current filename.
-_progress_reporter() {
-  local last_checked=0
-  while true; do
-    sleep "${PROGRESS_INTERVAL}"
-    [ -f "$RSYNC_LOG" ] || continue
-    local checked transferred last_file
-    checked=$(wc -l <"$RSYNC_LOG" 2>/dev/null || echo 0)
-    checked=$((checked)) # trim whitespace
-    transferred=$(grep -c '^>' "$RSYNC_LOG" 2>/dev/null || echo 0)
-    last_file=$(tail -1 "$RSYNC_LOG" 2>/dev/null | sed 's/^[^ ]* //' || echo "")
-    if [ "$checked" -gt "$last_checked" ]; then
-      local pct=0
-      if [ "${FILE_COUNT}" -gt 0 ]; then
-        pct=$(( (checked * 100) / FILE_COUNT ))
-      fi
-      local elapsed=$((SECONDS - RSYNC_START))
-      echo "Progress: ${checked}/${FILE_COUNT} checked, ${transferred} transferred (${pct}%) after ${elapsed}s | ${last_file}"
-      otel_log INFO "Rsync progress" \
-        "sync.status=in_progress" \
-        "files.checked=${checked}" "files.transferred=${transferred}" \
-        "files.total=${FILE_COUNT}" "sync.percent=${pct}" \
-        "current.file=${last_file}" "remote.host=${REMOTE_HOST}" \
-        "duration_seconds=${elapsed}"
-      last_checked=$checked
-    fi
-  done
-}
-
-: >"$RSYNC_LOG"
-: >"$RSYNC_ERR"
-_progress_reporter &
-PROGRESS_PID=$!
-trap 'kill $PROGRESS_PID 2>/dev/null; rm -f "$RSYNC_LOG" "$RSYNC_ERR"' EXIT
-
-# Run rsync with --itemize-changes so every checked file produces output.
-# Lines starting with ">" are transferred; lines starting with "." are skipped.
-# Capture exit code explicitly to avoid set -e / pipefail exiting early.
-RSYNC_EXIT=0
-rsync -rlt --partial --inplace --omit-dir-times \
-  --compress --timeout=300 \
-  --chmod=D755,F644 \
-  --itemize-changes \
-  --out-format='%i %n' \
-  --files-from="${FILE_LIST}" \
-  --rsync-path="sudo /usr/bin/rsync" \
-  -e "ssh ${SSH_OPTS[*]}" \
-  "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}" \
-  "${DUMP_DIR}${REMOTE_PATH}" \
-  >>"$RSYNC_LOG" 2>>"$RSYNC_ERR" || RSYNC_EXIT=$?
-
-kill $PROGRESS_PID 2>/dev/null || true
-CHECKED=$(wc -l <"$RSYNC_LOG" 2>/dev/null || echo 0)
-CHECKED=$((CHECKED))
-TRANSFERRED=$(grep -c '^>' "$RSYNC_LOG" 2>/dev/null || echo 0)
-DURATION=$((SECONDS - RSYNC_START))
-
-if [ "$RSYNC_EXIT" -eq 0 ]; then
-  echo "Rsync complete in ${DURATION}s (${CHECKED} checked, ${TRANSFERRED} transferred)"
-  otel_log INFO "Rsync complete" \
-    "sync.status=success" "files.total=${FILE_COUNT}" \
-    "files.checked=${CHECKED}" "files.transferred=${TRANSFERRED}" \
-    "remote.host=${REMOTE_HOST}" "duration_seconds=${DURATION}"
-else
-  echo "ERROR: Rsync failed with exit code ${RSYNC_EXIT} after ${DURATION}s (${CHECKED} checked, ${TRANSFERRED} transferred)"
-  # Log stderr content if present
-  if [ -s "$RSYNC_ERR" ]; then
-    echo "Last errors: $(tail -5 "$RSYNC_ERR")"
+  # Check if remote host is reachable via Tailscale (DERP relay is fine)
+  PING_OUT=$(tailscale ping --timeout=30s --c=1 "${REMOTE_HOST}" 2>&1 || true)
+  if ! echo "$PING_OUT" | grep -q "pong"; then
+    echo "Remote host ${REMOTE_HOST} is not reachable, retrying in ${RETRY_INTERVAL}s"
+    otel_log WARN "Remote host unreachable — retrying in ${RETRY_INTERVAL}s" \
+      "sync.status=skipped" "remote.host=${REMOTE_HOST}"
+    sleep "${RETRY_INTERVAL}"
+    continue
   fi
-  otel_log ERROR "Rsync failed (exit ${RSYNC_EXIT})" \
-    "sync.status=error" "files.total=${FILE_COUNT}" \
-    "files.checked=${CHECKED}" "files.transferred=${TRANSFERRED}" \
-    "remote.host=${REMOTE_HOST}" "duration_seconds=${DURATION}"
-  exit "${RSYNC_EXIT}"
-fi
+
+  # Rebuild file list if missing or older than threshold
+  if [ ! -f "${FILE_LIST}" ] ||
+    [ "$(($(date +%s) - $(stat -c %Y "${FILE_LIST}")))" -gt ${FILE_LIST_MAX_AGE} ]; then
+    echo "Building remote file list..."
+    ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" \
+      "sudo find '${REMOTE_PATH}' \
+        -type f -print" |
+      sed "s|^${REMOTE_PATH}||" \
+        >"${FILE_LIST}.tmp"
+    mv "${FILE_LIST}.tmp" "${FILE_LIST}"
+    FILE_COUNT=$(wc -l <"${FILE_LIST}")
+    echo "File list rebuilt: ${FILE_COUNT} files"
+    otel_log INFO "File list rebuilt: ${FILE_COUNT} files from ${REMOTE_HOST}" \
+      "files.count=${FILE_COUNT}" "remote.host=${REMOTE_HOST}"
+  else
+    echo "File list cached ($(wc -l <"${FILE_LIST}") files, max age ${FILE_LIST_MAX_AGE}s)"
+  fi
+
+  FILE_COUNT=$(wc -l <"${FILE_LIST}")
+  echo "Starting rsync of ${FILE_COUNT} files to ${DUMP_DIR}${REMOTE_PATH}"
+  otel_log INFO "Rsync started: ${FILE_COUNT} files from ${REMOTE_HOST}" \
+    "files.count=${FILE_COUNT}" "remote.host=${REMOTE_HOST}"
+
+  RSYNC_START=$SECONDS
+  RSYNC_LOG="${STATE_DIR}/rsync-transfer.log"
+  RSYNC_ERR="${STATE_DIR}/rsync-error.log"
+  PROGRESS_INTERVAL=60 # send progress OTel log every 60 seconds
+
+  # Background progress reporter: reads rsync's itemized output to track
+  # files checked (skipped + transferred), bytes transferred, and speed.
+  # --out-format '%i %l %n' produces: <itemize-flags> <file-size-bytes> <filename>
+  _progress_reporter() {
+    local last_checked=0
+    while true; do
+      sleep "${PROGRESS_INTERVAL}"
+      [ -f "$RSYNC_LOG" ] || continue
+      local checked transferred last_file xfer_bytes
+      checked=$(wc -l <"$RSYNC_LOG" 2>/dev/null || echo 0)
+      checked=$((checked)) # trim whitespace
+      transferred=$(grep -c '^>' "$RSYNC_LOG" 2>/dev/null || echo 0)
+      # Sum bytes from transferred files (lines starting with '>': field 2 is size)
+      xfer_bytes=$(grep '^>' "$RSYNC_LOG" 2>/dev/null | awk '{s+=$2} END {print s+0}' || echo 0)
+      last_file=$(tail -1 "$RSYNC_LOG" 2>/dev/null | awk '{$1=$2=""; sub(/^  /,""); print}' || echo "")
+      if [ "$checked" -gt "$last_checked" ]; then
+        local pct=0
+        if [ "${FILE_COUNT}" -gt 0 ]; then
+          pct=$(( (checked * 100) / FILE_COUNT ))
+        fi
+        local elapsed=$((SECONDS - RSYNC_START))
+        local speed="0.0"
+        if [ "$elapsed" -gt 0 ] && [ "$xfer_bytes" -gt 0 ]; then
+          speed=$(awk "BEGIN {printf \"%.1f\", ${xfer_bytes} / 1048576 / ${elapsed}}")
+        fi
+        local xfer_bytes_human
+        xfer_bytes_human=$(_human_bytes "$xfer_bytes")
+        echo "Progress: ${checked}/${FILE_COUNT} (${pct}%), ${xfer_bytes_human} transferred, ${speed} MB/s | ${last_file}"
+        otel_log INFO "Rsync progress: ${checked}/${FILE_COUNT} (${pct}%), ${xfer_bytes_human} transferred, ${speed} MB/s | ${last_file}" \
+          "sync.status=in_progress" \
+          "files.checked=${checked}" "files.transferred=${transferred}" \
+          "files.total=${FILE_COUNT}" "sync.percent=${pct}" \
+          "bytes.transferred=${xfer_bytes}" "transfer.speed_mbps=${speed}" \
+          "current.file=${last_file}" "remote.host=${REMOTE_HOST}" \
+          "duration_seconds=${elapsed}"
+        last_checked=$checked
+      fi
+    done
+  }
+
+  : >"$RSYNC_LOG"
+  : >"$RSYNC_ERR"
+  _progress_reporter &
+  PROGRESS_PID=$!
+
+  # Run rsync with --itemize-changes so every checked file produces output.
+  # --out-format '%i %l %n': itemize flags, file size in bytes, filename.
+  # Lines starting with ">" are transferred; lines starting with "." are skipped.
+  RSYNC_EXIT=0
+  rsync -rlt --partial --inplace --omit-dir-times \
+    --compress --timeout=300 \
+    --chmod=D755,F644 \
+    --itemize-changes \
+    --out-format='%i %l %n' \
+    --files-from="${FILE_LIST}" \
+    --rsync-path="sudo /usr/bin/rsync" \
+    -e "ssh ${SSH_OPTS[*]}" \
+    "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}" \
+    "${DUMP_DIR}${REMOTE_PATH}" \
+    >>"$RSYNC_LOG" 2>>"$RSYNC_ERR" || RSYNC_EXIT=$?
+
+  kill $PROGRESS_PID 2>/dev/null || true
+  wait $PROGRESS_PID 2>/dev/null || true
+
+  CHECKED=$(wc -l <"$RSYNC_LOG" 2>/dev/null || echo 0)
+  CHECKED=$((CHECKED))
+  TRANSFERRED=$(grep -c '^>' "$RSYNC_LOG" 2>/dev/null || echo 0)
+  TOTAL_BYTES=$(grep '^>' "$RSYNC_LOG" 2>/dev/null | awk '{s+=$2} END {print s+0}' || echo 0)
+  DURATION=$((SECONDS - RSYNC_START))
+  AVG_SPEED="0.0"
+  if [ "$DURATION" -gt 0 ] && [ "$TOTAL_BYTES" -gt 0 ]; then
+    AVG_SPEED=$(awk "BEGIN {printf \"%.1f\", ${TOTAL_BYTES} / 1048576 / ${DURATION}}")
+  fi
+  TOTAL_BYTES_HUMAN=$(_human_bytes "$TOTAL_BYTES")
+
+  rm -f "$RSYNC_LOG" "$RSYNC_ERR"
+
+  if [ "$RSYNC_EXIT" -eq 0 ]; then
+    echo "Rsync complete: ${TRANSFERRED} files, ${TOTAL_BYTES_HUMAN} in ${DURATION}s (${AVG_SPEED} MB/s)"
+    otel_log INFO "Rsync complete: ${TRANSFERRED} files, ${TOTAL_BYTES_HUMAN} in ${DURATION}s (${AVG_SPEED} MB/s)" \
+      "sync.status=success" "files.total=${FILE_COUNT}" \
+      "files.checked=${CHECKED}" "files.transferred=${TRANSFERRED}" \
+      "bytes.transferred=${TOTAL_BYTES}" "transfer.speed_mbps=${AVG_SPEED}" \
+      "remote.host=${REMOTE_HOST}" "duration_seconds=${DURATION}"
+    echo "Next sync in ${SYNC_INTERVAL}s"
+    sleep "${SYNC_INTERVAL}"
+  else
+    echo "ERROR: Rsync failed (exit ${RSYNC_EXIT}): ${CHECKED} checked, ${TRANSFERRED} transferred in ${DURATION}s — retrying in ${RETRY_INTERVAL}s"
+    if [ -s "$RSYNC_ERR" ]; then
+      echo "Last errors: $(tail -5 "$RSYNC_ERR" 2>/dev/null || true)"
+    fi
+    otel_log ERROR "Rsync failed (exit ${RSYNC_EXIT}): ${CHECKED} checked, ${TRANSFERRED} transferred in ${DURATION}s — retrying in ${RETRY_INTERVAL}s" \
+      "sync.status=error" "files.total=${FILE_COUNT}" \
+      "files.checked=${CHECKED}" "files.transferred=${TRANSFERRED}" \
+      "bytes.transferred=${TOTAL_BYTES}" "transfer.speed_mbps=${AVG_SPEED}" \
+      "remote.host=${REMOTE_HOST}" "duration_seconds=${DURATION}"
+    # Invalidate file list on connection errors so it gets rebuilt next iteration
+    case "$RSYNC_EXIT" in
+      10|12|23|24|30|35)
+        rm -f "${FILE_LIST}"
+        ;;
+    esac
+    sleep "${RETRY_INTERVAL}"
+  fi
+
+done
