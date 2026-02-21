@@ -83,15 +83,6 @@ nfs_shares:
       - 10.0.3.0/24
     readonly: false
 
-  - path: /mnt/bulk/signoz-cold
-    comment: "Signoz cold storage (30+ days)"
-    maproot_user: root
-    maproot_group: wheel
-    networks:
-      - 10.10.10.0/24
-      - 10.0.1.0/24
-    readonly: false
-
   - path: /mnt/fast/kubernetes/nfs-dynamic
     comment: "democratic-csi NFS dynamic provisioning"
     maproot_user: root

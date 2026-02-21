@@ -28,15 +28,6 @@
   changed_when: false
   tags: [properties, bulk, photos]
 
-- name: Set bulk/signoz-cold recordsize to 128K
-  ansible.builtin.command:
-    cmd: >
-      midclt call pool.dataset.update
-      'bulk/signoz-cold'
-      '{"recordsize": "128K"}'
-  changed_when: false
-  tags: [properties, bulk, observability]
-
 - name: Set bulk/backups/timemachine properties
   ansible.builtin.command:
     cmd: >

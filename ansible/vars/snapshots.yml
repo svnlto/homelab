@@ -22,13 +22,6 @@ snapshot_policies:
     monthly: 0
     replicate: false
 
-  bulk_signoz_cold:
-    hourly: 0
-    daily: 14
-    weekly: 4
-    monthly: 6
-    replicate: true
-
   bulk_backups:
     daily: 7
     weekly: 4
@@ -96,12 +89,6 @@ replication_tasks:
     schedule: daily 05:00
     recursive: true
     priority: high
-
-  - source: bulk/signoz-cold
-    destination: backup/signoz-cold
-    schedule: daily 06:00
-    recursive: true
-    priority: medium
 
   - source: bulk/media
     destination: backup/media
