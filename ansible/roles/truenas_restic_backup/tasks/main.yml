@@ -1,0 +1,24 @@
+---
+- name: Install required packages
+  ansible.builtin.include_tasks: install.yml
+  tags: [install]
+
+- name: Configure Restic environment
+  ansible.builtin.include_tasks: config.yml
+  tags: [config]
+
+- name: Initialize Restic repository
+  ansible.builtin.include_tasks: init.yml
+  tags: [init]
+
+- name: Create backup scripts
+  ansible.builtin.include_tasks: scripts.yml
+  tags: [scripts]
+
+- name: Configure systemd services and timers
+  ansible.builtin.include_tasks: systemd.yml
+  tags: [systemd]
+
+- name: Create status check script
+  ansible.builtin.include_tasks: status.yml
+  tags: [scripts]

@@ -1,0 +1,89 @@
+---
+restic_backup_jobs:
+  - name: critical
+    description: Critical Data
+    schedule: "hourly"
+    randomized_delay: "5min"
+    weekly_integrity_check: true
+    backup_sets:
+      - paths:
+          - /mnt/fast/kubernetes
+          - /mnt/fast/vms
+          - /mnt/fast/ml-models
+        tags: [critical, hourly, din]
+        excludes: ["*.log", "*.tmp", "lost+found", ".cache"]
+        retention:
+          hourly: 48
+          daily: 30
+          weekly: 8
+          monthly: 12
+          yearly: 3
+
+  - name: photos
+    description: Photos
+    schedule: "*-*-* 01:00:00"
+    randomized_delay: "30min"
+    backup_sets:
+      - paths:
+          - /mnt/bulk/photos
+        tags: [photos, daily, din]
+        excludes: ["*.tmp", "lost+found", ".DS_Store", "Thumbs.db"]
+        retention:
+          daily: 30
+          weekly: 12
+          monthly: 24
+          yearly: 10
+
+  - name: bulk
+    description: Bulk Data
+    schedule: "*-*-* 02:00:00"
+    randomized_delay: "30min"
+    backup_sets:
+      - paths:
+          - /mnt/bulk/music
+        tags: [music, daily, din]
+        excludes: ["*.log", "lost+found"]
+        retention:
+          daily: 7
+          weekly: 8
+          monthly: 6
+      - paths:
+          - /mnt/bulk/backups/proxmox
+        tags: [proxmox, daily, din]
+        excludes: ["*.tmp"]
+        retention:
+          daily: 7
+          weekly: 4
+          monthly: 3
+      - paths:
+          - /mnt/bulk/backups/arr-configs
+        tags: [arr-configs, daily, din]
+        excludes: []
+        retention:
+          daily: 30
+          weekly: 12
+          monthly: 12
+
+  - name: archive
+    description: Archive Data
+    schedule: "Sun *-*-* 03:00:00"
+    randomized_delay: "1h"
+    backup_sets:
+      - paths:
+          - /mnt/bulk/backups/timemachine
+        tags: [timemachine, weekly, din]
+        excludes: ["*.tmp", ".Spotlight-*", ".fseventsd"]
+        condition: "[ -d /mnt/bulk/backups/timemachine ]"
+        retention:
+          weekly: 4
+          monthly: 6
+          yearly: 2
+      - paths:
+          - /mnt/bulk/archive
+        tags: [archive, weekly, din]
+        excludes: ["*.tmp"]
+        condition: "[ -d /mnt/bulk/archive ]"
+        retention:
+          weekly: 8
+          monthly: 12
+          yearly: 5

@@ -1,0 +1,42 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+set -e
+source {{ restic_env_file }}
+
+echo "=== Restic Backup: {{ job.description }} ($(date)) ==="
+{% for set in job.backup_sets %}
+
+{% if set.condition is defined %}
+if {{ set.condition }}; then
+{% endif %}
+restic backup \
+{% for path in set.paths %}
+  {{ path }} \
+{% endfor %}
+{% for tag in set.tags %}
+  --tag {{ tag }} \
+{% endfor %}
+{% for exclude in set.excludes %}
+  --exclude="{{ exclude }}" \
+{% endfor %}
+  --verbose
+{% if set.condition is defined %}
+fi
+{% endif %}
+
+restic forget \
+  --tag {{ set.tags[0] }} \
+{% for key, value in set.retention.items() %}
+  --keep-{{ key }} {{ value }} \
+{% endfor %}
+  --prune
+{% endfor %}
+{% if job.weekly_integrity_check | default(false) %}
+
+if [ "$(date +%u)" -eq 7 ]; then
+  echo "Running weekly integrity check..."
+  restic check --read-data-subset=5%
+fi
+{% endif %}
+
+echo "=== {{ job.description }} backup completed ==="
