@@ -92,18 +92,6 @@ nfs_shares:
       - 10.0.1.0/24
     readonly: false
 
-  # Fast pool
-  # TODO: Move to /mnt/fast/arr-config once MD1220 hardware arrives
-  - path: /mnt/bulk/arr-config
-    comment: "Arr stack configuration data (databases, settings)"
-    maproot_user: root
-    maproot_group: wheel
-    networks:
-      - 10.10.10.0/24
-      - 192.168.0.0/24
-      - 10.0.1.0/24
-    readonly: false
-
   - path: /mnt/fast/kubernetes/nfs-dynamic
     comment: "democratic-csi NFS dynamic provisioning"
     maproot_user: root
@@ -238,10 +226,6 @@ acl_datasets:
     everyone_read: true
   - path: /mnt/bulk/photos
     uid: 1001
-    gid: 1000
-    everyone_read: true
-  - path: /mnt/bulk/arr-config
-    uid: 1000
     gid: 1000
     everyone_read: true
   - path: /mnt/bulk/archive

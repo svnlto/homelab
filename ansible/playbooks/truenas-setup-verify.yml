@@ -26,7 +26,6 @@
         - bulk/backups/restic-repo
         - bulk/backups/forgejo
         - bulk/backups/timemachine
-        - bulk/arr-config
         - bulk/archive
         - bulk/signoz-cold
       tags: [datasets, bulk]
@@ -92,17 +91,6 @@
       register: photos_recordsize
       changed_when: false
       failed_when: "'1M' not in photos_recordsize.stdout"
-      tags: [properties, bulk]
-
-    - name: Query bulk/arr-config recordsize
-      ansible.builtin.command:
-        cmd: >-
-          midclt call pool.dataset.query
-          '[["id", "=", "bulk/arr-config"]]'
-          '{"select": ["recordsize"]}'
-      register: arr_recordsize
-      changed_when: false
-      failed_when: "'16K' not in arr_recordsize.stdout"
       tags: [properties, bulk]
 
     # Services
@@ -257,7 +245,6 @@
       loop:
         - bulk/media
         - bulk/photos
-        - bulk/arr-config
         - bulk/archive
         - scratch
         - scratch/downloads
@@ -300,7 +287,6 @@
       loop:
         - path: bulk/media
         - path: bulk/photos
-        - path: bulk/arr-config
         - path: bulk/archive
         - path: scratch/downloads
         - path: scratch/downloads/complete
@@ -372,7 +358,7 @@
         fail_msg: "Snapshot task missing for dataset: {{ item }}"
         quiet: true
       loop: >-
-        {{ ['bulk/media', 'bulk/arr-config', 'bulk/photos']
+        {{ ['bulk/media', 'bulk/photos']
            + (['fast/kubernetes', 'fast/vms', 'fast/ml-models'] if fast_pool_check.stdout != '[]' else []) }}
       tags: [snapshots]
 

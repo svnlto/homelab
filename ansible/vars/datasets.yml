@@ -53,15 +53,6 @@ datasets:
     sync: "standard"
     quota: "100G"
 
-  bulk_arr_config:
-    recordsize: "16K"
-    compression: "lz4"
-    sync: "standard"
-    atime: "off"
-    acltype: "nfsv4"
-    aclmode: "passthrough"
-    # TODO: Move to fast pool once MD1220 hardware arrives
-
   bulk_archive:
     recordsize: "1M"
     compression: "lz4"
