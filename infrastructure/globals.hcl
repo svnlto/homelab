@@ -146,18 +146,6 @@ locals {
       tailscale_hostname = "traefik-shared"
     }
 
-    apps = {
-      vip                = "10.0.2.10"
-      control_start      = "10.0.2.11"
-      control_end        = "10.0.2.13"
-      worker_start       = "10.0.2.21"
-      worker_end         = "10.0.2.29"
-      metallb_start      = "10.0.2.100"
-      metallb_end        = "10.0.2.150"
-      fqdn_suffix        = "apps.h.svenlito.com"
-      tailscale_hostname = "traefik-apps"
-    }
-
     test = {
       vip                = "10.0.3.10"
       control_start      = "10.0.3.11"
@@ -207,8 +195,8 @@ locals {
   }
 
   vm_ids = {
-    jellyfin  = 210
-    pbs       = 220
+    jellyfin = 210
+    pbs      = 220
   }
 
   proxmox = {
