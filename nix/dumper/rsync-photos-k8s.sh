@@ -126,70 +126,82 @@ otel_log INFO "Rsync started" \
 
 RSYNC_START=$SECONDS
 RSYNC_LOG="${STATE_DIR}/rsync-transfer.log"
+RSYNC_ERR="${STATE_DIR}/rsync-error.log"
 PROGRESS_INTERVAL=60 # send progress OTel log every 60 seconds
 
-# Background progress reporter: counts transferred files from rsync's
-# verbose output and sends periodic OTel log records.
+# Background progress reporter: reads rsync's itemized output to track
+# files checked (skipped + transferred) and show the current filename.
 _progress_reporter() {
-  local last_count=0
+  local last_checked=0
   while true; do
     sleep "${PROGRESS_INTERVAL}"
     [ -f "$RSYNC_LOG" ] || continue
-    local current_count
-    current_count=$(wc -l <"$RSYNC_LOG" 2>/dev/null || echo 0)
-    current_count=$((current_count)) # trim whitespace
-    if [ "$current_count" -gt "$last_count" ]; then
+    local checked transferred last_file
+    checked=$(wc -l <"$RSYNC_LOG" 2>/dev/null || echo 0)
+    checked=$((checked)) # trim whitespace
+    transferred=$(grep -c '^>' "$RSYNC_LOG" 2>/dev/null || echo 0)
+    last_file=$(tail -1 "$RSYNC_LOG" 2>/dev/null | sed 's/^[^ ]* //' || echo "")
+    if [ "$checked" -gt "$last_checked" ]; then
       local pct=0
       if [ "${FILE_COUNT}" -gt 0 ]; then
-        pct=$(( (current_count * 100) / FILE_COUNT ))
+        pct=$(( (checked * 100) / FILE_COUNT ))
       fi
       local elapsed=$((SECONDS - RSYNC_START))
-      echo "Progress: ${current_count}/${FILE_COUNT} files (${pct}%) after ${elapsed}s"
+      echo "Progress: ${checked}/${FILE_COUNT} checked, ${transferred} transferred (${pct}%) after ${elapsed}s | ${last_file}"
       otel_log INFO "Rsync progress" \
         "sync.status=in_progress" \
-        "files.transferred=${current_count}" "files.total=${FILE_COUNT}" \
-        "sync.percent=${pct}" "remote.host=${REMOTE_HOST}" \
+        "files.checked=${checked}" "files.transferred=${transferred}" \
+        "files.total=${FILE_COUNT}" "sync.percent=${pct}" \
+        "current.file=${last_file}" "remote.host=${REMOTE_HOST}" \
         "duration_seconds=${elapsed}"
-      last_count=$current_count
+      last_checked=$checked
     fi
   done
 }
 
 : >"$RSYNC_LOG"
+: >"$RSYNC_ERR"
 _progress_reporter &
 PROGRESS_PID=$!
-trap 'kill $PROGRESS_PID 2>/dev/null; rm -f "$RSYNC_LOG"' EXIT
+trap 'kill $PROGRESS_PID 2>/dev/null; rm -f "$RSYNC_LOG" "$RSYNC_ERR"' EXIT
 
-# Run rsync, logging one line per transferred file via --out-format.
+# Run rsync with --itemize-changes so every checked file produces output.
+# Lines starting with ">" are transferred; lines starting with "." are skipped.
 # Capture exit code explicitly to avoid set -e / pipefail exiting early.
 RSYNC_EXIT=0
 rsync -rlt --partial --inplace --omit-dir-times \
   --compress --timeout=300 \
   --chmod=D755,F644 \
-  --out-format='%n' \
+  --itemize-changes \
+  --out-format='%i %n' \
   --files-from="${FILE_LIST}" \
   --rsync-path="sudo /usr/bin/rsync" \
   -e "ssh ${SSH_OPTS[*]}" \
   "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}" \
   "${DUMP_DIR}${REMOTE_PATH}" \
-  >>"$RSYNC_LOG" 2>&1 || RSYNC_EXIT=$?
+  >>"$RSYNC_LOG" 2>>"$RSYNC_ERR" || RSYNC_EXIT=$?
 
 kill $PROGRESS_PID 2>/dev/null || true
-TRANSFERRED=$(wc -l <"$RSYNC_LOG" 2>/dev/null || echo 0)
-TRANSFERRED=$((TRANSFERRED))
+CHECKED=$(wc -l <"$RSYNC_LOG" 2>/dev/null || echo 0)
+CHECKED=$((CHECKED))
+TRANSFERRED=$(grep -c '^>' "$RSYNC_LOG" 2>/dev/null || echo 0)
 DURATION=$((SECONDS - RSYNC_START))
 
 if [ "$RSYNC_EXIT" -eq 0 ]; then
-  echo "Rsync complete in ${DURATION}s (${TRANSFERRED} files)"
+  echo "Rsync complete in ${DURATION}s (${CHECKED} checked, ${TRANSFERRED} transferred)"
   otel_log INFO "Rsync complete" \
-    "sync.status=success" "files.count=${FILE_COUNT}" \
-    "files.transferred=${TRANSFERRED}" \
+    "sync.status=success" "files.total=${FILE_COUNT}" \
+    "files.checked=${CHECKED}" "files.transferred=${TRANSFERRED}" \
     "remote.host=${REMOTE_HOST}" "duration_seconds=${DURATION}"
 else
-  echo "ERROR: Rsync failed with exit code ${RSYNC_EXIT} after ${DURATION}s"
+  echo "ERROR: Rsync failed with exit code ${RSYNC_EXIT} after ${DURATION}s (${CHECKED} checked, ${TRANSFERRED} transferred)"
+  # Log stderr content if present
+  if [ -s "$RSYNC_ERR" ]; then
+    echo "Last errors: $(tail -5 "$RSYNC_ERR")"
+  fi
   otel_log ERROR "Rsync failed (exit ${RSYNC_EXIT})" \
-    "sync.status=error" "files.count=${FILE_COUNT}" \
-    "files.transferred=${TRANSFERRED}" \
+    "sync.status=error" "files.total=${FILE_COUNT}" \
+    "files.checked=${CHECKED}" "files.transferred=${TRANSFERRED}" \
     "remote.host=${REMOTE_HOST}" "duration_seconds=${DURATION}"
   exit "${RSYNC_EXIT}"
 fi
