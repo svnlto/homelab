@@ -55,6 +55,11 @@
             dependencies =
               builtins.filter (dep: (dep.pname or "") != "utitools")
               (old.dependencies or [ ]);
+            postPatch = (old.postPatch or "") + ''
+              # Remove utitools dependency — macOS-only, its platform_release
+              # marker causes packaging>=25.0 to choke on Azure kernel versions
+              sed -i '/utitools/d' pyproject.toml setup.cfg setup.py 2>/dev/null || true
+            '';
           });
       in pkgs-x86.dockerTools.buildLayeredImage {
         name = "ghcr.io/svnlto/osxphotos-export";
