@@ -3,7 +3,8 @@
   "extends": [
     "config:recommended",
     "docker:pinDigests",
-    ":pinVersions"
+    ":pinVersions",
+    ":preserveSemverRanges"
   ],
 
   // Check immediately on every run, Europe/Berlin timezone
