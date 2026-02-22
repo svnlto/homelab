@@ -110,16 +110,6 @@
           specialArgs = { constants = import ./common/constants.nix; };
         };
 
-        jellyfin = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          modules = [
-            disko.nixosModules.disko
-            ./jellyfin/disk-config.nix
-            ./jellyfin/configuration.nix
-          ];
-          specialArgs = { constants = import ./common/constants.nix; };
-        };
-
       };
     };
 }

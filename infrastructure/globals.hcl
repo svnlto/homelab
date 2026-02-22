@@ -84,9 +84,6 @@ locals {
     din_storage = "10.10.10.11"
     din_idrac   = "10.10.1.11"
 
-    jellyfin         = "192.168.0.51"
-    jellyfin_storage = "10.10.10.51"
-
     qdevice = "192.168.0.54"
 
     pbs         = "192.168.0.55"
@@ -195,8 +192,7 @@ locals {
   }
 
   vm_ids = {
-    jellyfin = 210
-    pbs      = 220
+    pbs = 220
   }
 
   proxmox = {

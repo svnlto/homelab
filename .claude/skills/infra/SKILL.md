@@ -23,7 +23,6 @@ You are managing homelab infrastructure spanning Proxmox VE, MikroTik, TrueNAS, 
 | VMID    | Name            | Node      | Purpose                        |
 |---------|-----------------|-----------|--------------------------------|
 | 200     | arr-stack       | din       | NixOS media automation         |
-| 210     | jellyfin        | grogu     | NixOS Jellyfin + Arc A310 GPU  |
 | 220     | pbs             | grogu     | Proxmox Backup Server          |
 | 300     | truenas-primary | din       | TrueNAS SCALE (H330+LSI HBA)   |
 | 301     | truenas-backup  | grogu     | TrueNAS SCALE (H241 HBA)       |
@@ -101,7 +100,6 @@ prod/
   images/                      # ISO/image downloads (TrueNAS, NixOS, Talos, PBS)
   compute/
     arr-stack/                 # NixOS arr media stack VM
-    jellyfin/                  # NixOS Jellyfin + GPU passthrough VM
     pbs/                       # Proxmox Backup Server VM
     k8s-shared/                # Talos shared cluster (use /talos instead)
     k8s-apps/                  # Talos apps cluster (use /talos instead)
@@ -185,9 +183,6 @@ dev/
   just nixos-install-arr-stack <ip>              # Initial install (nixos-anywhere)
   just nixos-update-arr-stack                    # Deploy via SSH
 
-  # Jellyfin (Proxmox VM at 192.168.0.51)
-  just nixos-install-jellyfin <ip>               # Initial install
-  just nixos-update-jellyfin                     # Deploy via SSH
   ```
 
 - `/infra nixos-show <config>` — Show a NixOS configuration
