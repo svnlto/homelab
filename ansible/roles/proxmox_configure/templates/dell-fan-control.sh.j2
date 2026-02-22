@@ -41,23 +41,19 @@ while true; do
     fi
 
     # Determine fan speed from inlet temp
-    if (( INLET >= 35 )); then
-        SPEED=0x32  # 50%
-    elif (( INLET >= 30 )); then
-        SPEED=0x1e  # 30%
-    elif (( INLET >= 25 )); then
-        SPEED=0x14  # 20%
+{% for entry in fan_curve.inlet %}
+    {{ "if" if loop.first else "elif" }} (( INLET >= {{ entry.temp }} )); then
+        SPEED={{ entry.speed }}
+{% endfor %}
     else
-        SPEED=0x0f  # 15%
+        SPEED={{ fan_curve.inlet_default_speed }}
     fi
 
     # CPU temp override - takes priority if CPUs are hot
-    if (( CPU >= 90 )); then
-        SPEED=0x64  # 100% - emergency
-    elif (( CPU >= 85 )); then
-        SPEED=0x50  # 80%
-    elif (( CPU >= 80 )); then
-        SPEED=0x3c  # 60%
+{% for entry in fan_curve.cpu %}
+    {{ "if" if loop.first else "elif" }} (( CPU >= {{ entry.temp }} )); then
+        SPEED={{ entry.speed }}
+{% endfor %}
     fi
 
     set_fan_speed "$SPEED"

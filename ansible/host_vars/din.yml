@@ -23,6 +23,18 @@ pci_resource_mappings:
 # Allow non-Intel SFP+ transceivers
 configure_ixgbe_unsupported_sfp: true
 
+# Dell fan control thresholds (R730xd)
+fan_curve:
+  inlet:
+    - {temp: 35, speed: "0x32"} # 50%
+    - {temp: 30, speed: "0x1e"} # 30%
+    - {temp: 25, speed: "0x14"} # 20%
+  inlet_default_speed: "0x0f" # 15%
+  cpu:
+    - {temp: 90, speed: "0x64"} # 100% - emergency
+    - {temp: 85, speed: "0x50"} # 80%
+    - {temp: 80, speed: "0x3c",} # 60%
+
 # Dell MD1220 enclosure fan control via EMM serial port
 enclosure_serial_device: "/dev/ttyS1"
 enclosure_fan_speed: 5
