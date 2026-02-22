@@ -62,6 +62,8 @@
               sed -i '/platform_release/d' pyproject.toml setup.cfg setup.py 2>/dev/null || true
               # Also strip utitools (macOS-only)
               sed -i '/utitools/d' pyproject.toml setup.cfg setup.py 2>/dev/null || true
+              # Relax whenever version pin — nixpkgs has 0.9.5, osxphotos pins <0.9.0
+              sed -i 's/whenever>=0.8.3,<0.9.0/whenever>=0.8.3/' pyproject.toml setup.cfg setup.py 2>/dev/null || true
             '';
           });
       in pkgs-x86.dockerTools.buildLayeredImage {
