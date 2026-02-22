@@ -86,9 +86,6 @@ locals {
 
     qdevice = "192.168.0.54"
 
-    pbs         = "192.168.0.55"
-    pbs_storage = "10.10.10.55"
-
     truenas_primary_mgmt    = "192.168.0.13"
     truenas_primary_storage = "10.10.10.13"
     truenas_backup_mgmt     = "192.168.0.14"
@@ -191,10 +188,6 @@ locals {
     }
   }
 
-  vm_ids = {
-    pbs = 220
-  }
-
   proxmox = {
     nodes = {
       primary   = "din"
@@ -254,12 +247,6 @@ locals {
   nixos = {
     iso_url  = "https://releases.nixos.org/nixos/unstable/nixos-26.05pre942779.d6c719321308/nixos-minimal-26.05pre942779.d6c719321308-x86_64-linux.iso"
     filename = "nixos-minimal-x86_64-linux.iso"
-  }
-
-  pbs = {
-    version  = "3.4-1"
-    iso_url  = "https://enterprise.proxmox.com/iso/proxmox-backup-server_3.4-1.iso"
-    filename = "proxmox-backup-server_3.4-1.iso"
   }
 
   talos = {

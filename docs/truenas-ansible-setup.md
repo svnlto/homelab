@@ -188,7 +188,6 @@ bulk/                               # 6× 7.15TB RAIDZ2 (25.3TB usable) - media 
 │       └── complete/               # Finished downloads
 ├── backups/
 │   ├── timemachine/                # macOS Time Machine
-│   ├── proxmox/                    # PBS datastore
 │   └── restic-repo/                # Offsite staging
 └── archive/                        # Cold storage
 
@@ -883,7 +882,6 @@ midclt call pool.create '{
 | `bulk/media` | ReadOnlyMany | Jellyfin, Navidrome | media:media |
 | `fast/kubernetes/nfs-dynamic` | ReadWriteOnce | democratic-csi | root:wheel |
 | `fast/kubernetes/nfs-static` | ReadWriteMany | Shared configs | root:wheel |
-| `bulk/backups/proxmox` | ReadWriteOnce | PBS on grogu | root:wheel |
 
 ---
 

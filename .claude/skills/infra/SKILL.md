@@ -23,7 +23,6 @@ You are managing homelab infrastructure spanning Proxmox VE, MikroTik, TrueNAS, 
 | VMID    | Name            | Node      | Purpose                        |
 |---------|-----------------|-----------|--------------------------------|
 | 200     | arr-stack       | din       | NixOS media automation         |
-| 220     | pbs             | grogu     | Proxmox Backup Server          |
 | 300     | truenas-primary | din       | TrueNAS SCALE (H330+LSI HBA)   |
 | 301     | truenas-backup  | grogu     | TrueNAS SCALE (H241 HBA)       |
 | 400-402 | shared-cp*      | din/grogu | Talos K8s shared control plane |
@@ -97,10 +96,9 @@ When the user invokes `/infra`, parse `$ARGUMENTS` to determine the action.
 ```text
 prod/
   resource-pools/              # Proxmox resource pool management
-  images/                      # ISO/image downloads (TrueNAS, NixOS, Talos, PBS)
+  images/                      # ISO/image downloads (TrueNAS, NixOS, Talos)
   compute/
     arr-stack/                 # NixOS arr media stack VM
-    pbs/                       # Proxmox Backup Server VM
     k8s-shared/                # Talos shared cluster (use /talos instead)
     k8s-apps/                  # Talos apps cluster (use /talos instead)
     argocd/                    # ArgoCD on k8s-shared (Helm)
@@ -149,9 +147,6 @@ dev/
   just truenas-setup                             # Configure primary TrueNAS
   just truenas-backup-setup                      # Configure backup TrueNAS
   just truenas-replication                       # ZFS replication din -> grogu
-
-  # Proxmox Backup Server
-  just pbs-setup                                 # Post-install PBS config
 
   # Backups
   just restic-setup                              # Configure B2 cloud backups
