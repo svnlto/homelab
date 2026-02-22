@@ -7,7 +7,7 @@ vfio_blacklist_drivers: [i915, xe, hpsa]
 
 # Intel Arc FLR workaround — clears reset_method before VM start to prevent QEMU hang
 intel_arc_pci_addresses: ["0000:05:00.0"]
-intel_arc_vm_ids: [210]
+intel_arc_vm_ids: [411]
 
 # Proxmox PCI resource mappings (Datacenter > Resource Mappings)
 pci_resource_mappings:
@@ -26,6 +26,18 @@ pci_resource_mappings:
 
 # Allow non-Intel SFP+ transceivers
 configure_ixgbe_unsupported_sfp: true
+
+# Dell fan control thresholds (R630 fans are louder, use lower speeds below 26°C)
+fan_curve:
+  inlet:
+    - {temp: 35, speed: "0x32"} # 50%
+    - {temp: 30, speed: "0x1e"} # 30%
+    - {temp: 26, speed: "0x14"} # 20%
+  inlet_default_speed: "0x0a" # 10%
+  cpu:
+    - {temp: 90, speed: "0x64"} # 100% - emergency
+    - {temp: 85, speed: "0x50"} # 80%
+    - {temp: 80, speed: "0x3c",} # 60%
 
 # Dell MD1200 enclosure fan control via EMM serial port
 enclosure_serial_device: "/dev/ttyS1"
