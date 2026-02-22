@@ -98,6 +98,12 @@
       # Allow NTP clients from all local subnets
       allow 192.168.0.0/24
       allow 10.0.0.0/8
+
+      # Serve time even when not yet synced to upstream (prevents Talos boot timeouts)
+      local stratum 10
+
+      # Relaxed rate limiting for boot storms (all Talos nodes query at once)
+      ratelimit interval 1 burst 16
     '';
   };
 
