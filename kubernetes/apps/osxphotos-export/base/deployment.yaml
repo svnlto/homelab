@@ -32,6 +32,13 @@ spec:
           securityContext:
             runAsUser: 1003
             runAsGroup: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - name: nfs-source
               mountPath: /mnt/source
