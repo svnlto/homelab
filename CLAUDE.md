@@ -86,7 +86,6 @@ infrastructure/
 │   ├── resource-pools/      # Proxmox pool management
 │   ├── images/              # Centralized ISO downloads (TrueNAS, NixOS)
 │   ├── compute/k8s-shared/  # Talos K8s cluster (VLAN 30)
-│   ├── compute/pbs/         # Proxmox Backup Server VM
 │   ├── compute/argocd/      # ArgoCD on k8s-shared
 │   ├── storage/
 │   │   ├── truenas-primary/ # VMID 300 on din (5×8TB + 21×900GB)
