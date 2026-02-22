@@ -103,7 +103,7 @@ while true; do
     --library "${LIBRARY_PATH}" \
     --directory "{created.year}/{created.mm}/{created.dd}" \
     --update \
-    --export-db "${EXPORT_DB_PATH}" \
+    --exportdb "${EXPORT_DB_PATH}" \
     --verbose \
     2>&1 | tee "$EXPORT_LOG" || EXPORT_EXIT=$?
 
