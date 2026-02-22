@@ -28,7 +28,7 @@ provisioner:
             pci_device_ids: "8086:56a6"
             vfio_blacklist_drivers: [i915, xe]
             intel_arc_pci_addresses: ["0000:05:00.0"]
-            intel_arc_vm_ids: [210]
+            intel_arc_vm_ids: [411]
             configure_ixgbe_unsupported_sfp: true
   env:
     ANSIBLE_CONFIG: ${MOLECULE_PROJECT_DIRECTORY}/ansible.cfg

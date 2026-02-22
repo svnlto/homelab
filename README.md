@@ -9,7 +9,6 @@ Infrastructure as Code for a homelab running NixOS, Terragrunt, and Ansible.
 | **DNS** | NixOS + Pi-hole | Ad-blocking DNS on Raspberry Pi (Unbound recursive via Mullvad DoT) |
 | **Quorum** | NixOS | Corosync QDevice on Raspberry Pi for Proxmox cluster quorum |
 | **Media** | NixOS + Docker | Arr stack (Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd) on Proxmox VM |
-| **Jellyfin** | NixOS | Jellyfin media server with Intel Arc A310 GPU passthrough |
 | **Dumper** | NixOS | Tailscale rsync automation (photo dump to TrueNAS) |
 | **VMs** | Terragrunt | Proxmox VM orchestration with environment separation (prod/dev) |
 | **Storage** | Ansible | TrueNAS SCALE datasets, shares, snapshots, replication |
@@ -36,7 +35,6 @@ Infrastructure as Code for a homelab running NixOS, Terragrunt, and Ansible.
 | Pi-hole (RPi) | 192.168.0.53 | -- |
 | QDevice (RPi) | 192.168.0.54 | -- |
 | Arr Stack | 192.168.0.50 | 10.10.10.50 |
-| Jellyfin | 192.168.0.51 | 10.10.10.51 |
 | Dumper | 192.168.0.52 | 10.10.10.52 |
 | grogu (R630) | 192.168.0.10 | 10.10.10.10 |
 | din (R730xd) | 192.168.0.11 | 10.10.10.11 |
@@ -62,7 +60,7 @@ infrastructure/              Terragrunt deployments
     provider.hcl             Proxmox provider + generated credential variables
     resource-pools/          Proxmox pool management
     images/                  Centralized ISO downloads (TrueNAS, NixOS)
-    compute/                 arr-stack, jellyfin, dumper VMs
+    compute/                 arr-stack, dumper VMs
     storage/                 truenas-primary (din), truenas-backup (grogu)
     mikrotik/                base, dhcp, dns, firewall
   dev/
@@ -73,7 +71,6 @@ nix/                         NixOS configurations
   rpi-pihole/                Pi-hole + Unbound DNS (aarch64)
   rpi-qdevice/               Corosync QDevice (aarch64)
   arr-stack/                 Media automation stack (x86_64)
-  jellyfin/                  Jellyfin media server (x86_64)
   dumper/                    Tailscale rsync automation (x86_64)
   common/constants.nix       Shared config (versions, IPs)
 ansible/                     Playbooks for TrueNAS, Proxmox, Restic backup

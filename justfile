@@ -123,26 +123,6 @@ nixos-update-arr-stack:
     @echo "Rebuilding NixOS on arr-stack..."
     ssh svenlito@192.168.0.50 "sudo nixos-rebuild switch --flake /tmp/nix-config#arr-stack"
 
-# --- NixOS Jellyfin (Proxmox VM) ---
-
-# Install NixOS on jellyfin VM via nixos-anywhere
-nixos-install-jellyfin ip:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "Installing NixOS jellyfin to VM at {{ip}}..."
-    cd nix && nix --extra-experimental-features "nix-command flakes" run github:nix-community/nixos-anywhere -- \
-      --flake .#jellyfin \
-      --build-on-remote \
-      root@{{ip}}
-    echo "Done! SSH: ssh svenlito@192.168.0.51"
-
-# Deploy jellyfin config via SSH
-nixos-update-jellyfin:
-    @echo "Syncing NixOS config to jellyfin..."
-    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.51:/tmp/nix-config/
-    @echo "Rebuilding NixOS on jellyfin..."
-    ssh svenlito@192.168.0.51 "sudo nixos-rebuild switch --flake /tmp/nix-config#jellyfin"
-
 # --- Ansible ---
 
 ansible-lint:
