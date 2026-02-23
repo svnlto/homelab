@@ -23,7 +23,7 @@ spec:
       targetRevision: HEAD
       path: kubernetes/apps/signoz
       directory:
-        include: "{ingress,talos-log-service}.yaml"
+        include: "ingress.yaml"
 
   destination:
     server: https://kubernetes.default.svc
