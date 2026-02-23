@@ -89,11 +89,20 @@
     mode: "0755"
   when: intel_arc_pci_addresses is defined and intel_arc_pci_addresses | length > 0
 
-- name: Attach hookscript to Intel Arc VMs
-  ansible.builtin.command: qm set {{ item }} --hookscript local:snippets/intel-arc-reset.sh
+- name: Check which Intel Arc VMs exist
+  ansible.builtin.stat:
+    path: "/etc/pve/qemu-server/{{ item }}.conf"
   loop: "{{ intel_arc_vm_ids | default([]) }}"
-  changed_when: true
+  register: arc_vm_configs
   when: intel_arc_vm_ids is defined and intel_arc_vm_ids | length > 0
+
+- name: Attach hookscript to Intel Arc VMs
+  ansible.builtin.command: qm set {{ item.item }} --hookscript local:snippets/intel-arc-reset.sh
+  loop: "{{ arc_vm_configs.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item }}"
+  changed_when: true
+  when: item.stat.exists | default(false)
 
 - name: Update initramfs
   ansible.builtin.command: update-initramfs -u -k all

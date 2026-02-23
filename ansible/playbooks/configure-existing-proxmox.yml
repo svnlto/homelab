@@ -26,6 +26,12 @@
       failed_when: not pvesh_stat.stat.exists
 
   tasks:
+    - name: Configure apt repositories (enterprise -> no-subscription)
+      ansible.builtin.include_role:
+        name: proxmox_configure
+        tasks_from: repositories.yml
+      tags: [repositories, packages]
+
     - name: Install common packages
       ansible.builtin.include_role:
         name: proxmox_configure
