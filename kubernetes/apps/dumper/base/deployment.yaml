@@ -16,6 +16,13 @@ spec:
         - name: tailscale
           image: docker.io/tailscale/tailscale:v1.94.2
           restartPolicy: Always
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
           env:
             - name: TS_AUTHKEY
               valueFrom:
@@ -49,6 +56,13 @@ spec:
       containers:
         - name: dumper
           image: ghcr.io/svnlto/dumper:latest
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           env:
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://signoz-otel-collector.signoz.svc:4318

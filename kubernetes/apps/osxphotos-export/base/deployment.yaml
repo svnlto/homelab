@@ -16,6 +16,13 @@ spec:
         - name: osxphotos-export
           image: ghcr.io/svnlto/osxphotos-export:latest
           workingDir: /cache
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
           env:
             - name: EXPORT_DB_PATH
               value: /cache/osxphotos_export.db
