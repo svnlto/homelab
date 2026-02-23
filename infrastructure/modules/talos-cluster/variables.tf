@@ -244,13 +244,6 @@ variable "cloudns_auth_password" {
   default     = ""
 }
 
-# Logging
-variable "talos_log_endpoint" {
-  description = "TCP endpoint for Talos system log forwarding (e.g., 10.0.1.102:5140)"
-  type        = string
-  default     = ""
-}
-
 # Registry Mirrors
 variable "registry_mirrors" {
   description = "Registry mirror endpoints for pull-through cache"
