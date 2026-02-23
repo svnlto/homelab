@@ -16,13 +16,13 @@ let
   images = {
     gluetun = "qmcgaw/gluetun:v3.41.1";
     qbittorrent = "lscr.io/linuxserver/qbittorrent:5.1.4-r1-ls431";
-    sabnzbd = "lscr.io/linuxserver/sabnzbd:4.5.1-ls223";
-    radarr = "lscr.io/linuxserver/radarr:6.0.4.10291-ls288";
-    sonarr = "lscr.io/linuxserver/sonarr:4.0.16.2944-ls299";
+    sabnzbd = "lscr.io/linuxserver/sabnzbd:4.5.5-ls244";
+    radarr = "lscr.io/linuxserver/radarr:6.0.4.10291-ls293";
+    sonarr = "lscr.io/linuxserver/sonarr:4.0.16.2944-ls303";
     lidarr = "ghcr.io/hotio/lidarr:pr-plugins-3.0.0.4856";
     bazarr = "lscr.io/linuxserver/bazarr:v1.5.5-ls336";
     slskd = "slskd/slskd:0.24.4";
-    prowlarr = "lscr.io/linuxserver/prowlarr:2.3.0.5236-ls133";
+    prowlarr = "lscr.io/linuxserver/prowlarr:2.3.0.5236-ls137";
     flaresolverr = "ghcr.io/flaresolverr/flaresolverr:v3.4.6";
     recyclarr = "ghcr.io/recyclarr/recyclarr:8.2.1";
     buildarr = "callum027/buildarr:0.7.8";
