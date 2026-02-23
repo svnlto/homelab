@@ -8,7 +8,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: truenas-nfs-fast
+  storageClassName: ""
+  volumeName: jellyfin-cache
   resources:
     requests:
       storage: 10Gi
