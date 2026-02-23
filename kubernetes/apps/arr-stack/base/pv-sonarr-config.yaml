@@ -3,16 +3,30 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: arr-sonarr-config
+  annotations:
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.nfs-fast
 spec:
   capacity:
     storage: 5Gi
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: ""
+  storageClassName: truenas-nfs-fast
   claimRef:
     namespace: arr-stack
     name: sonarr-config
-  nfs:
-    server: 10.10.10.13
-    path: /mnt/fast/kubernetes/nfs-dynamic/pvc-949bf037-3747-468d-977b-8b3f07c00381
+  csi:
+    driver: org.democratic-csi.nfs-fast
+    volumeHandle: pvc-949bf037-3747-468d-977b-8b3f07c00381
+    fsType: nfs
+    volumeAttributes:
+      server: 10.10.10.13
+      share: /mnt/fast/kubernetes/nfs-dynamic/pvc-949bf037-3747-468d-977b-8b3f07c00381
+      node_attach_driver: nfs
+      provisioner_driver: freenas-nfs
+  mountOptions:
+    - nfsvers=4
+    - nconnect=8
+    - hard
+    - noatime
+    - nodiratime

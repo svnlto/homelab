@@ -9,6 +9,7 @@ resources:
   - pvc-source.yaml
   - pv-export.yaml
   - pvc-export.yaml
+  - pv-cache.yaml
   - pvc-cache.yaml
 
 commonLabels:

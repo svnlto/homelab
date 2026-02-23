@@ -2,26 +2,26 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: arr-buildarr-config
+  name: jellyseerr-config
   annotations:
     pv.kubernetes.io/provisioned-by: org.democratic-csi.nfs-fast
 spec:
   capacity:
-    storage: 1Gi
+    storage: 2Gi
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: truenas-nfs-fast
   claimRef:
-    namespace: arr-stack
-    name: buildarr-config
+    namespace: jellyfin
+    name: jellyseerr-config
   csi:
     driver: org.democratic-csi.nfs-fast
-    volumeHandle: pvc-2d59b96a-9238-4803-8761-d613fc7b3bbe
+    volumeHandle: pvc-5af7a2ae-39fc-4d3f-8bb5-0de455f16b68
     fsType: nfs
     volumeAttributes:
       server: 10.10.10.13
-      share: /mnt/fast/kubernetes/nfs-dynamic/pvc-2d59b96a-9238-4803-8761-d613fc7b3bbe
+      share: /mnt/fast/kubernetes/nfs-dynamic/pvc-5af7a2ae-39fc-4d3f-8bb5-0de455f16b68
       node_attach_driver: nfs
       provisioner_driver: freenas-nfs
   mountOptions:

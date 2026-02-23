@@ -131,7 +131,7 @@ resource "helm_release" "truenas_nfs_fast_csi" {
       {
         name                 = "truenas-nfs-fast"
         defaultClass         = false
-        reclaimPolicy        = "Delete"
+        reclaimPolicy        = "Retain"
         volumeBindingMode    = "Immediate"
         allowVolumeExpansion = true
         parameters = {
