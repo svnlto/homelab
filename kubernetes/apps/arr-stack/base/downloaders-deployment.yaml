@@ -20,6 +20,13 @@ spec:
       initContainers:
         - name: init-scratch
           image: busybox:1.37
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
           command:
             - sh
             - -c
@@ -92,6 +99,13 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
             failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           volumeMounts:
             - name: gluetun-config
               mountPath: /gluetun
@@ -100,6 +114,13 @@ spec:
 
         - name: qbittorrent
           image: lscr.io/linuxserver/qbittorrent:5.1.4-r1-ls431
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
           env:
             - name: PUID
               value: "1000"
@@ -125,6 +146,13 @@ spec:
 
         - name: sabnzbd
           image: lscr.io/linuxserver/sabnzbd:4.5.1-ls223
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
           env:
             - name: PUID
               value: "1000"
@@ -148,6 +176,13 @@ spec:
 
         - name: slskd
           image: slskd/slskd:0.24.4
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           env:
             - name: PUID
               value: "1000"
@@ -166,6 +201,13 @@ spec:
 
         - name: prowlarr
           image: lscr.io/linuxserver/prowlarr:2.3.0.5236-ls133
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           env:
             - name: PUID
               value: "1000"
@@ -179,6 +221,13 @@ spec:
 
         - name: flaresolverr
           image: ghcr.io/flaresolverr/flaresolverr:v3.4.6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           env:
             - name: LOG_LEVEL
               value: info

@@ -39,6 +39,13 @@
     "schedule": ["before 5am"]
   },
 
+  // Enable built-in Kubernetes manager for app manifests
+  "kubernetes": {
+    "fileMatch": [
+      "^kubernetes/apps/.+\\.yaml$"
+    ]
+  },
+
   // Custom regex managers for Nix files with Docker image references
   "customManagers": [
     {
@@ -99,6 +106,21 @@
       "groupName": "nix flake inputs",
       "matchManagers": ["nix"],
       "matchUpdateTypes": ["minor", "patch"]
+    },
+
+    // Group Kubernetes container images (minor + patch)
+    {
+      "groupName": "kubernetes containers",
+      "matchFileNames": ["kubernetes/apps/**"],
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+
+    // Disable digest pinning for Kubernetes manifests
+    {
+      "matchFileNames": ["kubernetes/apps/**"],
+      "matchDatasources": ["docker"],
+      "pinDigests": false
     },
 
     // Label major updates for careful review
