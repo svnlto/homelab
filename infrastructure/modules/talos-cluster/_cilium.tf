@@ -48,6 +48,10 @@ data "helm_template" "cilium" {
     {
       name  = "devices"
       value = "{eth0}"
+    },
+    {
+      name  = "socketLB.enabled"
+      value = "true"
     }
   ]
 }

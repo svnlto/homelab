@@ -72,28 +72,6 @@ nfs_shares:
       - 10.0.2.0/24
     readonly: false
 
-  - path: /mnt/bulk/kubernetes/nfs-dynamic
-    comment: "democratic-csi bulk pool (Forgejo registry, large app data)"
-    maproot_user: root
-    maproot_group: wheel
-    networks:
-      - 10.10.10.0/24
-      - 10.0.1.0/24
-      - 10.0.2.0/24
-      - 10.0.3.0/24
-    readonly: false
-
-  - path: /mnt/fast/kubernetes/nfs-dynamic
-    comment: "democratic-csi NFS dynamic provisioning"
-    maproot_user: root
-    maproot_group: wheel
-    networks:
-      - 10.10.10.0/24
-      - 10.0.1.0/24
-      - 10.0.2.0/24
-      - 10.0.3.0/24
-    readonly: false
-
   - path: /mnt/fast/kubernetes/nfs-static
     comment: "Static PVs for shared configs"
     maproot_user: root
@@ -106,16 +84,6 @@ nfs_shares:
     readonly: false
 
   # Scratch pool
-  - path: /mnt/scratch/kubernetes/nfs-dynamic
-    comment: "democratic-csi scratch pool (CI cache, ephemeral data)"
-    maproot_user: root
-    maproot_group: wheel
-    networks:
-      - 10.10.10.0/24
-      - 10.0.1.0/24
-      - 10.0.2.0/24
-      - 10.0.3.0/24
-    readonly: false
 
   - path: /mnt/scratch/dump
     comment: "Photo dump from remote machine via rsync (K8s CronJob)"
