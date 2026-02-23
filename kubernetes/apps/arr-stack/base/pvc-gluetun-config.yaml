@@ -3,13 +3,10 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: gluetun-config
-  annotations:
-    argocd.argoproj.io/sync-options: Delete=false
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: ""
-  volumeName: gluetun-config
+  storageClassName: truenas-nfs-fast
   resources:
     requests:
       storage: 1Gi

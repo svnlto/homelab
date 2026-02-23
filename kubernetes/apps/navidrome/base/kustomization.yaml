@@ -7,7 +7,6 @@ resources:
   - service.yaml
   - pv-music.yaml
   - pvc-music.yaml
-  - pv-data.yaml
   - pvc-data.yaml
 
 commonLabels:
