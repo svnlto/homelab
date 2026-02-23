@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: arr-buildarr-config
+  name: gluetun-config
   annotations:
     pv.kubernetes.io/provisioned-by: org.democratic-csi.nfs-fast
 spec:
@@ -14,14 +14,14 @@ spec:
   storageClassName: truenas-nfs-fast
   claimRef:
     namespace: arr-stack
-    name: buildarr-config
+    name: gluetun-config
   csi:
     driver: org.democratic-csi.nfs-fast
-    volumeHandle: pvc-2d59b96a-9238-4803-8761-d613fc7b3bbe
+    volumeHandle: pvc-8b8d1026-1229-41c3-80f2-5bffe3d1b214
     fsType: nfs
     volumeAttributes:
       server: 10.10.10.13
-      share: /mnt/fast/kubernetes/nfs-dynamic/pvc-2d59b96a-9238-4803-8761-d613fc7b3bbe
+      share: /mnt/fast/kubernetes/nfs-dynamic/pvc-8b8d1026-1229-41c3-80f2-5bffe3d1b214
       node_attach_driver: nfs
       provisioner_driver: freenas-nfs
   mountOptions:

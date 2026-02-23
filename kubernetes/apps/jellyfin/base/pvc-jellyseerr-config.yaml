@@ -9,6 +9,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   storageClassName: truenas-nfs-fast
+  volumeName: jellyseerr-config
   resources:
     requests:
       storage: 2Gi

@@ -3,16 +3,30 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: arr-sabnzbd-config
+  annotations:
+    pv.kubernetes.io/provisioned-by: org.democratic-csi.nfs-fast
 spec:
   capacity:
     storage: 2Gi
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: ""
+  storageClassName: truenas-nfs-fast
   claimRef:
     namespace: arr-stack
     name: sabnzbd-config
-  nfs:
-    server: 10.10.10.13
-    path: /mnt/fast/kubernetes/nfs-dynamic/pvc-8505ea35-2949-4af7-ba14-514c51a12355
+  csi:
+    driver: org.democratic-csi.nfs-fast
+    volumeHandle: pvc-8505ea35-2949-4af7-ba14-514c51a12355
+    fsType: nfs
+    volumeAttributes:
+      server: 10.10.10.13
+      share: /mnt/fast/kubernetes/nfs-dynamic/pvc-8505ea35-2949-4af7-ba14-514c51a12355
+      node_attach_driver: nfs
+      provisioner_driver: freenas-nfs
+  mountOptions:
+    - nfsvers=4
+    - nconnect=8
+    - hard
+    - noatime
+    - nodiratime
