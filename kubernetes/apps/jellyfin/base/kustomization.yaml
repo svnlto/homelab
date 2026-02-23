@@ -18,12 +18,7 @@ resources:
   - pvc-media-music.yaml
   - pvc-media-books.yaml
 
-  # Static config PVs
-  - pv-jellyfin-config.yaml
-  - pv-jellyfin-cache.yaml
-  - pv-jellyseerr-config.yaml
-
-  # Static config PVCs
+  # Dynamic config PVCs (truenas-nfs-fast)
   - pvc-jellyfin-config.yaml
   - pvc-jellyfin-cache.yaml
   - pvc-jellyseerr-config.yaml

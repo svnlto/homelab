@@ -8,8 +8,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: ""
-  volumeName: osxphotos-cache
+  storageClassName: truenas-nfs-fast
   resources:
     requests:
       storage: 1Gi

@@ -14,7 +14,6 @@ resources:
   - pv-scratch.yaml
 
   # Static NFS PVs (app config)
-  - pv-gluetun-config.yaml
   - pv-sonarr-config.yaml
   - pv-radarr-config.yaml
   - pv-lidarr-config.yaml
