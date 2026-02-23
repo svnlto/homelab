@@ -46,6 +46,19 @@ otelCollector:
       memory: 256Mi
     limits:
       memory: 512Mi
+  config:
+    receivers:
+      tcplog/talos:
+        listen_address: "0.0.0.0:5140"
+        add_attributes: true
+    service:
+      pipelines:
+        logs:
+          receivers:
+            - otlp
+            - httplogreceiver/heroku
+            - httplogreceiver/json
+            - tcplog/talos
 
 frontend:
   service:
