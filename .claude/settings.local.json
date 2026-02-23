@@ -11,7 +11,10 @@
       "Bash(terraform fmt:*)",
       "Bash(terraform validate:*)",
       "Bash(nix flake check:*)",
-      "Bash(nix fmt:*)"
+      "Bash(nix fmt:*)",
+      "Bash(gh pr:*ee)",
+      "Bash(talosctl:*)",
+      "Bash(kubectl:*)"
     ],
     "deny": [
       "Bash(terraform destroy:*)",

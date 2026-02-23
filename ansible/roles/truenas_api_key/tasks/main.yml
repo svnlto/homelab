@@ -35,7 +35,7 @@
       - create
       - --category=password
       - --title={{ truenas_1password_item }}
-      - --vault=Personal
+      - --vault=Homelab
       - credential={{ truenas_api_key }}
   when: key_create.changed
   changed_when: true
@@ -51,7 +51,7 @@
       - item
       - edit
       - "{{ truenas_1password_item }}"
-      - --vault=Personal
+      - --vault=Homelab
       - credential={{ truenas_api_key }}
   when: key_create.changed and op_create.rc != 0
   changed_when: true

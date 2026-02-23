@@ -76,6 +76,13 @@
       "env": {
         "TALOSCONFIG": "${HOME}/.talos/config"
       }
+    },
+    "signoz": {
+      "command": "/Users/svenlito/.local/bin/signoz-mcp-server",
+      "env": {
+        "SIGNOZ_URL": "https://signoz.shared.h.svenlito.com",
+        "SIGNOZ_API_KEY": "${SIGNOZ_API_KEY}"
+      }
     }
   }
 }

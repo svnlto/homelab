@@ -1,0 +1,84 @@
+---
+# Deploy pull-through cache registries on TrueNAS SCALE.
+# Each registry runs as a custom Docker app (registry:2) configured
+# as a proxy/mirror for an upstream registry.
+
+- name: Create registry cache dataset
+  arensb.truenas.filesystem:
+    name: "{{ registry_cache_dataset }}"
+    state: present
+    compression: "LZ4"
+  tags: [registry-cache, datasets]
+
+- name: Query existing apps
+  ansible.builtin.command:
+    cmd: midclt call app.query
+  register: existing_apps_raw
+  changed_when: false
+  tags: [registry-cache]
+
+- name: Parse existing app names
+  ansible.builtin.set_fact:
+    existing_app_names: "{{ existing_apps_raw.stdout | from_json | map(attribute='name') | list }}"
+  tags: [registry-cache]
+
+- name: Create per-registry storage directories
+  ansible.builtin.command:
+    cmd: >
+      midclt call filesystem.mkdir '{"path": "/mnt/{{ registry_cache_dataset }}/{{ item.name }}"}'
+  loop: "{{ registry_caches }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: registry_dirs
+  changed_when: registry_dirs.rc == 0
+  failed_when: >
+    registry_dirs.rc != 0
+    and 'already exists' not in (registry_dirs.stderr | default(''))
+    and 'already exists' not in (registry_dirs.stdout | default(''))
+    and 'exists' not in (registry_dirs.stderr | default(''))
+  tags: [registry-cache, datasets]
+
+- name: Deploy registry cache apps
+  ansible.builtin.command:
+    cmd: midclt call app.create '{{ app_config | to_json }}'
+  vars:
+    app_config:
+      app_name: "{{ item.name }}"
+      custom_app: true
+      custom_compose_config:
+        services:
+          registry:
+            image: "registry:2"
+            ports:
+              - "{{ item.port }}:5000"
+            environment:
+              REGISTRY_PROXY_REMOTEURL: "{{ item.upstream }}"
+              REGISTRY_STORAGE_DELETE_ENABLED: "true"
+              REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: "/var/lib/registry"
+            volumes:
+              - "/mnt/{{ registry_cache_dataset }}/{{ item.name }}:/var/lib/registry"
+            restart: "unless-stopped"
+  loop: "{{ registry_caches }}"
+  loop_control:
+    label: "{{ item.name }} -> {{ item.upstream }}"
+  when: item.name not in existing_app_names
+  changed_when: true
+  tags: [registry-cache]
+
+- name: Wait for apps to start
+  ansible.builtin.command:
+    cmd: midclt call app.query '[["name", "=", "{{ item.name }}"]]'
+  loop: "{{ registry_caches }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: app_status
+  changed_when: false
+  tags: [registry-cache]
+
+- name: Show deployed registry cache endpoints
+  ansible.builtin.debug:
+    msg: "{{ item.name }}: http://{{ ansible_host }}:{{ item.port }} -> {{ item.upstream }}"
+  loop: "{{ registry_caches }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: [registry-cache]

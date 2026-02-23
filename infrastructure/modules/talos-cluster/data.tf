@@ -58,6 +58,13 @@ data "talos_machine_configuration" "control_plane" {
             allowedKubernetesNamespaces = ["kube-system"]
           }
         }
+        registries = length(var.registry_mirrors) > 0 ? {
+          mirrors = {
+            for name, mirror in var.registry_mirrors : name => {
+              endpoints = [mirror.endpoint]
+            }
+          }
+        } : null
       }
       cluster = {
         network = {
@@ -136,6 +143,13 @@ data "talos_machine_configuration" "worker" {
             "kernel.modules_disabled" = "0"
           } : {}
         )
+        registries = length(var.registry_mirrors) > 0 ? {
+          mirrors = {
+            for name, mirror in var.registry_mirrors : name => {
+              endpoints = [mirror.endpoint]
+            }
+          }
+        } : null
       }
     })
   ]

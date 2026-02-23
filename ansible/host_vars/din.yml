@@ -20,6 +20,9 @@ pci_resource_mappings:
     path: "0000:03:00.0"
     subsystem_id: "1028:1f78"
 
+# X520 port 1 (eno1) has the SFP+ transceiver
+primary_interface: "eno1"
+
 # Allow non-Intel SFP+ transceivers
 configure_ixgbe_unsupported_sfp: true
 
@@ -28,8 +31,8 @@ fan_curve:
   inlet:
     - {temp: 35, speed: "0x32"} # 50%
     - {temp: 30, speed: "0x1e"} # 30%
-    - {temp: 25, speed: "0x14"} # 20%
-  inlet_default_speed: "0x0f" # 15%
+    - {temp: 25, speed: "0x19"} # 25%
+  inlet_default_speed: "0x19" # 25%
   cpu:
     - {temp: 90, speed: "0x64"} # 100% - emergency
     - {temp: 85, speed: "0x50"} # 80%

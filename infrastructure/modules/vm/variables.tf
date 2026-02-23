@@ -113,7 +113,7 @@ variable "boot_disk_size_gb" {
 variable "boot_disk_storage" {
   description = "Storage backend for boot disk"
   type        = string
-  default     = "local-zfs"
+  default     = "local-lvm"
 }
 
 variable "additional_disks" {

@@ -17,3 +17,4 @@ TF_VAR_cloudns_auth_id=op://Homelab/ClouDNS API/auth_id
 TF_VAR_cloudns_auth_password=op://Homelab/ClouDNS API/password
 TF_VAR_acme_email=op://Homelab/ACME Email/email
 ARGOCD_API_TOKEN=op://Homelab/ArgoCD API Token/credential
+SIGNOZ_API_KEY=op://Homelab/SigNoz API Key/credential
