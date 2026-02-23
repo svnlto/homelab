@@ -105,10 +105,15 @@
 - name: Save token to 1Password # noqa no-handler
   delegate_to: localhost
   become: false
-  ansible.builtin.shell: |
-    op item edit "Proxmox API Token" \
-      --vault Personal \
-      'token_id={{ terraform_user }}!{{ terraform_token_name }}' \
-      'token_secret={{ api_token_secret }}'
+  ansible.builtin.command:
+    argv:
+      - op
+      - item
+      - edit
+      - "Proxmox API Token"
+      - --vault
+      - Homelab
+      - "token_id={{ terraform_user }}!{{ terraform_token_name }}"
+      - "token_secret={{ api_token_secret }}"
   when: token_output.changed
   changed_when: true

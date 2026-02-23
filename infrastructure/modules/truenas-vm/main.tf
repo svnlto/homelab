@@ -12,7 +12,7 @@ resource "proxmox_virtual_environment_vm" "truenas" {
 
   startup {
     order      = 1
-    up_delay   = 120
+    up_delay   = 180
     down_delay = 120
   }
   machine       = "q35"
@@ -67,7 +67,7 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   }
 
   disk {
-    datastore_id = "local-zfs"
+    datastore_id = var.boot_disk_storage
     file_format  = "raw"
     interface    = "virtio0"
     iothread     = true
@@ -84,7 +84,7 @@ resource "proxmox_virtual_environment_vm" "truenas" {
       device  = "hostpci${hostpci.key}"
       mapping = hostpci.value
       pcie    = true
-      rombar  = true
+      rombar  = false
     }
   }
 

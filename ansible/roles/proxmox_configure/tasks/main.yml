@@ -4,6 +4,9 @@
 - name: Ensure /etc/hosts is correct
   ansible.builtin.include_tasks: hosts.yml
 
+- name: Configure apt repositories (enterprise -> no-subscription)
+  ansible.builtin.include_tasks: repositories.yml
+
 - name: Install common packages
   ansible.builtin.include_tasks: packages.yml
 

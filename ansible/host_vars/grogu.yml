@@ -24,6 +24,9 @@ pci_resource_mappings:
     path: "0000:81:00.0"
     subsystem_id: "103c:21c8"
 
+# X520 port 2 (eno2) has the SFP+ transceiver
+primary_interface: "eno2"
+
 # Allow non-Intel SFP+ transceivers
 configure_ixgbe_unsupported_sfp: true
 
