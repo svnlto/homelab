@@ -145,7 +145,7 @@ spec:
               mountPath: /data-scratch
 
         - name: sabnzbd
-          image: lscr.io/linuxserver/sabnzbd:4.5.1-ls223
+          image: lscr.io/linuxserver/sabnzbd:4.5.5-ls244
           resources:
             requests:
               cpu: 100m
@@ -200,7 +200,7 @@ spec:
               readOnly: true
 
         - name: prowlarr
-          image: lscr.io/linuxserver/prowlarr:2.3.0.5236-ls133
+          image: lscr.io/linuxserver/prowlarr:2.3.0.5236-ls137
           resources:
             requests:
               cpu: 50m
