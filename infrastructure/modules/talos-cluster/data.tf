@@ -65,6 +65,12 @@ data "talos_machine_configuration" "control_plane" {
             }
           }
         } : null
+        logging = var.talos_log_endpoint != "" ? {
+          destinations = [{
+            endpoint = "tcp://${var.talos_log_endpoint}"
+            format   = "json_lines"
+          }]
+        } : null
       }
       cluster = {
         network = {
@@ -149,6 +155,12 @@ data "talos_machine_configuration" "worker" {
               endpoints = [mirror.endpoint]
             }
           }
+        } : null
+        logging = var.talos_log_endpoint != "" ? {
+          destinations = [{
+            endpoint = "tcp://${var.talos_log_endpoint}"
+            format   = "json_lines"
+          }]
         } : null
       }
     })

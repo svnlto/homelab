@@ -23,6 +23,11 @@ otelAgent:
     limits:
       memory: 256Mi
   config:
+    receivers:
+      filelog/k8s:
+        exclude:
+          - /var/log/pods/signoz_signoz-k8s-infra*-signoz-*/*/*.log
+          - /var/log/pods/signoz_signoz-k8s-infra*-k8s-infra-*/*/*.log
     exporters:
       otlp:
         endpoint: "signoz-otel-collector.signoz.svc.cluster.local:4317"

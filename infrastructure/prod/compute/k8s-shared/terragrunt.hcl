@@ -109,6 +109,9 @@ inputs = {
     }
   }
 
+  # Talos system log forwarding to SigNoz OTel collector
+  talos_log_endpoint = "10.0.1.102:5140"
+
   tags             = ["production", "k8s", "shared"]
   deploy_bootstrap = true
 
