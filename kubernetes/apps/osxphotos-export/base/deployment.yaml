@@ -15,6 +15,7 @@ spec:
       containers:
         - name: osxphotos-export
           image: ghcr.io/svnlto/osxphotos-export:latest
+          workingDir: /cache
           env:
             - name: EXPORT_DB_PATH
               value: /cache/osxphotos_export.db
