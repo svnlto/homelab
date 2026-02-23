@@ -205,6 +205,10 @@ enclosure-fan:
     cd ansible && ansible-playbook -i inventory.ini \
       playbooks/configure-existing-proxmox.yml --tags enclosure-fan
 
+# Deploy pull-through registry cache on TrueNAS
+truenas-registry-cache:
+    cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-registry-cache.yml
+
 # --- Restic Backup (B2) ---
 
 restic-setup:

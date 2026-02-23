@@ -1,0 +1,16 @@
+---
+# Deploy pull-through registry cache on TrueNAS primary.
+# Each upstream registry gets its own Distribution instance.
+
+- name: Deploy pull-through registry cache on TrueNAS
+  hosts: truenas_primary
+  become: true
+
+  vars_files:
+    - ../vars/registry_cache.yml
+
+  environment:
+    middleware_method: client
+
+  roles:
+    - role: truenas_registry_cache

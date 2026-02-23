@@ -67,7 +67,7 @@ variable "vip_ip" {
 variable "datastore_id" {
   description = "Proxmox datastore for VM disks"
   type        = string
-  default     = "local-zfs"
+  default     = "local-lvm"
 }
 
 # Control Plane Nodes
@@ -242,4 +242,13 @@ variable "cloudns_auth_password" {
   type        = string
   sensitive   = true
   default     = ""
+}
+
+# Registry Mirrors
+variable "registry_mirrors" {
+  description = "Registry mirror endpoints for pull-through cache"
+  type = map(object({
+    endpoint = string
+  }))
+  default = {}
 }

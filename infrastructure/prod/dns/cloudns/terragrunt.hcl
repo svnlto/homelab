@@ -31,10 +31,5 @@ inputs = {
       subdomain    = "*.shared.h"
       tailscale_ip = dependency.k8s_shared.outputs.traefik_tailscale_ip
     }
-    # Future: uncomment when clusters are deployed
-    # test = {
-    #   subdomain    = "*.test.h"
-    #   tailscale_ip = dependency.k8s_test.outputs.traefik_tailscale_ip
-    # }
   }
 }

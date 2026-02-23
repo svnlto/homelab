@@ -1,0 +1,27 @@
+---
+# Pull-through cache registries deployed as custom Docker apps on TrueNAS.
+# Each entry creates a Distribution (registry:2) instance configured as a
+# pull-through cache for the upstream registry.
+
+registry_cache_dataset: bulk/registry-cache
+
+registry_caches:
+  - name: distribution-dockerio
+    port: 5000
+    upstream: https://registry-1.docker.io
+
+  - name: distribution-ghcrio
+    port: 5001
+    upstream: https://ghcr.io
+
+  - name: distribution-registryk8s
+    port: 5002
+    upstream: https://registry.k8s.io
+
+  - name: distribution-lscrio
+    port: 5003
+    upstream: https://lscr.io
+
+  - name: distribution-quayio
+    port: 5004
+    upstream: https://quay.io

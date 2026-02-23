@@ -1,14 +1,21 @@
 ---
-# Configure Proxmox PCI resource mappings (/etc/pve/mapping/pci.cfg).
-# This is a cluster-wide file (shared via pmxcfs), so we run once and
-# aggregate mappings from all hosts in the play.
+# Configure Proxmox PCI resource mappings via pvesh API.
+# pmxcfs doesn't support standard file operations, so we use the API instead.
 
 - name: Configure PCI resource mappings
-  ansible.builtin.template:
-    src: pci-mappings.cfg.j2
-    dest: /etc/pve/mapping/pci.cfg
-    owner: root
-    group: www-data
-    mode: "0640"
-  run_once: true
+  ansible.builtin.shell: | # noqa: no-changed-when
+    if pvesh get /cluster/mapping/pci/{{ item.key }} >/dev/null 2>&1; then
+      pvesh set /cluster/mapping/pci/{{ item.key }} \
+        --description '{{ item.value.description }}' \
+        --map 'id={{ item.value.device_id }},iommugroup={{ item.value.iommu_group }},node={{ inventory_hostname }},path={{ item.value.path }},subsystem-id={{ item.value.subsystem_id }}'
+    else
+      pvesh create /cluster/mapping/pci \
+        --id {{ item.key }} \
+        --description '{{ item.value.description }}' \
+        --map 'id={{ item.value.device_id }},iommugroup={{ item.value.iommu_group }},node={{ inventory_hostname }},path={{ item.value.path }},subsystem-id={{ item.value.subsystem_id }}'
+    fi
+  loop: "{{ pci_resource_mappings | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when: pci_resource_mappings is defined
   tags: [passthrough, pci-mappings]

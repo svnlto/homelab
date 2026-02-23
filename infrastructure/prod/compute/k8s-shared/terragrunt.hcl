@@ -53,7 +53,7 @@ inputs = {
   ntp_servers     = [local.ips.pihole, "time.cloudflare.com"]
   vip_ip          = local.k8s.vip
 
-  datastore_id = "local-zfs"
+  datastore_id = "local-lvm"
 
   control_plane_nodes = {
     cp1 = {
@@ -134,6 +134,15 @@ inputs = {
   tailscale_oauth_client_id     = dependency.tailscale.outputs.k8s_oauth_client_id
   tailscale_oauth_client_secret = dependency.tailscale.outputs.k8s_oauth_client_secret
   tailscale_hostname            = local.k8s.tailscale_hostname
+
+  # Pull-through registry cache (Distribution on TrueNAS)
+  registry_mirrors = {
+    "docker.io"       = { endpoint = "http://${local.ips.truenas_primary_storage}:5000" }
+    "ghcr.io"         = { endpoint = "http://${local.ips.truenas_primary_storage}:5001" }
+    "registry.k8s.io" = { endpoint = "http://${local.ips.truenas_primary_storage}:5002" }
+    "lscr.io"         = { endpoint = "http://${local.ips.truenas_primary_storage}:5003" }
+    "quay.io"         = { endpoint = "http://${local.ips.truenas_primary_storage}:5004" }
+  }
 
   # Traefik ACME (production Let's Encrypt)
   traefik_acme_enabled  = true

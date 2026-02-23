@@ -37,7 +37,8 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
   }
 
   agent {
-    enabled = false
+    enabled = true
+    type    = "virtio"
   }
 
   vga {
@@ -113,7 +114,8 @@ resource "proxmox_virtual_environment_vm" "worker" {
   }
 
   agent {
-    enabled = false
+    enabled = true
+    type    = "virtio"
   }
 
   dynamic "serial_device" {
