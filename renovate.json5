@@ -49,16 +49,6 @@
   // Custom regex managers for Nix files with Docker image references
   "customManagers": [
     {
-      // Match single-line: name = "registry/image:tag";
-      // Requires depName to start with [a-z] to exclude NFS device lines (${truenasIp}:...)
-      "customType": "regex",
-      "fileMatch": ["^nix/arr-stack/arr\\.nix$"],
-      "matchStrings": [
-        "\\s+\\w+\\s*=\\s*\"(?<depName>[a-z][^\"]*?):(?<currentValue>[^\"]+?)\";"
-      ],
-      "datasourceTemplate": "docker"
-    },
-    {
       // Pi-hole version in constants.nix (Docker Hub pihole/pihole)
       "customType": "regex",
       "fileMatch": ["^nix/common/constants\\.nix$"],
@@ -91,13 +81,6 @@
     {
       "groupName": "terraform providers",
       "matchManagers": ["terraform"],
-      "matchUpdateTypes": ["minor", "patch"]
-    },
-
-    // Group arr-stack container images (minor + patch)
-    {
-      "groupName": "arr-stack containers",
-      "matchFileNames": ["nix/arr-stack/arr.nix"],
       "matchUpdateTypes": ["minor", "patch"]
     },
 
