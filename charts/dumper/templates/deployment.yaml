@@ -1,0 +1,113 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dumper
+  labels:
+    {{- include "dumper.labels" (dict "name" "dumper") | nindent 4 }}
+  annotations:
+    {{- range $key, $val := .Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "dumper.selectorLabels" (dict "name" "dumper") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "dumper.selectorLabels" (dict "name" "dumper") | nindent 8 }}
+      annotations:
+        {{- range $key, $val := .Values.global.annotations }}
+        {{ $key }}: {{ $val | quote }}
+        {{- end }}
+    spec:
+      initContainers:
+        - name: tailscale
+          image: {{ .Values.tailscale.image }}
+          restartPolicy: Always
+          resources:
+            {{- toYaml .Values.tailscale.resources | nindent 12 }}
+          env:
+            - name: TS_AUTHKEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecrets.tailscale.targetSecretName }}
+                  key: {{ .Values.externalSecrets.tailscale.secretKey }}
+            - name: TS_STATE_DIR
+              value: /var/lib/tailscale
+            - name: TS_USERSPACE
+              value: "false"
+            - name: TS_HOSTNAME
+              value: {{ .Values.tailscale.hostname }}
+            - name: TS_ACCEPT_DNS
+              value: "false"
+            - name: TS_KUBE_SECRET
+              value: ""
+            - name: TS_SOCKET
+              value: /var/run/tailscale/tailscaled.sock
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          volumeMounts:
+            - name: tailscale-state
+              mountPath: /var/lib/tailscale
+            - name: tailscale-socket
+              mountPath: /var/run/tailscale
+            - name: dev-tun
+              mountPath: /dev/net/tun
+      containers:
+        - name: dumper
+          image: {{ .Values.dumper.image }}
+          resources:
+            {{- toYaml .Values.dumper.resources | nindent 12 }}
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.dumper.otelEndpoint }}
+            - name: OTEL_SERVICE_NAME
+              value: dumper
+            - name: TS_SOCKET
+              value: /var/run/tailscale/tailscaled.sock
+            - name: SYNC_INTERVAL
+              value: {{ .Values.dumper.syncInterval | quote }}
+            - name: RETRY_INTERVAL
+              value: {{ .Values.dumper.retryInterval | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.externalSecrets.config.targetSecretName }}
+          securityContext:
+            {{- toYaml .Values.dumper.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: nfs-dump
+              mountPath: /mnt/dump
+            - name: cache
+              mountPath: /cache
+            - name: ssh-key
+              mountPath: /secrets/ssh
+              readOnly: true
+            - name: tailscale-socket
+              mountPath: /var/run/tailscale
+              readOnly: true
+      volumes:
+        - name: nfs-dump
+          persistentVolumeClaim:
+            claimName: nfs-dump
+        - name: cache
+          persistentVolumeClaim:
+            claimName: dumper-cache
+        - name: tailscale-state
+          emptyDir: {}
+        - name: tailscale-socket
+          emptyDir: {}
+        - name: dev-tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+        - name: ssh-key
+          secret:
+            secretName: {{ .Values.externalSecrets.sshKey.targetSecretName }}
+            defaultMode: 0400

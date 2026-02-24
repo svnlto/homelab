@@ -1,0 +1,6 @@
+---
+apiVersion: v2
+name: arr-stack
+description: Media automation stack (Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, SABnzbd, and more)
+type: application
+version: 0.1.0

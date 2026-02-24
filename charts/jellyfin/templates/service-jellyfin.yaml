@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyfin
+  annotations:
+    {{- range $key, $val := .Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  ports:
+    - port: {{ .Values.jellyfin.port }}
+      targetPort: {{ .Values.jellyfin.port }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "jellyfin.selectorLabels" (dict "name" "jellyfin") | nindent 4 }}

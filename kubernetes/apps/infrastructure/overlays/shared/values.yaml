@@ -1,0 +1,25 @@
+---
+# Shared cluster overrides
+
+global:
+  annotations:
+    deployed-by: argocd
+    cluster: shared
+
+ingress:
+  domain: shared.h.svenlito.com
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+    traefik.ingress.kubernetes.io/service.serversscheme: https
+
+externalServices:
+  - name: truenas-primary
+    ip: 10.10.10.13
+    port: 443
+    portName: https
+    hostname: truenas
+  - name: truenas-backup
+    ip: 10.10.10.14
+    port: 443
+    portName: https
+    hostname: truenas-backup

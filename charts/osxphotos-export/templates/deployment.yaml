@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: osxphotos-export
+  labels:
+    {{- include "osxphotos-export.labels" . | nindent 4 }}
+  annotations:
+    {{- range $key, $val := .Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "osxphotos-export.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "osxphotos-export.selectorLabels" . | nindent 8 }}
+      annotations:
+        {{- range $key, $val := .Values.global.annotations }}
+        {{ $key }}: {{ $val | quote }}
+        {{- end }}
+    spec:
+      containers:
+        - name: osxphotos-export
+          image: {{ .Values.image }}
+          workingDir: /cache
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            {{- range $key, $val := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.externalSecret.targetSecretName }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: nfs-source
+              mountPath: /mnt/source
+              readOnly: true
+            - name: nfs-export
+              mountPath: /mnt/export
+            - name: cache
+              mountPath: /cache
+      volumes:
+        - name: nfs-source
+          persistentVolumeClaim:
+            claimName: osxphotos-source
+        - name: nfs-export
+          persistentVolumeClaim:
+            claimName: osxphotos-export
+        - name: cache
+          persistentVolumeClaim:
+            claimName: osxphotos-cache

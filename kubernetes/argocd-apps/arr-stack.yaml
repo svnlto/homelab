@@ -9,10 +9,17 @@ metadata:
 spec:
   project: default
 
-  source:
-    repoURL: https://github.com/svnlto/homelab
-    targetRevision: HEAD
-    path: kubernetes/apps/arr-stack/overlays/shared
+  sources:
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      path: charts/arr-stack
+      helm:
+        releaseName: arr-stack
+        valueFiles:
+          - $values/kubernetes/apps/arr-stack/overlays/shared/values.yaml
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      ref: values
 
   destination:
     server: https://kubernetes.default.svc

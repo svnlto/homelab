@@ -1,0 +1,54 @@
+---
+global:
+  annotations: {}
+
+# -- Navidrome server
+navidrome:
+  image: deluan/navidrome:latest
+  port: 4533
+  env:
+    - name: ND_MUSICFOLDER
+      value: /music
+    - name: ND_DATAFOLDER
+      value: /data
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# -- NFS storage for music library
+nfs:
+  server: ""
+  mountOptions:
+    - nfsvers=4.2
+    - rsize=131072
+    - wsize=131072
+    - hard
+  volumes: []
+
+# -- CSI storage for app data
+csi:
+  driver: org.democratic-csi.nfs-fast
+  storageClassName: truenas-nfs-fast
+  server: ""
+  basePath: /mnt/fast/kubernetes/nfs-dynamic
+  mountOptions:
+    - nfsvers=4
+    - nconnect=8
+    - hard
+    - noatime
+    - nodiratime
+  volumes: []
+
+# -- Ingress configuration
+ingress:
+  enabled: false
+  domain: ""
+  annotations: {}

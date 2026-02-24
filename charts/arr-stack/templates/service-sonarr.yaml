@@ -1,0 +1,2 @@
+---
+{{ include "arr-stack.arrService" (dict "name" "sonarr" "app" .Values.sonarr "Values" .Values) }}

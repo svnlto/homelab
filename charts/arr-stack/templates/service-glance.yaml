@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: glance
+  annotations:
+    {{- include "arr-stack.annotations" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.glance.port }}
+      targetPort: {{ .Values.glance.port }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "arr-stack.selectorLabels" (dict "name" "glance") | nindent 4 }}

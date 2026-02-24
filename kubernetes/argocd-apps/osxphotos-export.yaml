@@ -9,20 +9,21 @@ metadata:
 spec:
   project: default
 
-  source:
-    repoURL: https://github.com/svnlto/homelab
-    targetRevision: HEAD
-    path: kubernetes/apps/osxphotos-export/overlays/shared
+  sources:
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      path: charts/osxphotos-export
+      helm:
+        releaseName: osxphotos-export
+        valueFiles:
+          - $values/kubernetes/apps/osxphotos-export/overlays/shared/values.yaml
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      ref: values
 
   destination:
     server: https://kubernetes.default.svc
     namespace: osxphotos-export
-
-  ignoreDifferences:
-    - group: ""
-      kind: Secret
-      jsonPointers:
-        - /data
 
   syncPolicy:
     automated:
@@ -30,3 +31,9 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      jsonPointers:
+        - /data

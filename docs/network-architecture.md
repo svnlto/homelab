@@ -4,22 +4,27 @@
 
 ## Overview
 
-The homelab network uses MikroTik CRS310 switches with RouterOS for L3 inter-VLAN routing and VLAN-aware bridging. The architecture supports both traditional VM/LXC deployments and multiple Kubernetes clusters with proper network isolation.
+The homelab network uses MikroTik CRS310 switches with RouterOS for L3 inter-VLAN routing
+and VLAN-aware bridging. The architecture supports both traditional VM/LXC deployments and
+multiple Kubernetes clusters with proper network isolation.
 
 ### Current Setup (Single Router)
 
 **Equipment in use:**
+
 - **CRS310-8G+2S+IN (nevarro)**: Main gateway with NAT/firewall/DHCP + L3 inter-VLAN routing (8x 2.5GbE + 2x 10G SFP+)
 - **O2 Homespot**: WAN uplink (modem/bridge mode, 192.168.8.1)
 - **Beryl AX (sorgan)**: WiFi-only access point on ether3 (no routing/NAT)
 - **Pi-hole**: DNS server for network-wide ad blocking
 - **2x Dell PowerEdge servers**: grogu (R630), din (R730xd) with 10GbE X520 NICs
 
-MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot WAN uplink. Servers connect directly to router SFP+ ports with all VLANs trunked.
+MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot WAN uplink.
+Servers connect directly to router SFP+ ports with all VLANs trunked.
 
 ### Future Expansion (Two-Switch Design)
 
 **When CRS310-1G-5S-4S+IN arrives:**
+
 - Dedicated 10GbE aggregation switch for storage fabric
 - Reduced router CPU load (L2 switching offloaded to aggregation switch)
 - Additional SFP+ ports for expansion (GPU server, future nodes)
@@ -29,7 +34,7 @@ MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot W
 
 ### Current (Single Router)
 
-```
+```text
                     INTERNET
                         │
                   ┌─────┴──────┐
@@ -66,7 +71,7 @@ MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot W
 
 ### Future (Two-Switch Design)
 
-```
+```text
                           ┌──────────────┐
                           │ O2 Homespot  │
                           │ 192.168.8.1  │
@@ -93,6 +98,7 @@ MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot W
 ```
 
 **Migration benefits:**
+
 - Storage traffic (VLAN 10) stays on dedicated 10GbE fabric
 - Inter-VLAN routing still happens on router
 - More available ports for expansion
@@ -101,7 +107,7 @@ MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot W
 ## VLAN Architecture
 
 | VLAN | Name               | Subnet          | Gateway      | Purpose                           |
-|------|--------------------|-----------------|--------------|-----------------------------------|
+| ---- | ------------------ | --------------- | ------------ | --------------------------------- |
 | 1    | Management         | 10.10.1.0/24    | 10.10.1.1    | iDRAC, switch management          |
 | 10   | Storage            | 10.10.10.0/24   | 10.10.10.1   | 10GbE NFS/iSCSI, TrueNAS          |
 | 20   | LAN                | 192.168.0.0/24  | 192.168.0.1  | VMs, clients, WiFi (via Beryl AP) |
@@ -113,17 +119,20 @@ MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot W
 ### VLAN Purposes Explained
 
 **Infrastructure VLANs (1, 10, 20):**
+
 - Traditional network segments for physical infrastructure
 - Out-of-band management, storage fabric, general LAN
 - Pre-date Kubernetes deployment
 
 **Kubernetes VLANs (30-32):**
+
 - Separate VLAN per cluster for network isolation
 - Each cluster has its own IP space and MetalLB pool
 - Production apps isolated from test workloads
 - Inter-VLAN routing enforced by router firewall rules
 
 **Deployment Strategy:**
+
 - **VLAN 20**: Infrastructure VMs only (TrueNAS, optional utility VMs)
 - **VLAN 30-32**: All production workloads on Kubernetes
 - **K8s-first approach**: No traditional VM/LXC deployments for applications
@@ -132,58 +141,60 @@ MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot W
 
 ### VLAN 1 - Management (10.10.1.0/24)
 
-| Range          | Purpose                 | Notes                    |
-|----------------|-------------------------|--------------------------|
-| 10.10.1.1      | Router gateway          | CRS310-8G+2S+IN         |
-| 10.10.1.2      | Switch (future)         | CRS310-1G-5S-4S+IN      |
-| 10.10.1.10     | grogu iDRAC             | R630 management         |
-| 10.10.1.11     | din iDRAC               | R730xd management       |
-| 10.10.1.12-50  | Reserved                | Future servers          |
-| 10.10.1.100-200| DHCP pool               | Auto-assigned devices   |
+| Range           | Purpose         | Notes                 |
+| --------------- | --------------- | --------------------- |
+| 10.10.1.1       | Router gateway  | CRS310-8G+2S+IN       |
+| 10.10.1.2       | Switch (future) | CRS310-1G-5S-4S+IN    |
+| 10.10.1.10      | grogu iDRAC     | R630 management       |
+| 10.10.1.11      | din iDRAC       | R730xd management     |
+| 10.10.1.12-50   | Reserved        | Future servers        |
+| 10.10.1.100-200 | DHCP pool       | Auto-assigned devices |
 
 ### VLAN 10 - Storage (10.10.10.0/24)
 
-| Range           | Purpose                 | Notes                    |
-|-----------------|-------------------------|--------------------------|
-| 10.10.10.1      | Storage gateway         | Router L3 interface     |
-| 10.10.10.2      | Switch mgmt (future)    | Aggregation switch      |
-| 10.10.10.10     | grogu storage           | Proxmox X520 interface  |
-| 10.10.10.11     | din storage             | Proxmox X520 interface  |
-| 10.10.10.12     | Reserved (future GPU)   | Future GPU server       |
-| 10.10.10.13     | TrueNAS Primary         | VM on din (192.168.0.13)|
-| 10.10.10.14     | TrueNAS Backup          | VM on grogu (192.168.0.14)|
-| 10.10.10.20-50  | Reserved VMs            | Future storage services |
+| Range          | Purpose              | Notes                       |
+| -------------- | -------------------- | --------------------------- |
+| 10.10.10.1     | Storage gateway      | Router L3 interface         |
+| 10.10.10.2     | Switch mgmt (future) | Aggregation switch          |
+| 10.10.10.10    | grogu storage        | Proxmox X520 interface      |
+| 10.10.10.11    | din storage          | Proxmox X520 interface      |
+| 10.10.10.12    | Reserved (future GPU)| Future GPU server           |
+| 10.10.10.13    | TrueNAS Primary      | VM on din (192.168.0.13)    |
+| 10.10.10.14    | TrueNAS Backup       | VM on grogu (192.168.0.14)  |
+| 10.10.10.20-50 | Reserved VMs         | Future storage services     |
 
 ### VLAN 20 - LAN (192.168.0.0/24)
 
-| Range            | Purpose                 | Notes                    |
-|------------------|-------------------------|--------------------------|
-| 192.168.0.1      | Gateway/Router          | MikroTik CRS310 (nevarro) |
-| 192.168.0.10     | grogu Proxmox           | Management interface    |
-| 192.168.0.11     | din Proxmox             | Management interface    |
-| 192.168.0.13     | TrueNAS Primary         | NAS management UI       |
-| 192.168.0.14     | TrueNAS Backup          | Backup NAS UI           |
-| 192.168.0.53     | Pi-hole                 | DNS/DHCP server         |
-| 192.168.0.100-149| DHCP pool               | Dynamic clients (MikroTik DHCP) |
-| 192.168.0.150-159| Entertainment           | Apple TV, HomePod, etc. |
-| 192.168.0.160-169| Personal devices        | MacBook, iPhone, etc.   |
-| 192.168.0.200-250| VMs/Containers          | Reserved for utility VMs |
+| Range             | Purpose          | Notes                            |
+| ----------------- | ---------------- | -------------------------------- |
+| 192.168.0.1       | Gateway/Router   | MikroTik CRS310 (nevarro)        |
+| 192.168.0.10      | grogu Proxmox    | Management interface             |
+| 192.168.0.11      | din Proxmox      | Management interface             |
+| 192.168.0.13      | TrueNAS Primary  | NAS management UI                |
+| 192.168.0.14      | TrueNAS Backup   | Backup NAS UI                    |
+| 192.168.0.53      | Pi-hole          | DNS/DHCP server                  |
+| 192.168.0.100-149 | DHCP pool        | Dynamic clients (MikroTik DHCP)  |
+| 192.168.0.150-159 | Entertainment    | Apple TV, HomePod, etc.          |
+| 192.168.0.160-169 | Personal devices | MacBook, iPhone, etc.            |
+| 192.168.0.200-250 | VMs/Containers   | Reserved for utility VMs         |
 
-**Note:** This range is reserved for non-production utility VMs if needed (e.g., development VMs, testing). All production workloads run on Kubernetes (VLANs 30-32).
+**Note:** This range is reserved for non-production utility VMs if needed
+(e.g., development VMs, testing). All production workloads run on Kubernetes (VLANs 30-32).
 
 ### VLAN 30 - K8s Shared Services (10.0.1.0/24)
 
 **Cluster Purpose:** Core infrastructure that other clusters depend on
 
-| Range          | Purpose                 | Notes                    |
-|----------------|-------------------------|--------------------------|
-| 10.0.1.1       | Gateway                 | Router L3 interface     |
-| 10.0.1.10      | K8s API VIP             | kube-vip HA endpoint    |
-| 10.0.1.11-13   | Control plane nodes     | 3-node HA               |
-| 10.0.1.21-29   | Worker nodes            | Up to 9 workers         |
-| 10.0.1.100-150 | MetalLB pool            | LoadBalancer services   |
+| Range          | Purpose             | Notes                 |
+| -------------- | ------------------- | --------------------- |
+| 10.0.1.1       | Gateway             | Router L3 interface   |
+| 10.0.1.10      | K8s API VIP         | kube-vip HA endpoint  |
+| 10.0.1.11-13   | Control plane nodes | 3-node HA             |
+| 10.0.1.21-29   | Worker nodes        | Up to 9 workers       |
+| 10.0.1.100-150 | MetalLB pool        | LoadBalancer services |
 
 **Services in this cluster:**
+
 - **Monitoring**: SigNoz (centralized observability - metrics, logs, traces)
 - **Ingress**: Nginx Ingress Controller (centralized entry point for all clusters)
 - **Secrets**: External Secrets Operator, Vault (secret management)
@@ -191,21 +202,24 @@ MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot W
 - **Cert management**: cert-manager (automatic TLS certificates)
 - **Backup**: Velero (cluster backup/restore)
 
-**Why centralized ingress:** Single LoadBalancer IP (e.g., 10.0.1.100) acts as entry point. Ingress inspects Host header and forwards to appropriate backend cluster. This simplifies DNS (all services → one IP) and TLS management (centralized cert-manager).
+**Why centralized ingress:** Single LoadBalancer IP (e.g., 10.0.1.100) acts as entry point.
+Ingress inspects Host header and forwards to appropriate backend cluster.
+This simplifies DNS (all services -> one IP) and TLS management (centralized cert-manager).
 
 ### VLAN 31 - K8s Apps (10.0.2.0/24)
 
 **Cluster Purpose:** Production user-facing applications
 
-| Range          | Purpose                 | Notes                    |
-|----------------|-------------------------|--------------------------|
-| 10.0.2.1       | Gateway                 | Router L3 interface     |
-| 10.0.2.10      | K8s API VIP             | kube-vip HA endpoint    |
-| 10.0.2.11-13   | Control plane nodes     | 3-node HA               |
-| 10.0.2.21-29   | Worker nodes            | Up to 9 workers         |
-| 10.0.2.100-150 | MetalLB pool            | LoadBalancer services   |
+| Range          | Purpose             | Notes                 |
+| -------------- | ------------------- | --------------------- |
+| 10.0.2.1       | Gateway             | Router L3 interface   |
+| 10.0.2.10      | K8s API VIP         | kube-vip HA endpoint  |
+| 10.0.2.11-13   | Control plane nodes | 3-node HA             |
+| 10.0.2.21-29   | Worker nodes        | Up to 9 workers       |
+| 10.0.2.100-150 | MetalLB pool        | LoadBalancer services |
 
 **Services for this cluster:**
+
 - **Media**: Jellyfin, Sonarr, Radarr, Prowlarr, qBittorrent (full arr media automation stack)
 - **Photos**: Immich (Google Photos alternative)
 - **Files**: Nextcloud (file sync and share)
@@ -217,15 +231,16 @@ MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot W
 
 **Cluster Purpose:** Testing, staging, and development
 
-| Range          | Purpose                 | Notes                    |
-|----------------|-------------------------|--------------------------|
-| 10.0.3.1       | Gateway                 | Router L3 interface     |
-| 10.0.3.10      | K8s API VIP             | kube-vip HA endpoint    |
-| 10.0.3.11-13   | Control plane nodes     | 3-node HA               |
-| 10.0.3.21-23   | Worker nodes            | 3 workers (smaller)     |
-| 10.0.3.100-150 | MetalLB pool            | LoadBalancer services   |
+| Range          | Purpose             | Notes                 |
+| -------------- | ------------------- | --------------------- |
+| 10.0.3.1       | Gateway             | Router L3 interface   |
+| 10.0.3.10      | K8s API VIP         | kube-vip HA endpoint  |
+| 10.0.3.11-13   | Control plane nodes | 3-node HA             |
+| 10.0.3.21-23   | Worker nodes        | 3 workers (smaller)   |
+| 10.0.3.100-150 | MetalLB pool        | LoadBalancer services |
 
 **Use cases:**
+
 - Staging versions of production apps before promoting to Apps cluster
 - CI/CD testing (GitHub Actions, GitLab CI)
 - Load testing and performance validation
@@ -240,24 +255,24 @@ MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot W
 
 **Current (Single Router):**
 
-| Port   | VLAN Mode       | VLAN    | Device            | Cable Type      |
-|--------|-----------------|---------|-------------------|-----------------|
-| ether1 | WAN (standalone)| —       | O2 Homespot uplink| Cat6A           |
-| ether2 | access          | 20      | Pi-hole           | Cat6A           |
-| ether3 | access          | 20      | Beryl AX WiFi AP  | Cat6A           |
-| ether4 | access          | 1       | din iDRAC         | Cat6A           |
-| ether5 | access          | 1       | grogu iDRAC       | Cat6A           |
-| ether6-8| access         | 20      | Future devices    | -               |
-| sfp+1  | trunk           | 1,10,20,30,31,32 | grogu X520 | 10G DAC/Fiber |
-| sfp+2  | trunk           | 1,10,20,30,31,32 | din X520   | 10G DAC/Fiber |
+| Port     | VLAN Mode        | VLAN             | Device             | Cable Type    |
+| -------- | ---------------- | ---------------- | ------------------ | ------------- |
+| ether1   | WAN (standalone) | —                | O2 Homespot uplink | Cat6A         |
+| ether2   | access           | 20               | Pi-hole            | Cat6A         |
+| ether3   | access           | 20               | Beryl AX WiFi AP   | Cat6A         |
+| ether4   | access           | 1                | din iDRAC          | Cat6A         |
+| ether5   | access           | 1                | grogu iDRAC        | Cat6A         |
+| ether6-8 | access           | 20               | Future devices     | -             |
+| sfp+1    | trunk            | 1,10,20,30,31,32 | grogu X520         | 10G DAC/Fiber |
+| sfp+2    | trunk            | 1,10,20,30,31,32 | din X520           | 10G DAC/Fiber |
 
 **Future (With Aggregation Switch):**
 
-| Port   | VLAN Mode | VLAN    | Device                  | Cable Type  |
-|--------|-----------|---------|-------------------------|-------------|
-| ether1-8| (same)  | (same)  | (same)                  | (same)      |
-| sfp+1  | trunk     | 1,10,20,30,31,32 | Switch uplink | 10G DAC   |
-| sfp+2  | available | -       | Future 10G device       | -           |
+| Port     | VLAN Mode | VLAN             | Device            | Cable Type |
+| -------- | --------- | ---------------- | ----------------- | ---------- |
+| ether1-8 | (same)    | (same)           | (same)            | (same)     |
+| sfp+1    | trunk     | 1,10,20,30,31,32 | Switch uplink     | 10G DAC    |
+| sfp+2    | available | -                | Future 10G device | -          |
 
 ### VLAN Interfaces (L3 Gateways)
 
@@ -313,7 +328,7 @@ add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 vlan-ids=32
 ### Routing Policy Summary
 
 | From VLAN | To VLAN | Access | Reason |
-|-----------|---------|--------|--------|
+| --------- | ------- | ------ | ------ |
 | 20 (LAN) | 1 (Mgmt) | ✅ Allow | Admin access to iDRAC |
 | 20 (LAN) | 10 (Storage) | ✅ Allow | User access to NAS (SMB, NFS) |
 | 20 (LAN) | 30 (K8s Shared) | ✅ Allow | Access monitoring, ArgoCD, ingress |
@@ -420,11 +435,12 @@ add chain=forward action=drop comment="Drop all other inter-VLAN (default deny)"
 ### Network Interfaces
 
 **Physical interfaces on both grogu and din (Proxmox biosdevname):**
+
 - `nic0`, `nic1`: Intel I350 1GbE (unused, no cable)
 - `nic2`: Intel X520 10GbE SFP+ Port 1 (primary, all VLANs trunked)
 - `nic3`: Intel X520 10GbE SFP+ Port 2 (spare/future LACP)
 
-### Bridge Configuration
+### Bridge Configuration (Proxmox Hosts)
 
 Edit `/etc/network/interfaces` on **both grogu and din**:
 
@@ -487,6 +503,7 @@ iface vmbr32 inet manual
 ```
 
 Apply changes:
+
 ```bash
 # Test configuration
 ifreload -a -s
@@ -498,6 +515,7 @@ ifreload -a
 ### VM/Container Bridge Assignment Examples
 
 **Traditional LXC container (arr-stack on VLAN 20):**
+
 ```hcl
 resource "proxmox_virtual_environment_container" "arr_stack" {
   node_name = "din"
@@ -520,6 +538,7 @@ resource "proxmox_virtual_environment_container" "arr_stack" {
 ```
 
 **Kubernetes node (Apps cluster on VLAN 31):**
+
 ```hcl
 resource "proxmox_virtual_environment_vm" "k8s_worker" {
   name      = "talos-worker1"
@@ -537,7 +556,8 @@ resource "proxmox_virtual_environment_vm" "k8s_worker" {
 ## Traffic Flow Examples
 
 ### 1. WiFi Client → Jellyfin (via Centralized Ingress)
-```
+
+```text
 MacBook (192.168.0.160, VLAN 20)
     ↓ WiFi
 Beryl AX AP (sorgan)
@@ -557,7 +577,7 @@ K8s Apps Jellyfin pod (10.0.2.x)
 
 ### 2. Jellyfin Pod → TrueNAS NFS (Media Storage)
 
-```
+```text
 Jellyfin pod (10.0.2.50, VLAN 31)
     ↓ K8s network
 Worker node vmbr31
@@ -575,7 +595,7 @@ ZFS dataset: bulk/media
 
 ### 3. Prometheus (K8s Shared) → TrueNAS Metrics
 
-```
+```text
 Prometheus pod (10.0.1.25, VLAN 30)
     ↓
 Worker node vmbr30
@@ -591,7 +611,7 @@ TrueNAS VM (10.10.10.13:9273)
 
 ### 4. K8s Apps → K8s Shared Services (Metrics Push)
 
-```
+```text
 App pod (10.0.2.45, VLAN 31)
     ↓ Push metrics
 Worker node vmbr31
@@ -607,7 +627,7 @@ Prometheus pod (10.0.1.25, VLAN 30)
 
 ### 5. K8s Node → Internet (Package Updates)
 
-```
+```text
 Talos worker node (10.0.2.21, VLAN 31)
     ↓ VLAN 31
 MikroTik (inter-VLAN routing: VLAN 31 → WAN)
@@ -623,7 +643,8 @@ Internet
 ### 6. Storage Replication (TrueNAS Primary → Backup)
 
 **Current (Single Router):**
-```
+
+```text
 TrueNAS Primary (din) - 10.10.10.13
     ↓ VLAN 10
 din nic2.10
@@ -638,7 +659,8 @@ TrueNAS Backup (grogu) - 10.10.10.14
 **All traffic goes through router, but stays on VLAN 10 (L2 switching, not routed).**
 
 **Future (With Aggregation Switch):**
-```
+
+```text
 TrueNAS Primary (din) - 10.10.10.13
     ↓ SAS to MD1220
 din nic2.10
@@ -682,7 +704,8 @@ TrueNAS Backup (grogu) - 10.10.10.14
 
 ### Kubernetes Service Records
 
-**Centralized Ingress (All services via ingress.home.arpa)**
+#### Centralized Ingress (All services via ingress.home.arpa)
+
 ```bash
 # All services point to centralized ingress in Shared Services cluster
 10.0.1.100      ingress.home.arpa
@@ -705,14 +728,16 @@ TrueNAS Backup (grogu) - 10.10.10.14
 
 ### Current State → Future State
 
-**Phase 1: Current (Single Router)**
+#### Phase 1: Current (Single Router)
+
 - ✅ All infrastructure VLANs operational (1, 10, 20)
 - ✅ Traditional VMs/LXC on VLAN 20 (arr-stack, monitoring)
 - ✅ TrueNAS deployed with storage access
 - ⏳ Add K8s VLANs 30-32 to router
 - ⏳ Deploy first K8s cluster (Shared Services on VLAN 30)
 
-**Phase 2: Add Aggregation Switch**
+#### Phase 2: Add Aggregation Switch
+
 1. Configure CRS310-1G-5S-4S+IN as L2 switch
 2. Connect router SFP+1 → switch SFP+4 (10G DAC trunk)
 3. Move grogu nic2 → switch SFP+1
@@ -720,11 +745,13 @@ TrueNAS Backup (grogu) - 10.10.10.14
 5. Test connectivity (no config changes needed on Proxmox/VMs)
 
 **Benefits:**
+
 - Reduced router CPU load
 - Dedicated 10GbE storage fabric
 - More available ports for expansion
 
-**Phase 3: Kubernetes Deployment (K8s-First)**
+#### Phase 3: Kubernetes Deployment (K8s-First)
+
 1. **Deploy Shared Services cluster (VLAN 30)**
    - SigNoz (observability), ingress, ArgoCD, cert-manager, Vault
 2. **Deploy Apps cluster (VLAN 31)**
@@ -734,6 +761,7 @@ TrueNAS Backup (grogu) - 10.10.10.14
    - Staging environment, CI/CD, experiments
 
 **Kubernetes Benefits:**
+
 - GitOps (declarative config, version control)
 - Automatic updates (ArgoCD, Renovate)
 - Better resource utilization (bin packing)
@@ -744,19 +772,22 @@ TrueNAS Backup (grogu) - 10.10.10.14
 
 ## Performance Considerations
 
-### Current Setup (Single Router)
+### Performance with Single Router
 
 **All traffic goes through CRS310-8G+2S+IN:**
+
 - Switching capacity: 60 Gbps
 - Forwarding rate: 44.64 Mpps
 - CPU: 800 MHz (RouterOS on ARM)
 
 **Bottlenecks:**
+
 - Inter-VLAN routing: CPU-based (not hardware offloaded)
 - All K8s cross-cluster traffic: Router CPU
 - Storage access from K8s: Router CPU (VLAN 30/31/32 → VLAN 10)
 
 **Mitigation:**
+
 - Keep pod-to-pod traffic within same cluster (same VLAN, L2 switching)
 - Use centralized ingress to minimize cross-cluster routing
 - Storage I/O is read/write intensive, not packet-intensive (should be fine)
@@ -764,11 +795,13 @@ TrueNAS Backup (grogu) - 10.10.10.14
 ### Future Setup (With Aggregation Switch)
 
 **Traffic distribution:**
+
 - Pod-to-pod within cluster: Stay on VLAN (L2 switching on aggregation switch)
 - Cross-cluster: Router CPU (unavoidable)
 - Storage access: Switch → router → storage VLAN → switch (one routing hop)
 
 **Benefits:**
+
 - Reduced router CPU load (L2 switching offloaded)
 - 10GbE storage fabric isolated from compute
 - More SFP+ ports for expansion
@@ -832,12 +865,14 @@ nslookup google.com 192.168.0.53  # DNS via Pi-hole
 
 ### Lost Access After Enabling VLAN Filtering
 
-**Option 1: Serial/Console**
+#### Option 1: Serial/Console
+
 ```routeros
 /interface bridge set bridge1 vlan-filtering=no
 ```
 
-**Option 2: Factory reset**
+#### Option 2: Factory reset
+
 ```routeros
 /system reset-configuration no-defaults=yes
 # Then re-apply config
@@ -846,34 +881,36 @@ nslookup google.com 192.168.0.53  # DNS via Pi-hole
 ## Access URLs
 
 | Service | URL | VLAN | Notes |
-|---------|-----|------|-------|
-| **Infrastructure** |
-| Proxmox grogu | https://192.168.0.10:8006 | 20 | Admin |
-| Proxmox din | https://192.168.0.11:8006 | 20 | Admin |
-| grogu iDRAC | https://10.10.1.10 | 1 | Out-of-band mgmt |
-| din iDRAC | https://10.10.1.11 | 1 | Out-of-band mgmt |
-| Router | https://192.168.0.1 | 20 | Winbox/WebFig |
-| TrueNAS Primary | https://192.168.0.13 | 20 | NAS management |
-| TrueNAS Backup | https://192.168.0.14 | 20 | Backup NAS |
-| Pi-hole | http://192.168.0.53/admin | 20 | DNS/DHCP admin |
-| **Kubernetes Services (via Ingress)** |
-| SigNoz | https://signoz.home.arpa | 30 | Centralized observability |
-| ArgoCD | https://argocd.home.arpa | 30 | GitOps |
-| Jellyfin | https://jellyfin.home.arpa | 31 | Media streaming |
-| Immich | https://immich.home.arpa | 31 | Photo management |
-| Nextcloud | https://nextcloud.home.arpa | 31 | File sync/share |
-| Home Assistant | https://homeassistant.home.arpa | 31 | Home automation |
+| ------- | --- | ---- | ----- |
+| **Infrastructure** | | | |
+| Proxmox grogu | <https://192.168.0.10:8006> | 20 | Admin |
+| Proxmox din | <https://192.168.0.11:8006> | 20 | Admin |
+| grogu iDRAC | <https://10.10.1.10> | 1 | Out-of-band mgmt |
+| din iDRAC | <https://10.10.1.11> | 1 | Out-of-band mgmt |
+| Router | <https://192.168.0.1> | 20 | Winbox/WebFig |
+| TrueNAS Primary | <https://192.168.0.13> | 20 | NAS management |
+| TrueNAS Backup | <https://192.168.0.14> | 20 | Backup NAS |
+| Pi-hole | <http://192.168.0.53/admin> | 20 | DNS/DHCP admin |
+| **Kubernetes Services (via Ingress)** | | | |
+| SigNoz | <https://signoz.home.arpa> | 30 | Centralized observability |
+| ArgoCD | <https://argocd.home.arpa> | 30 | GitOps |
+| Jellyfin | <https://jellyfin.home.arpa> | 31 | Media streaming |
+| Immich | <https://immich.home.arpa> | 31 | Photo management |
+| Nextcloud | <https://nextcloud.home.arpa> | 31 | File sync/share |
+| Home Assistant | <https://homeassistant.home.arpa> | 31 | Home automation |
 
 ## Security Considerations
 
 ### VLAN Isolation
 
 **Production ↔ Test isolation enforced:**
+
 - K8s Apps (VLAN 31) ↔ K8s Test (VLAN 32): Blocked by firewall
 - Prevents test failures from impacting production
 - Prevents production data access from test cluster
 
 **Management ↔ Storage isolation:**
+
 - VLAN 1 (Management) ↔ VLAN 10 (Storage): Blocked
 - No reason for iDRAC to access NAS directly
 - Reduces attack surface

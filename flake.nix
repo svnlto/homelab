@@ -45,6 +45,8 @@
             k9s
             vcluster
             popeye
+            helm-docs
+            kubeconform
             # MCP server runtimes
             nodejs
             deno

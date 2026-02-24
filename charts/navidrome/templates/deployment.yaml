@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: navidrome
+  labels:
+    {{- include "navidrome.labels" . | nindent 4 }}
+  annotations:
+    {{- range $key, $val := .Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "navidrome.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "navidrome.selectorLabels" . | nindent 8 }}
+      annotations:
+        {{- range $key, $val := .Values.global.annotations }}
+        {{ $key }}: {{ $val | quote }}
+        {{- end }}
+    spec:
+      securityContext:
+        runAsUser: {{ .Values.navidrome.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.navidrome.securityContext.runAsGroup }}
+        fsGroup: {{ .Values.navidrome.securityContext.fsGroup }}
+      containers:
+        - name: navidrome
+          image: {{ .Values.navidrome.image }}
+          ports:
+            - containerPort: {{ .Values.navidrome.port }}
+              name: http
+          env:
+            {{- toYaml .Values.navidrome.env | nindent 12 }}
+          resources:
+            {{- toYaml .Values.navidrome.resources | nindent 12 }}
+          volumeMounts:
+            - name: music
+              mountPath: /music
+              readOnly: true
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: music
+          persistentVolumeClaim:
+            claimName: nfs-music
+        - name: data
+          persistentVolumeClaim:
+            claimName: navidrome-data

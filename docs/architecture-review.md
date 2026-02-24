@@ -28,7 +28,7 @@
 
 ## Architecture Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                          HOMELAB INFRASTRUCTURE                         │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -140,7 +140,8 @@ Ansible (ansible/):
 ### 1. Fast Pool Capacity (CONCERN)
 
 **Current Allocation**:
-```
+
+```text
 Allocated:
 - kubernetes/nfs-dynamic: 4TB quota
 - kubernetes/iscsi-zvols: ~6TB (databases)
@@ -151,6 +152,7 @@ Headroom: 3TB (19%)
 ```
 
 **Growth Projections**:
+
 - **Databases grow fastest** - PostgreSQL, ClickHouse, Redis
 - **Forgejo Git repos** - grows with every commit
 - **VMs** - relatively static unless new VMs deployed
@@ -158,6 +160,7 @@ Headroom: 3TB (19%)
 **Risk**: If databases hit 6TB quota and need more, pool is full.
 
 **Mitigation Options**:
+
 1. **Monitor closely** - set alerts at 85%, 90%
 2. **Increase database zvol size slowly** - tune as needed
 3. **Move non-critical workloads to bulk pool**
@@ -168,7 +171,8 @@ Headroom: 3TB (19%)
 ### 2. Bulk Pool Headroom (ACCEPTABLE BUT TIGHT)
 
 **Current Allocation**:
-```
+
+```text
 Allocated:
 - kubernetes/nfs-dynamic: 10TB quota (Forgejo registry ~500GB initially)
 - media: 10TB
@@ -180,6 +184,7 @@ Headroom: 0.6TB (2%)
 ```
 
 **Why This Is OK**:
+
 - **Large sequential files** - no COW fragmentation issues
 - **Quota on k8s dataset** - prevents runaway growth
 - **Media is replaceable** - can delete if space needed
@@ -187,6 +192,7 @@ Headroom: 0.6TB (2%)
 **Risk**: Photos can't grow beyond 5TB without cleanup.
 
 **Mitigation**:
+
 1. **Expand pool** - add more 8TB drives when available (easy to add vdev)
 2. **Offload old media** - delete watched movies/shows
 3. **Compress photos** - Immich already does this
@@ -196,6 +202,7 @@ Headroom: 0.6TB (2%)
 ### 3. Democratic-CSI Architecture (EXCELLENT)
 
 **Why This Works**:
+
 ```yaml
 # Instead of pre-allocating manual datasets:
 bulk/container-registry/     # ❌ Static, can't resize
@@ -215,8 +222,9 @@ bulk/kubernetes/nfs-dynamic/
 ```
 
 **Comparison**:
+
 | Manual Datasets | Democratic-CSI |
-|-----------------|----------------|
+| --------------- | -------------- |
 | Pre-allocate blindly | Allocate on-demand |
 | Can't easily resize | `kubectl patch pvc` |
 | Manual NFS exports | Auto-configured |
@@ -229,7 +237,8 @@ bulk/kubernetes/nfs-dynamic/
 **Current State**: Documented but not implemented.
 
 **3-2-1 Backup Tiers**:
-```
+
+```text
 Tier 1: Local Snapshots (din)
 ├─ fast/kubernetes: Hourly (keep 24)
 ├─ fast/vms: Every 4 hours (keep 6)
@@ -251,11 +260,13 @@ Tier 3: Offsite (B2)
 **Risk**: Only Tier 1 (local snapshots) will be active initially.
 
 **Single Points of Failure**:
+
 1. **Fire/theft of din** - all data lost (no offsite backup)
 2. **Fast pool failure** - databases lost until grogu replication online
 3. **Bulk pool failure** - photos lost permanently (irreplaceable!)
 
 **Mitigation** (in order of importance):
+
 1. **Deploy Tier 3 FIRST** - Restic to B2 for critical data
    - `bulk/photos` (5TB) - Immich can integrate with B2 directly
    - `fast/kubernetes/nfs-static` (configs ~10GB) - Restic
@@ -268,7 +279,8 @@ Tier 3: Offsite (B2)
 ### 5. Monitoring & Alerts (MISSING)
 
 **What's Missing**:
-```
+
+```text
 Monitoring:
 ├─ Pool capacity (email at 85%, 90%, 95%)
 ├─ Scrub failures (weekly scrubs need to succeed)
@@ -284,6 +296,7 @@ Currently:
 **Risk**: Problems go unnoticed until it's too late.
 
 **Mitigation**:
+
 1. **TrueNAS built-in alerts** - configure email notifications
 2. **Prometheus/Grafana** - scrape TrueNAS metrics
 3. **AlertManager** - send alerts to Slack/email
@@ -294,7 +307,8 @@ Currently:
 ### 6. Terraform/Terragrunt Integration (GOOD)
 
 **Current Flow**:
-```
+
+```text
 1. Terragrunt deploys TrueNAS VMs
    └─ infrastructure/prod/storage/truenas-primary/
        ├─ Creates VMID 300 on din
@@ -323,6 +337,7 @@ Currently:
 ```
 
 **Why This is Correct**:
+
 - **Pool creation manual** = good (one-time, high-risk, can't easily undo)
 - **Dataset config via Ansible** = good (idempotent, can re-run safely)
 - **PVC provisioning via K8s** = good (application-driven, automated)
@@ -345,25 +360,25 @@ Currently:
 
 ### After Pool Creation
 
-6. ⬜ **Run Ansible playbook** - Configure datasets/shares
-7. ⬜ **Create verification playbook** - Automated health checks
-8. ⬜ **Deploy Democratic-CSI** - 4 instances in Kubernetes
-9. ⬜ **Test PVC provisioning** - Verify each storage class works
-10. ⬜ **Setup Prometheus monitoring** - Pool capacity, scrub status
+1. ⬜ **Run Ansible playbook** - Configure datasets/shares
+2. ⬜ **Create verification playbook** - Automated health checks
+3. ⬜ **Deploy Democratic-CSI** - 4 instances in Kubernetes
+4. ⬜ **Test PVC provisioning** - Verify each storage class works
+5. ⬜ **Setup Prometheus monitoring** - Pool capacity, scrub status
 
 ### When grogu Online
 
-11. ⬜ **Create replication playbook** - SSH keys, midclt commands
-12. ⬜ **Deploy backup TrueNAS** - VMID 301 on grogu
-13. ⬜ **Enable replication** - Tier 2 backup (din → grogu)
-14. ⬜ **Test failover** - Can we restore from grogu if din dies?
+1. ⬜ **Create replication playbook** - SSH keys, midclt commands
+2. ⬜ **Deploy backup TrueNAS** - VMID 301 on grogu
+3. ⬜ **Enable replication** - Tier 2 backup (din → grogu)
+4. ⬜ **Test failover** - Can we restore from grogu if din dies?
 
 ### Long-Term
 
-15. ⬜ **Plan fast pool expansion** - Monitor growth, acquire drives when needed
-16. ⬜ **Plan bulk pool expansion** - Acquire 5-6 more 8TB drives
-17. ⬜ **Document disaster recovery** - Full restore procedures
-18. ⬜ **Quarterly restore tests** - Verify backups work
+1. ⬜ **Plan fast pool expansion** - Monitor growth, acquire drives when needed
+2. ⬜ **Plan bulk pool expansion** - Acquire 5-6 more 8TB drives
+3. ⬜ **Document disaster recovery** - Full restore procedures
+4. ⬜ **Quarterly restore tests** - Verify backups work
 
 ---
 
@@ -372,6 +387,7 @@ Currently:
 ### Overall Assessment: **GOOD** (with caveats)
 
 **Strengths**:
+
 - Pool design appropriate for data criticality ✅
 - RAIDZ2 on fast/bulk pools (2-drive fault tolerance) ✅
 - Kubernetes-native storage via democratic-csi ✅
@@ -379,6 +395,7 @@ Currently:
 - Clear separation of concerns ✅
 
 **Weaknesses**:
+
 - Fast pool headroom tight (19%, acceptable but monitor) ⚠️
 - Bulk pool headroom very tight (3%, monitor closely) ⚠️
 - No backups implemented yet (documented only) ❌
@@ -388,6 +405,7 @@ Currently:
 **Blockers**: None. Ready to deploy pools.
 
 **Critical Path**:
+
 1. Create Restic playbook (photos backup to B2)
 2. Create pools via midclt
 3. Run Ansible playbook
@@ -396,6 +414,7 @@ Currently:
 6. Test PVC provisioning
 
 **Estimated Timeline**:
+
 - Pool creation: 30 minutes
 - Ansible configuration: 15 minutes
 - Democratic-CSI deployment: 1 hour
@@ -404,13 +423,17 @@ Currently:
 
 **Confidence Level**: **High**
 
-This architecture is well-designed and ready for production deployment. The tight capacity on fast/bulk pools is manageable with monitoring. Missing backups should be addressed immediately after deployment (Tier 3 first, then Tier 2 when grogu online).
+This architecture is well-designed and ready for production deployment.
+The tight capacity on fast/bulk pools is manageable with monitoring.
+Missing backups should be addressed immediately after deployment
+(Tier 3 first, then Tier 2 when grogu online).
 
 ---
 
 ## Next Actions
 
 User should decide:
+
 1. **Proceed with pool creation?** (docs/truenas-pool-setup.md has commands)
 2. **Create Restic playbook first?** (photos backup to B2 before deploying)
 3. **Create verification playbook?** (automated health checks after deployment)

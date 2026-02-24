@@ -3,7 +3,7 @@
 > **See also**: [network-architecture.md](network-architecture.md) for detailed
 > VLAN configuration, IP allocations, and traffic flows.
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                          19" RACK - FRONT VIEW                           │
 │                       (18U Acoustic Cabinet, 1000mm deep)                │
@@ -182,7 +182,7 @@ On the back side, cables arrive from devices above, beside, or below the panel.
 ## Patch Panel Port Assignments (U1)
 
 | Port | Keystone | Back (Device) | Front (Patch to) |
-|------|----------|---------------|-------------------|
+| ---- | -------- | ------------- | ----------------- |
 | 1 | Cat6A RJ45 | O2 Homespot (from top) | Nevarro ether1 |
 | 2 | Cat6A RJ45 | Beryl AP (from top) | Nevarro ether3 |
 | 3 | Cat6A RJ45 | Pi-hole (rear shelf) | Nevarro ether2 |
@@ -199,7 +199,7 @@ On the back side, cables arrive from devices above, beside, or below the panel.
 Gateway, NAT, firewall, DHCP, DNS forwarding. Managed via Terragrunt.
 
 | Port | Device | Mode | VLAN | IP |
-|------|--------|------|------|----|
+| ---- | ------ | ---- | ---- | -- |
 | ether1 | O2 Homespot (via patch 1) | WAN (standalone) | — | 192.168.8.2 |
 | ether2 | Pi-hole (via patch 3) | access | 20 (LAN) | 192.168.0.53 |
 | ether3 | Beryl AP (via patch 2) | access | 20 (LAN) | DHCP |
@@ -213,7 +213,7 @@ Gateway, NAT, firewall, DHCP, DNS forwarding. Managed via Terragrunt.
 ### VLAN Gateways
 
 | VLAN | Interface IP | Purpose |
-|------|--------------|---------|
+| ---- | ------------ | ------- |
 | 1 | 10.10.1.1/24 | Management gateway |
 | 10 | 10.10.10.1/24 | Storage gateway (10GbE) |
 | 20 | 192.168.0.1/24 | LAN gateway |
@@ -224,14 +224,14 @@ Gateway, NAT, firewall, DHCP, DNS forwarding. Managed via Terragrunt.
 ## Direct SAS Connections (Non-Switched)
 
 | Source | HBA | Target | Cable |
-|--------|-----|--------|-------|
+| ------ | --- | ------ | ----- |
 | grogu (R630) | HPE H241 | Dell MD1200 EMM | Mini-SAS HD SFF-8644 to SFF-8088 |
 | din (R730xd) | Dell PERC H200E | Dell MD1220 EMM | Mini-SAS SFF-8088 |
 
 ## VLAN Summary
 
 | VLAN | Name | Subnet | Purpose |
-|------|------|--------|---------|
+| ---- | ---- | ------ | ------- |
 | 1 | Management | 10.10.1.0/24 | iDRAC, switch mgmt |
 | 10 | Storage | 10.10.10.0/24 | NFS, iSCSI, replication (10GbE) |
 | 20 | LAN | 192.168.0.0/24 | VMs, services, clients, WiFi |
@@ -242,7 +242,7 @@ Gateway, NAT, firewall, DHCP, DNS forwarding. Managed via Terragrunt.
 ## Power Budget
 
 | Device | Idle | Load |
-|--------|------|------|
+| ------ | ---- | ---- |
 | R630 (grogu) — 2× E5-2699v3, 256GB, 2× SSD | 150W | 350W |
 | MD1200 — 12× 8TB 3.5" SATA | 100W | 150W |
 | R730xd (din) — 2× E5-2680v3, 128GB, 12× internal drives | 200W | 400W |
@@ -254,7 +254,7 @@ UPS: APC SMT1500RMI2U (1500VA / 1000W) → ~64% idle load, ~8min runtime at full
 
 ## PDU Layout (Rear-Mounted, 2× PDU from UPS)
 
-```
+```text
 PDU A (rear left rail)          PDU B (rear right rail)
 ───────────────────────         ───────────────────────
 R630 PSU1                       R630 PSU2

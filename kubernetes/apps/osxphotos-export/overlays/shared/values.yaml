@@ -1,0 +1,32 @@
+---
+# Shared cluster overrides
+
+global:
+  annotations:
+    deployed-by: argocd
+    cluster: shared
+
+nfs:
+  server: 10.10.10.13
+  volumes:
+    - name: source
+      pvName: osxphotos-nfs-source
+      pvcName: osxphotos-source
+      path: /mnt/scratch/dump
+      capacity: 1Ti
+      accessMode: ReadOnlyMany
+    - name: export
+      pvName: osxphotos-nfs-export
+      pvcName: osxphotos-export
+      path: /mnt/bulk/photos
+      capacity: 1Ti
+      accessMode: ReadWriteMany
+
+csi:
+  server: 10.10.10.13
+  volumes:
+    - name: cache
+      pvName: osxphotos-cache
+      pvcName: osxphotos-cache
+      volumeHandle: pvc-daf69719-f54e-485b-8141-245718467edf
+      capacity: 1Gi

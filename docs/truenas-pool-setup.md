@@ -5,7 +5,7 @@ Complete guide for creating the 3-pool ZFS configuration on TrueNAS SCALE runnin
 ## Hardware Configuration
 
 | Component | Drives | Layout | Raw | Usable | Purpose |
-|-----------|--------|--------|-----|--------|---------|
+| --------- | ------ | ------ | --- | ------ | ------- |
 | **Proxmox OS** | 2× 256GB NVMe | Mirror | — | — | Hypervisor boot (includes Talos images on local-zfs) |
 | **fast** | 21× 900GB + 2× 120GB SSD | 3× 7-drive RAIDZ2 + mirrored SLOG | ~17.1TB | ~14TB | K8s PVCs (iSCSI), VMs, databases, ML models |
 | **bulk** | 6× 7.15TB (limited by smallest) | 1× 6-drive RAIDZ2 | 42.9TB | 25.3TB | Media, photos, cold observability data |
@@ -77,11 +77,13 @@ midclt call pool.create '{
 ```
 
 **Why RAIDZ2 not RAIDZ1?**
+
 - RAIDZ1 = only 1-drive fault tolerance (risky for critical K8s data)
 - RAIDZ2 = 2-drive fault tolerance per vdev (safe for databases)
 - Tradeoff: Lose capacity to parity for much better protection
 
 **Verify fast pool**:
+
 ```bash
 zpool status fast
 # Should show:
@@ -120,6 +122,7 @@ midclt call pool.create '{
 **Note**: SLOG is only on fast pool (bulk pool doesn't need it - sequential large writes).
 
 **Verify bulk pool**:
+
 ```bash
 zpool status bulk
 # Should show:
@@ -169,6 +172,7 @@ midclt call pool.create '{
 ```
 
 **Verify scratch pool**:
+
 ```bash
 zpool status scratch
 # Should show:
@@ -245,7 +249,8 @@ ansible-playbook playbooks/truenas-setup.yml --tags=snapshots,scrub
 ## Dataset Hierarchy Created by Ansible
 
 ### Bulk Pool (~28.6TB)
-```
+
+```text
 bulk/
 ├── kubernetes/
 │   └── nfs-dynamic/                   # democratic-csi provisions PVCs here
@@ -259,7 +264,8 @@ bulk/
 ```
 
 ### Fast Pool (~14TB)
-```
+
+```text
 fast/
 ├── kubernetes/
 │   ├── nfs-dynamic/                   # democratic-csi provisions PVCs here
@@ -276,7 +282,8 @@ fast/
 **Note**: Talos cluster boot images are stored on Proxmox's `local-zfs`, not TrueNAS.
 
 ### Scratch Pool (~15TB)
-```
+
+```text
 scratch/
 ├── kubernetes/
 │   └── nfs-dynamic/                   # democratic-csi provisions PVCs here
@@ -290,7 +297,7 @@ scratch/
 ## Storage Class Matrix
 
 | Workload | Pool | Type | Storage Class | Access Mode | Why |
-|----------|------|------|---------------|-------------|-----|
+| -------- | ---- | ---- | ------------- | ----------- | --- |
 | **PostgreSQL, MySQL** | fast | iSCSI | `truenas-iscsi-fast` | ReadWriteOnce | Block storage, better IOPS |
 | **Redis, databases** | fast | iSCSI | `truenas-iscsi-fast` | ReadWriteOnce | Low latency critical |
 | **Forgejo Git repos DB** | fast | iSCSI | `truenas-iscsi-fast` | ReadWriteOnce | Critical data protection |
@@ -307,6 +314,7 @@ scratch/
 ## Backup Strategy (3-2-1)
 
 ### Tier 1: Local Snapshots (din)
+
 - **fast/kubernetes**: Hourly (keep 24)
 - **fast/vms**: Every 4 hours (keep 6)
 - **fast/ml-models**: Daily (keep 7)
@@ -315,6 +323,7 @@ scratch/
 - **scratch/***: No snapshots (ephemeral by design)
 
 ### Tier 2: Replication (din → grogu backup pool)
+
 - **fast/kubernetes**: Hourly
 - **fast/vms**: Every 4 hours
 - **fast/ml-models**: Daily
@@ -324,6 +333,7 @@ scratch/
 - **bulk/backups**: Daily
 
 ### Tier 3: Offsite (Backblaze B2 via Restic)
+
 - **fast/kubernetes**: Hourly (~4TB, K8s PVCs, databases in iSCSI zvols)
 - **fast/vms**: Hourly (~2TB, VM disk images)
 - **fast/ml-models**: Hourly (~1TB, trained models)
@@ -341,11 +351,13 @@ scratch/
 ## Network Configuration
 
 ### NFS Exports (via Storage VLAN)
+
 - **Primary**: `10.10.10.13` (Storage VLAN 10)
 - **Kubernetes VLANs**: `10.0.1.0/24` (VLAN 30), `10.0.2.0/24` (VLAN 31), `10.0.3.0/24` (VLAN 32)
 - **LAN**: `192.168.0.0/24` (VLAN 20) for arr-stack
 
 ### iSCSI Target
+
 - **Portal**: `10.10.10.13:3260` (Storage VLAN only)
 - **Initiator Group**: Allow `10.0.1.0/24`, `10.0.2.0/24`, `10.0.3.0/24`
 - **Auth**: None (network-based access control)
@@ -353,6 +365,7 @@ scratch/
 ## Capacity Planning
 
 ### Fast Pool (14TB) - Reduced Quotas for Headroom ✅
+
 - Kubernetes NFS dynamic: **4TB quota** (reduced from 6TB)
 - iSCSI zvols (databases): ~4TB (PostgreSQL, MySQL, ClickHouse)
 - VMs: ~2TB
@@ -362,6 +375,7 @@ scratch/
 **Why headroom matters**: ZFS performance degrades above 90% full, COW needs free space for writes.
 
 ### Bulk Pool (28.6TB)
+
 - Kubernetes NFS dynamic: **10TB quota** (Forgejo registry ~500GB, future growth)
 - Media: ~10TB (movies, music, TV, books)
 - Photos (Immich): ~5TB
@@ -370,6 +384,7 @@ scratch/
 - **Reserve**: **~1TB headroom (3%)** ← Tight but acceptable for large files
 
 ### Scratch Pool (15TB)
+
 - Kubernetes NFS dynamic: **8TB quota** (CI cache ephemeral)
 - Downloads: ~5TB (incomplete torrents, usenet staging)
 - ML datasets: ~1TB
@@ -378,6 +393,7 @@ scratch/
 ## Troubleshooting
 
 ### Pool Creation Fails
+
 ```bash
 # Check if disks are already in use
 zpool status
@@ -389,6 +405,7 @@ midclt call disk.unused
 ```
 
 ### SLOG Not Attached
+
 ```bash
 # Add SLOG to existing pool
 zpool add fast log mirror \
@@ -397,6 +414,7 @@ zpool add fast log mirror \
 ```
 
 ### Verify Pool Health
+
 ```bash
 # Detailed status
 zpool status -v

@@ -1,0 +1,25 @@
+---
+# Shared cluster overrides
+
+global:
+  annotations:
+    deployed-by: argocd
+    cluster: shared
+
+nfs:
+  server: 10.10.10.13
+  volumes:
+    - name: dump
+      pvName: dumper-nfs-dump
+      pvcName: nfs-dump
+      path: /mnt/scratch/dump
+      capacity: 1Ti
+
+csi:
+  server: 10.10.10.13
+  volumes:
+    - name: cache
+      pvName: dumper-cache
+      pvcName: dumper-cache
+      volumeHandle: pvc-c44edf8b-0bfc-4d0f-a9b4-f36c6129263b
+      capacity: 1Gi

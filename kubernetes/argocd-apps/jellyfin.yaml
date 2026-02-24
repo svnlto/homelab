@@ -9,10 +9,17 @@ metadata:
 spec:
   project: default
 
-  source:
-    repoURL: https://github.com/svnlto/homelab
-    targetRevision: HEAD
-    path: kubernetes/apps/jellyfin/overlays/shared
+  sources:
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      path: charts/jellyfin
+      helm:
+        releaseName: jellyfin
+        valueFiles:
+          - $values/kubernetes/apps/jellyfin/overlays/shared/values.yaml
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      ref: values
 
   destination:
     server: https://kubernetes.default.svc

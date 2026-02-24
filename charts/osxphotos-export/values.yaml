@@ -1,0 +1,70 @@
+---
+global:
+  annotations: {}
+
+# -- Container image
+image: ghcr.io/svnlto/osxphotos-export:latest
+
+# -- Container resources
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 1Gi
+
+# -- Environment variables
+env:
+  EXPORT_DB_PATH: /cache/osxphotos_export.db
+  SYNC_INTERVAL: "3600"
+  RETRY_INTERVAL: "300"
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://signoz-otel-collector.signoz.svc:4318
+  OTEL_SERVICE_NAME: osxphotos-export
+
+# -- Security context for the container
+securityContext:
+  runAsUser: 1003
+  runAsGroup: 1000
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- NFS storage for source and export
+nfs:
+  server: ""
+  mountOptions:
+    - nfsvers=4.2
+    - rsize=131072
+    - wsize=131072
+    - hard
+  volumes: []
+
+# -- CSI storage for cache volume
+csi:
+  driver: org.democratic-csi.nfs-fast
+  storageClassName: truenas-nfs-fast
+  server: ""
+  basePath: /mnt/fast/kubernetes/nfs-dynamic
+  mountOptions:
+    - nfsvers=4
+    - nconnect=8
+    - hard
+    - noatime
+    - nodiratime
+  volumes: []
+
+# -- External secrets configuration
+externalSecret:
+  refreshInterval: 1h
+  secretStoreName: onepassword
+  secretStoreKind: ClusterSecretStore
+  targetSecretName: osxphotos-config
+  onePasswordItem: osxphotos-config
+  keys:
+    - EXPORT_DEST
+    - LIBRARY_PATH

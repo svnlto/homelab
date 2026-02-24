@@ -1,0 +1,212 @@
+---
+global:
+  annotations: {}
+
+timezone: Europe/Berlin
+
+# -- NFS storage for media and scratch
+nfs:
+  server: ""
+  mountOptions:
+    - nfsvers=4.2
+    - rsize=131072
+    - wsize=131072
+    - hard
+  volumes: []
+
+# -- CSI storage for app config volumes
+csi:
+  driver: org.democratic-csi.nfs-fast
+  storageClassName: truenas-nfs-fast
+  server: ""
+  basePath: /mnt/fast/kubernetes/nfs-dynamic
+  mountOptions:
+    - nfsvers=4
+    - nconnect=8
+    - hard
+    - noatime
+    - nodiratime
+  volumes: []
+
+# -- External secrets configuration
+externalSecret:
+  refreshInterval: 1h
+  secretStoreName: onepassword
+  secretStoreKind: ClusterSecretStore
+  targetSecretName: arr-secrets
+  onePasswordItem: arr-stack-secrets
+  keys:
+    - WIREGUARD_PRIVATE_KEY
+    - WIREGUARD_ADDRESSES
+    - RADARR_API_KEY
+    - SONARR_API_KEY
+    - PROWLARR_API_KEY
+    - LIDARR_API_KEY
+    - BAZARR_API_KEY
+
+# -- Downloaders pod (gluetun VPN + download clients)
+downloaders:
+  gluetun:
+    image: qmcgaw/gluetun:v3.41.1
+    vpnProvider: protonvpn
+    serverCountries: Sweden
+    firewallInputPorts: "8701,8080,9696,8191,5030"
+    firewallOutboundSubnets: "10.96.0.0/12,10.244.0.0/16"
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:5.1.4-r1-ls431
+    port: 8701
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:4.5.5-ls244
+    port: 8080
+    resources:
+      requests:
+        cpu: 100m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+  slskd:
+    image: slskd/slskd:0.24.4
+    port: 5030
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:2.3.0.5236-ls137
+    port: 9696
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:v3.4.6
+    port: 8191
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  initScratch:
+    image: busybox:1.37
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+
+# -- Arr apps (radarr, sonarr, lidarr, bazarr)
+radarr:
+  image: lscr.io/linuxserver/radarr:6.0.4.10291-ls293
+  port: 7878
+  probePath: /ping
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+sonarr:
+  image: lscr.io/linuxserver/sonarr:4.0.16.2944-ls303
+  port: 8989
+  probePath: /ping
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+lidarr:
+  image: ghcr.io/hotio/lidarr:pr-plugins-3.0.0.4856
+  port: 8686
+  probePath: /ping
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+bazarr:
+  image: lscr.io/linuxserver/bazarr:v1.5.5-ls336
+  port: 6767
+  probePath: /
+  livenessInitialDelay: 60
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# -- Recyclarr CronJob
+recyclarr:
+  image: ghcr.io/recyclarr/recyclarr:8.2.1
+  schedule: "0 4 * * 1"
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# -- Buildarr deployment
+buildarr:
+  image: callum027/buildarr:0.7.8
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# -- Glance dashboard
+glance:
+  image: glanceapp/glance:v0.8.4
+  port: 8080
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# -- Ingress configuration
+ingress:
+  enabled: false
+  domain: ""
+  annotations: {}
+  hosts: []

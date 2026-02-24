@@ -703,7 +703,7 @@ spec:
 ## Storage Decision Matrix
 
 | Database/App | Storage Type | Storage Class | Pool | Why |
-|--------------|--------------|---------------|------|-----|
+| ------------ | ------------ | ------------- | ---- | --- |
 | PostgreSQL | iSCSI | `truenas-iscsi-fast` | fast | Transactional DB, needs low latency |
 | MySQL | iSCSI | `truenas-iscsi-fast` | fast | Transactional DB, needs low latency |
 | Redis | iSCSI | `truenas-iscsi-fast` | fast | In-memory + persistence, needs fast I/O |
@@ -716,6 +716,7 @@ spec:
 ## Key Points
 
 ### When to Use iSCSI Block Storage
+
 - ✅ Transactional databases (PostgreSQL, MySQL, MariaDB)
 - ✅ Time-series databases (ClickHouse, InfluxDB, Prometheus)
 - ✅ Key-value stores with persistence (Redis, etcd)
@@ -723,6 +724,7 @@ spec:
 - ✅ Single-pod workloads (ReadWriteOnce)
 
 ### When to Use NFS File Storage
+
 - ✅ Shared configuration files (ReadWriteMany)
 - ✅ Large files (media, backups, archives)
 - ✅ Container registries (Forgejo, Harbor)
