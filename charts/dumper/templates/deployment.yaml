@@ -26,6 +26,22 @@ spec:
         {{- end }}
     spec:
       initContainers:
+        - name: init-cache
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - chown 1003:1000 /cache
+          volumeMounts:
+            - name: cache
+              mountPath: /cache
+          resources:
+            limits:
+              cpu: 100m
+              memory: 32Mi
+            requests:
+              cpu: 10m
+              memory: 16Mi
         - name: tailscale
           image: {{ .Values.tailscale.image }}
           restartPolicy: Always
