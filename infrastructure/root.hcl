@@ -49,6 +49,19 @@ terraform {
     execute      = ["echo", "Successfully applied ${path_relative_to_include()}"]
     run_on_error = false
   }
+
+  after_hook "validate_tflint" {
+    commands = ["validate"]
+    execute = [
+      "sh", "-c", <<-EOT
+        echo "Running tflint for '${path_relative_to_include()}'..."
+        tflint --config="${get_repo_root()}/.tflint.hcl" --force --color -f compact
+        error_code=$?
+        echo "Running tflint for '${path_relative_to_include()}'...DONE"
+        exit $error_code
+      EOT
+    ]
+  }
 }
 
 inputs = {}

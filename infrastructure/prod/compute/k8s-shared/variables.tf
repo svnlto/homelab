@@ -198,3 +198,11 @@ variable "metrics_server_enabled" {
   type    = bool
   default = false
 }
+
+variable "registry_mirrors" {
+  description = "Registry mirror endpoints for pull-through cache"
+  type = map(object({
+    endpoint = string
+  }))
+  default = {}
+}
