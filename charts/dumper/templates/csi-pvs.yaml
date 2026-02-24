@@ -1,0 +1,33 @@
+{{- range .Values.csi.volumes }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .pvName }}
+  annotations:
+    pv.kubernetes.io/provisioned-by: {{ $.Values.csi.driver }}
+    {{- range $key, $val := $.Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  capacity:
+    storage: {{ .capacity }}
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ $.Values.csi.storageClassName }}
+  claimRef:
+    namespace: {{ $.Release.Namespace }}
+    name: {{ .pvcName }}
+  csi:
+    driver: {{ $.Values.csi.driver }}
+    volumeHandle: {{ .volumeHandle }}
+    fsType: nfs
+    volumeAttributes:
+      server: {{ $.Values.csi.server }}
+      share: {{ $.Values.csi.basePath }}/{{ .volumeHandle }}
+      node_attach_driver: nfs
+      provisioner_driver: freenas-nfs
+  mountOptions:
+    {{- toYaml $.Values.csi.mountOptions | nindent 4 }}
+{{- end }}

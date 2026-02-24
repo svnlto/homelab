@@ -1,0 +1,2 @@
+---
+{{ include "arr-stack.arrDeployment" (dict "name" "bazarr" "app" .Values.bazarr "Values" .Values "Release" .Release) }}

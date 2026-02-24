@@ -1,0 +1,60 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glance
+  labels:
+    {{- include "arr-stack.labels" (dict "name" "glance") | nindent 4 }}
+  annotations:
+    {{- include "arr-stack.annotations" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "arr-stack.selectorLabels" (dict "name" "glance") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "arr-stack.selectorLabels" (dict "name" "glance") | nindent 8 }}
+      annotations:
+        {{- include "arr-stack.annotations" . | nindent 8 }}
+    spec:
+      containers:
+        - name: glance
+          image: {{ .Values.glance.image }}
+          ports:
+            - containerPort: {{ .Values.glance.port }}
+              name: http
+          env:
+            - name: TZ
+              value: {{ .Values.timezone }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.glance.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+            - name: default-config
+              mountPath: /app/config/glance.yml
+              subPath: glance.yml
+              readOnly: true
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: glance-config
+        - name: default-config
+          configMap:
+            name: glance-config-default

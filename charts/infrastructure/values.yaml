@@ -1,0 +1,9 @@
+---
+global:
+  annotations: {}
+
+ingress:
+  domain: ""
+  annotations: {}
+
+externalServices: []

@@ -1,0 +1,79 @@
+---
+global:
+  annotations: {}
+
+# -- NFS storage for dump data
+nfs:
+  server: ""
+  mountOptions:
+    - nfsvers=4.2
+    - rsize=131072
+    - wsize=131072
+    - hard
+  volumes: []
+
+# -- CSI storage for cache
+csi:
+  driver: org.democratic-csi.nfs
+  storageClassName: truenas-nfs-bulk
+  server: ""
+  basePath: /mnt/bulk/kubernetes/nfs-dynamic
+  mountOptions:
+    - nfsvers=4
+    - nconnect=8
+    - hard
+    - noatime
+    - nodiratime
+  volumes: []
+
+# -- External secrets configuration
+externalSecrets:
+  refreshInterval: 1h
+  secretStoreName: onepassword
+  secretStoreKind: ClusterSecretStore
+  config:
+    targetSecretName: dumper-config
+    onePasswordItem: dumper-config
+    keys:
+      - REMOTE_HOST
+      - REMOTE_PATH
+      - REMOTE_USER
+  sshKey:
+    targetSecretName: dumper-ssh-key
+    onePasswordItem: dumper-config
+    secretKey: id_ed25519
+    remoteRefKey: private_key
+  tailscale:
+    targetSecretName: tailscale-auth
+    onePasswordItem: tailscale-auth-key
+    secretKey: TS_AUTHKEY
+    remoteRefKey: credential
+
+# -- Tailscale init container (sidecar)
+tailscale:
+  image: docker.io/tailscale/tailscale:v1.94.2
+  hostname: dumper-k8s
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# -- Dumper container
+dumper:
+  image: ghcr.io/svnlto/dumper:latest
+  otelEndpoint: http://signoz-otel-collector.signoz.svc:4318
+  syncInterval: "3600"
+  retryInterval: "300"
+  securityContext:
+    runAsUser: 1003
+    runAsGroup: 1000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

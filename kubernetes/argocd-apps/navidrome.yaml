@@ -9,10 +9,17 @@ metadata:
 spec:
   project: default
 
-  source:
-    repoURL: https://github.com/svnlto/homelab
-    targetRevision: HEAD
-    path: kubernetes/apps/navidrome/overlays/shared
+  sources:
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      path: charts/navidrome
+      helm:
+        releaseName: navidrome
+        valueFiles:
+          - $values/kubernetes/apps/navidrome/overlays/shared/values.yaml
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      ref: values
 
   destination:
     server: https://kubernetes.default.svc

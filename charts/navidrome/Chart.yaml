@@ -1,0 +1,6 @@
+---
+apiVersion: v2
+name: navidrome
+description: Navidrome music server with NFS and CSI persistent storage
+type: application
+version: 0.1.0

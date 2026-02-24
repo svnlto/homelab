@@ -1,0 +1,68 @@
+{{- range .Values.externalServices }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- include "infrastructure.labels" (dict "name" .name) | nindent 4 }}
+  annotations:
+    {{- range $key, $val := $.Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  ports:
+    - port: {{ .port }}
+      targetPort: {{ .port }}
+      protocol: TCP
+      name: {{ .portName }}
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- include "infrastructure.labels" (dict "name" .name) | nindent 4 }}
+    kubernetes.io/service-name: {{ .name }}
+  annotations:
+    {{- range $key, $val := $.Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+addressType: IPv4
+endpoints:
+  - addresses:
+      - {{ .ip | quote }}
+ports:
+  - port: {{ .port }}
+    name: {{ .portName }}
+    protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- include "infrastructure.labels" (dict "name" .name) | nindent 4 }}
+  annotations:
+    {{- range $key, $val := $.Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+    {{- range $key, $val := $.Values.ingress.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  tls:
+    - hosts:
+        - {{ .hostname }}.{{ $.Values.ingress.domain }}
+  rules:
+    - host: {{ .hostname }}.{{ $.Values.ingress.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .name }}
+                port:
+                  name: {{ .portName }}
+{{- end }}

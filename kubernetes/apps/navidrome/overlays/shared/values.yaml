@@ -1,0 +1,32 @@
+---
+# Shared cluster overrides
+
+global:
+  annotations:
+    deployed-by: argocd
+    cluster: shared
+
+nfs:
+  server: 10.10.10.13
+  volumes:
+    - name: music
+      pvName: navidrome-nfs-music
+      pvcName: nfs-music
+      path: /mnt/bulk/media/music
+      capacity: 1Ti
+      accessMode: ReadOnlyMany
+
+csi:
+  server: 10.10.10.13
+  volumes:
+    - name: data
+      pvName: navidrome-data
+      pvcName: navidrome-data
+      volumeHandle: pvc-232a4b44-a313-498a-ae61-e27d89a86bf6
+      capacity: 1Gi
+
+ingress:
+  enabled: true
+  domain: shared.h.svenlito.com
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt

@@ -1,0 +1,88 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buildarr
+  labels:
+    {{- include "arr-stack.labels" (dict "name" "buildarr") | nindent 4 }}
+  annotations:
+    {{- include "arr-stack.annotations" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "arr-stack.selectorLabels" (dict "name" "buildarr") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "arr-stack.selectorLabels" (dict "name" "buildarr") | nindent 8 }}
+      annotations:
+        {{- include "arr-stack.annotations" . | nindent 8 }}
+    spec:
+      containers:
+        - name: buildarr
+          image: {{ .Values.buildarr.image }}
+          command:
+            - /bin/sh
+            - /config/entrypoint.sh
+            - daemon
+          env:
+            - name: TZ
+              value: {{ .Values.timezone }}
+            - name: RADARR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: RADARR_API_KEY
+            - name: SONARR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: SONARR_API_KEY
+            - name: PROWLARR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: PROWLARR_API_KEY
+            - name: LIDARR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: LIDARR_API_KEY
+            - name: BAZARR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: BAZARR_API_KEY
+          resources:
+            {{- toYaml .Values.buildarr.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: buildarr-tmpl
+              mountPath: /config/buildarr.yml.tmpl
+              subPath: buildarr.yml.tmpl
+              readOnly: true
+            - name: entrypoint
+              mountPath: /config/entrypoint.sh
+              subPath: entrypoint.sh
+              readOnly: true
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: buildarr-config
+        - name: buildarr-tmpl
+          configMap:
+            name: buildarr-config
+            items:
+              - key: buildarr.yml.tmpl
+                path: buildarr.yml.tmpl
+        - name: entrypoint
+          configMap:
+            name: buildarr-config
+            defaultMode: 0755
+            items:
+              - key: entrypoint.sh
+                path: entrypoint.sh

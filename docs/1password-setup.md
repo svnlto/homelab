@@ -90,11 +90,16 @@ Fields:
 1. Click "+" → "API Credential"
 2. Title: "MikroTik Terraform API"
 3. Username: terraform
-4. Credential: <strong-password-for-terraform-user>
-5. Notes: "MikroTik REST API credentials for Terraform/Terragrunt. User has API permissions to manage network configuration via infrastructure code."
+4. Credential: `strong-password-for-terraform-user`
+5. Notes: "MikroTik REST API credentials for Terraform/Terragrunt.
+   User has API permissions to manage network configuration
+   via infrastructure code."
 6. Save
 
-**Note**: Separate from admin credentials (stored in "MikroTik Router" item). The `terraform` user is created on the MikroTik during initial setup with `full` group permissions for API access.
+**Note**: Separate from admin credentials (stored in
+"MikroTik Router" item). The `terraform` user is created on
+the MikroTik during initial setup with `full` group
+permissions for API access.
 
 #### Item 3: Backblaze B2
 
@@ -134,8 +139,8 @@ Fields:
 
 1. Click "+" → "Login"
 2. Title: "OpenVPN"
-3. Username: <your-openvpn-username>
-4. Password: <your-b2-password>
+3. Username: `your-openvpn-username`
+4. Password: `your-b2-password`
 5. Save
 
 #### Item 5: Soulseek
@@ -154,8 +159,8 @@ Fields:
 
 1. Click "+" → "Login"
 2. Title: "Soulseek"
-3. Username: <your-soulseek-username>
-4. Password: <your-soulseek-password>
+3. Username: `your-soulseek-username`
+4. Password: `your-soulseek-password`
 5. Save
 
 ### Step 3: Test 1Password CLI Access
@@ -221,7 +226,9 @@ cat > .env << 'EOF'
 EOF
 ```
 
-**Important**: DO NOT delete `.env` yet. Keep it as a fallback for 30 days, then delete once you're confident 1Password integration is working.
+**Important**: DO NOT delete `.env` yet. Keep it as a fallback
+for 30 days, then delete once you're confident 1Password
+integration is working.
 
 ## 1Password Item Reference Paths
 

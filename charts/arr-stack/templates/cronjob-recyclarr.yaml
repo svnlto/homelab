@@ -1,0 +1,61 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: recyclarr
+  annotations:
+    {{- include "arr-stack.annotations" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.recyclarr.schedule | quote }}
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    metadata:
+      annotations:
+        {{- include "arr-stack.annotations" . | nindent 8 }}
+    spec:
+      activeDeadlineSeconds: 600
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: recyclarr
+          annotations:
+            {{- include "arr-stack.annotations" . | nindent 12 }}
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: recyclarr
+              image: {{ .Values.recyclarr.image }}
+              command:
+                - recyclarr
+                - sync
+              env:
+                - name: TZ
+                  value: {{ .Values.timezone }}
+                - name: RADARR_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.externalSecret.targetSecretName }}
+                      key: RADARR_API_KEY
+                - name: SONARR_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.externalSecret.targetSecretName }}
+                      key: SONARR_API_KEY
+              resources:
+                {{- toYaml .Values.recyclarr.resources | nindent 16 }}
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                - name: recyclarr-yml
+                  mountPath: /config/recyclarr.yml
+                  subPath: recyclarr.yml
+                  readOnly: true
+          volumes:
+            - name: config
+              persistentVolumeClaim:
+                claimName: recyclarr-config
+            - name: recyclarr-yml
+              configMap:
+                name: recyclarr-config

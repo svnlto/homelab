@@ -7,10 +7,12 @@
 
 ## Executive Summary
 
-As of TrueNAS SCALE 25.04, the REST API is **deprecated** and replaced by the WebSocket-based `midclt` tool. The **de facto standard** for Ansible automation is:
+As of TrueNAS SCALE 25.04, the REST API is **deprecated**
+and replaced by the WebSocket-based `midclt` tool.
+The **de facto standard** for Ansible automation is:
 
 | Approach | Use Case | Maturity |
-|----------|----------|----------|
+| -------- | -------- | -------- |
 | **arensb.truenas** collection | Datasets, shares, services, users | ⭐⭐⭐ Good |
 | **midclt via shell tasks** | Pool creation, advanced config | ⭐⭐ Manual but reliable |
 | **TrueNAS built-in tasks** | Snapshots, replication, scrubs | ⭐⭐⭐ Native |
@@ -24,7 +26,7 @@ Based on our previous conversations:
 ### Current Inventory
 
 | Component | Count | Location/Purpose |
-|-----------|-------|------------------|
+| --------- | ----- | ---------------- |
 | **Dell R730xd** ("din") | 12× LFF front + 2× SFF rear + 4× internal | TrueNAS primary (VM on Proxmox) |
 | **Dell R630** ("grogu") | Primary compute | Proxmox + Jellyfin (Arc A310) |
 | **Dell MD1220** | 24× 2.5" JBOD | Attached to R730xd → fast pool |
@@ -39,7 +41,7 @@ Based on our previous conversations:
 
 ### Pool Layout
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                      R730xd "din" — PRIMARY TRUENAS                             │
 └─────────────────────────────────────────────────────────────────────────────────┘
@@ -150,7 +152,7 @@ Based on our previous conversations:
 ### Recommended Starting Configuration
 
 | Pool | Drives | Layout | Raw | Usable | Status |
-|------|--------|--------|-----|--------|--------|
+| ---- | ------ | ------ | --- | ------ | ------ |
 | **fast** | 21× 900GB 10K SAS | 3× RAIDZ2 (7-wide) + SLOG | ~17.1TB | ~14TB | Deployed |
 | **bulk** | 6× 7.15TB | 1× RAIDZ2 (6-wide) | 42.9TB | 25.3TB | Ready now |
 | **scratch** | 6× 2.73TB | 1× RAIDZ1 (6-wide) | 16.4TB | 12.9TB | Ready now |
@@ -160,16 +162,19 @@ Based on our previous conversations:
 ### Future Expansion Notes
 
 **Bulk pool (8TB drives):**
+
 - 6 drives → 32TB (single 6-wide RAIDZ2)
 - 12 drives → 64TB (two 6-wide RAIDZ2 vdevs, fills R730xd front)
 - 16 drives → 85TB (use internal 4× LFF for third vdev)
 
 **Fast pool (1.2TB SAS 2.5" if acquired):**
+
 - Keep as hot spares for MD1220
 - Or gradually replace 900GB drives as they fail/age
 - Do NOT mix 900GB and 1.2TB in same vdev (wastes capacity)
 
 **Backup pool (3TB drives):**
+
 - If 18× 3TB lot won: rebuild as 12-wide RAIDZ2 (30TB), keep spares
 - Constellation drives become cold spares or resale
 
@@ -177,7 +182,7 @@ Based on our previous conversations:
 
 ## Part 1: Dataset Hierarchy Design
 
-```
+```text
 bulk/                               # 6× 7.15TB RAIDZ2 (25.3TB usable) - media & backups
 ├── media/
 │   ├── music/                      # → Navidrome
@@ -309,7 +314,7 @@ snapshot_policies:
 ### 3-2-1 Backup Strategy
 
 | Tier | What | Where | Tool |
-|------|------|-------|------|
+| ---- | ---- | ----- | ---- |
 | **1** | Local snapshots | din (primary TrueNAS) | Built-in periodic tasks |
 | **2** | Local replication | grogu (backup TrueNAS via MD1200) | ZFS send/recv over 10G |
 | **3** | Cloud backup | Backblaze B2 | Restic (~€5-10/month) |
@@ -335,12 +340,13 @@ replication_tasks:
     recursive: true
 ```
 
-The 10G DAC between din and grogu makes ZFS replication fast — this is your "warm" backup that's instantly accessible if din dies.
+The 10G DAC between din and grogu makes ZFS replication fast — this is your "warm" backup
+that's instantly accessible if din dies.
 
 ### What Actually Needs Cloud Backup
 
 | Data | Size | Priority | Method |
-|------|------|----------|--------|
+| ---- | ---- | -------- | ------ |
 | `fast/kubernetes/nfs-static` | ~1-10 GB | **Critical** | Restic to B2 |
 | *arr databases | ~500 MB | **Critical** | Include in above |
 | Navidrome DB | ~100 MB | **Critical** | Include in above |
@@ -878,7 +884,7 @@ midclt call pool.create '{
 ## Part 6: NFS Share Matrix
 
 | Dataset | K8s Access Mode | Consumer | mapall |
-|---------|-----------------|----------|--------|
+| ------- | --------------- | -------- | ------ |
 | `bulk/media` | ReadOnlyMany | Jellyfin, Navidrome | media:media |
 | `fast/kubernetes/nfs-dynamic` | ReadWriteOnce | democratic-csi | root:wheel |
 | `fast/kubernetes/nfs-static` | ReadWriteMany | Shared configs | root:wheel |
@@ -1089,7 +1095,7 @@ midclt call core.get_jobs '[["method", "=", "replication.run"]]' | jq
 
 ## Part 8: Directory Structure
 
-```
+```text
 truenas-ansible/
 ├── ansible.cfg
 ├── inventory/
@@ -1167,7 +1173,7 @@ midclt call service.update 'nfs' '{"enable": true}'
 ### arensb.truenas Collection Coverage
 
 | Feature | Module | Status |
-|---------|--------|--------|
+| ------- | ------ | ------ |
 | Datasets | `filesystem` | ✅ Full support |
 | NFS shares | `sharing_nfs` | ✅ Full support |
 | SMB shares | `sharing_smb` | ✅ Full support |
@@ -1183,6 +1189,7 @@ midclt call service.update 'nfs' '{"enable": true}'
 ### Don't Install Packages on TrueNAS Base OS
 
 Never install sanoid or other packages directly — use:
+
 - Built-in snapshot/replication tasks
 - Docker apps
 - External systems that pull via SSH/ZFS send
@@ -1238,7 +1245,7 @@ ansible-playbook playbooks/setup-replication.yml
 ## Changelog
 
 | Date | Change |
-|------|--------|
+| ---- | ------ |
 | 2026-01-30 | Complete pool design with current inventory: 5×8TB, 8×3TB, 24×900GB |
 | 2026-01-30 | Added bulk pool expansion options (5-wide now vs wait for 6th drive) |
 | 2026-01-30 | Corrected boot drive: 256GB SATA on PCIe (not SSD mirror) |

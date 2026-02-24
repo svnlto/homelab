@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: downloaders
+  annotations:
+    {{- include "arr-stack.annotations" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.downloaders.qbittorrent.port }}
+      targetPort: {{ .Values.downloaders.qbittorrent.port }}
+      protocol: TCP
+      name: qbittorrent
+    - port: {{ .Values.downloaders.sabnzbd.port }}
+      targetPort: {{ .Values.downloaders.sabnzbd.port }}
+      protocol: TCP
+      name: sabnzbd
+    - port: {{ .Values.downloaders.prowlarr.port }}
+      targetPort: {{ .Values.downloaders.prowlarr.port }}
+      protocol: TCP
+      name: prowlarr
+    - port: {{ .Values.downloaders.flaresolverr.port }}
+      targetPort: {{ .Values.downloaders.flaresolverr.port }}
+      protocol: TCP
+      name: flaresolverr
+    - port: {{ .Values.downloaders.slskd.port }}
+      targetPort: {{ .Values.downloaders.slskd.port }}
+      protocol: TCP
+      name: slskd
+  selector:
+    {{- include "arr-stack.selectorLabels" (dict "name" "downloaders") | nindent 4 }}

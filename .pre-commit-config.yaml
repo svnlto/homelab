@@ -9,6 +9,7 @@ repos:
         exclude: ^\.git/
       - id: check-yaml
         args: [--unsafe]
+        exclude: ^charts/.*/templates/
       - id: check-json
       - id: check-added-large-files
         args: ["--maxkb=10240"]
@@ -22,7 +23,7 @@ repos:
     hooks:
       - id: yamlfmt
         args: ["-conf", ".yamlfmt.yaml"]
-        exclude: ^\.git/
+        exclude: ^(\.git/|charts/.*/templates/)
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1
@@ -36,7 +37,7 @@ repos:
     hooks:
       - id: markdownlint
         args: ["--fix", "--config", ".markdownlint.yaml"]
-        exclude: ^(\.git/|docs/)
+        exclude: ^(\.git/|charts/)
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.104.0
@@ -67,6 +68,32 @@ repos:
 
   - repo: local
     hooks:
+      - id: helm-lint
+        name: Helm lint (charts)
+        entry: bash -c 'rc=0; for chart in charts/*/; do helm lint "$chart" || rc=1; done; exit $rc' --
+        language: system
+        files: ^charts/
+        pass_filenames: false
+      - id: helm-template
+        name: Helm template (charts)
+        entry: bash -c 'rc=0; for chart in charts/*/; do helm template test "$chart" > /dev/null || rc=1; done; exit $rc'
+          --
+        language: system
+        files: ^charts/
+        pass_filenames: false
+      - id: helm-docs
+        name: Helm docs (charts)
+        entry: bash -c 'eval "$(direnv export bash 2>/dev/null)"; helm-docs --chart-search-root charts' --
+        language: system
+        files: ^charts/
+        pass_filenames: false
+      - id: kubeconform
+        name: Kubeconform (charts)
+        entry: bash -c 'eval "$(direnv export bash 2>/dev/null)"; rc=0; for chart in charts/*/; do helm template test "$chart"
+          2>/dev/null | kubeconform -strict -ignore-missing-schemas -kubernetes-version 1.35.0 || rc=1; done; exit $rc' --
+        language: system
+        files: ^charts/
+        pass_filenames: false
       - id: nixfmt
         name: Format Nix files
         entry: nixfmt

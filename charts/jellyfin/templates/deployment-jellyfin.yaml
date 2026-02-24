@@ -1,0 +1,104 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  labels:
+    {{- include "jellyfin.labels" (dict "name" "jellyfin") | nindent 4 }}
+  annotations:
+    {{- range $key, $val := .Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "jellyfin.selectorLabels" (dict "name" "jellyfin") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "jellyfin.selectorLabels" (dict "name" "jellyfin") | nindent 8 }}
+      annotations:
+        {{- range $key, $val := .Values.global.annotations }}
+        {{ $key }}: {{ $val | quote }}
+        {{- end }}
+    spec:
+      {{- with .Values.jellyfin.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: jellyfin
+          image: {{ .Values.jellyfin.image }}
+          securityContext:
+            privileged: true
+          ports:
+            - containerPort: {{ .Values.jellyfin.port }}
+              name: http
+          env:
+            - name: TZ
+              value: {{ .Values.timezone }}
+            {{- if .Values.ingress.enabled }}
+            - name: JELLYFIN_PublishedServerUrl
+              value: https://jellyfin.{{ .Values.ingress.domain }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.jellyfin.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: cache
+              mountPath: /cache
+            - name: media-movies
+              mountPath: /data/media/movies
+              readOnly: true
+            - name: media-tv
+              mountPath: /data/media/tv
+              readOnly: true
+            - name: media-music
+              mountPath: /data/media/music
+              readOnly: true
+            - name: media-books
+              mountPath: /data/media/books
+              readOnly: true
+            - name: dri
+              mountPath: /dev/dri
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: jellyfin-config
+        - name: cache
+          persistentVolumeClaim:
+            claimName: jellyfin-cache
+        - name: media-movies
+          persistentVolumeClaim:
+            claimName: nfs-media-movies
+        - name: media-tv
+          persistentVolumeClaim:
+            claimName: nfs-media-tv
+        - name: media-music
+          persistentVolumeClaim:
+            claimName: nfs-media-music
+        - name: media-books
+          persistentVolumeClaim:
+            claimName: nfs-media-books
+        - name: dri
+          hostPath:
+            path: /dev/dri
+            type: Directory

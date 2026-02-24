@@ -1,0 +1,41 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: glance-config-default
+  annotations:
+    {{- include "arr-stack.annotations" . | nindent 4 }}
+data:
+  glance.yml: |
+    pages:
+      - name: Arr Stack
+        columns:
+          - size: full
+            widgets:
+              - type: monitor
+                cache: 1m
+                title: Services
+                sites:
+                  - title: Radarr
+                    url: http://radarr.{{ .Values.ingress.domain }}
+                    icon: si:radarr
+                  - title: Sonarr
+                    url: http://sonarr.{{ .Values.ingress.domain }}
+                    icon: si:sonarr
+                  - title: Lidarr
+                    url: http://lidarr.{{ .Values.ingress.domain }}
+                    icon: si:lidarr
+                  - title: Bazarr
+                    url: http://bazarr.{{ .Values.ingress.domain }}
+                    icon: si:bazarr
+                  - title: Prowlarr
+                    url: http://prowlarr.{{ .Values.ingress.domain }}
+                    icon: si:prowlarr
+                  - title: qBittorrent
+                    url: http://qbittorrent.{{ .Values.ingress.domain }}
+                    icon: si:qbittorrent
+                  - title: SABnzbd
+                    url: http://sabnzbd.{{ .Values.ingress.domain }}
+                    icon: si:sabnzbd
+                  - title: Slskd
+                    url: http://slskd.{{ .Values.ingress.domain }}

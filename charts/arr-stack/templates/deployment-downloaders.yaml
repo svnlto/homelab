@@ -1,0 +1,208 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: downloaders
+  labels:
+    {{- include "arr-stack.labels" (dict "name" "downloaders") | nindent 4 }}
+  annotations:
+    {{- include "arr-stack.annotations" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "arr-stack.selectorLabels" (dict "name" "downloaders") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "arr-stack.selectorLabels" (dict "name" "downloaders") | nindent 8 }}
+      annotations:
+        {{- include "arr-stack.annotations" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: init-scratch
+          image: {{ .Values.downloaders.initScratch.image }}
+          resources:
+            {{- toYaml .Values.downloaders.initScratch.resources | nindent 12 }}
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /data-scratch/incomplete
+              mkdir -p /data-scratch/complete/torrents
+              mkdir -p /data-scratch/complete/usenet
+              mkdir -p /data-scratch/complete/soulseek
+              chown -R 1000:1000 /data-scratch/incomplete /data-scratch/complete
+          volumeMounts:
+            - name: scratch
+              mountPath: /data-scratch
+
+      containers:
+        - name: gluetun
+          image: {{ .Values.downloaders.gluetun.image }}
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          ports:
+            - containerPort: {{ .Values.downloaders.qbittorrent.port }}
+              name: qbittorrent
+            - containerPort: {{ .Values.downloaders.sabnzbd.port }}
+              name: sabnzbd
+            - containerPort: {{ .Values.downloaders.prowlarr.port }}
+              name: prowlarr
+            - containerPort: {{ .Values.downloaders.flaresolverr.port }}
+              name: flaresolverr
+            - containerPort: {{ .Values.downloaders.slskd.port }}
+              name: slskd
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: {{ .Values.downloaders.gluetun.vpnProvider }}
+            - name: VPN_TYPE
+              value: wireguard
+            - name: WIREGUARD_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: WIREGUARD_PRIVATE_KEY
+            - name: WIREGUARD_ADDRESSES
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: WIREGUARD_ADDRESSES
+            - name: SERVER_COUNTRIES
+              value: {{ .Values.downloaders.gluetun.serverCountries }}
+            - name: VPN_PORT_FORWARDING
+              value: "on"
+            - name: VPN_PORT_FORWARDING_PROVIDER
+              value: {{ .Values.downloaders.gluetun.vpnProvider }}
+            - name: UPDATER_PERIOD
+              value: 24h
+            - name: HEALTH_VPN_DURATION_INITIAL
+              value: 30s
+            - name: HEALTH_VPN_DURATION_ADDITION
+              value: 30s
+            - name: FIREWALL_INPUT_PORTS
+              value: {{ .Values.downloaders.gluetun.firewallInputPorts | quote }}
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              value: {{ .Values.downloaders.gluetun.firewallOutboundSubnets | quote }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - wget --no-verbose --tries=1 -O /dev/null -T 3 https://www.google.com
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.downloaders.gluetun.resources | nindent 12 }}
+          volumeMounts:
+            - name: gluetun-config
+              mountPath: /gluetun
+            - name: dev-tun
+              mountPath: /dev/net/tun
+
+        - name: qbittorrent
+          image: {{ .Values.downloaders.qbittorrent.image }}
+          resources:
+            {{- toYaml .Values.downloaders.qbittorrent.resources | nindent 12 }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: {{ .Values.timezone }}
+            - name: WEBUI_PORT
+              value: {{ .Values.downloaders.qbittorrent.port | quote }}
+          volumeMounts:
+            - name: qbittorrent-config
+              mountPath: /config
+            {{- include "arr-stack.mediaVolumeMounts" . | nindent 12 }}
+
+        - name: sabnzbd
+          image: {{ .Values.downloaders.sabnzbd.image }}
+          resources:
+            {{- toYaml .Values.downloaders.sabnzbd.resources | nindent 12 }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: {{ .Values.timezone }}
+          volumeMounts:
+            - name: sabnzbd-config
+              mountPath: /config
+            {{- include "arr-stack.mediaVolumeMounts" . | nindent 12 }}
+
+        - name: slskd
+          image: {{ .Values.downloaders.slskd.image }}
+          resources:
+            {{- toYaml .Values.downloaders.slskd.resources | nindent 12 }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: {{ .Values.timezone }}
+          volumeMounts:
+            - name: slskd-config
+              mountPath: /app
+            - name: scratch
+              mountPath: /data-scratch
+            - name: media-music
+              mountPath: /data/media/music
+              readOnly: true
+
+        - name: prowlarr
+          image: {{ .Values.downloaders.prowlarr.image }}
+          resources:
+            {{- toYaml .Values.downloaders.prowlarr.resources | nindent 12 }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: {{ .Values.timezone }}
+          volumeMounts:
+            - name: prowlarr-config
+              mountPath: /config
+
+        - name: flaresolverr
+          image: {{ .Values.downloaders.flaresolverr.image }}
+          resources:
+            {{- toYaml .Values.downloaders.flaresolverr.resources | nindent 12 }}
+          env:
+            - name: LOG_LEVEL
+              value: info
+            - name: TZ
+              value: {{ .Values.timezone }}
+
+      volumes:
+        - name: dev-tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+        - name: gluetun-config
+          persistentVolumeClaim:
+            claimName: gluetun-config
+        - name: qbittorrent-config
+          persistentVolumeClaim:
+            claimName: qbittorrent-config
+        - name: sabnzbd-config
+          persistentVolumeClaim:
+            claimName: sabnzbd-config
+        - name: slskd-config
+          persistentVolumeClaim:
+            claimName: slskd-config
+        - name: prowlarr-config
+          persistentVolumeClaim:
+            claimName: prowlarr-config
+        {{- include "arr-stack.mediaVolumes" . | nindent 8 }}
