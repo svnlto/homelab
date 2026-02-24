@@ -18,6 +18,9 @@ nfs:
 iscsi:
   driver: org.democratic-csi.iscsi
   storageClassName: truenas-iscsi-rwo
+  portal: ""
+  iqnPrefix: iqn.2005-10.org.freenas.ctl:csi-
+  iqnSuffix: -shared
   volumes: []
 
 # -- CSI storage for app config volumes
