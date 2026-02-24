@@ -75,6 +75,32 @@ data "talos_machine_configuration" "control_plane" {
         discovery = {
           enabled = true
         }
+        scheduler = {
+          config = {
+            apiVersion = "kubescheduler.config.k8s.io/v1"
+            kind       = "KubeSchedulerConfiguration"
+            profiles = [
+              {
+                schedulerName = "default-scheduler"
+                pluginConfig = [
+                  {
+                    name = "PodTopologySpread"
+                    args = {
+                      defaultingType = "List"
+                      defaultConstraints = [
+                        {
+                          maxSkew           = 1
+                          topologyKey       = "kubernetes.io/hostname"
+                          whenUnsatisfiable = "ScheduleAnyway"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
         inlineManifests = var.deploy_bootstrap ? [
           {
             name     = "cilium"
