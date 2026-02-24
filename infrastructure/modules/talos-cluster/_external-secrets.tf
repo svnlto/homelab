@@ -33,7 +33,7 @@ resource "helm_release" "external_secrets" {
   name             = "external-secrets"
   repository       = "https://charts.external-secrets.io"
   chart            = "external-secrets"
-  version          = "0.14.3"
+  version          = "2.0.1"
   namespace        = kubernetes_namespace_v1.external_secrets[0].metadata[0].name
   create_namespace = false
   wait             = true
@@ -68,22 +68,19 @@ resource "kubectl_manifest" "cluster_secret_store" {
   validate_schema = false
 
   yaml_body = <<-YAML
-    apiVersion: external-secrets.io/v1beta1
+    apiVersion: external-secrets.io/v1
     kind: ClusterSecretStore
     metadata:
       name: onepassword
     spec:
       provider:
-        onepassword:
-          connectHost: ""
-          vaults:
-            ${var.op_vault_name}: 1
+        onepasswordSDK:
+          vault: ${var.op_vault_name}
           auth:
-            secretRef:
-              connectTokenSecretRef:
-                name: onepassword-sa-token
-                namespace: external-secrets
-                key: token
+            serviceAccountSecretRef:
+              name: onepassword-sa-token
+              namespace: external-secrets
+              key: token
   YAML
 
   depends_on = [helm_release.external_secrets]
