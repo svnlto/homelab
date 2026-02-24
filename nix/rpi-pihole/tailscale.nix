@@ -6,12 +6,10 @@ _: {
 
     # Prevent Tailscale from overriding DNS settings
     # --advertise-routes: subnet router for VLAN 20 (LAN)
-    # --relay-server-port: act as a peer relay so K8s pods route through LAN
-    extraUpFlags = [
-      "--accept-dns=false"
-      "--advertise-routes=192.168.0.0/24"
-      "--relay-server-port=41642"
-    ];
+    extraUpFlags = [ "--accept-dns=false" "--advertise-routes=192.168.0.0/24" ];
+
+    # Peer relay uses `tailscale set`, not `tailscale up`
+    extraSetFlags = [ "--relay-server-port=41642" ];
   };
 
   # Firewall configuration
