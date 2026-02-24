@@ -4,6 +4,11 @@ kind: Application
 metadata:
   name: dumper
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: dumper=ghcr.io/svnlto/dumper
+    argocd-image-updater.argoproj.io/dumper.update-strategy: semver
+    argocd-image-updater.argoproj.io/dumper.helm.image-name: dumper.image.repository
+    argocd-image-updater.argoproj.io/dumper.helm.image-tag: dumper.image.tag
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

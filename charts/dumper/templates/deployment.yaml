@@ -62,7 +62,7 @@ spec:
               mountPath: /dev/net/tun
       containers:
         - name: dumper
-          image: {{ .Values.dumper.image }}
+          image: {{ .Values.dumper.image.repository }}:{{ .Values.dumper.image.tag }}
           resources:
             {{- toYaml .Values.dumper.resources | nindent 12 }}
           env:

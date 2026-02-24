@@ -9,6 +9,12 @@ on:
       - "nix/dumper/**"
       - "nix/flake.nix"
       - "nix/flake.lock"
+  workflow_call:
+    inputs:
+      version:
+        description: "Semver tag to apply (e.g. dumper-v1.2.3)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -34,8 +40,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           docker load < result
+          echo "${GITHUB_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+          docker push ghcr.io/svnlto/dumper:latest
+
           SHA_TAG="ghcr.io/svnlto/dumper:${{ github.sha }}"
           docker tag ghcr.io/svnlto/dumper:latest "${SHA_TAG}"
-          echo "${GITHUB_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker push ghcr.io/svnlto/dumper:latest
           docker push "${SHA_TAG}"
+
+          if [ -n "${{ inputs.version }}" ]; then
+            # inputs.version is e.g. "dumper-v1.2.3", strip component prefix for semver
+            SEMVER="${{ inputs.version }}"
+            SEMVER="${SEMVER#dumper-}"
+            docker tag ghcr.io/svnlto/dumper:latest "ghcr.io/svnlto/dumper:${SEMVER}"
+            docker push "ghcr.io/svnlto/dumper:${SEMVER}"
+          fi
