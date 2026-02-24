@@ -33,6 +33,7 @@
             cacert
             curl
             jq
+            gawk
           ];
           config = {
             Cmd = [ "/bin/bash" "/app/rsync-photos.sh" ];
