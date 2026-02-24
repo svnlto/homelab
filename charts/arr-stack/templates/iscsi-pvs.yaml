@@ -23,4 +23,12 @@ spec:
     driver: {{ $.Values.iscsi.driver }}
     volumeHandle: {{ .volumeHandle }}
     fsType: ext4
+    volumeAttributes:
+      node_attach_driver: iscsi
+      provisioner_driver: freenas-api-iscsi
+      portal: {{ $.Values.iscsi.portal }}
+      iqn: {{ $.Values.iscsi.iqnPrefix }}{{ .volumeHandle }}{{ $.Values.iscsi.iqnSuffix }}
+      lun: "0"
+      portals: ""
+      interface: ""
 {{- end }}

@@ -36,6 +36,7 @@ nfs:
       capacity: 1Ti
 
 iscsi:
+  portal: 10.10.10.13:3260
   volumes:
     - name: slskd
       pvName: arr-slskd-config
