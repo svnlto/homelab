@@ -244,6 +244,33 @@ variable "cloudns_auth_password" {
   default     = ""
 }
 
+# External Secrets Operator
+variable "external_secrets_enabled" {
+  description = "Deploy External Secrets Operator with 1Password backend"
+  type        = bool
+  default     = false
+}
+
+variable "op_service_account_token" {
+  description = "1Password Service Account token for External Secrets Operator"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "op_vault_name" {
+  description = "1Password vault name for External Secrets"
+  type        = string
+  default     = "Homelab"
+}
+
+# Metrics Server
+variable "metrics_server_enabled" {
+  description = "Deploy metrics-server for kubectl top and HPA"
+  type        = bool
+  default     = false
+}
+
 # Registry Mirrors
 variable "registry_mirrors" {
   description = "Registry mirror endpoints for pull-through cache"

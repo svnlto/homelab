@@ -44,4 +44,12 @@ module "k8s_shared" {
   traefik_acme_server   = var.traefik_acme_server
   cloudns_auth_id       = var.cloudns_auth_id
   cloudns_auth_password = var.cloudns_auth_password
+
+  # External Secrets Operator (1Password)
+  external_secrets_enabled = var.external_secrets_enabled
+  op_service_account_token = var.op_service_account_token
+  op_vault_name            = var.op_vault_name
+
+  # Metrics Server
+  metrics_server_enabled = var.metrics_server_enabled
 }

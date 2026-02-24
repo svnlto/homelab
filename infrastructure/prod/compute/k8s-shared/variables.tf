@@ -177,3 +177,24 @@ variable "cloudns_auth_password" {
   sensitive = true
   default   = ""
 }
+
+variable "external_secrets_enabled" {
+  type    = bool
+  default = false
+}
+
+variable "op_service_account_token" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
+
+variable "op_vault_name" {
+  type    = string
+  default = "Homelab"
+}
+
+variable "metrics_server_enabled" {
+  type    = bool
+  default = false
+}
