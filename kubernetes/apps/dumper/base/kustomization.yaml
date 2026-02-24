@@ -4,6 +4,9 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
+  - external-secret-tailscale.yaml
+  - external-secret-config.yaml
+  - external-secret-ssh-key.yaml
   - deployment.yaml
   - pv-nfs.yaml
   - pv-cache.yaml

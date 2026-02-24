@@ -53,6 +53,9 @@ resources:
   - configmap-buildarr.yaml
   - configmap-glance.yaml
 
+  # External Secrets
+  - external-secret.yaml
+
   # Downloaders (Gluetun + qBit + SABnzbd + Slskd + Prowlarr + FlareSolverr)
   - downloaders-deployment.yaml
   - downloaders-service.yaml

@@ -144,6 +144,14 @@ inputs = {
     "quay.io"         = { endpoint = "http://${local.ips.truenas_primary_storage}:5004" }
   }
 
+  # External Secrets Operator (1Password)
+  external_secrets_enabled = true
+  op_service_account_token = get_env("TF_VAR_op_service_account_token", "")
+  op_vault_name            = "Homelab"
+
+  # Metrics Server
+  metrics_server_enabled = true
+
   # Traefik ACME (production Let's Encrypt)
   traefik_acme_enabled  = true
   traefik_acme_email    = get_env("TF_VAR_acme_email", "")

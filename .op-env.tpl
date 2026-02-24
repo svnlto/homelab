@@ -16,5 +16,6 @@ TF_VAR_tailscale_tailnet=op://Homelab/Tailscale API Key/tailnet
 TF_VAR_cloudns_auth_id=op://Homelab/ClouDNS API/auth_id
 TF_VAR_cloudns_auth_password=op://Homelab/ClouDNS API/password
 TF_VAR_acme_email=op://Homelab/ACME Email/email
+TF_VAR_op_service_account_token=op://Homelab/ESO Service Account/credential
 ARGOCD_API_TOKEN=op://Homelab/ArgoCD API Token/credential
 SIGNOZ_API_KEY=op://Homelab/SigNoz API Key/credential
