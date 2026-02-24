@@ -14,6 +14,12 @@ nfs:
     - hard
   volumes: []
 
+# -- iSCSI storage for app config volumes (SQLite-safe)
+iscsi:
+  driver: org.democratic-csi.iscsi
+  storageClassName: truenas-iscsi-rwo
+  volumes: []
+
 # -- CSI storage for app config volumes
 csi:
   driver: org.democratic-csi.nfs-fast
