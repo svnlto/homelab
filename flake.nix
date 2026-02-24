@@ -40,9 +40,11 @@
             terraform
             kubernetes-helm
             kubectl
+            kubectx
             talosctl
             k9s
             vcluster
+            popeye
             # MCP server runtimes
             nodejs
             deno
