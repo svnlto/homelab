@@ -80,24 +80,29 @@ spec:
               value: {{ .Values.downloaders.gluetun.vpnProvider }}
             - name: UPDATER_PERIOD
               value: 24h
-            - name: HEALTH_VPN_DURATION_INITIAL
-              value: 30s
-            - name: HEALTH_VPN_DURATION_ADDITION
-              value: 30s
             - name: FIREWALL_INPUT_PORTS
               value: {{ .Values.downloaders.gluetun.firewallInputPorts | quote }}
             - name: FIREWALL_OUTBOUND_SUBNETS
               value: {{ .Values.downloaders.gluetun.firewallOutboundSubnets | quote }}
+          startupProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - wget --no-verbose --tries=1 -O /dev/null -T 3 https://www.google.com
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 10
           livenessProbe:
             exec:
               command:
                 - sh
                 - -c
                 - wget --no-verbose --tries=1 -O /dev/null -T 3 https://www.google.com
-            initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
-            failureThreshold: 3
+            failureThreshold: 5
           resources:
             {{- toYaml .Values.downloaders.gluetun.resources | nindent 12 }}
           volumeMounts:

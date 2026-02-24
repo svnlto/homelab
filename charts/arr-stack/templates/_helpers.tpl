@@ -102,20 +102,27 @@ spec:
               value: "1000"
             - name: TZ
               value: {{ .Values.timezone }}
+          startupProbe:
+            httpGet:
+              path: {{ .app.probePath }}
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 12
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
               path: {{ .app.probePath }}
               port: http
-            initialDelaySeconds: {{ .app.livenessInitialDelay | default 30 }}
             periodSeconds: 30
-            timeoutSeconds: 5
+            timeoutSeconds: 10
+            failureThreshold: 5
           readinessProbe:
             httpGet:
               path: {{ .app.probePath }}
               port: http
-            initialDelaySeconds: 30
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 10
           resources:
             {{- toYaml .app.resources | nindent 12 }}
           volumeMounts:

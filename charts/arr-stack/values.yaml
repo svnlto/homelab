@@ -160,7 +160,6 @@ bazarr:
   image: lscr.io/linuxserver/bazarr:v1.5.5-ls336
   port: 6767
   probePath: /
-  livenessInitialDelay: 60
   resources:
     requests:
       cpu: 50m

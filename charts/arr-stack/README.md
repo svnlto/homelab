@@ -9,7 +9,6 @@ Media automation stack (Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, SABnzbd, an
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | bazarr.image | string | `"lscr.io/linuxserver/bazarr:v1.5.5-ls336"` |  |
-| bazarr.livenessInitialDelay | int | `60` |  |
 | bazarr.port | int | `6767` |  |
 | bazarr.probePath | string | `"/"` |  |
 | bazarr.resources.limits.cpu | string | `"500m"` |  |
