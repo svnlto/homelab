@@ -52,4 +52,7 @@ module "k8s_shared" {
 
   # Metrics Server
   metrics_server_enabled = var.metrics_server_enabled
+
+  # Pull-through registry cache
+  registry_mirrors = var.registry_mirrors
 }

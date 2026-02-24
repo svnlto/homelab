@@ -33,7 +33,7 @@ provider "proxmox" {
 }
 
 provider "onepassword" {
-  account = "$${var.onepassword_account}"
+  account = var.onepassword_account
 }
 EOF
 }
