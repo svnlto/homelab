@@ -33,7 +33,7 @@ resource "helm_release" "external_secrets" {
   name             = "external-secrets"
   repository       = "https://charts.external-secrets.io"
   chart            = "external-secrets"
-  version          = "0.14.3"
+  version          = "2.0.1"
   namespace        = kubernetes_namespace_v1.external_secrets[0].metadata[0].name
   create_namespace = false
   wait             = true
