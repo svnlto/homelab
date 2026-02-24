@@ -35,6 +35,19 @@ nfs:
       path: /mnt/scratch/downloads
       capacity: 1Ti
 
+iscsi:
+  volumes:
+    - name: slskd
+      pvName: arr-slskd-config
+      pvcName: slskd-config
+      volumeHandle: pvc-6f9ce57c-20bb-4012-9e44-78ef0e50cfc8
+      capacity: 2Gi
+    - name: buildarr
+      pvName: arr-buildarr-config
+      pvcName: buildarr-config
+      volumeHandle: pvc-d394dbea-d9f8-45cf-890f-4eeee56ccfc3
+      capacity: 1Gi
+
 csi:
   server: 10.10.10.13
   volumes:
@@ -52,11 +65,6 @@ csi:
       pvName: arr-sabnzbd-config
       pvcName: sabnzbd-config
       volumeHandle: pvc-8505ea35-2949-4af7-ba14-514c51a12355
-      capacity: 2Gi
-    - name: slskd
-      pvName: arr-slskd-config
-      pvcName: slskd-config
-      volumeHandle: pvc-b4017abd-6ae3-4145-a281-085580cbd996
       capacity: 2Gi
     - name: prowlarr
       pvName: arr-prowlarr-config
@@ -87,11 +95,6 @@ csi:
       pvName: arr-recyclarr-config
       pvcName: recyclarr-config
       volumeHandle: pvc-e644590d-829f-4e01-97a4-8a161d9daac2
-      capacity: 1Gi
-    - name: buildarr
-      pvName: arr-buildarr-config
-      pvcName: buildarr-config
-      volumeHandle: pvc-2d59b96a-9238-4803-8761-d613fc7b3bbe
       capacity: 1Gi
     - name: glance
       pvName: arr-glance-config

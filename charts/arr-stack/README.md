@@ -24,6 +24,7 @@ Media automation stack (Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, SABnzbd, an
 | glance | object | `{"image":"glanceapp/glance:v0.8.4","port":8080,"resources":{"limits":{"cpu":"200m","memory":"256Mi"},"requests":{"cpu":"25m","memory":"64Mi"}}}` | Glance dashboard |
 | global.annotations | object | `{}` |  |
 | ingress | object | `{"annotations":{},"domain":"","enabled":false,"hosts":[]}` | Ingress configuration |
+| iscsi | object | `{"driver":"org.democratic-csi.iscsi","storageClassName":"truenas-iscsi-rwo","volumes":[]}` | iSCSI storage for app config volumes (SQLite-safe) |
 | lidarr.image | string | `"ghcr.io/hotio/lidarr:pr-plugins-3.0.0.4856"` |  |
 | lidarr.port | int | `8686` |  |
 | lidarr.probePath | string | `"/ping"` |  |

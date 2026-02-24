@@ -1,0 +1,26 @@
+{{- range .Values.iscsi.volumes }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .pvName }}
+  annotations:
+    pv.kubernetes.io/provisioned-by: {{ $.Values.iscsi.driver }}
+    {{- range $key, $val := $.Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  capacity:
+    storage: {{ .capacity }}
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ $.Values.iscsi.storageClassName }}
+  claimRef:
+    namespace: {{ $.Release.Namespace }}
+    name: {{ .pvcName }}
+  csi:
+    driver: {{ $.Values.iscsi.driver }}
+    volumeHandle: {{ .volumeHandle }}
+    fsType: ext4
+{{- end }}
