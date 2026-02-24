@@ -69,6 +69,7 @@ dumper:
   otelEndpoint: http://signoz-otel-collector.signoz.svc:4318
   syncInterval: "3600"
   retryInterval: "300"
+  rsyncParallel: "8"
   securityContext:
     runAsUser: 1003
     runAsGroup: 1000
@@ -77,5 +78,5 @@ dumper:
       cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 500m
+      cpu: 1000m
       memory: 512Mi

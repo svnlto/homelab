@@ -12,6 +12,7 @@
 # Environment variables for tuning:
 #   SYNC_INTERVAL=3600   (seconds between successful syncs)
 #   RETRY_INTERVAL=300   (seconds to wait after a failure)
+#   RSYNC_PARALLEL=8     (number of concurrent rsync streams)
 
 set -euo pipefail
 
@@ -21,8 +22,9 @@ FILE_LIST="${STATE_DIR}/rsync-filelist.txt"
 FILE_LIST_MAX_AGE=86400 # rebuild if older than 24h
 SYNC_INTERVAL="${SYNC_INTERVAL:-3600}"
 RETRY_INTERVAL="${RETRY_INTERVAL:-300}"
+RSYNC_PARALLEL="${RSYNC_PARALLEL:-8}"
 
-SSH_OPTS=(-i /secrets/ssh/id_ed25519 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=10)
+SSH_OPTS=(-i /secrets/ssh/id_ed25519 -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o Ciphers=aes128-gcm@openssh.com -o IPQoS=throughput)
 
 # Format bytes into a human-readable string (B, KB, MB, GB)
 _human_bytes() {
@@ -149,25 +151,36 @@ while true; do
     "files.count=${FILE_COUNT}" "remote.host=${REMOTE_HOST}"
 
   RSYNC_START=$SECONDS
-  RSYNC_LOG="${STATE_DIR}/rsync-transfer.log"
-  RSYNC_ERR="${STATE_DIR}/rsync-error.log"
+  CHUNK_DIR="${STATE_DIR}/chunks"
   PROGRESS_INTERVAL=60 # send progress OTel log every 60 seconds
 
-  # Background progress reporter: reads rsync's itemized output to track
-  # files checked (skipped + transferred), bytes transferred, and speed.
+  # Split file list into N chunks for parallel rsync streams
+  rm -rf "$CHUNK_DIR"
+  mkdir -p "$CHUNK_DIR"
+  split -n "l/${RSYNC_PARALLEL}" "${FILE_LIST}" "${CHUNK_DIR}/chunk-"
+
+  # Background progress reporter: aggregates across all per-stream log files.
   # --out-format '%i %l %n' produces: <itemize-flags> <file-size-bytes> <filename>
   _progress_reporter() {
     local last_checked=0
     while true; do
       sleep "${PROGRESS_INTERVAL}"
-      [ -f "$RSYNC_LOG" ] || continue
-      local checked transferred last_file xfer_bytes
-      checked=$(wc -l <"$RSYNC_LOG" 2>/dev/null || echo 0)
-      checked=$((checked)) # trim whitespace
-      transferred=$(grep -c '^>' "$RSYNC_LOG" 2>/dev/null || echo 0)
-      # Sum bytes from transferred files (lines starting with '>': field 2 is size)
-      xfer_bytes=$(grep '^>' "$RSYNC_LOG" 2>/dev/null | awk '{s+=$2} END {print s+0}' || echo 0)
-      last_file=$(tail -1 "$RSYNC_LOG" 2>/dev/null | awk '{$1=$2=""; sub(/^  /,""); print}' || echo "")
+      local checked=0 transferred=0 xfer_bytes=0 last_file=""
+      for log in "${CHUNK_DIR}"/rsync-transfer-*.log; do
+        [ -f "$log" ] || continue
+        local c
+        c=$(wc -l <"$log" 2>/dev/null || echo 0)
+        checked=$((checked + c))
+        local t
+        t=$(grep -c '^>' "$log" 2>/dev/null || echo 0)
+        transferred=$((transferred + t))
+        local b
+        b=$(grep '^>' "$log" 2>/dev/null | awk '{s+=$2} END {print s+0}' || echo 0)
+        xfer_bytes=$((xfer_bytes + b))
+        local lf
+        lf=$(tail -1 "$log" 2>/dev/null | awk '{$1=$2=""; sub(/^  /,""); print}' || echo "")
+        [ -n "$lf" ] && last_file="$lf"
+      done
       if [ "$checked" -gt "$last_checked" ]; then
         local pct=0
         if [ "${FILE_COUNT}" -gt 0 ]; then
@@ -180,12 +193,13 @@ while true; do
         fi
         local xfer_bytes_human
         xfer_bytes_human=$(_human_bytes "$xfer_bytes")
-        echo "Progress: ${checked}/${FILE_COUNT} (${pct}%), ${xfer_bytes_human} transferred, ${speed} MB/s | ${last_file}"
-        otel_log INFO "Rsync progress: ${checked}/${FILE_COUNT} (${pct}%), ${xfer_bytes_human} transferred, ${speed} MB/s | ${last_file}" \
+        echo "Progress: ${checked}/${FILE_COUNT} (${pct}%), ${xfer_bytes_human} transferred, ${speed} MB/s [${RSYNC_PARALLEL} streams] | ${last_file}"
+        otel_log INFO "Rsync progress: ${checked}/${FILE_COUNT} (${pct}%), ${xfer_bytes_human} transferred, ${speed} MB/s [${RSYNC_PARALLEL} streams] | ${last_file}" \
           "sync.status=in_progress" \
           "files.checked=${checked}" "files.transferred=${transferred}" \
           "files.total=${FILE_COUNT}" "sync.percent=${pct}" \
           "bytes.transferred=${xfer_bytes}" "transfer.speed_mbps=${speed}" \
+          "rsync.streams=${RSYNC_PARALLEL}" \
           "current.file=${last_file}" "remote.host=${REMOTE_HOST}" \
           "duration_seconds=${elapsed}"
         last_checked=$checked
@@ -193,34 +207,64 @@ while true; do
     done
   }
 
-  : >"$RSYNC_LOG"
-  : >"$RSYNC_ERR"
   _progress_reporter &
   PROGRESS_PID=$!
 
-  # Run rsync with --itemize-changes so every checked file produces output.
+  # Launch parallel rsync streams, one per chunk file.
   # --out-format '%i %l %n': itemize flags, file size in bytes, filename.
   # Lines starting with ">" are transferred; lines starting with "." are skipped.
+  RSYNC_PIDS=()
+  STREAM_IDX=0
+  for chunk in "${CHUNK_DIR}"/chunk-*; do
+    [ -f "$chunk" ] || continue
+    # Skip empty chunks (can happen if file list < RSYNC_PARALLEL)
+    [ -s "$chunk" ] || continue
+    STREAM_LOG="${CHUNK_DIR}/rsync-transfer-${STREAM_IDX}.log"
+    STREAM_ERR="${CHUNK_DIR}/rsync-error-${STREAM_IDX}.log"
+    : >"$STREAM_LOG"
+    : >"$STREAM_ERR"
+    rsync -rlt --partial --inplace --omit-dir-times \
+      --skip-compress=jpg,jpeg,heic,heif,png,mp4,mov,gif,webp,cr2,nef,arw,dng \
+      --timeout=300 \
+      --chmod=D755,F644 \
+      --itemize-changes \
+      --out-format='%i %l %n' \
+      --files-from="$chunk" \
+      --rsync-path="sudo /usr/bin/rsync" \
+      -e "ssh ${SSH_OPTS[*]}" \
+      "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}" \
+      "${DUMP_DIR}${REMOTE_PATH}" \
+      >>"$STREAM_LOG" 2>>"$STREAM_ERR" &
+    RSYNC_PIDS+=($!)
+    STREAM_IDX=$((STREAM_IDX + 1))
+  done
+
+  # Wait for all rsync streams and collect exit codes
   RSYNC_EXIT=0
-  rsync -rlt --partial --inplace --omit-dir-times \
-    --compress --timeout=300 \
-    --chmod=D755,F644 \
-    --itemize-changes \
-    --out-format='%i %l %n' \
-    --files-from="${FILE_LIST}" \
-    --rsync-path="sudo /usr/bin/rsync" \
-    -e "ssh ${SSH_OPTS[*]}" \
-    "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}" \
-    "${DUMP_DIR}${REMOTE_PATH}" \
-    >>"$RSYNC_LOG" 2>>"$RSYNC_ERR" || RSYNC_EXIT=$?
+  for pid in "${RSYNC_PIDS[@]}"; do
+    STREAM_EXIT=0
+    wait "$pid" || STREAM_EXIT=$?
+    if [ "$STREAM_EXIT" -ne 0 ] && [ "$RSYNC_EXIT" -eq 0 ]; then
+      RSYNC_EXIT=$STREAM_EXIT
+    fi
+  done
 
   kill $PROGRESS_PID 2>/dev/null || true
   wait $PROGRESS_PID 2>/dev/null || true
 
-  CHECKED=$(wc -l <"$RSYNC_LOG" 2>/dev/null || echo 0)
-  CHECKED=$((CHECKED))
-  TRANSFERRED=$(grep -c '^>' "$RSYNC_LOG" 2>/dev/null || echo 0)
-  TOTAL_BYTES=$(grep '^>' "$RSYNC_LOG" 2>/dev/null | awk '{s+=$2} END {print s+0}' || echo 0)
+  # Aggregate stats across all stream logs
+  CHECKED=0
+  TRANSFERRED=0
+  TOTAL_BYTES=0
+  for log in "${CHUNK_DIR}"/rsync-transfer-*.log; do
+    [ -f "$log" ] || continue
+    local_checked=$(wc -l <"$log" 2>/dev/null || echo 0)
+    CHECKED=$((CHECKED + local_checked))
+    local_transferred=$(grep -c '^>' "$log" 2>/dev/null || echo 0)
+    TRANSFERRED=$((TRANSFERRED + local_transferred))
+    local_bytes=$(grep '^>' "$log" 2>/dev/null | awk '{s+=$2} END {print s+0}' || echo 0)
+    TOTAL_BYTES=$((TOTAL_BYTES + local_bytes))
+  done
   DURATION=$((SECONDS - RSYNC_START))
   AVG_SPEED="0.0"
   if [ "$DURATION" -gt 0 ] && [ "$TOTAL_BYTES" -gt 0 ]; then
@@ -228,7 +272,7 @@ while true; do
   fi
   TOTAL_BYTES_HUMAN=$(_human_bytes "$TOTAL_BYTES")
 
-  rm -f "$RSYNC_LOG" "$RSYNC_ERR"
+  rm -rf "$CHUNK_DIR"
 
   if [ "$RSYNC_EXIT" -eq 0 ]; then
     # Consolidate SQLite databases (merge WAL into main DB, remove WAL/SHM)
@@ -250,9 +294,6 @@ while true; do
     sleep "${SYNC_INTERVAL}"
   else
     echo "ERROR: Rsync failed (exit ${RSYNC_EXIT}): ${CHECKED} checked, ${TRANSFERRED} transferred in ${DURATION}s — retrying in ${RETRY_INTERVAL}s"
-    if [ -s "$RSYNC_ERR" ]; then
-      echo "Last errors: $(tail -5 "$RSYNC_ERR" 2>/dev/null || true)"
-    fi
     otel_log ERROR "Rsync failed (exit ${RSYNC_EXIT}): ${CHECKED} checked, ${TRANSFERRED} transferred in ${DURATION}s — retrying in ${RETRY_INTERVAL}s" \
       "sync.status=error" "files.total=${FILE_COUNT}" \
       "files.checked=${CHECKED}" "files.transferred=${TRANSFERRED}" \

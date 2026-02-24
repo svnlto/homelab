@@ -2,16 +2,23 @@ _: {
   # Enable Tailscale service
   services.tailscale = {
     enable = true;
-    useRoutingFeatures = "client";
+    useRoutingFeatures = "server";
 
     # Prevent Tailscale from overriding DNS settings
-    extraUpFlags = [ "--accept-dns=false" ];
+    # --advertise-routes: subnet router for VLAN 20 (LAN)
+    # --relay-server-port: act as a peer relay so K8s pods route through LAN
+    extraUpFlags = [
+      "--accept-dns=false"
+      "--advertise-routes=192.168.0.0/24"
+      "--relay-server-port=41642"
+    ];
   };
 
   # Firewall configuration
   networking.firewall = {
     # Allow Tailscale's UDP port
-    allowedUDPPorts = [ 41641 ];
+    # 41641: Tailscale WireGuard, 41642: Tailscale peer relay
+    allowedUDPPorts = [ 41641 41642 ];
 
     # Required for Tailscale's NAT traversal
     checkReversePath = "loose";
