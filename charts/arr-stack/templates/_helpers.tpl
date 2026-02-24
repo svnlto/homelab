@@ -106,9 +106,9 @@ spec:
             httpGet:
               path: {{ .app.probePath }}
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: {{ .app.startupInitialDelay | default 10 }}
             periodSeconds: 5
-            failureThreshold: 12
+            failureThreshold: {{ .app.startupFailureThreshold | default 12 }}
             timeoutSeconds: 5
           livenessProbe:
             httpGet:
