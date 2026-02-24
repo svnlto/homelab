@@ -12,7 +12,7 @@ OSXPhotos export service for syncing Apple Photos to NFS storage
 | env | object | `{"EXPORT_DB_PATH":"/cache/osxphotos_export.db","OTEL_EXPORTER_OTLP_ENDPOINT":"http://signoz-otel-collector.signoz.svc:4318","OTEL_SERVICE_NAME":"osxphotos-export","RETRY_INTERVAL":"300","SYNC_INTERVAL":"3600"}` | Environment variables |
 | externalSecret | object | `{"keys":["EXPORT_DEST","LIBRARY_PATH"],"onePasswordItem":"osxphotos-config","refreshInterval":"1h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"osxphotos-config"}` | External secrets configuration |
 | global.annotations | object | `{}` |  |
-| image | string | `"ghcr.io/svnlto/osxphotos-export:latest"` | Container image |
+| image | object | `{"repository":"ghcr.io/svnlto/osxphotos-export","tag":"latest"}` | Container image |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=131072","wsize=131072","hard"],"server":"","volumes":[]}` | NFS storage for source and export |
 | resources | object | `{"limits":{"cpu":"500m","memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Container resources |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1003,"seccompProfile":{"type":"RuntimeDefault"}}` | Security context for the container |

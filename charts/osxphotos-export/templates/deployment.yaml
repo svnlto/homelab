@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: osxphotos-export
-          image: {{ .Values.image }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           workingDir: /cache
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

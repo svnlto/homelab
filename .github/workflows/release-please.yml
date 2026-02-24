@@ -1,0 +1,43 @@
+---
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    outputs:
+      dumper-release-created: ${{ steps.release.outputs['nix/dumper--release_created'] }}
+      dumper-tag: ${{ steps.release.outputs['nix/dumper--tag_name'] }}
+      osxphotos-release-created: ${{ steps.release.outputs['nix/osxphotos-export--release_created'] }}
+      osxphotos-tag: ${{ steps.release.outputs['nix/osxphotos-export--tag_name'] }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  build-dumper:
+    name: Build Dumper Release
+    needs: release-please
+    if: needs.release-please.outputs.dumper-release-created == 'true'
+    uses: ./.github/workflows/build-dumper.yml
+    with:
+      version: ${{ needs.release-please.outputs.dumper-tag }}
+
+  build-osxphotos-export:
+    name: Build OSXPhotos Export Release
+    needs: release-please
+    if: needs.release-please.outputs.osxphotos-release-created == 'true'
+    uses: ./.github/workflows/build-osxphotos-export.yml
+    with:
+      version: ${{ needs.release-please.outputs.osxphotos-tag }}

@@ -3,7 +3,9 @@ global:
   annotations: {}
 
 # -- Container image
-image: ghcr.io/svnlto/osxphotos-export:latest
+image:
+  repository: ghcr.io/svnlto/osxphotos-export
+  tag: latest
 
 # -- Container resources
 resources:

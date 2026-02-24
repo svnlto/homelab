@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "packages": {
+    "nix/dumper": {
+      "release-type": "simple",
+      "component": "dumper",
+      "include-component-in-tag": true
+    },
+    "nix/osxphotos-export": {
+      "release-type": "simple",
+      "component": "osxphotos-export",
+      "include-component-in-tag": true
+    }
+  }
+}
