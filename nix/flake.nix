@@ -34,6 +34,7 @@
             curl
             jq
             gawk
+            sqlite
           ];
           config = {
             Cmd = [ "/bin/bash" "/app/rsync-photos.sh" ];

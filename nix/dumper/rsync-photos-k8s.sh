@@ -231,6 +231,15 @@ while true; do
   rm -f "$RSYNC_LOG" "$RSYNC_ERR"
 
   if [ "$RSYNC_EXIT" -eq 0 ]; then
+    # Consolidate SQLite databases (merge WAL into main DB, remove WAL/SHM)
+    # so consumers reading over NFS get a consistent database.
+    while IFS= read -r -d '' db; do
+      if sqlite3 "$db" "PRAGMA integrity_check;" >/dev/null 2>&1; then
+        sqlite3 "$db" "PRAGMA wal_checkpoint(TRUNCATE);" >/dev/null 2>&1 || true
+        rm -f "${db}-wal" "${db}-shm"
+      fi
+    done < <(find "${DUMP_DIR}${REMOTE_PATH}" -name '*.sqlite' -print0 2>/dev/null)
+
     echo "Rsync complete: ${TRANSFERRED} files, ${TOTAL_BYTES_HUMAN} in ${DURATION}s (${AVG_SPEED} MB/s)"
     otel_log INFO "Rsync complete: ${TRANSFERRED} files, ${TOTAL_BYTES_HUMAN} in ${DURATION}s (${AVG_SPEED} MB/s)" \
       "sync.status=success" "files.total=${FILE_COUNT}" \
