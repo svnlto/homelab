@@ -4,6 +4,7 @@ variable "acl_tags" {
   default = {
     k8s        = ["autogroup:admin"]
     dumper-src = ["autogroup:admin"]
+    pihole     = ["autogroup:admin"]
   }
 }
 

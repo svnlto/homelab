@@ -76,6 +76,8 @@ spec:
               value: {{ .Values.dumper.syncInterval | quote }}
             - name: RETRY_INTERVAL
               value: {{ .Values.dumper.retryInterval | quote }}
+            - name: RSYNC_PARALLEL
+              value: {{ .Values.dumper.rsyncParallel | quote }}
           envFrom:
             - secretRef:
                 name: {{ .Values.externalSecrets.config.targetSecretName }}

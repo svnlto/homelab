@@ -11,7 +11,13 @@ resource "tailscale_acl" "this" {
 
     // Grants — default: allow all connections
     grants = [
-      { src = ["*"], dst = ["*"], ip = ["*"] }
+      { src = ["*"], dst = ["*"], ip = ["*"] },
+      // Allow K8s pods to use Pi-hole as a Tailscale peer relay
+      {
+        src = ["tag:k8s"]
+        dst = ["tag:pihole"]
+        app = { "tailscale.com/cap/relay" = [{}] }
+      }
     ]
 
     // SSH access
