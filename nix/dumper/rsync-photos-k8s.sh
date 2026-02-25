@@ -228,7 +228,7 @@ while true; do
       --itemize-changes \
       --out-format='%i %l %n' \
       --files-from="$chunk" \
-      --rsync-path="sudo /usr/bin/rsync" \
+      --rsync-path="sudo /usr/local/bin/rsync" \
       -e "ssh ${SSH_OPTS[*]}" \
       "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}" \
       "${DUMP_DIR}${REMOTE_PATH}" \
