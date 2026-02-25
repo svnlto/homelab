@@ -1,0 +1,33 @@
+---
+global:
+  annotations: {}
+
+cluster:
+  name: postgresql
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.2
+  instances: 1
+
+  storage:
+    storageClass: truenas-iscsi-rwo
+    size: 10Gi
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  postgresql:
+    parameters:
+      shared_buffers: "128MB"
+      effective_cache_size: "512MB"
+      work_mem: "8MB"
+      maintenance_work_mem: "64MB"
+      max_connections: "50"
+
+  bootstrap:
+    initdb:
+      database: seerr
+      owner: seerr

@@ -2,16 +2,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: jellyseerr
+  name: seerr
   annotations:
     {{- range $key, $val := .Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
     {{- end }}
 spec:
   ports:
-    - port: {{ .Values.jellyseerr.port }}
-      targetPort: {{ .Values.jellyseerr.port }}
+    - port: {{ .Values.seerr.port }}
+      targetPort: {{ .Values.seerr.port }}
       protocol: TCP
       name: http
   selector:
-    {{- include "jellyfin.selectorLabels" (dict "name" "jellyseerr") | nindent 4 }}
+    {{- include "jellyfin.selectorLabels" (dict "name" "seerr") | nindent 4 }}
