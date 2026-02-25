@@ -27,8 +27,8 @@ data:
                       - title: Jellyfin
                         url: https://jellyfin.{{ .Values.ingress.domain }}
                         icon: si:jellyfin
-                      - title: Jellyseerr
-                        url: https://jellyseerr.{{ .Values.ingress.domain }}
+                      - title: Seerr
+                        url: https://seerr.{{ .Values.ingress.domain }}
                         icon: si:jellyfin
                       - title: Navidrome
                         url: https://navidrome.{{ .Values.ingress.domain }}
@@ -90,8 +90,8 @@ data:
                   - title: Jellyfin
                     url: https://jellyfin.{{ .Values.ingress.domain }}
                     icon: si:jellyfin
-                  - title: Jellyseerr
-                    url: https://jellyseerr.{{ .Values.ingress.domain }}
+                  - title: Seerr
+                    url: https://seerr.{{ .Values.ingress.domain }}
                     icon: si:jellyfin
                   - title: Navidrome
                     url: https://navidrome.{{ .Values.ingress.domain }}

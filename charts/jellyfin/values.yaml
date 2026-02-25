@@ -50,10 +50,12 @@ jellyfin:
       cpu: 4000m
       memory: 4Gi
 
-# -- Jellyseerr request management
-jellyseerr:
-  image: fallenbagel/jellyseerr:2.7.3
+# -- Seerr request management (successor to Jellyseerr)
+seerr:
+  image: ghcr.io/seerr-team/seerr:development
   port: 5055
+  database:
+    secretName: ""
   resources:
     requests:
       cpu: 50m

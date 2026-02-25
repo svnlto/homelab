@@ -1,0 +1,99 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seerr
+  labels:
+    {{- include "jellyfin.labels" (dict "name" "seerr") | nindent 4 }}
+  annotations:
+    {{- range $key, $val := .Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "jellyfin.selectorLabels" (dict "name" "seerr") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "jellyfin.selectorLabels" (dict "name" "seerr") | nindent 8 }}
+      annotations:
+        {{- range $key, $val := .Values.global.annotations }}
+        {{ $key }}: {{ $val | quote }}
+        {{- end }}
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      initContainers:
+        - name: chown-config
+          image: busybox:1.37
+          command: ["sh", "-c", "chown -R 1000:1000 /app/config"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+      containers:
+        - name: seerr
+          image: {{ .Values.seerr.image }}
+          ports:
+            - containerPort: {{ .Values.seerr.port }}
+              name: http
+          env:
+            - name: TZ
+              value: {{ .Values.timezone }}
+            - name: DB_TYPE
+              value: postgres
+            {{- if .Values.seerr.database.secretName }}
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.seerr.database.secretName }}
+                  key: host
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.seerr.database.secretName }}
+                  key: port
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.seerr.database.secretName }}
+                  key: username
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.seerr.database.secretName }}
+                  key: password
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.seerr.database.secretName }}
+                  key: dbname
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /api/v1/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/v1/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.seerr.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: seerr-config
