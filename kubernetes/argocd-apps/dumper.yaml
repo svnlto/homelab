@@ -10,6 +10,7 @@ metadata:
     argocd-image-updater.argoproj.io/dumper.allow-tags: regexp:^v[0-9]+\.[0-9]+\.[0-9]+$
     argocd-image-updater.argoproj.io/dumper.helm.image-name: dumper.image.repository
     argocd-image-updater.argoproj.io/dumper.helm.image-tag: dumper.image.tag
+    argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd/git-creds
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

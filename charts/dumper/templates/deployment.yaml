@@ -25,6 +25,8 @@ spec:
         {{ $key }}: {{ $val | quote }}
         {{- end }}
     spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       initContainers:
         - name: tailscale
           image: {{ .Values.tailscale.image }}
