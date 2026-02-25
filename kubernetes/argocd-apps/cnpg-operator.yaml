@@ -12,7 +12,7 @@ spec:
   sources:
     - repoURL: https://cloudnative-pg.github.io/charts
       chart: cloudnative-pg
-      targetRevision: "0.23.0"
+      targetRevision: "0.27.1"
       helm:
         valueFiles:
           - $values/kubernetes/apps/cnpg-operator/values.yaml
@@ -32,6 +32,7 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - ServerSideDiff=true
+      - RespectIgnoreDifferences=true
 
   ignoreDifferences:
     - group: admissionregistration.k8s.io
