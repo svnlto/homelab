@@ -17,6 +17,12 @@ resource "tailscale_acl" "this" {
         src = ["tag:k8s"]
         dst = ["tag:pihole"]
         app = { "tailscale.com/cap/relay" = [{}] }
+      },
+      // Allow K8s pods and dumper-src Mac to use photo-relay (Linode Singapore) as a peer relay
+      {
+        src = ["tag:k8s", "tag:dumper-src"]
+        dst = ["tag:photo-relay"]
+        app = { "tailscale.com/cap/relay" = [{}] }
       }
     ]
 
