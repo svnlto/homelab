@@ -7,8 +7,13 @@ metadata:
     {{- include "arr-stack.annotations" . | nindent 4 }}
 data:
   glance.yml: |
+    theme:
+      background-color: 240 21 15
+      primary-color: 267 84 81
+      contrast-multiplier: 1.1
     pages:
       - name: Home
+        hide-desktop-navigation: true
         columns:
           - size: small
             widgets:
@@ -83,16 +88,16 @@ data:
                     url: http://slskd.{{ .Values.ingress.domain }}
                     icon: si:slskd
                   - title: Jellyfin
-                    url: http://jellyfin.{{ .Values.ingress.domain }}
+                    url: http://jellyfin.jellyfin.svc.cluster.local:8096
                     icon: si:jellyfin
                   - title: Jellyseerr
-                    url: http://jellyseerr.{{ .Values.ingress.domain }}
+                    url: http://jellyseerr.jellyfin.svc.cluster.local:5055
                     icon: si:jellyfin
                   - title: Navidrome
-                    url: http://navidrome.{{ .Values.ingress.domain }}
+                    url: http://navidrome.navidrome.svc.cluster.local:4533
                     icon: si:navidrome
                   - title: SigNoz
-                    url: http://signoz.{{ .Values.ingress.domain }}
+                    url: http://signoz.signoz.svc.cluster.local:8080
 
               {{- range .Values.glance.jellyfinLibraries }}
               - type: custom-api
@@ -104,6 +109,7 @@ data:
                   api-key: ${JELLYFIN_KEY}
                   user-name: {{ $.Values.glance.jellyfinUserName | quote }}
                   library-name: {{ . | quote }}
+                  external-url: https://jellyfin.{{ $.Values.ingress.domain }}
                   mode: "latest"
                   item-count: "10"
                   show-thumbnail: true
@@ -121,6 +127,7 @@ data:
                   {{ `{{ $isSmallColumn := .Options.BoolOr "small-column" false }}` }}
                   {{ `{{ $showThumbnail := .Options.BoolOr "show-thumbnail" false }}` }}
                   {{ `{{ $showProgressBar := .Options.BoolOr "progress-bar" true }}` }}
+                  {{ `{{ $externalURL := .Options.StringOr "external-url" $baseURL }}` }}
 
                   {{ `{{ define "errorMsg" }}` }}
                     <div class="widget-error-header">
@@ -200,7 +207,7 @@ data:
                                 {{ `{{ $artist = $item.String "AlbumArtist" }}` }}
                               {{ `{{ end }}` }}
 
-                              {{ `{{ $linkURL := print $baseURL "/web/#/details?id=" $itemID }}` }}
+                              {{ `{{ $linkURL := print $externalURL "/web/#/details?id=" $itemID }}` }}
                               {{ `{{ $thumbURL := concat $baseURL "/Items/" $itemID "/Images/Primary?api_key=" $apiKey }}` }}
 
                               {{ `<a class="card widget-content-frame" href="{{ $linkURL | safeURL }}">` }}
@@ -276,7 +283,7 @@ data:
           - size: small
             widgets:
               - type: weather
-                location: Berlin, Germany
+                location: Munich, Germany
                 units: metric
                 hour-format: 24h
 
