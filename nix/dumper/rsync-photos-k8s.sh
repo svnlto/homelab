@@ -235,6 +235,8 @@ while true; do
       >>"$STREAM_LOG" 2>>"$STREAM_ERR" &
     RSYNC_PIDS+=($!)
     STREAM_IDX=$((STREAM_IDX + 1))
+    # Stagger stream starts to avoid overwhelming Tailscale
+    sleep 2
   done
 
   # Wait for all rsync streams and collect exit codes
