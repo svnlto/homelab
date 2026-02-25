@@ -32,4 +32,8 @@ spec:
     syncOptions:
       - CreateNamespace=true
 
-  ignoreDifferences: []
+  ignoreDifferences:
+    - group: postgresql.cnpg.io
+      kind: Cluster
+      jqPathExpressions:
+        - .spec.resources
