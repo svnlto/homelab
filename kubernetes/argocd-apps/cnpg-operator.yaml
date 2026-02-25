@@ -35,6 +35,10 @@ spec:
       - RespectIgnoreDifferences=true
 
   ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jqPathExpressions:
+        - .spec.versions[]?.schema?.openAPIV3Schema
     - group: admissionregistration.k8s.io
       kind: MutatingWebhookConfiguration
       jqPathExpressions:
