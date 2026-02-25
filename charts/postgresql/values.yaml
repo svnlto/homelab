@@ -31,3 +31,8 @@ cluster:
     initdb:
       database: seerr
       owner: seerr
+
+# -- Secrets to copy to other namespaces for cross-namespace access
+secretExports: []
+# - namespace: jellyfin
+#   secretName: postgresql-seerr-credentials

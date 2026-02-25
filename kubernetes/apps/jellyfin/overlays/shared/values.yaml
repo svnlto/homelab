@@ -55,7 +55,13 @@ csi:
 
 seerr:
   database:
-    secretName: postgresql-app
+    host: postgresql-rw.database.svc.cluster.local
+    port: "5432"
+    user: seerr
+    name: seerr
+    passwordSecret:
+      name: seerr-db-credentials
+      key: password
 
 jellyfin:
   nodeSelector:

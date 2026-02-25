@@ -55,7 +55,13 @@ seerr:
   image: ghcr.io/seerr-team/seerr:sha-55776ea
   port: 5055
   database:
-    secretName: ""
+    host: ""
+    port: "5432"
+    user: ""
+    name: ""
+    passwordSecret:
+      name: ""
+      key: password
   resources:
     requests:
       cpu: 50m
