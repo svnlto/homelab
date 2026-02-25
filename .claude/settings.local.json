@@ -12,7 +12,6 @@
       "Bash(terraform validate:*)",
       "Bash(nix flake check:*)",
       "Bash(nix fmt:*)",
-      "Bash(gh pr:*ee)",
       "Bash(talosctl:*)",
       "Bash(kubectl:*)"
     ],
