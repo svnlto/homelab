@@ -69,7 +69,7 @@ dumper:
   otelEndpoint: http://signoz-otel-collector.signoz.svc:4318
   syncInterval: "3600"
   retryInterval: "300"
-  rsyncParallel: "8"
+  rsyncParallel: "4"
   securityContext:
     runAsUser: 1003
     runAsGroup: 1000
