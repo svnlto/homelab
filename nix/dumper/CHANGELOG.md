@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/svnlto/homelab/compare/dumper-v0.2.2...dumper-v0.2.3) (2026-02-25)
+
+
+### Bug Fixes
+
+* use Homebrew rsync on remote Mac for protocol compatibility ([24c2f30](https://github.com/svnlto/homelab/commit/24c2f30c0ff01b6f6a6446d8ad0331b9571b4680))
+
 ## [0.2.2](https://github.com/svnlto/homelab/compare/dumper-v0.2.1...dumper-v0.2.2) (2026-02-25)
 
 
