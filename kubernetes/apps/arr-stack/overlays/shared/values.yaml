@@ -103,6 +103,9 @@ csi:
       volumeHandle: pvc-2f1bfb5f-9a6f-437d-9ff6-342f30c741e4
       capacity: 1Gi
 
+glance:
+  jellyfinUserName: sven
+
 ingress:
   enabled: true
   domain: shared.h.svenlito.com

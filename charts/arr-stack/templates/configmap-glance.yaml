@@ -8,8 +8,50 @@ metadata:
 data:
   glance.yml: |
     pages:
-      - name: Arr Stack
+      - name: Home
         columns:
+          - size: small
+            widgets:
+              - type: calendar
+                first-day-of-week: monday
+
+              - type: bookmarks
+                groups:
+                  - title: Media
+                    links:
+                      - title: Jellyfin
+                        url: https://jellyfin.{{ .Values.ingress.domain }}
+                        icon: si:jellyfin
+                      - title: Jellyseerr
+                        url: https://jellyseerr.{{ .Values.ingress.domain }}
+                        icon: si:jellyfin
+                      - title: Navidrome
+                        url: https://navidrome.{{ .Values.ingress.domain }}
+                        icon: si:navidrome
+                  - title: Infrastructure
+                    links:
+                      - title: Proxmox
+                        url: https://192.168.0.11:8006
+                        icon: si:proxmox
+                      - title: TrueNAS
+                        url: http://192.168.0.13
+                        icon: si:truenas
+                      - title: ArgoCD
+                        url: https://argocd.{{ .Values.ingress.domain }}
+                        icon: si:argo
+                      - title: SigNoz
+                        url: https://signoz.{{ .Values.ingress.domain }}
+
+              - type: releases
+                cache: 1d
+                repositories:
+                  - glanceapp/glance
+                  - jellyfin/jellyfin
+                  - siderolabs/talos
+                  - navidrome/navidrome
+                  - Radarr/Radarr
+                  - Sonarr/Sonarr
+
           - size: full
             widgets:
               - type: monitor
@@ -39,3 +81,210 @@ data:
                     icon: si:sabnzbd
                   - title: Slskd
                     url: http://slskd.{{ .Values.ingress.domain }}
+                    icon: si:slskd
+                  - title: Jellyfin
+                    url: http://jellyfin.{{ .Values.ingress.domain }}
+                    icon: si:jellyfin
+                  - title: Jellyseerr
+                    url: http://jellyseerr.{{ .Values.ingress.domain }}
+                    icon: si:jellyfin
+                  - title: Navidrome
+                    url: http://navidrome.{{ .Values.ingress.domain }}
+                    icon: si:navidrome
+                  - title: SigNoz
+                    url: http://signoz.{{ .Values.ingress.domain }}
+
+              {{- range .Values.glance.jellyfinLibraries }}
+              - type: custom-api
+                title: Recently Added {{ . }}
+                frameless: true
+                cache: 5m
+                options:
+                  base-url: ${JELLYFIN_URL}
+                  api-key: ${JELLYFIN_KEY}
+                  user-name: {{ $.Values.glance.jellyfinUserName | quote }}
+                  library-name: {{ . | quote }}
+                  mode: "latest"
+                  item-count: "10"
+                  show-thumbnail: true
+                  thumbnail-aspect-ratio: "portrait"
+                template: |
+                  {{ `{{/* Required config options */}}` }}
+                  {{ `{{ $baseURL := .Options.StringOr "base-url" "" }}` }}
+                  {{ `{{ $apiKey := .Options.StringOr "api-key" "" }}` }}
+                  {{ `{{ $userName := .Options.StringOr "user-name" "" }}` }}
+                  {{ `{{ $libraryName := .Options.StringOr "library-name" "" }}` }}
+                  {{ `{{ $mode := .Options.StringOr "mode" "latest" }}` }}
+                  {{ `{{ $itemCount := .Options.StringOr "item-count" "10" }}` }}
+                  {{ `{{ $mediaTypes := .Options.StringOr "media-types" "Movie,Episode,MusicAlbum" }}` }}
+                  {{ `{{ $thumbAspectRatio := .Options.StringOr "thumbnail-aspect-ratio" "" }}` }}
+                  {{ `{{ $isSmallColumn := .Options.BoolOr "small-column" false }}` }}
+                  {{ `{{ $showThumbnail := .Options.BoolOr "show-thumbnail" false }}` }}
+                  {{ `{{ $showProgressBar := .Options.BoolOr "progress-bar" true }}` }}
+
+                  {{ `{{ define "errorMsg" }}` }}
+                    <div class="widget-error-header">
+                      <div class="color-negative size-h3">ERROR</div>
+                    </div>
+                    {{ `<p class="break-all">{{ . }}</p>` }}
+                  {{ `{{ end }}` }}
+
+                  {{ `{{ if or (eq $baseURL "") (eq $apiKey "") (eq $userName "") (eq $mode "") (and (eq $mode "latest") (eq $libraryName "")) }}` }}
+                    {{ `{{ template "errorMsg" "Some required options are not set." }}` }}
+                  {{ `{{ else }}` }}
+                    {{ `{{ $userID := "" }}` }}
+                    {{ `{{ $usersCall := newRequest (print $baseURL "/Users") | withParameter "api_key" $apiKey | withHeader "Accept" "application/json" | getResponse }}` }}
+                    {{ `{{ range $i, $user := $usersCall.JSON.Array "" }}` }}
+                      {{ `{{ if eq ($user.String "Name") $userName }}` }}
+                        {{ `{{ $userID = $user.String "Id" }}` }}
+                        {{ `{{ break }}` }}
+                      {{ `{{ end }}` }}
+                    {{ `{{ end }}` }}
+                    {{ `{{ if eq $userID "" }}` }}
+                      {{ `{{ template "errorMsg" (printf "User '%s' not found." $userName) }}` }}
+                    {{ `{{ else }}` }}
+                      {{ `{{ $items := "" }}` }}
+                      {{ `{{ if eq $mode "latest" }}` }}
+                        {{ `{{ $libraryID := "" }}` }}
+                        {{ `{{ $userViewsCall := newRequest (print $baseURL "/UserViews") | withParameter "api_key" $apiKey | withParameter "userId" $userID | withHeader "Accept" "application/json" | getResponse }}` }}
+                        {{ `{{ range $i, $item := $userViewsCall.JSON.Array "Items" }}` }}
+                          {{ `{{ if eq ($item.String "Name") $libraryName }}` }}
+                            {{ `{{ $libraryID = $item.String "Id" }}` }}
+                            {{ `{{ break }}` }}
+                          {{ `{{ end }}` }}
+                        {{ `{{ end }}` }}
+                        {{ `{{ if eq $libraryID "" }}` }}
+                          {{ `{{ template "errorMsg" (printf "Library '%s' not found." $libraryName) }}` }}
+                        {{ `{{ else }}` }}
+                          {{ `{{ $latestCall := newRequest (print $baseURL "/Users/" $userID "/Items/Latest") | withParameter "api_key" $apiKey | withParameter "Limit" $itemCount | withParameter "ParentId" $libraryID | withParameter "IncludeItemTypes" $mediaTypes | withParameter "GroupItems" "true" | withHeader "Accept" "application/json" | getResponse }}` }}
+                          {{ `{{ $items = $latestCall.JSON.Array "" }}` }}
+                        {{ `{{ end }}` }}
+                      {{ `{{ else if eq $mode "nextup" }}` }}
+                        {{ `{{ $nextUpCall := newRequest (print $baseURL "/Shows/NextUp") | withParameter "api_key" $apiKey | withParameter "UserId" $userID | withParameter "Limit" $itemCount | withParameter "EnableResumable" "true" | withHeader "Accept" "application/json" | getResponse }}` }}
+                        {{ `{{ $items = $nextUpCall.JSON.Array "Items" }}` }}
+                      {{ `{{ end }}` }}
+
+                      {{ `{{ if eq (len $items) 0 }}` }}
+                        <p>No items found.</p>
+                      {{ `{{ else }}` }}
+                        <div class="carousel-container show-right-cutoff">
+                          <div class="cards-horizontal carousel-items-container">
+                            {{ `{{ range $n, $item := $items }}` }}
+                              {{ `{{ $mediaType := $item.String "Type" }}` }}
+                              {{ `{{ $title := $item.String "Name" }}` }}
+                              {{ `{{ $itemID := $item.String "Id" }}` }}
+                              {{ `{{ $seriesTitle := "" }}` }}
+                              {{ `{{ $artist := "" }}` }}
+                              {{ `{{ $seriesID := "" }}` }}
+                              {{ `{{ $season := "" }}` }}
+                              {{ `{{ $episode := "" }}` }}
+                              {{ `{{ $playPercentage := "" }}` }}
+                              {{ `{{ $unwatchedEpisodeCount := "" }}` }}
+
+                              {{ `{{ if eq $mediaType "Series" }}` }}
+                                {{ `{{ $unwatchedEpisodeCount = $item.Int "UserData.UnplayedItemCount" }}` }}
+                              {{ `{{ else if eq $mediaType "Episode" }}` }}
+                                {{ `{{ $unwatchedEpisodeCount = 1 }}` }}
+                                {{ `{{ $seriesTitle = $item.String "SeriesName" }}` }}
+                                {{ `{{ $seriesID = $item.String "SeriesId" }}` }}
+                                {{ `{{ $season = $item.Int "ParentIndexNumber" }}` }}
+                                {{ `{{ $episode = $item.Int "IndexNumber" }}` }}
+                                {{ `{{ if $item.Exists "UserData.PlayedPercentage" }}` }}
+                                  {{ `{{ $playPercentage = $item.String "UserData.PlayedPercentage" }}` }}
+                                {{ `{{ end }}` }}
+                                {{ `{{ if eq $mode "latest" }}` }}
+                                  {{ `{{ $itemID = $seriesID }}` }}
+                                  {{ `{{ $title = $seriesTitle }}` }}
+                                {{ `{{ end }}` }}
+                              {{ `{{ else if eq $mediaType "MusicAlbum" }}` }}
+                                {{ `{{ $artist = $item.String "AlbumArtist" }}` }}
+                              {{ `{{ end }}` }}
+
+                              {{ `{{ $linkURL := print $baseURL "/web/#/details?id=" $itemID }}` }}
+                              {{ `{{ $thumbURL := concat $baseURL "/Items/" $itemID "/Images/Primary?api_key=" $apiKey }}` }}
+
+                              {{ `<a class="card widget-content-frame" href="{{ $linkURL | safeURL }}">` }}
+                                {{ `{{ if $showThumbnail }}` }}
+                                  <div style="position: relative;">
+                                    {{ `<img src="{{ $thumbURL | safeURL }}" alt="{{ $title }} thumbnail" loading="lazy" class="media-server-thumbnail shrink-0" style="object-fit: fill; border-radius: var(--border-radius) var(--border-radius) 0 0; width: 100%; display: block; {{ if eq $thumbAspectRatio "square" }}aspect-ratio: 1;{{ else if eq $thumbAspectRatio "portrait" }}aspect-ratio: 2/3;{{ else if eq $thumbAspectRatio "landscape" }}aspect-ratio: 16/9;{{ else }}aspect-ratio: initial;{{ end }}" />` }}
+                                    {{ `{{ if and ($showProgressBar) (not (eq $playPercentage "")) }}` }}
+                                      <div style="position: absolute; bottom: 8px; left: 8px; right: 8px; height: 6px; border-radius: var(--border-radius); overflow: hidden; background-color: rgba(255, 255, 255, 0.2);">
+                                        {{ `<div style="width: {{ print $playPercentage "%" }}; height: 100%; border-radius: var(--border-radius) 0 0 var(--border-radius); background-color: var(--color-primary)"></div>` }}
+                                      </div>
+                                    {{ `{{ end }}` }}
+                                  </div>
+                                {{ `{{ end }}` }}
+                                <div class="grow padding-inline-widget margin-top-10 margin-bottom-10">
+                                  {{ `<ul class="flex flex-column justify-evenly margin-bottom-3 {{ if $isSmallColumn }}size-h6{{ end }}" style="height: 100%;">` }}
+                                    {{ `{{ if eq $mode "latest" }}` }}
+                                      {{ `{{ if or (eq $mediaType "Series") (eq $mediaType "Episode") }}` }}
+                                        <ul class="list-horizontal-text flex-nowrap">
+                                          {{ `<li class="color-primary shrink-0">{{ $unwatchedEpisodeCount }}</li>` }}
+                                          {{ `<li class="text-truncate">{{ $title }}</li>` }}
+                                        </ul>
+                                      {{ `{{ else if eq $mediaType "MusicAlbum" }}` }}
+                                        <ul class="list-horizontal-text flex-nowrap">
+                                          {{ `<li class="color-primary text-truncate">{{ $artist }}</li>` }}
+                                          {{ `<li class="text-truncate">{{ $title }}</li>` }}
+                                        </ul>
+                                      {{ `{{ else }}` }}
+                                        {{ `<li class="text-truncate">{{ $title }}</li>` }}
+                                      {{ `{{ end }}` }}
+                                    {{ `{{ else if eq $mode "nextup" }}` }}
+                                      <ul class="list-horizontal-text flex-nowrap">
+                                        {{ `<li class="color-primary shrink-0">S{{ $season }}E{{ $episode }}</li>` }}
+                                        {{ `<li class="text-truncate">{{ $seriesTitle }}</li>` }}
+                                      </ul>
+                                      {{ `<li class="text-truncate">{{ $title }}</li>` }}
+                                    {{ `{{ end }}` }}
+                                  </ul>
+                                </div>
+                              </a>
+                            {{ `{{ end }}` }}
+                          </div>
+                        </div>
+                      {{ `{{ end }}` }}
+                    {{ `{{ end }}` }}
+                  {{ `{{ end }}` }}
+              {{- end }}
+
+              - type: group
+                widgets:
+                  - type: rss
+                    limit: 10
+                    collapse-after: 3
+                    cache: 12h
+                    feeds:
+                      - url: https://selfh.st/rss/
+                        title: selfh.st
+                        limit: 4
+                      - url: https://blog.linuxserver.io/rss/
+                        title: LinuxServer.io
+                      - url: https://www.truenas.com/blog/feed/
+                        title: TrueNAS Blog
+                  - type: reddit
+                    subreddit: selfhosted
+                    show-thumbnails: true
+
+              - type: videos
+                channels:
+                  - UCR-DXc1voovS8nhAvccRZhg # Jeff Geerling
+                  - UCsBjURrPoezykLs9EqgamOA # Fireship
+                  - UCOk-gHyjcWZNj3Br4oxwh0A # Techno Tim
+                  - UC2gyzKcHbYfqoXA5xbyGXtQ # NetworkChuck
+
+          - size: small
+            widgets:
+              - type: weather
+                location: Berlin, Germany
+                units: metric
+                hour-format: 24h
+
+              - type: markets
+                markets:
+                  - symbol: SPY
+                    name: S&P 500
+                  - symbol: BTC-USD
+                    name: Bitcoin
+                  - symbol: ETH-USD
+                    name: Ethereum

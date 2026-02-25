@@ -28,6 +28,13 @@ spec:
           env:
             - name: TZ
               value: {{ .Values.timezone }}
+            - name: JELLYFIN_URL
+              value: http://jellyfin.jellyfin.svc.cluster.local:8096
+            - name: JELLYFIN_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: JELLYFIN_API_KEY
           livenessProbe:
             httpGet:
               path: /

@@ -52,6 +52,7 @@ externalSecret:
     - PROWLARR_API_KEY
     - LIDARR_API_KEY
     - BAZARR_API_KEY
+    - JELLYFIN_API_KEY
 
 # -- Downloaders pod (gluetun VPN + download clients)
 downloaders:
@@ -202,10 +203,13 @@ buildarr:
       cpu: 200m
       memory: 256Mi
 
-# -- Glance dashboard
 glance:
   image: glanceapp/glance:v0.8.4
   port: 8080
+  jellyfinUserName: ""
+  jellyfinLibraries:
+    - Shows
+    - Movies
   resources:
     requests:
       cpu: 25m
