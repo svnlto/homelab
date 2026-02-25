@@ -55,15 +55,6 @@ restic_backup_jobs:
           daily: 7
           weekly: 4
           monthly: 3
-      - paths:
-          - /mnt/bulk/backups/arr-configs
-        tags: [arr-configs, daily, din]
-        excludes: []
-        retention:
-          daily: 30
-          weekly: 12
-          monthly: 12
-
   - name: archive
     description: Archive Data
     schedule: "Sun *-*-* 03:00:00"
