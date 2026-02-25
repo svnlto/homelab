@@ -36,7 +36,9 @@ Always use `kubectl --kubeconfig <path>` explicitly.
 | App              | Namespace      | Description                                |
 |------------------|----------------|--------------------------------------------|
 | arr-stack        | arr-stack      | Sonarr, Radarr, Prowlarr, Lidarr, SABnzbd  |
-| jellyfin         | jellyfin       | Jellyfin media server + Jellyseerr         |
+| jellyfin         | jellyfin       | Jellyfin media server + Seerr              |
+| cnpg-operator    | cnpg-system    | CloudNativePG operator                     |
+| postgresql       | database       | Shared PostgreSQL cluster (CNPG)           |
 | navidrome        | navidrome      | Music streaming server                     |
 | dumper           | dumper         | Backup/dump utility                        |
 | metrics-server   | kube-system    | Kubernetes metrics server (Helm)           |

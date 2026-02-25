@@ -149,11 +149,12 @@ nix/
 ```text
 charts/                      # Local Helm charts (one per app)
 ├── arr-stack/               # Media automation (Sonarr, Radarr, Prowlarr, etc.)
-├── jellyfin/                # Media server + Jellyseerr
+├── jellyfin/                # Media server + Seerr
 ├── infrastructure/          # democratic-csi StorageClasses
 ├── dumper/                  # Photo dump CronJob
 ├── navidrome/               # Music server
-└── osxphotos-export/        # macOS photo export CronJob
+├── osxphotos-export/        # macOS photo export CronJob
+└── postgresql/              # CloudNativePG shared PostgreSQL cluster
 
 kubernetes/
 ├── argocd-apps/             # ArgoCD Application manifests (one per app)
