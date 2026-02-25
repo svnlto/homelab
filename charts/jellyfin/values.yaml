@@ -52,7 +52,7 @@ jellyfin:
 
 # -- Seerr request management (successor to Jellyseerr)
 seerr:
-  image: ghcr.io/seerr-team/seerr:development
+  image: ghcr.io/seerr-team/seerr:sha-55776ea
   port: 5055
   database:
     secretName: ""
