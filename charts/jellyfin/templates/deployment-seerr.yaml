@@ -47,34 +47,22 @@ spec:
           env:
             - name: TZ
               value: {{ .Values.timezone }}
+            {{- if .Values.seerr.database.host }}
             - name: DB_TYPE
               value: postgres
-            {{- if .Values.seerr.database.secretName }}
             - name: DB_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.seerr.database.secretName }}
-                  key: host
+              value: {{ .Values.seerr.database.host | quote }}
             - name: DB_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.seerr.database.secretName }}
-                  key: port
+              value: {{ .Values.seerr.database.port | default "5432" | quote }}
             - name: DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.seerr.database.secretName }}
-                  key: username
+              value: {{ .Values.seerr.database.user | quote }}
             - name: DB_PASS
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.seerr.database.secretName }}
-                  key: password
+                  name: {{ .Values.seerr.database.passwordSecret.name }}
+                  key: {{ .Values.seerr.database.passwordSecret.key }}
             - name: DB_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.seerr.database.secretName }}
-                  key: dbname
+              value: {{ .Values.seerr.database.name | quote }}
             {{- end }}
           livenessProbe:
             httpGet:
