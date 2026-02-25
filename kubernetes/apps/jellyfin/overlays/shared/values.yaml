@@ -30,24 +30,38 @@ nfs:
       path: /mnt/bulk/media/books
       capacity: 1Ti
 
-csi:
-  server: 10.10.10.13
+iscsi:
+  portal: 10.10.10.13:3260
   volumes:
     - name: jellyfin-config
       pvName: jellyfin-config
       pvcName: jellyfin-config
-      volumeHandle: pvc-c980b589-8804-41e5-80df-de9d5e249bf8
+      volumeHandle: pvc-8e9e0bad-e507-44cc-8c5d-65ba15f53cd8
       capacity: 10Gi
+    - name: seerr-config
+      pvName: seerr-config
+      pvcName: seerr-config
+      volumeHandle: pvc-0d49fa16-59b1-4f63-abbb-b0c3887eaf95
+      capacity: 2Gi
+
+csi:
+  server: 10.10.10.13
+  volumes:
     - name: jellyfin-cache
       pvName: jellyfin-cache
       pvcName: jellyfin-cache
       volumeHandle: pvc-8350007f-5c2e-433d-8b52-3b322b9b947f
       capacity: 10Gi
-    - name: jellyseerr-config
-      pvName: jellyseerr-config
-      pvcName: jellyseerr-config
-      volumeHandle: pvc-5af7a2ae-39fc-4d3f-8bb5-0de455f16b68
-      capacity: 2Gi
+
+seerr:
+  database:
+    host: postgresql-rw.database.svc.cluster.local
+    port: "5432"
+    user: seerr
+    name: seerr
+    passwordSecret:
+      name: seerr-db-credentials
+      key: password
 
 jellyfin:
   nodeSelector:
@@ -62,6 +76,6 @@ ingress:
     - name: jellyfin
       service: jellyfin
       portName: http
-    - name: jellyseerr
-      service: jellyseerr
+    - name: seerr
+      service: seerr
       portName: http

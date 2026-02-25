@@ -14,6 +14,15 @@ nfs:
     - hard
   volumes: []
 
+# -- iSCSI storage for app config volumes (SQLite-safe)
+iscsi:
+  driver: org.democratic-csi.iscsi
+  storageClassName: truenas-iscsi-rwo
+  portal: ""
+  iqnPrefix: iqn.2005-10.org.freenas.ctl:csi-
+  iqnSuffix: -shared
+  volumes: []
+
 # -- CSI storage for app config volumes
 csi:
   driver: org.democratic-csi.nfs-fast
@@ -41,10 +50,18 @@ jellyfin:
       cpu: 4000m
       memory: 4Gi
 
-# -- Jellyseerr request management
-jellyseerr:
-  image: fallenbagel/jellyseerr:2.7.3
+# -- Seerr request management (successor to Jellyseerr)
+seerr:
+  image: ghcr.io/seerr-team/seerr:v3.0.1
   port: 5055
+  database:
+    host: ""
+    port: "5432"
+    user: ""
+    name: ""
+    passwordSecret:
+      name: ""
+      key: password
   resources:
     requests:
       cpu: 50m

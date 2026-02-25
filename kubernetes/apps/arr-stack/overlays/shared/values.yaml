@@ -48,6 +48,31 @@ iscsi:
       pvcName: buildarr-config
       volumeHandle: pvc-d394dbea-d9f8-45cf-890f-4eeee56ccfc3
       capacity: 1Gi
+    - name: prowlarr
+      pvName: arr-prowlarr-config
+      pvcName: prowlarr-config
+      volumeHandle: pvc-02dee8a1-e9c9-42d9-ae5c-789189cdb4b6
+      capacity: 2Gi
+    - name: sonarr
+      pvName: arr-sonarr-config
+      pvcName: sonarr-config
+      volumeHandle: pvc-400e33b1-0f78-4fe9-92b8-bd8f0dc4a73b
+      capacity: 5Gi
+    - name: radarr
+      pvName: arr-radarr-config
+      pvcName: radarr-config
+      volumeHandle: pvc-244b84f0-08f3-4c35-a7bd-0ee48bcf2e9f
+      capacity: 5Gi
+    - name: lidarr
+      pvName: arr-lidarr-config
+      pvcName: lidarr-config
+      volumeHandle: pvc-3b768fb5-66b5-4720-925d-572f30608808
+      capacity: 5Gi
+    - name: bazarr
+      pvName: arr-bazarr-config
+      pvcName: bazarr-config
+      volumeHandle: pvc-9e5c5fb5-17c9-40f8-829f-398ab823c991
+      capacity: 1Gi
 
 csi:
   server: 10.10.10.13
@@ -67,31 +92,6 @@ csi:
       pvcName: sabnzbd-config
       volumeHandle: pvc-8505ea35-2949-4af7-ba14-514c51a12355
       capacity: 2Gi
-    - name: prowlarr
-      pvName: arr-prowlarr-config
-      pvcName: prowlarr-config
-      volumeHandle: pvc-cae64dc1-43bb-421d-af40-64c6bb8d9dfb
-      capacity: 2Gi
-    - name: sonarr
-      pvName: arr-sonarr-config
-      pvcName: sonarr-config
-      volumeHandle: pvc-949bf037-3747-468d-977b-8b3f07c00381
-      capacity: 5Gi
-    - name: radarr
-      pvName: arr-radarr-config
-      pvcName: radarr-config
-      volumeHandle: pvc-b26f92d9-499e-4d88-96b6-20f6f604fe9f
-      capacity: 5Gi
-    - name: lidarr
-      pvName: arr-lidarr-config
-      pvcName: lidarr-config
-      volumeHandle: pvc-7eac0bab-35c0-4f17-8608-90206bca43ec
-      capacity: 5Gi
-    - name: bazarr
-      pvName: arr-bazarr-config
-      pvcName: bazarr-config
-      volumeHandle: pvc-f7ab6757-aead-4417-b69c-f2afc6a5ec6c
-      capacity: 1Gi
     - name: recyclarr
       pvName: arr-recyclarr-config
       pvcName: recyclarr-config
@@ -102,6 +102,9 @@ csi:
       pvcName: glance-config
       volumeHandle: pvc-2f1bfb5f-9a6f-437d-9ff6-342f30c741e4
       capacity: 1Gi
+
+glance:
+  jellyfinUserName: sven
 
 ingress:
   enabled: true

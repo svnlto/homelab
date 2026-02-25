@@ -2,7 +2,7 @@
 
 ![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
-Jellyfin media server with Jellyseerr request management
+Jellyfin media server with Seerr request management
 
 ## Values
 
@@ -11,9 +11,10 @@ Jellyfin media server with Jellyseerr request management
 | csi | object | `{"basePath":"/mnt/fast/kubernetes/nfs-dynamic","driver":"org.democratic-csi.nfs-fast","mountOptions":["nfsvers=4","nconnect=8","hard","noatime","nodiratime"],"server":"","storageClassName":"truenas-nfs-fast","volumes":[]}` | CSI storage for app config volumes |
 | global.annotations | object | `{}` |  |
 | ingress | object | `{"annotations":{},"domain":"","enabled":false,"hosts":[]}` | Ingress configuration |
+| iscsi | object | `{"driver":"org.democratic-csi.iscsi","iqnPrefix":"iqn.2005-10.org.freenas.ctl:csi-","iqnSuffix":"-shared","portal":"","storageClassName":"truenas-iscsi-rwo","volumes":[]}` | iSCSI storage for app config volumes (SQLite-safe) |
 | jellyfin | object | `{"image":"jellyfin/jellyfin:10.11.6","nodeSelector":{},"port":8096,"resources":{"limits":{"cpu":"4000m","memory":"4Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}` | Jellyfin media server |
-| jellyseerr | object | `{"image":"fallenbagel/jellyseerr:2.7.3","port":5055,"resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}}` | Jellyseerr request management |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=131072","wsize=131072","hard"],"server":"","volumes":[]}` | NFS storage for media (read-only) |
+| seerr | object | `{"database":{"host":"","name":"","passwordSecret":{"key":"password","name":""},"port":"5432","user":""},"image":"ghcr.io/seerr-team/seerr:v3.0.1","port":5055,"resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}}` | Seerr request management (successor to Jellyseerr) |
 | timezone | string | `"Europe/Berlin"` |  |
 
 ----------------------------------------------

@@ -20,8 +20,16 @@ Media automation stack (Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, SABnzbd, an
 | buildarr | object | `{"image":"callum027/buildarr:0.7.8","resources":{"limits":{"cpu":"200m","memory":"256Mi"},"requests":{"cpu":"25m","memory":"64Mi"}}}` | Buildarr deployment |
 | csi | object | `{"basePath":"/mnt/fast/kubernetes/nfs-dynamic","driver":"org.democratic-csi.nfs-fast","mountOptions":["nfsvers=4","nconnect=8","hard","noatime","nodiratime"],"server":"","storageClassName":"truenas-nfs-fast","volumes":[]}` | CSI storage for app config volumes |
 | downloaders | object | `{"flaresolverr":{"image":"ghcr.io/flaresolverr/flaresolverr:v3.4.6","port":8191,"resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"256Mi"}}},"gluetun":{"firewallInputPorts":"8701,8080,9696,8191,5030","firewallOutboundSubnets":"10.96.0.0/12,10.244.0.0/16","image":"qmcgaw/gluetun:v3.41.1","resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}},"serverCountries":"Sweden","vpnProvider":"protonvpn"},"initScratch":{"image":"busybox:1.37","resources":{"limits":{"cpu":"100m","memory":"64Mi"},"requests":{"cpu":"10m","memory":"32Mi"}}},"prowlarr":{"image":"lscr.io/linuxserver/prowlarr:2.3.0.5236-ls137","port":9696,"resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}},"qbittorrent":{"image":"lscr.io/linuxserver/qbittorrent:5.1.4-r1-ls431","port":8701,"resources":{"limits":{"cpu":"1000m","memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}},"sabnzbd":{"image":"lscr.io/linuxserver/sabnzbd:4.5.5-ls244","port":8080,"resources":{"limits":{"cpu":"1000m","memory":"2Gi"},"requests":{"cpu":"100m","memory":"1Gi"}}},"slskd":{"image":"slskd/slskd:0.24.4","port":5030,"resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}}}` | Downloaders pod (gluetun VPN + download clients) |
-| externalSecret | object | `{"keys":["WIREGUARD_PRIVATE_KEY","WIREGUARD_ADDRESSES","RADARR_API_KEY","SONARR_API_KEY","PROWLARR_API_KEY","LIDARR_API_KEY","BAZARR_API_KEY"],"onePasswordItem":"arr-stack-secrets","refreshInterval":"1h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"arr-secrets"}` | External secrets configuration |
-| glance | object | `{"image":"glanceapp/glance:v0.8.4","port":8080,"resources":{"limits":{"cpu":"200m","memory":"256Mi"},"requests":{"cpu":"25m","memory":"64Mi"}}}` | Glance dashboard |
+| externalSecret | object | `{"keys":["WIREGUARD_PRIVATE_KEY","WIREGUARD_ADDRESSES","RADARR_API_KEY","SONARR_API_KEY","PROWLARR_API_KEY","LIDARR_API_KEY","BAZARR_API_KEY","JELLYFIN_API_KEY"],"onePasswordItem":"arr-stack-secrets","refreshInterval":"1h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"arr-secrets"}` | External secrets configuration |
+| glance.image | string | `"glanceapp/glance:v0.8.4"` |  |
+| glance.jellyfinLibraries[0] | string | `"Shows"` |  |
+| glance.jellyfinLibraries[1] | string | `"Movies"` |  |
+| glance.jellyfinUserName | string | `""` |  |
+| glance.port | int | `8080` |  |
+| glance.resources.limits.cpu | string | `"200m"` |  |
+| glance.resources.limits.memory | string | `"256Mi"` |  |
+| glance.resources.requests.cpu | string | `"25m"` |  |
+| glance.resources.requests.memory | string | `"64Mi"` |  |
 | global.annotations | object | `{}` |  |
 | ingress | object | `{"annotations":{},"domain":"","enabled":false,"hosts":[]}` | Ingress configuration |
 | iscsi | object | `{"driver":"org.democratic-csi.iscsi","iqnPrefix":"iqn.2005-10.org.freenas.ctl:csi-","iqnSuffix":"-shared","portal":"","storageClassName":"truenas-iscsi-rwo","volumes":[]}` | iSCSI storage for app config volumes (SQLite-safe) |
@@ -34,7 +42,7 @@ Media automation stack (Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, SABnzbd, an
 | lidarr.resources.requests.memory | string | `"256Mi"` |  |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=131072","wsize=131072","hard"],"server":"","volumes":[]}` | NFS storage for media and scratch |
 | radarr | object | `{"image":"lscr.io/linuxserver/radarr:6.0.4.10291-ls293","port":7878,"probePath":"/ping","resources":{"limits":{"cpu":"1000m","memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}}` | Arr apps (radarr, sonarr, lidarr, bazarr) |
-| recyclarr | object | `{"image":"ghcr.io/recyclarr/recyclarr:8.2.1","resources":{"limits":{"cpu":"200m","memory":"256Mi"},"requests":{"cpu":"25m","memory":"64Mi"}},"schedule":"0 4 * * 1"}` | Recyclarr CronJob |
+| recyclarr | object | `{"image":"ghcr.io/recyclarr/recyclarr:8.3.1@sha256:e28f8fd583b3175db64118ec006cc3436f6c8a7c9344520d314f91dc879f6607","resources":{"limits":{"cpu":"200m","memory":"256Mi"},"requests":{"cpu":"25m","memory":"64Mi"}},"schedule":"0 4 * * 1"}` | Recyclarr CronJob |
 | sonarr.image | string | `"lscr.io/linuxserver/sonarr:4.0.16.2944-ls303"` |  |
 | sonarr.port | int | `8989` |  |
 | sonarr.probePath | string | `"/ping"` |  |
