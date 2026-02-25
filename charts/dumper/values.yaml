@@ -65,7 +65,7 @@ tailscale:
 dumper:
   image:
     repository: ghcr.io/svnlto/dumper
-    tag: v0.2.1
+    tag: v0.2.3@sha256:8e04c75d875d41eb2e29248d2d4170df91285d493b401ec7d84dd73be196f7b3
   otelEndpoint: http://signoz-otel-collector.signoz.svc:4318
   syncInterval: "3600"
   retryInterval: "300"
