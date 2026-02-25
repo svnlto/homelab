@@ -341,7 +341,6 @@ scratch/
 - **bulk/music**: Daily (~10TB, music library)
 - **bulk/backups/proxmox**: Daily (Proxmox VM backups)
 - **bulk/backups/forgejo**: Daily (~100GB, Git repos)
-- **bulk/backups/arr-configs**: Daily (arr-stack configs)
 - **bulk/backups/timemachine**: Weekly (~2TB, macOS backups)
 - **bulk/archive**: Weekly (cold storage)
 - **Exclude**: bulk/media/movies, bulk/media/tv (replaceable), scratch/* (ephemeral)
