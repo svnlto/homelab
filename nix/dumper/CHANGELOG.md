@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/svnlto/homelab/compare/dumper-v0.2.1...dumper-v0.2.2) (2026-02-25)
+
+
+### Bug Fixes
+
+* reduce rsync parallelism to 4 and stagger stream starts ([6c9516b](https://github.com/svnlto/homelab/commit/6c9516b1fd30a19fe0417c0e9aeb85e489bbe3d5))
+
 ## [0.2.1](https://github.com/svnlto/homelab/compare/dumper-v0.2.0...dumper-v0.2.1) (2026-02-25)
 
 
