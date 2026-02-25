@@ -4,5 +4,5 @@ helm:
     value: ghcr.io/svnlto/dumper
     forcestring: true
   - name: dumper.image.tag
-    value: v0.2.3
+    value: v0.2.4
     forcestring: true
