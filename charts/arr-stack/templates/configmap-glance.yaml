@@ -39,7 +39,7 @@ data:
                         url: https://192.168.0.11:8006
                         icon: si:proxmox
                       - title: TrueNAS
-                        url: http://192.168.0.13
+                        url: https://truenas.{{ .Values.ingress.domain }}
                         icon: si:truenas
                       - title: ArgoCD
                         url: https://argocd.{{ .Values.ingress.domain }}
