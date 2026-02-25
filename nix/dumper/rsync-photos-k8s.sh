@@ -168,15 +168,13 @@ while true; do
       local checked=0 transferred=0 xfer_bytes=0 last_file=""
       for log in "${CHUNK_DIR}"/rsync-transfer-*.log; do
         [ -f "$log" ] || continue
-        local c
-        c=$(wc -l <"$log" 2>/dev/null || echo 0)
-        checked=$((checked + c))
-        local t
-        t=$(grep -c '^>' "$log" 2>/dev/null || echo 0)
-        transferred=$((transferred + t))
-        local b
-        b=$(grep '^>' "$log" 2>/dev/null | awk '{s+=$2} END {print s+0}' || echo 0)
-        xfer_bytes=$((xfer_bytes + b))
+        local c t b
+        c=$(wc -l <"$log" 2>/dev/null) || c=0
+        checked=$((checked + ${c:-0}))
+        t=$(grep -c '^>' "$log" 2>/dev/null) || t=0
+        transferred=$((transferred + ${t:-0}))
+        b=$(grep '^>' "$log" 2>/dev/null | awk '{s+=$2} END {print s+0}') || b=0
+        xfer_bytes=$((xfer_bytes + ${b:-0}))
         local lf
         lf=$(tail -1 "$log" 2>/dev/null | awk '{$1=$2=""; sub(/^  /,""); print}' || echo "")
         [ -n "$lf" ] && last_file="$lf"
@@ -258,12 +256,12 @@ while true; do
   TOTAL_BYTES=0
   for log in "${CHUNK_DIR}"/rsync-transfer-*.log; do
     [ -f "$log" ] || continue
-    local_checked=$(wc -l <"$log" 2>/dev/null || echo 0)
-    CHECKED=$((CHECKED + local_checked))
-    local_transferred=$(grep -c '^>' "$log" 2>/dev/null || echo 0)
-    TRANSFERRED=$((TRANSFERRED + local_transferred))
-    local_bytes=$(grep '^>' "$log" 2>/dev/null | awk '{s+=$2} END {print s+0}' || echo 0)
-    TOTAL_BYTES=$((TOTAL_BYTES + local_bytes))
+    local_checked=$(wc -l <"$log" 2>/dev/null) || local_checked=0
+    CHECKED=$((CHECKED + ${local_checked:-0}))
+    local_transferred=$(grep -c '^>' "$log" 2>/dev/null) || local_transferred=0
+    TRANSFERRED=$((TRANSFERRED + ${local_transferred:-0}))
+    local_bytes=$(grep '^>' "$log" 2>/dev/null | awk '{s+=$2} END {print s+0}') || local_bytes=0
+    TOTAL_BYTES=$((TOTAL_BYTES + ${local_bytes:-0}))
   done
   DURATION=$((SECONDS - RSYNC_START))
   AVG_SPEED="0.0"
