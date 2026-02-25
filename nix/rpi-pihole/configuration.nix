@@ -51,13 +51,8 @@
   # Enable sudo without password for wheel group
   security.sudo.wheelNeedsPassword = false;
 
-  # Automatic system updates (NixOS-specific)
-  system.autoUpgrade = {
-    enable = true;
-    allowReboot = false;
-    dates = "daily";
-    flake = "/etc/nixos";
-  };
+  # Auto-upgrade disabled — deployments are managed via `just nixos-deploy-pihole`
+  system.autoUpgrade.enable = false;
 
   # Automatic garbage collection
   nix.gc = {
