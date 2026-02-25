@@ -2,8 +2,8 @@
 # Configure Proxmox PCI resource mappings via pvesh API.
 # pmxcfs doesn't support standard file operations, so we use the API instead.
 
-- name: Configure PCI resource mappings
-  ansible.builtin.shell: | # noqa: no-changed-when
+- name: Configure PCI resource mappings # noqa: no-changed-when
+  ansible.builtin.shell: |
     if pvesh get /cluster/mapping/pci/{{ item.key }} >/dev/null 2>&1; then
       pvesh set /cluster/mapping/pci/{{ item.key }} \
         --description '{{ item.value.description }}' \
