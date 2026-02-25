@@ -64,28 +64,28 @@ data:
                 title: Services
                 sites:
                   - title: Radarr
-                    url: http://radarr.{{ .Values.ingress.domain }}
+                    url: https://radarr.{{ .Values.ingress.domain }}
                     icon: si:radarr
                   - title: Sonarr
-                    url: http://sonarr.{{ .Values.ingress.domain }}
+                    url: https://sonarr.{{ .Values.ingress.domain }}
                     icon: si:sonarr
                   - title: Lidarr
-                    url: http://lidarr.{{ .Values.ingress.domain }}
+                    url: https://lidarr.{{ .Values.ingress.domain }}
                     icon: si:lidarr
                   - title: Bazarr
-                    url: http://bazarr.{{ .Values.ingress.domain }}
+                    url: https://bazarr.{{ .Values.ingress.domain }}
                     icon: si:bazarr
                   - title: Prowlarr
-                    url: http://prowlarr.{{ .Values.ingress.domain }}
+                    url: https://prowlarr.{{ .Values.ingress.domain }}
                     icon: si:prowlarr
                   - title: qBittorrent
-                    url: http://qbittorrent.{{ .Values.ingress.domain }}
+                    url: https://qbittorrent.{{ .Values.ingress.domain }}
                     icon: si:qbittorrent
                   - title: SABnzbd
-                    url: http://sabnzbd.{{ .Values.ingress.domain }}
+                    url: https://sabnzbd.{{ .Values.ingress.domain }}
                     icon: si:sabnzbd
                   - title: Slskd
-                    url: http://slskd.{{ .Values.ingress.domain }}
+                    url: https://slskd.{{ .Values.ingress.domain }}
                     icon: si:slskd
                   - title: Jellyfin
                     url: https://jellyfin.{{ .Values.ingress.domain }}
