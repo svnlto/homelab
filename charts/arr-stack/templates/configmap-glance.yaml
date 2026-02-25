@@ -88,16 +88,16 @@ data:
                     url: http://slskd.{{ .Values.ingress.domain }}
                     icon: si:slskd
                   - title: Jellyfin
-                    url: http://jellyfin.jellyfin.svc.cluster.local:8096
+                    url: https://jellyfin.{{ .Values.ingress.domain }}
                     icon: si:jellyfin
                   - title: Jellyseerr
-                    url: http://jellyseerr.jellyfin.svc.cluster.local:5055
+                    url: https://jellyseerr.{{ .Values.ingress.domain }}
                     icon: si:jellyfin
                   - title: Navidrome
-                    url: http://navidrome.navidrome.svc.cluster.local:4533
+                    url: https://navidrome.{{ .Values.ingress.domain }}
                     icon: si:navidrome
                   - title: SigNoz
-                    url: http://signoz.signoz.svc.cluster.local:8080
+                    url: https://signoz.{{ .Values.ingress.domain }}
 
               {{- range .Values.glance.jellyfinLibraries }}
               - type: custom-api
