@@ -34,7 +34,7 @@ Media automation stack (Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, SABnzbd, an
 | lidarr.resources.requests.memory | string | `"256Mi"` |  |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=131072","wsize=131072","hard"],"server":"","volumes":[]}` | NFS storage for media and scratch |
 | radarr | object | `{"image":"lscr.io/linuxserver/radarr:6.0.4.10291-ls293","port":7878,"probePath":"/ping","resources":{"limits":{"cpu":"1000m","memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}}` | Arr apps (radarr, sonarr, lidarr, bazarr) |
-| recyclarr | object | `{"image":"ghcr.io/recyclarr/recyclarr:8.2.1","resources":{"limits":{"cpu":"200m","memory":"256Mi"},"requests":{"cpu":"25m","memory":"64Mi"}},"schedule":"0 4 * * 1"}` | Recyclarr CronJob |
+| recyclarr | object | `{"image":"ghcr.io/recyclarr/recyclarr:8.3.1@sha256:e28f8fd583b3175db64118ec006cc3436f6c8a7c9344520d314f91dc879f6607","resources":{"limits":{"cpu":"200m","memory":"256Mi"},"requests":{"cpu":"25m","memory":"64Mi"}},"schedule":"0 4 * * 1"}` | Recyclarr CronJob |
 | sonarr.image | string | `"lscr.io/linuxserver/sonarr:4.0.16.2944-ls303"` |  |
 | sonarr.port | int | `8989` |  |
 | sonarr.probePath | string | `"/ping"` |  |
