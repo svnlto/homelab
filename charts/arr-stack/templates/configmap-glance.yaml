@@ -208,7 +208,7 @@ data:
                               {{ `{{ end }}` }}
 
                               {{ `{{ $linkURL := print $externalURL "/web/#/details?id=" $itemID }}` }}
-                              {{ `{{ $thumbURL := concat $baseURL "/Items/" $itemID "/Images/Primary?api_key=" $apiKey }}` }}
+                              {{ `{{ $thumbURL := concat $externalURL "/Items/" $itemID "/Images/Primary?api_key=" $apiKey }}` }}
 
                               {{ `<a class="card widget-content-frame" href="{{ $linkURL | safeURL }}">` }}
                                 {{ `{{ if $showThumbnail }}` }}
