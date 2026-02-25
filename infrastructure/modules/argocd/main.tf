@@ -59,6 +59,12 @@ resource "helm_release" "argocd" {
             clusters  = ["*"]
           }
         ])
+
+        # Ignore status fields that K8s 1.31+ adds but ArgoCD's bundled
+        # schema doesn't yet know about (e.g. terminatingReplicas)
+        "resource.customizations.ignoreDifferences.apps_Deployment" = yamlencode({
+          jqPathExpressions = [".status"]
+        })
       }
     }
 

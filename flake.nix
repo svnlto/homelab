@@ -43,6 +43,7 @@
             kubectx
             talosctl
             k9s
+            argocd
             vcluster
             popeye
             helm-docs
