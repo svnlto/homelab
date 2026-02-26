@@ -23,6 +23,12 @@ sync:
     nodes:
       enabled: true
 
+integrations:
+  metricsServer:
+    enabled: true
+    nodes: true
+    pods: true
+
 exportKubeConfig:
   secret:
     name: vcluster-dev-kubeconfig
