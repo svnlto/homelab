@@ -237,7 +237,7 @@ locals {
       node_name = "grogu"
       hostname  = "truenas-backup"
       cores     = 6
-      memory_mb = 24576
+      memory_mb = 12288
       disks = {
         boot_size_gb = 32
       }
