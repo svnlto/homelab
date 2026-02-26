@@ -1,0 +1,31 @@
+---
+controlPlane:
+  distro:
+    k8s:
+      enabled: true
+  statefulSet:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 384Mi
+      limits:
+        memory: 768Mi
+    persistence:
+      volumeClaim:
+        storageClass: truenas-iscsi-rwo
+        size: 5Gi
+
+sync:
+  toHost:
+    ingresses:
+      enabled: true
+  fromHost:
+    nodes:
+      enabled: true
+
+exportKubeConfig:
+  secret:
+    name: vcluster-dev-kubeconfig
+
+telemetry:
+  enabled: false
