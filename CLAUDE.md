@@ -215,7 +215,7 @@ Pinned via Nix flakes (`flake.nix`):
 - Terraform 1.14.1 (from nixpkgs-terraform)
 - Terragrunt (from nixpkgs)
 - Ansible (from nixpkgs-unstable)
-- Proxmox Provider 0.96.0 (bpg/proxmox)
+- Proxmox Provider 0.97.0 (bpg/proxmox)
 
 ## Pre-commit Hooks
 
