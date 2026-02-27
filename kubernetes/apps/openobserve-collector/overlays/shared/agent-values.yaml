@@ -18,7 +18,7 @@ presets:
   kubernetesAttributes:
     enabled: true
 
-extraEnvFrom:
+extraEnvsFrom:
   - secretRef:
       name: openobserve-auth
 
@@ -34,7 +34,7 @@ config:
     otlphttp/openobserve:
       endpoint: http://openobserve-openobserve-standalone.openobserve.svc:5080/api/default/
       headers:
-        Authorization: "${env:auth-header}"
+        Authorization: "${env:OPENOBSERVE_AUTH_HEADER}"
   service:
     pipelines:
       logs:
