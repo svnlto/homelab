@@ -28,7 +28,7 @@ resources:
 config:
   exporters:
     otlphttp/openobserve:
-      endpoint: http://openobserve.openobserve.svc:5080/api/default/
+      endpoint: http://openobserve-openobserve-standalone.openobserve.svc:5080/api/default/
       headers:
         Authorization: "Basic YWRtaW5Ac3ZlbmxpdG8uY29tOkNoYW5nZU1lQWZ0ZXJGaXJzdExvZ2luIQ=="
   service:

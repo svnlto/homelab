@@ -18,6 +18,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: openobserve
+                name: openobserve-openobserve-standalone
                 port:
                   number: 5080
