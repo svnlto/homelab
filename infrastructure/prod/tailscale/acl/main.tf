@@ -9,16 +9,36 @@ resource "tailscale_acl" "this" {
       for tag, owners in var.acl_tags : "tag:${tag}" => owners
     }
 
-    // Grants — default: allow all connections
+    // Grants — explicit per-path network access (deny-by-default)
     grants = [
-      { src = ["*"], dst = ["*"], ip = ["*"] },
-      // Allow K8s pods to use Pi-hole as a Tailscale peer relay
+      // --- Network access ---
+
+      // Personal devices can reach each other
+      { src = ["autogroup:member"], dst = ["autogroup:self"], ip = ["*"] },
+
+      // Personal devices can reach all tagged infrastructure
+      { src = ["autogroup:member"], dst = ["tag:k8s"], ip = ["*"] },
+      { src = ["autogroup:member"], dst = ["tag:pihole"], ip = ["*"] },
+      { src = ["autogroup:member"], dst = ["tag:dumper-src"], ip = ["*"] },
+      { src = ["autogroup:member"], dst = ["tag:photo-relay"], ip = ["*"] },
+
+      // K8s pods can reach Pi-hole (DNS), dumper-src (rsync), and photo-relay
+      { src = ["tag:k8s"], dst = ["tag:pihole"], ip = ["*"] },
+      { src = ["tag:k8s"], dst = ["tag:dumper-src"], ip = ["*"] },
+      { src = ["tag:k8s"], dst = ["tag:photo-relay"], ip = ["*"] },
+
+      // dumper-src Mac can reach photo-relay (relay path)
+      { src = ["tag:dumper-src"], dst = ["tag:photo-relay"], ip = ["*"] },
+
+      // --- Peer relay capabilities ---
+
+      // K8s pods can use Pi-hole as a Tailscale peer relay
       {
         src = ["tag:k8s"]
         dst = ["tag:pihole"]
         app = { "tailscale.com/cap/relay" = [{}] }
       },
-      // Allow K8s pods and dumper-src Mac to use photo-relay (Linode Singapore) as a peer relay
+      // K8s pods and dumper-src Mac can use photo-relay (Linode Singapore) as a peer relay
       {
         src = ["tag:k8s", "tag:dumper-src"]
         dst = ["tag:photo-relay"]
