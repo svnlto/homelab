@@ -30,6 +30,9 @@ resources:
     memory: 256Mi
 
 config:
+  receivers:
+    kubeletstats:
+      insecure_skip_verify: true
   exporters:
     otlphttp/openobserve:
       endpoint: http://openobserve-openobserve-standalone.openobserve.svc:5080/api/default/
