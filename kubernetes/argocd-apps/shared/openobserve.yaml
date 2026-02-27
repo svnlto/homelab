@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: signoz
+  name: openobserve
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,33 +10,28 @@ spec:
   project: default
 
   sources:
-    - repoURL: https://charts.signoz.io
-      chart: signoz
-      targetRevision: "0.112.0"
+    - repoURL: https://charts.openobserve.ai
+      chart: openobserve-standalone
+      targetRevision: "0.60.0"
       helm:
         valueFiles:
-          - $values/kubernetes/apps/signoz/values.yaml
+          - $values/kubernetes/apps/openobserve/overlays/shared/values.yaml
     - repoURL: https://github.com/svnlto/homelab
       targetRevision: HEAD
       ref: values
     - repoURL: https://github.com/svnlto/homelab
       targetRevision: HEAD
-      path: kubernetes/apps/signoz
+      path: kubernetes/apps/openobserve/overlays/shared
       directory:
         include: "ingress.yaml"
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: signoz
+    namespace: openobserve
 
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
-    managedNamespaceMetadata:
-      labels:
-        pod-security.kubernetes.io/enforce: privileged
     syncOptions:
       - CreateNamespace=true
-
-  ignoreDifferences: []
