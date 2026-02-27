@@ -3,6 +3,9 @@
 # Collects cluster-level metrics and K8s events (single replica).
 # Exports to OpenObserve via OTLP HTTP.
 
+image:
+  repository: otel/opentelemetry-collector-contrib
+
 mode: deployment
 
 replicaCount: 1

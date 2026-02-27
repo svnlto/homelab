@@ -3,6 +3,9 @@
 # Collects pod logs, host metrics, and kubelet metrics per node.
 # Exports to OpenObserve via OTLP HTTP.
 
+image:
+  repository: otel/opentelemetry-collector-contrib
+
 mode: daemonset
 
 presets:
