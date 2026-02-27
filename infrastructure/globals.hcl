@@ -250,10 +250,14 @@ locals {
   }
 
   talos = {
-    version = "v1.12.2"
-    # Schematic includes: siderolabs/i915-ucode, siderolabs/intel-ucode,
-    # siderolabs/iscsi-tools, siderolabs/qemu-guest-agent
-    schematic_id = "930a00fbcce4d3bcd531c92e13d24412df7b676f818004fbbdfeb693e4dcb649"
+    version = "v1.12.4"
+    # CP/worker: intel-ucode, iscsi-tools, qemu-guest-agent
+    schematic_id = "bb0ba48a52352c699781aeeb4aa1983b80ccc778c2eac94590fe6b4ab3c0fd00"
+    # GPU worker: + i915-ucode + xe driver (xe.force_probe=56a6,
+    # i915.force_probe=!56a6, xe.vram_bar_size=-1, xe.probe_display=false)
+    # xe handles VFIO passthrough without GuC hang; vram_bar_size=-1 skips
+    # BAR resize (QEMU #703); probe_display=false prevents virtio console freeze
+    gpu_schematic_id = "31fc3ef37111e6197d55761c65ad48e23f709bce355e90efa46064351d13ff4c"
   }
 
   versions = {

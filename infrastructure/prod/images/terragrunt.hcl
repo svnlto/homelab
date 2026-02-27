@@ -25,8 +25,9 @@ inputs = {
   nixos_url      = local.nixos.iso_url
   nixos_filename = local.nixos.filename
 
-  talos_version      = local.talos.version
-  talos_schematic_id = local.talos.schematic_id
+  talos_version          = local.talos.version
+  talos_schematic_id     = local.talos.schematic_id
+  talos_gpu_schematic_id = local.talos.gpu_schematic_id
 
   proxmox_node_primary   = local.proxmox.nodes.primary
   proxmox_node_secondary = local.proxmox.nodes.secondary

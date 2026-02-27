@@ -9,7 +9,7 @@ data "helm_template" "cilium" {
   name         = "cilium"
   repository   = "https://helm.cilium.io"
   chart        = "cilium"
-  version      = "1.16.5"
+  version      = "1.19.1"
   kube_version = var.kubernetes_version
 
   set = [
@@ -48,6 +48,10 @@ data "helm_template" "cilium" {
     {
       name  = "devices"
       value = "{eth0}"
+    },
+    {
+      name  = "nodePort.directRoutingDevice"
+      value = "eth0"
     },
     {
       name  = "socketLB.enabled"
