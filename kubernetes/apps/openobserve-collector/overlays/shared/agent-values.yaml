@@ -1,0 +1,41 @@
+---
+# OTel Collector Agent (DaemonSet)
+# Collects pod logs, host metrics, and kubelet metrics per node.
+# Exports to OpenObserve via OTLP HTTP.
+
+mode: daemonset
+
+presets:
+  logsCollection:
+    enabled: true
+  hostMetrics:
+    enabled: true
+  kubeletMetrics:
+    enabled: true
+  kubernetesAttributes:
+    enabled: true
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+config:
+  exporters:
+    otlphttp/openobserve:
+      endpoint: http://openobserve.openobserve.svc:5080/api/default/
+      headers:
+        Authorization: "Basic YWRtaW5Ac3ZlbmxpdG8uY29tOkNoYW5nZU1lQWZ0ZXJGaXJzdExvZ2luIQ=="
+  service:
+    pipelines:
+      logs:
+        exporters:
+          - otlphttp/openobserve
+      metrics:
+        exporters:
+          - otlphttp/openobserve
+      traces:
+        exporters:
+          - otlphttp/openobserve
