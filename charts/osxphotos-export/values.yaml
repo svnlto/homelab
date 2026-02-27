@@ -21,7 +21,7 @@ env:
   EXPORT_DB_PATH: /cache/osxphotos_export.db
   SYNC_INTERVAL: "3600"
   RETRY_INTERVAL: "300"
-  OTEL_EXPORTER_OTLP_ENDPOINT: http://signoz-otel-collector.signoz.svc:4318
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://openobserve.openobserve.svc:5080/api/default/
   OTEL_SERVICE_NAME: osxphotos-export
 
 # -- Security context for the container

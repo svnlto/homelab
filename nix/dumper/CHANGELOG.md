@@ -2,7 +2,6 @@
 
 ## [0.2.4](https://github.com/svnlto/homelab/compare/dumper-v0.2.3...dumper-v0.2.4) (2026-02-25)
 
-
 ### Bug Fixes
 
 * migrate all SQLite apps from NFS to iSCSI storage ([387043e](https://github.com/svnlto/homelab/commit/387043eeaebd0d51ee9aa9e4d6b9d2b6055dd960))

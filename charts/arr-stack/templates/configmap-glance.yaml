@@ -44,8 +44,8 @@ data:
                       - title: ArgoCD
                         url: https://argocd.{{ .Values.ingress.domain }}
                         icon: si:argo
-                      - title: SigNoz
-                        url: https://signoz.{{ .Values.ingress.domain }}
+                      - title: OpenObserve
+                        url: https://openobserve.{{ .Values.ingress.domain }}
 
               - type: releases
                 cache: 1d
@@ -96,8 +96,8 @@ data:
                   - title: Navidrome
                     url: https://navidrome.{{ .Values.ingress.domain }}
                     icon: si:navidrome
-                  - title: SigNoz
-                    url: https://signoz.{{ .Values.ingress.domain }}
+                  - title: OpenObserve
+                    url: https://openobserve.{{ .Values.ingress.domain }}
 
               {{- range .Values.glance.jellyfinLibraries }}
               - type: custom-api

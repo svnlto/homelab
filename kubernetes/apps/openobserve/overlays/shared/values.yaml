@@ -1,0 +1,37 @@
+---
+# OpenObserve Standalone
+#
+# OTLP ingestion endpoints (cluster-internal):
+#   HTTP: http://openobserve.openobserve.svc:5080/api/default/
+#   gRPC: openobserve.openobserve.svc:5081
+#
+# Web UI: https://openobserve.shared.h.svenlito.com
+
+auth:
+  ZO_ROOT_USER_EMAIL: "admin@svenlito.com"
+  ZO_ROOT_USER_PASSWORD: "ChangeMeAfterFirstLogin!"
+
+config:
+  ZO_TELEMETRY: "false"
+  ZO_LOCAL_MODE: "true"
+  ZO_META_STORE: "sqlite"
+
+persistence:
+  enabled: true
+  size: 20Gi
+  storageClass: truenas-iscsi-rwo
+  accessModes:
+    - ReadWriteOnce
+
+service:
+  type: ClusterIP
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    memory: 1Gi
+
+ingress:
+  enabled: false

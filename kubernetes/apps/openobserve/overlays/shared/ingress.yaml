@@ -2,22 +2,22 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: signoz
-  namespace: signoz
+  name: openobserve
+  namespace: openobserve
   annotations:
     traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
 spec:
   tls:
     - hosts:
-        - signoz.shared.h.svenlito.com
+        - openobserve.shared.h.svenlito.com
   rules:
-    - host: signoz.shared.h.svenlito.com
+    - host: openobserve.shared.h.svenlito.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: signoz
+                name: openobserve
                 port:
-                  number: 8080
+                  number: 5080

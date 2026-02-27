@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: signoz-k8s-infra
+  name: openobserve-collector
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,19 +10,19 @@ spec:
   project: default
 
   sources:
-    - repoURL: https://charts.signoz.io
-      chart: k8s-infra
-      targetRevision: "0.15.0"
+    - repoURL: https://charts.openobserve.ai
+      chart: openobserve-collector
+      targetRevision: "0.4.2"
       helm:
         valueFiles:
-          - $values/kubernetes/apps/signoz-k8s-infra/values.yaml
+          - $values/kubernetes/apps/openobserve-collector/overlays/shared/values.yaml
     - repoURL: https://github.com/svnlto/homelab
       targetRevision: HEAD
       ref: values
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: signoz
+    namespace: openobserve
 
   syncPolicy:
     automated:
