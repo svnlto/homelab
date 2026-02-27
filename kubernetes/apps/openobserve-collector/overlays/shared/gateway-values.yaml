@@ -1,0 +1,38 @@
+---
+# OTel Collector Gateway (Deployment)
+# Collects cluster-level metrics and K8s events (single replica).
+# Exports to OpenObserve via OTLP HTTP.
+
+mode: deployment
+
+replicaCount: 1
+
+presets:
+  clusterMetrics:
+    enabled: true
+  kubernetesEvents:
+    enabled: true
+  kubernetesAttributes:
+    enabled: true
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+config:
+  exporters:
+    otlphttp/openobserve:
+      endpoint: http://openobserve.openobserve.svc:5080/api/default/
+      headers:
+        Authorization: "Basic YWRtaW5Ac3ZlbmxpdG8uY29tOkNoYW5nZU1lQWZ0ZXJGaXJzdExvZ2luIQ=="
+  service:
+    pipelines:
+      logs:
+        exporters:
+          - otlphttp/openobserve
+      metrics:
+        exporters:
+          - otlphttp/openobserve

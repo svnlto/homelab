@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: openobserve-collector
+  name: openobserve-collector-agent
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,12 +10,47 @@ spec:
   project: default
 
   sources:
-    - repoURL: https://charts.openobserve.ai
-      chart: openobserve-collector
-      targetRevision: "0.4.2"
+    - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+      chart: opentelemetry-collector
+      targetRevision: "0.143.0"
       helm:
         valueFiles:
-          - $values/kubernetes/apps/openobserve-collector/overlays/shared/values.yaml
+          - $values/kubernetes/apps/openobserve-collector/overlays/shared/agent-values.yaml
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      ref: values
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openobserve
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    managedNamespaceMetadata:
+      labels:
+        pod-security.kubernetes.io/enforce: privileged
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: openobserve-collector-gateway
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  sources:
+    - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+      chart: opentelemetry-collector
+      targetRevision: "0.143.0"
+      helm:
+        valueFiles:
+          - $values/kubernetes/apps/openobserve-collector/overlays/shared/gateway-values.yaml
     - repoURL: https://github.com/svnlto/homelab
       targetRevision: HEAD
       ref: values
