@@ -30,6 +30,15 @@ resources:
     memory: 256Mi
 
 config:
+  processors:
+    resource/cluster:
+      attributes:
+        - key: k8s_cluster_name
+          value: k8s-shared
+          action: upsert
+        - key: k8s_cluster
+          value: k8s-shared
+          action: upsert
   exporters:
     otlphttp/openobserve:
       endpoint: http://openobserve-openobserve-standalone.openobserve.svc:5080/api/default/
@@ -38,8 +47,12 @@ config:
   service:
     pipelines:
       logs:
+        processors:
+          - resource/cluster
         exporters:
           - otlphttp/openobserve
       metrics:
+        processors:
+          - resource/cluster
         exporters:
           - otlphttp/openobserve
