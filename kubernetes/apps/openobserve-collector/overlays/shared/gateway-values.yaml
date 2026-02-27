@@ -31,6 +31,15 @@ resources:
 
 config:
   processors:
+    filter/metrics:
+      metrics:
+        exclude:
+          match_type: regexp
+          metric_names:
+            - otelcol_.*
+            - scrape_.*
+            - promhttp_.*
+            - up
     resource/cluster:
       attributes:
         - key: k8s_cluster_name
@@ -53,6 +62,7 @@ config:
           - otlphttp/openobserve
       metrics:
         processors:
+          - filter/metrics
           - resource/cluster
         exporters:
           - otlphttp/openobserve
