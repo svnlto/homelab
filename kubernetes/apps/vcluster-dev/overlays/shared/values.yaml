@@ -1,0 +1,43 @@
+---
+controlPlane:
+  distro:
+    k8s:
+      enabled: true
+  statefulSet:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 384Mi
+      limits:
+        memory: 768Mi
+    persistence:
+      volumeClaim:
+        storageClass: truenas-iscsi-rwo
+        size: 5Gi
+
+networking:
+  replicateServices:
+    fromHost:
+      - from: openobserve/openobserve-openobserve-standalone
+        to: openobserve/openobserve
+
+sync:
+  toHost:
+    ingresses:
+      enabled: true
+  fromHost:
+    nodes:
+      enabled: true
+
+integrations:
+  metricsServer:
+    enabled: true
+    nodes: true
+    pods: true
+
+exportKubeConfig:
+  secret:
+    name: vcluster-dev-kubeconfig
+
+telemetry:
+  enabled: false
