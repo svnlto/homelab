@@ -118,16 +118,8 @@ resource "proxmox_virtual_environment_vm" "worker" {
     type    = "virtio"
   }
 
-  dynamic "serial_device" {
-    for_each = each.value.gpu_passthrough ? [1] : []
-
-    content {
-      device = "socket"
-    }
-  }
-
   vga {
-    type   = each.value.gpu_passthrough ? "serial0" : "virtio"
+    type   = "virtio"
     memory = 4
   }
 
@@ -142,7 +134,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
     interface    = "scsi0"
     size         = each.value.disk_size_gb
     file_format  = "raw"
-    file_id      = var.talos_image_id
+    file_id      = each.value.gpu_passthrough && var.talos_gpu_image_id != "" ? var.talos_gpu_image_id : var.talos_image_id
     ssd          = true
   }
 
@@ -181,9 +173,23 @@ resource "talos_machine_configuration_apply" "control_plane" {
   client_configuration        = talos_machine_secrets.cluster.client_configuration
   machine_configuration_input = data.talos_machine_configuration.control_plane[each.key].machine_configuration
 
-  # Connect to the DHCP-reserved IP (matches static IP in machine config)
   node     = split("/", each.value.ip_address)[0]
   endpoint = split("/", each.value.ip_address)[0]
+
+  timeouts = {
+    create = "15m"
+    update = "15m"
+  }
+
+  on_destroy = {
+    graceful = true
+    reboot   = false
+    reset    = true
+  }
+
+  lifecycle {
+    replace_triggered_by = [proxmox_virtual_environment_vm.control_plane[each.key]]
+  }
 
   depends_on = [proxmox_virtual_environment_vm.control_plane]
 }
@@ -194,9 +200,23 @@ resource "talos_machine_configuration_apply" "worker" {
   client_configuration        = talos_machine_secrets.cluster.client_configuration
   machine_configuration_input = data.talos_machine_configuration.worker[each.key].machine_configuration
 
-  # Connect to the DHCP-reserved IP (matches static IP in machine config)
   node     = split("/", each.value.ip_address)[0]
   endpoint = split("/", each.value.ip_address)[0]
+
+  timeouts = {
+    create = "15m"
+    update = "15m"
+  }
+
+  on_destroy = {
+    graceful = true
+    reboot   = false
+    reset    = true
+  }
+
+  lifecycle {
+    replace_triggered_by = [proxmox_virtual_environment_vm.worker[each.key]]
+  }
 
   depends_on = [proxmox_virtual_environment_vm.worker]
 }
@@ -211,6 +231,10 @@ resource "talos_machine_bootstrap" "cluster" {
   client_configuration = talos_machine_secrets.cluster.client_configuration
   endpoint             = split("/", values(var.control_plane_nodes)[0].ip_address)[0]
   node                 = split("/", values(var.control_plane_nodes)[0].ip_address)[0]
+
+  timeouts = {
+    create = "15m"
+  }
 
   depends_on = [talos_machine_configuration_apply.control_plane]
 }

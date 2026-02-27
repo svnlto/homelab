@@ -21,3 +21,8 @@ output "talos_image_id_grogu" {
   description = "Proxmox file ID for the Talos image on grogu"
   value       = module.talos_image_grogu.image_id
 }
+
+output "talos_image_gpu_id_grogu" {
+  description = "Proxmox file ID for the Talos GPU image on grogu"
+  value       = module.talos_image_gpu_grogu.image_id
+}

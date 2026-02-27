@@ -59,3 +59,9 @@ variable "talos_schematic_id" {
   type        = string
   description = "Talos Image Factory schematic ID"
 }
+
+variable "talos_gpu_schematic_id" {
+  type        = string
+  description = "Talos Image Factory schematic ID for GPU nodes"
+  default     = ""
+}
