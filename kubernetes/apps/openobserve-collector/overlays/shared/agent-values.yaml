@@ -18,6 +18,10 @@ presets:
   kubernetesAttributes:
     enabled: true
 
+extraEnvFrom:
+  - secretRef:
+      name: openobserve-auth
+
 resources:
   requests:
     cpu: 50m
@@ -30,7 +34,7 @@ config:
     otlphttp/openobserve:
       endpoint: http://openobserve-openobserve-standalone.openobserve.svc:5080/api/default/
       headers:
-        Authorization: "Basic YWRtaW5Ac3ZlbmxpdG8uY29tOkNoYW5nZU1lQWZ0ZXJGaXJzdExvZ2luIQ=="
+        Authorization: "${env:auth-header}"
   service:
     pipelines:
       logs:

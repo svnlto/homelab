@@ -23,7 +23,7 @@ spec:
       targetRevision: HEAD
       path: kubernetes/apps/openobserve/overlays/shared
       directory:
-        include: "ingress.yaml"
+        include: "{ingress,external-secret}.yaml"
 
   destination:
     server: https://kubernetes.default.svc

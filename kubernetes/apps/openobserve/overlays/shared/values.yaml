@@ -8,8 +8,10 @@
 # Web UI: https://openobserve.shared.h.svenlito.com
 
 auth:
-  ZO_ROOT_USER_EMAIL: "admin@svenlito.com"
-  ZO_ROOT_USER_PASSWORD: "ChangeMeAfterFirstLogin!"
+  existingRootUserSecret:
+    name: openobserve-auth
+    emailKey: ZO_ROOT_USER_EMAIL
+    passwordKey: ZO_ROOT_USER_PASSWORD
 
 config:
   ZO_TELEMETRY: "false"
