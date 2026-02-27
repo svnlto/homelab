@@ -2,8 +2,8 @@
 # OpenObserve Standalone
 #
 # OTLP ingestion endpoints (cluster-internal):
-#   HTTP: http://openobserve.openobserve.svc:5080/api/default/
-#   gRPC: openobserve.openobserve.svc:5081
+#   HTTP: http://openobserve-openobserve-standalone.openobserve.svc:5080/api/default/
+#   gRPC: openobserve-openobserve-standalone.openobserve.svc:5081
 #
 # Web UI: https://openobserve.shared.h.svenlito.com
 
