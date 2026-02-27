@@ -10,12 +10,6 @@ include "provider" {
 
 dependency "images" {
   config_path = "../../images"
-
-  mock_outputs = {
-    talos_image_id_din = "local:iso/talos-mock-nocloud.img"
-  }
-  mock_outputs_merge_strategy_with_state = "shallow"
-  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 }
 
 dependency "tailscale" {
@@ -42,15 +36,17 @@ inputs = {
   cluster_name     = "shared"
   cluster_endpoint = "https://${local.k8s.vip}:6443"
 
-  talos_version      = "v1.12.2"
-  kubernetes_version = "v1.35.0"
-  talos_image_id     = dependency.images.outputs.talos_image_id_din
-  talos_schematic_id = local.talos.schematic_id
+  talos_version          = "v1.12.4"
+  kubernetes_version     = "v1.35.0"
+  talos_image_id         = dependency.images.outputs.talos_image_id_din
+  talos_gpu_image_id     = dependency.images.outputs.talos_image_gpu_id_grogu
+  talos_schematic_id     = local.talos.schematic_id
+  talos_gpu_schematic_id = local.talos.gpu_schematic_id
 
   network_bridge  = local.proxmox.bridges.k8s_shared
   network_gateway = local.vlans.k8s_shared.gateway
-  dns_servers     = [local.ips.pihole, "1.1.1.1"]
-  ntp_servers     = [local.ips.pihole, "time.cloudflare.com"]
+  dns_servers     = [local.ips.pihole]
+  ntp_servers     = [local.ips.pihole]
   vip_ip          = local.k8s.vip
 
   datastore_id = "local-lvm"

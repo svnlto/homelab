@@ -79,3 +79,16 @@ module "talos_image_grogu" {
   content_type     = "iso"
   proxmox_filename = "talos-${var.talos_schematic_id}-${var.talos_version}-nocloud.img"
 }
+
+module "talos_image_gpu_grogu" {
+  source = "../../modules/proxmox-image"
+
+  download_url       = "https://factory.talos.dev/image/${var.talos_gpu_schematic_id}/${var.talos_version}/nocloud-amd64.raw.xz"
+  image_name         = "talos-${var.talos_gpu_schematic_id}-${var.talos_version}-nocloud-amd64.raw"
+  compression_format = "xz"
+
+  proxmox_node     = var.proxmox_node_secondary
+  datastore_id     = var.datastore_id
+  content_type     = "iso"
+  proxmox_filename = "talos-${var.talos_gpu_schematic_id}-${var.talos_version}-nocloud.img"
+}
