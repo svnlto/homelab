@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: openobserve-collector-agent
+  name: openobserve-collector-gateway
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -15,7 +15,7 @@ spec:
       targetRevision: "0.143.0"
       helm:
         valueFiles:
-          - $values/kubernetes/apps/openobserve-collector/overlays/shared/agent-values.yaml
+          - $values/kubernetes/apps/openobserve-collector/overlays/shared/gateway-values.yaml
     - repoURL: https://github.com/svnlto/homelab
       targetRevision: HEAD
       ref: values
