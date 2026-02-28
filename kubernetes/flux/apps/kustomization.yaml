@@ -4,5 +4,10 @@ kind: Kustomization
 resources:
   - resourceset-local-apps.yaml
   - resourceset-external-apps.yaml
-  - openobserve.yaml
-  - image-automation.yaml
+  - helmrelease-openobserve.yaml
+  - kustomization-openobserve-extras.yaml
+  - imagerepository-dumper.yaml
+  - imagerepository-osxphotos-export.yaml
+  - imagepolicy-dumper.yaml
+  - imagepolicy-osxphotos-export.yaml
+  - imageupdateautomation-homelab.yaml
