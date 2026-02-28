@@ -1,0 +1,58 @@
+---
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSet
+metadata:
+  name: local-apps
+  namespace: flux-system
+spec:
+  inputs:
+    - id: arr-stack
+      namespace: arr-stack
+      chartPath: ./charts/arr-stack
+    - id: jellyfin
+      namespace: jellyfin
+      chartPath: ./charts/jellyfin
+    - id: navidrome
+      namespace: navidrome
+      chartPath: ./charts/navidrome
+    - id: postgresql
+      namespace: database
+      chartPath: ./charts/postgresql
+    - id: dumper
+      namespace: dumper
+      chartPath: ./charts/dumper
+    - id: osxphotos-export
+      namespace: osxphotos-export
+      chartPath: ./charts/osxphotos-export
+    - id: infrastructure
+      namespace: infrastructure
+      chartPath: ./charts/infrastructure
+  resources:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      metadata:
+        name: << inputs.id >>
+        namespace: << inputs.namespace >>
+      spec:
+        interval: 10m
+        releaseName: << inputs.id >>
+        chart:
+          spec:
+            chart: << inputs.chartPath >>
+            sourceRef:
+              kind: GitRepository
+              name: homelab
+              namespace: flux-system
+            reconcileStrategy: Revision
+        valuesFrom:
+          - kind: ConfigMap
+            name: << inputs.id >>-values
+            valuesKey: values.yaml
+        install:
+          remediation:
+            retries: 3
+        upgrade:
+          remediation:
+            retries: 3
+        driftDetection:
+          mode: enabled

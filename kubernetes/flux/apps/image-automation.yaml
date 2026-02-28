@@ -1,0 +1,74 @@
+---
+# Image repositories — scan container registries for new tags.
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: dumper
+  namespace: flux-system
+spec:
+  image: ghcr.io/svnlto/dumper
+  interval: 5m
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: osxphotos-export
+  namespace: flux-system
+spec:
+  image: ghcr.io/svnlto/osxphotos-export
+  interval: 5m
+---
+# Image policies — select the latest semver tag.
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: dumper
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: dumper
+  filterTags:
+    pattern: "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+  policy:
+    semver:
+      range: ">=0.0.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: osxphotos-export
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: osxphotos-export
+  filterTags:
+    pattern: "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+  policy:
+    semver:
+      range: ">=0.0.0"
+---
+# Image update automation — push tag updates back to Git.
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageUpdateAutomation
+metadata:
+  name: homelab
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: homelab
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: flux-image-automation
+        email: flux@svenlito.com
+      messageTemplate: "chore: update image {{range .Changed.Changes}}{{print .OldValue}} -> {{print .NewValue}} {{end}}"
+    push:
+      branch: main
+  update:
+    path: ./kubernetes/apps
+    strategy: Setters

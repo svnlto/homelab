@@ -1,0 +1,54 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: arr-stack
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cnpg-system
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: database
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dumper
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: infrastructure
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jellyfin
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: navidrome
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openobserve
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: osxphotos-export
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vcluster-dev
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
