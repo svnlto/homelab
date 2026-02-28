@@ -1,0 +1,29 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: infrastructure
+  namespace: infrastructure
+spec:
+  interval: 10m
+  releaseName: infrastructure
+  chart:
+    spec:
+      chart: ./charts/infrastructure
+      sourceRef:
+        kind: GitRepository
+        name: homelab
+        namespace: flux-system
+      reconcileStrategy: Revision
+  valuesFrom:
+    - kind: ConfigMap
+      name: infrastructure-values
+      valuesKey: values.yaml
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  driftDetection:
+    mode: enabled

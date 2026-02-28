@@ -113,6 +113,18 @@ variable "talos_schematic_id" {
   type        = string
 }
 
+variable "talos_gpu_schematic_id" {
+  description = "Talos Factory schematic ID for GPU nodes (includes extra kernel args for SDBoot/UKI)"
+  type        = string
+  default     = ""
+}
+
+variable "talos_gpu_image_id" {
+  description = "Proxmox file ID for the Talos GPU image"
+  type        = string
+  default     = ""
+}
+
 
 # Tags
 variable "tags" {

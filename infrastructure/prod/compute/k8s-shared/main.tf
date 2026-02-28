@@ -12,12 +12,14 @@ module "k8s_shared" {
   dns_servers     = var.dns_servers
   vip_ip          = var.vip_ip
 
-  datastore_id   = var.datastore_id
-  talos_image_id = var.talos_image_id
+  datastore_id       = var.datastore_id
+  talos_image_id     = var.talos_image_id
+  talos_gpu_image_id = var.talos_gpu_image_id
 
-  control_plane_nodes = var.control_plane_nodes
-  worker_nodes        = var.worker_nodes
-  talos_schematic_id  = var.talos_schematic_id
+  control_plane_nodes    = var.control_plane_nodes
+  worker_nodes           = var.worker_nodes
+  talos_schematic_id     = var.talos_schematic_id
+  talos_gpu_schematic_id = var.talos_gpu_schematic_id
 
   tags             = var.tags
   deploy_bootstrap = var.deploy_bootstrap
