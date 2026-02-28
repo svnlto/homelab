@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/svnlto/homelab/compare/dumper-v0.2.4...dumper-v0.3.0) (2026-02-27)
+
+
+### Features
+
+* migrate observability from SigNoz to OpenObserve ([cdc4000](https://github.com/svnlto/homelab/commit/cdc4000c826610cb04d17efcd654b06cf4e4d4e7))
+
 ## [0.2.4](https://github.com/svnlto/homelab/compare/dumper-v0.2.3...dumper-v0.2.4) (2026-02-25)
 
 ### Bug Fixes
