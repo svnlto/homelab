@@ -23,7 +23,7 @@ iscsi:
       pvName: navidrome-data
       pvcName: navidrome-data
       volumeHandle: pvc-f99ca6e8-14d0-4a62-a21d-ffdf6b7bb3e7
-      capacity: 1Gi
+      capacity: 5Gi
 
 csi:
   server: 10.10.10.13

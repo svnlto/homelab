@@ -4,13 +4,37 @@ global:
 
 # -- Navidrome server
 navidrome:
-  image: deluan/navidrome:latest
+  image: deluan/navidrome:0.60.3
   port: 4533
   env:
     - name: ND_MUSICFOLDER
       value: /music
     - name: ND_DATAFOLDER
       value: /data
+    - name: ND_SCANNER_SCHEDULE
+      value: "@every 1h"
+    - name: ND_LOGLEVEL
+      value: info
+    - name: ND_ENABLETRANSCODINGCONFIG
+      value: "false"
+    - name: ND_SESSIONTIMEOUT
+      value: "24h"
+    - name: ND_ENABLEINSIGHTSCOLLECTOR
+      value: "false"
+    - name: ND_PROMETHEUS_ENABLED
+      value: "true"
+    - name: ND_PROMETHEUS_METRICSPATH
+      value: /metrics
+    - name: ND_IMAGECACHESIZE
+      value: "500MB"
+    - name: ND_TRANSCODINGCACHESIZE
+      value: "500MB"
+    - name: ND_BACKUP_COUNT
+      value: "5"
+    - name: ND_BACKUP_SCHEDULE
+      value: "@daily"
+    - name: ND_BACKUP_PATH
+      value: /data/backups
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
