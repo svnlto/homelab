@@ -1,0 +1,34 @@
+{{- if .Values.staticVolume.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.staticVolume.pvName }}
+  annotations:
+    pv.kubernetes.io/provisioned-by: {{ .Values.staticVolume.driver }}
+    {{- range $key, $val := .Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  capacity:
+    storage: {{ .Values.cluster.storage.size }}
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.cluster.storage.storageClass }}
+  claimRef:
+    namespace: {{ .Release.Namespace }}
+    name: {{ .Values.cluster.name }}-1
+  csi:
+    driver: {{ .Values.staticVolume.driver }}
+    volumeHandle: {{ .Values.staticVolume.volumeHandle }}
+    fsType: ext4
+    volumeAttributes:
+      node_attach_driver: iscsi
+      provisioner_driver: freenas-api-iscsi
+      portal: {{ .Values.staticVolume.portal }}
+      iqn: {{ .Values.staticVolume.iqnPrefix }}{{ .Values.staticVolume.volumeHandle }}{{ .Values.staticVolume.iqnSuffix }}
+      lun: "0"
+      portals: ""
+      interface: ""
+{{- end }}

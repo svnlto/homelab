@@ -2,6 +2,16 @@
 global:
   annotations: {}
 
+# -- Static iSCSI volume for data persistence across cluster rebuilds
+staticVolume:
+  enabled: false
+  pvName: ""
+  volumeHandle: ""
+  driver: org.democratic-csi.iscsi
+  portal: ""
+  iqnPrefix: iqn.2005-10.org.freenas.ctl:csi-
+  iqnSuffix: -shared
+
 cluster:
   name: postgresql
   imageName: ghcr.io/cloudnative-pg/postgresql:17.2
@@ -31,8 +41,3 @@ cluster:
     initdb:
       database: seerr
       owner: seerr
-
-# -- Secrets to copy to other namespaces for cross-namespace access
-secretExports: []
-# - namespace: jellyfin
-#   secretName: postgresql-seerr-credentials

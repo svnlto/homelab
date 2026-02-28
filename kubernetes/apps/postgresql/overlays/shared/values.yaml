@@ -4,6 +4,12 @@ global:
     deployed-by: argocd
     cluster: shared
 
+staticVolume:
+  enabled: true
+  pvName: postgresql-data
+  volumeHandle: pvc-d543dc0c-3ae4-425e-8f50-433e573a479a
+  portal: 10.10.10.13:3260
+
 cluster:
   storage:
     size: 10Gi

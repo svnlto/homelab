@@ -20,6 +20,11 @@ spec:
     - repoURL: https://github.com/svnlto/homelab
       targetRevision: HEAD
       ref: values
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      path: kubernetes/apps/jellyfin/overlays/shared
+      directory:
+        include: "external-secret.yaml"
 
   destination:
     server: https://kubernetes.default.svc
