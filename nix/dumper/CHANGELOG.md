@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/svnlto/homelab/compare/dumper-v0.4.2...dumper-v0.4.3) (2026-03-01)
+
+
+### Bug Fixes
+
+* remove library prefix from originals file list ([273a97c](https://github.com/svnlto/homelab/commit/273a97c6ebabf402ecbc1f072d072b9e4103934b))
+
 ## [0.4.2](https://github.com/svnlto/homelab/compare/dumper-v0.4.1...dumper-v0.4.2) (2026-03-01)
 
 
