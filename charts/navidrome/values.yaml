@@ -35,6 +35,8 @@ navidrome:
       value: "@daily"
     - name: ND_BACKUP_PATH
       value: /data/backups
+    - name: ND_AGENTS
+      value: lastfm
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
