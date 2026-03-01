@@ -9,6 +9,7 @@ global:
 server:
   gpu:
     enabled: true
+    renderNode: /dev/dri/renderD129
   nodeSelector:
     kubernetes.io/hostname: shared-worker2
   resources:
