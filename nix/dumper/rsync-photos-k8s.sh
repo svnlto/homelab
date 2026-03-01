@@ -131,56 +131,100 @@ while true; do
   LOCAL_LIB="${DUMP_DIR}${REMOTE_PATH}"
   DB="${LOCAL_LIB}/database/Photos.sqlite"
 
+  PHASE1_START=$SECONDS
   echo "Phase 1: Syncing database/ from remote..."
   otel_log INFO "Phase 1: syncing database/" \
     "sync.phase=1" "remote.host=${REMOTE_HOST}"
 
   PHASE1_EXIT=0
-  rsync -rlt --partial --inplace --omit-dir-times \
+  PHASE1_OUTPUT=$(rsync -rlt --partial --inplace --omit-dir-times \
+    --stats \
     --timeout=300 \
     --chmod=D755,F644 \
     --rsync-path="sudo /usr/local/bin/rsync" \
     -e "ssh ${SSH_OPTS[*]}" \
     "${REMOTE_USER}@${REMOTE_HOST}:${LIB_PATH}/database/" \
-    "${LOCAL_LIB}/database/" 2>&1 || PHASE1_EXIT=$?
+    "${LOCAL_LIB}/database/" 2>&1) || PHASE1_EXIT=$?
+
+  PHASE1_DURATION=$((SECONDS - PHASE1_START))
+  PHASE1_XFER=$(echo "$PHASE1_OUTPUT" | grep -oP 'Number of regular files transferred: \K\d+' || echo "0")
+  PHASE1_BYTES=$(echo "$PHASE1_OUTPUT" | grep -oP 'Total transferred file size: [\d,]+ bytes' | tr -cd '0-9' || echo "0")
+  PHASE1_BYTES=${PHASE1_BYTES:-0}
+  PHASE1_BYTES_HUMAN=$(_human_bytes "$PHASE1_BYTES")
 
   if [ "$PHASE1_EXIT" -ne 0 ]; then
-    echo "ERROR: Phase 1 database sync failed (exit ${PHASE1_EXIT}) — retrying in ${RETRY_INTERVAL}s"
+    echo "ERROR: Phase 1 database sync failed (exit ${PHASE1_EXIT}) after ${PHASE1_DURATION}s — retrying in ${RETRY_INTERVAL}s"
+    echo "$PHASE1_OUTPUT" | tail -5
     otel_log ERROR "Phase 1 database sync failed (exit ${PHASE1_EXIT})" \
-      "sync.phase=1" "sync.status=error" "remote.host=${REMOTE_HOST}"
+      "sync.phase=1" "sync.status=error" "remote.host=${REMOTE_HOST}" \
+      "duration_seconds=${PHASE1_DURATION}"
     sleep "${RETRY_INTERVAL}"
     continue
   fi
 
+  echo "Phase 1: rsync done in ${PHASE1_DURATION}s — ${PHASE1_XFER} files, ${PHASE1_BYTES_HUMAN} transferred"
+  otel_log INFO "Phase 1 rsync done in ${PHASE1_DURATION}s — ${PHASE1_XFER} files, ${PHASE1_BYTES_HUMAN}" \
+    "sync.phase=1" "duration_seconds=${PHASE1_DURATION}" \
+    "files.transferred=${PHASE1_XFER}" "bytes.transferred=${PHASE1_BYTES}"
+
   # WAL checkpoint: consolidate SQLite databases so consumers get consistent reads
+  DB_COUNT=0
   while IFS= read -r -d '' db; do
+    DB_COUNT=$((DB_COUNT + 1))
+    DB_NAME=$(basename "$db")
+    DB_SIZE=$(stat -f%z "$db" 2>/dev/null || stat -c%s "$db" 2>/dev/null || echo "0")
+    DB_SIZE_HUMAN=$(_human_bytes "$DB_SIZE")
+
+    WAL_START=$SECONDS
+    echo "  Integrity check: ${DB_NAME} (${DB_SIZE_HUMAN})..."
     if sqlite3 "$db" "PRAGMA integrity_check;" >/dev/null 2>&1; then
+      IC_DURATION=$((SECONDS - WAL_START))
+      echo "  Integrity OK (${IC_DURATION}s), checkpointing WAL..."
+      WAL_CP_START=$SECONDS
       sqlite3 "$db" "PRAGMA wal_checkpoint(TRUNCATE);" >/dev/null 2>&1 || true
       rm -f "${db}-wal" "${db}-shm"
+      CP_DURATION=$((SECONDS - WAL_CP_START))
+      echo "  WAL checkpoint done (${CP_DURATION}s)"
+      otel_log INFO "SQLite ${DB_NAME}: integrity OK (${IC_DURATION}s), WAL checkpoint (${CP_DURATION}s)" \
+        "sync.phase=1" "db.name=${DB_NAME}" "db.size=${DB_SIZE}" \
+        "db.integrity_seconds=${IC_DURATION}" "db.checkpoint_seconds=${CP_DURATION}"
+    else
+      IC_DURATION=$((SECONDS - WAL_START))
+      echo "  WARN: Integrity check failed for ${DB_NAME} (${IC_DURATION}s) — skipping checkpoint"
+      otel_log WARN "SQLite ${DB_NAME}: integrity check failed (${IC_DURATION}s)" \
+        "sync.phase=1" "db.name=${DB_NAME}" "db.size=${DB_SIZE}" \
+        "db.integrity_seconds=${IC_DURATION}"
     fi
   done < <(find "${LOCAL_LIB}/database" -name '*.sqlite' -print0 2>/dev/null)
 
-  echo "Phase 1 complete: database/ synced"
-  otel_log INFO "Phase 1 complete" "sync.phase=1" "sync.status=success"
+  PHASE1_TOTAL=$((SECONDS - PHASE1_START))
+  echo "Phase 1 complete: ${DB_COUNT} databases processed in ${PHASE1_TOTAL}s"
+  otel_log INFO "Phase 1 complete: ${DB_COUNT} databases in ${PHASE1_TOTAL}s" \
+    "sync.phase=1" "sync.status=success" "db.count=${DB_COUNT}" \
+    "duration_seconds=${PHASE1_TOTAL}"
 
   # ── Phase 2: Build targeted file list from Photos.sqlite ──────────
+  PHASE2_START=$SECONDS
   echo "Phase 2: Querying Photos.sqlite for missing originals..."
 
   ALL_ORIGINALS="${STATE_DIR}/all-originals.txt"
   PRESENT="${STATE_DIR}/present-originals.txt"
 
   if [ -f "$DB" ] && sqlite3 "$DB" "SELECT COUNT(*) FROM ZASSET LIMIT 1;" >/dev/null 2>&1; then
+    QUERY_START=$SECONDS
     sqlite3 "$DB" \
       "SELECT 'originals/' || ZDIRECTORY || '/' || ZFILENAME
        FROM ZASSET
        WHERE ZTRASHEDSTATE = 0 AND ZDIRECTORY IS NOT NULL AND ZFILENAME IS NOT NULL;" \
       | sort > "${ALL_ORIGINALS}"
+    QUERY_DURATION=$((SECONDS - QUERY_START))
 
     TOTAL_ORIGINALS=$(wc -l < "${ALL_ORIGINALS}")
-    echo "Photos.sqlite reports ${TOTAL_ORIGINALS} originals"
+    echo "  SQL query: ${TOTAL_ORIGINALS} originals in ${QUERY_DURATION}s"
 
     # Find originals already present on disk
     ORIGINALS_DIR="${LOCAL_LIB}/originals"
+    SCAN_START=$SECONDS
     if [ -d "$ORIGINALS_DIR" ]; then
       find "$ORIGINALS_DIR" -type f \
         | sed "s|^${DUMP_DIR}${REMOTE_PATH}||" \
@@ -188,14 +232,20 @@ while true; do
     else
       : > "${PRESENT}"
     fi
+    PRESENT_COUNT=$(wc -l < "${PRESENT}")
+    SCAN_DURATION=$((SECONDS - SCAN_START))
+    echo "  Disk scan: ${PRESENT_COUNT} originals on disk in ${SCAN_DURATION}s"
 
     # Set difference: originals in DB but not on disk
     comm -23 "${ALL_ORIGINALS}" "${PRESENT}" > "${FILE_LIST}"
     FILE_COUNT=$(wc -l < "${FILE_LIST}")
+    PHASE2_DURATION=$((SECONDS - PHASE2_START))
 
-    echo "Missing originals: ${FILE_COUNT} / ${TOTAL_ORIGINALS}"
-    otel_log INFO "Phase 2: ${FILE_COUNT} missing originals (${TOTAL_ORIGINALS} total)" \
+    echo "  Missing: ${FILE_COUNT} / ${TOTAL_ORIGINALS} (${PRESENT_COUNT} present) — ${PHASE2_DURATION}s"
+    otel_log INFO "Phase 2: ${FILE_COUNT} missing originals (${TOTAL_ORIGINALS} total, ${PRESENT_COUNT} present) in ${PHASE2_DURATION}s" \
       "sync.phase=2" "files.missing=${FILE_COUNT}" "files.total_originals=${TOTAL_ORIGINALS}" \
+      "files.present=${PRESENT_COUNT}" "duration_seconds=${PHASE2_DURATION}" \
+      "query_seconds=${QUERY_DURATION}" "scan_seconds=${SCAN_DURATION}" \
       "remote.host=${REMOTE_HOST}"
   else
     echo "WARN: Photos.sqlite not available or unreadable — falling back to full originals sync"
