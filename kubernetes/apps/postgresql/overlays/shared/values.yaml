@@ -28,4 +28,5 @@ databases:
     extensions:
       - name: vchord
       - name: vector
+      - name: cube
       - name: earthdistance
