@@ -11,6 +11,8 @@ metadata:
     {{- end }}
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "navidrome.selectorLabels" . | nindent 6 }}
@@ -27,6 +29,7 @@ spec:
         runAsUser: {{ .Values.navidrome.securityContext.runAsUser }}
         runAsGroup: {{ .Values.navidrome.securityContext.runAsGroup }}
         fsGroup: {{ .Values.navidrome.securityContext.fsGroup }}
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: navidrome
           image: {{ .Values.navidrome.image }}
