@@ -140,7 +140,9 @@
       "matchPackageNames": ["ghcr.io/svnlto/dumper", "ghcr.io/svnlto/osxphotos-export"],
       "automerge": true,
       "automergeType": "pr",
-      "automergeStrategy": "squash"
+      "automergeStrategy": "squash",
+      "groupName": "dumper images",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"]
     },
 
   ]
