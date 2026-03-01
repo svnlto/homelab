@@ -1,9 +1,0 @@
----
-helm:
-  parameters:
-    - name: dumper.image.repository
-      value: ghcr.io/svnlto/dumper
-      forcestring: true
-    - name: dumper.image.tag
-      value: v0.2.4
-      forcestring: true
