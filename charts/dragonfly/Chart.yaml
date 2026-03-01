@@ -1,0 +1,7 @@
+---
+apiVersion: v2
+name: dragonfly
+description: Dragonfly shared Redis-compatible cache service with iSCSI persistent storage
+type: application
+version: 0.1.0
+appVersion: "1.37.0"

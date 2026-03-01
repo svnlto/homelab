@@ -1,0 +1,18 @@
+{{- range .Values.databases }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: {{ $.Values.cluster.name }}-{{ .name }}
+  annotations:
+    {{- include "postgresql.annotations" $ | nindent 4 }}
+spec:
+  name: {{ .name }}
+  owner: {{ .owner }}
+  cluster:
+    name: {{ $.Values.cluster.name }}
+  {{- if .extensions }}
+  extensions:
+    {{- toYaml .extensions | nindent 4 }}
+  {{- end }}
+{{- end }}

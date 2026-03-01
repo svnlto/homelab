@@ -1,0 +1,88 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-server
+  labels:
+    {{- include "immich.labels" (dict "name" "immich-server" "component" "server" "context" .) | nindent 4 }}
+  annotations:
+    {{- include "immich.annotations" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "immich.selectorLabels" (dict "name" "immich-server" "context" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "immich.selectorLabels" (dict "name" "immich-server" "context" .) | nindent 8 }}
+      annotations:
+        {{- include "immich.annotations" . | nindent 8 }}
+    spec:
+      securityContext:
+        runAsUser: {{ .Values.server.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.server.securityContext.runAsGroup }}
+        fsGroup: {{ .Values.server.securityContext.fsGroup }}
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: immich-server
+          image: {{ .Values.server.image }}
+          ports:
+            - containerPort: {{ .Values.server.port }}
+              name: http
+          envFrom:
+            - configMapRef:
+                name: immich-config
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: DB_PASSWORD
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: REDIS_PASSWORD
+            - name: IMMICH_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: IMMICH_SECRET_KEY
+          startupProbe:
+            httpGet:
+              path: /api/server/ping
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /api/server/ping
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /api/server/ping
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 10
+          resources:
+            {{- toYaml .Values.server.resources | nindent 12 }}
+          volumeMounts:
+            - name: upload
+              mountPath: /usr/src/app/upload
+            - name: external-libraries
+              mountPath: /external-libraries
+              readOnly: true
+      volumes:
+        - name: upload
+          persistentVolumeClaim:
+            claimName: immich-upload
+        - name: external-libraries
+          persistentVolumeClaim:
+            claimName: nfs-photos

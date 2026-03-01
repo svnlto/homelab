@@ -1,0 +1,33 @@
+---
+global:
+  annotations: {}
+
+dragonfly:
+  image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.37.0
+  port: 6379
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+
+# -- iSCSI storage for data persistence
+iscsi:
+  driver: org.democratic-csi.iscsi
+  storageClassName: truenas-iscsi-rwo
+  portal: ""
+  iqnPrefix: iqn.2005-10.org.freenas.ctl:csi-
+  iqnSuffix: -shared
+  volumes: []
+
+# -- External secrets configuration
+externalSecret:
+  refreshInterval: 1h
+  secretStoreName: onepassword
+  secretStoreKind: ClusterSecretStore
+  targetSecretName: dragonfly-secrets
+  onePasswordItem: dragonfly-secrets
+  keys:
+    - DRAGONFLY_PASSWORD

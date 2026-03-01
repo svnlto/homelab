@@ -10,7 +10,7 @@ CloudNativePG PostgreSQL cluster for shared database workloads
 |-----|------|---------|-------------|
 | cluster.bootstrap.initdb.database | string | `"seerr"` |  |
 | cluster.bootstrap.initdb.owner | string | `"seerr"` |  |
-| cluster.imageName | string | `"ghcr.io/cloudnative-pg/postgresql:17.2"` |  |
+| cluster.imageName | string | `"ghcr.io/tensorchord/cloudnative-vectorchord:17-1.1.1"` |  |
 | cluster.instances | int | `1` |  |
 | cluster.name | string | `"postgresql"` |  |
 | cluster.postgresql.parameters.effective_cache_size | string | `"512MB"` |  |
@@ -18,12 +18,14 @@ CloudNativePG PostgreSQL cluster for shared database workloads
 | cluster.postgresql.parameters.max_connections | string | `"50"` |  |
 | cluster.postgresql.parameters.shared_buffers | string | `"128MB"` |  |
 | cluster.postgresql.parameters.work_mem | string | `"8MB"` |  |
+| cluster.postgresql.shared_preload_libraries[0] | string | `"vchord.so"` |  |
 | cluster.resources.limits.cpu | string | `"1000m"` |  |
 | cluster.resources.limits.memory | string | `"1Gi"` |  |
 | cluster.resources.requests.cpu | string | `"100m"` |  |
 | cluster.resources.requests.memory | string | `"256Mi"` |  |
 | cluster.storage.size | string | `"10Gi"` |  |
 | cluster.storage.storageClass | string | `"truenas-iscsi-rwo"` |  |
+| databases | list | `[]` | Additional databases managed via CNPG Database CR |
 | global.annotations | object | `{}` |  |
 | staticVolume | object | `{"driver":"org.democratic-csi.iscsi","enabled":false,"iqnPrefix":"iqn.2005-10.org.freenas.ctl:csi-","iqnSuffix":"-shared","portal":"","pvName":"","volumeHandle":""}` | Static iSCSI volume for data persistence across cluster rebuilds |
 
