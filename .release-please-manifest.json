@@ -1,4 +1,4 @@
 {
-  "nix/dumper": "0.4.0",
+  "nix/dumper": "0.4.1",
   "nix/osxphotos-export": "0.1.0"
 }
