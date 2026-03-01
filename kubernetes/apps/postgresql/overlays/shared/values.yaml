@@ -26,6 +26,6 @@ databases:
   - name: immich
     owner: immich
     extensions:
-      - name: vectorchord
+      - name: vchord
       - name: vector
       - name: earthdistance
