@@ -8,7 +8,7 @@ Dragonfly shared Redis-compatible cache service with iSCSI persistent storage
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| dragonfly.image | string | `"docker.dragonflydb.io/dragonflydb/dragonfly:v1.37.0"` |  |
+| dragonfly.image | string | `"docker.dragonflydb.io/dragonflydb/dragonfly:v1.37.0@sha256:84b1009aee0b68327758bce8e99ed514f782d713353acc46caf5738feaa481d6"` |  |
 | dragonfly.port | int | `6379` |  |
 | dragonfly.resources.limits.cpu | string | `"1000m"` |  |
 | dragonfly.resources.limits.memory | string | `"512Mi"` |  |
