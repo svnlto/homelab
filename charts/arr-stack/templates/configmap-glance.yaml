@@ -265,10 +265,10 @@ data:
                       - url: https://selfh.st/rss/
                         title: selfh.st
                         limit: 4
-                      - url: https://blog.linuxserver.io/rss/
+                      - url: https://www.linuxserver.io/blog.rss
                         title: LinuxServer.io
-                      - url: https://www.truenas.com/blog/feed/
-                        title: TrueNAS Blog
+                      - url: https://forums.truenas.com/latest.rss
+                        title: TrueNAS Forums
                   - type: reddit
                     subreddit: selfhosted
                     show-thumbnails: true
