@@ -28,7 +28,7 @@ spec:
             - --dir
             - /data
             - --dbfilename
-            - dump.rdb
+            - dump
             - --requirepass
             - $(DRAGONFLY_PASSWORD)
           ports:
