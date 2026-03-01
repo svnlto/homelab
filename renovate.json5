@@ -135,13 +135,18 @@
       "versioning": "regex:^v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)([.-](?<build>\\d+))?(-r\\d+)?-ls(?<revision>\\d+)$"
     },
 
-    // Automerge own container images — replaces argocd-image-updater
+    // Dumper image managed by CI deploy pipeline — disable Renovate
     {
-      "matchPackageNames": ["ghcr.io/svnlto/dumper", "ghcr.io/svnlto/osxphotos-export"],
+      "matchPackageNames": ["ghcr.io/svnlto/dumper"],
+      "enabled": false
+    },
+
+    // Automerge osxphotos-export container images
+    {
+      "matchPackageNames": ["ghcr.io/svnlto/osxphotos-export"],
       "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash",
-      "groupName": "dumper images",
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"]
     },
 
