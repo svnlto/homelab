@@ -135,5 +135,13 @@
       "versioning": "regex:^v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)([.-](?<build>\\d+))?(-r\\d+)?-ls(?<revision>\\d+)$"
     },
 
+    // Automerge own container images — replaces argocd-image-updater
+    {
+      "matchPackageNames": ["ghcr.io/svnlto/dumper", "ghcr.io/svnlto/osxphotos-export"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+
   ]
 }
