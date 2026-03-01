@@ -131,8 +131,8 @@ while true; do
   LOCAL_LIB="${DUMP_DIR}${REMOTE_PATH}"
   DB="${LOCAL_LIB}/database/Photos.sqlite"
 
-  echo "Phase 1: Syncing database/ and resources/ from remote..."
-  otel_log INFO "Phase 1: syncing database/ and resources/" \
+  echo "Phase 1: Syncing database/ from remote..."
+  otel_log INFO "Phase 1: syncing database/" \
     "sync.phase=1" "remote.host=${REMOTE_HOST}"
 
   PHASE1_EXIT=0
@@ -152,14 +152,6 @@ while true; do
     continue
   fi
 
-  rsync -rlt --partial --inplace --omit-dir-times \
-    --timeout=300 \
-    --chmod=D755,F644 \
-    --rsync-path="sudo /usr/local/bin/rsync" \
-    -e "ssh ${SSH_OPTS[*]}" \
-    "${REMOTE_USER}@${REMOTE_HOST}:${LIB_PATH}/resources/" \
-    "${LOCAL_LIB}/resources/" 2>&1 || true
-
   # WAL checkpoint: consolidate SQLite databases so consumers get consistent reads
   while IFS= read -r -d '' db; do
     if sqlite3 "$db" "PRAGMA integrity_check;" >/dev/null 2>&1; then
@@ -168,7 +160,7 @@ while true; do
     fi
   done < <(find "${LOCAL_LIB}/database" -name '*.sqlite' -print0 2>/dev/null)
 
-  echo "Phase 1 complete: database/ and resources/ synced"
+  echo "Phase 1 complete: database/ synced"
   otel_log INFO "Phase 1 complete" "sync.phase=1" "sync.status=success"
 
   # ── Phase 2: Build targeted file list from Photos.sqlite ──────────
