@@ -12,9 +12,9 @@ Jellyfin media server with Seerr request management
 | global.annotations | object | `{}` |  |
 | ingress | object | `{"annotations":{},"domain":"","enabled":false,"hosts":[]}` | Ingress configuration |
 | iscsi | object | `{"driver":"org.democratic-csi.iscsi","iqnPrefix":"iqn.2005-10.org.freenas.ctl:csi-","iqnSuffix":"-shared","portal":"","storageClassName":"truenas-iscsi-rwo","volumes":[]}` | iSCSI storage for app config volumes (SQLite-safe) |
-| jellyfin | object | `{"image":"jellyfin/jellyfin:10.11.6","nodeSelector":{},"port":8096,"resources":{"limits":{"cpu":"4000m","memory":"4Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}` | Jellyfin media server |
+| jellyfin | object | `{"image":"jellyfin/jellyfin:10.11.6@sha256:333b647716631443a43c7fabac4b0c46b4e2f036bad19547e00958f10f721b85","nodeSelector":{},"port":8096,"resources":{"limits":{"cpu":"4000m","memory":"4Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}` | Jellyfin media server |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=131072","wsize=131072","hard"],"server":"","volumes":[]}` | NFS storage for media (read-only) |
-| seerr | object | `{"database":{"host":"","name":"","passwordSecret":{"key":"password","name":""},"port":"5432","user":""},"image":"ghcr.io/seerr-team/seerr:v3.1.0","port":5055,"resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}}` | Seerr request management (successor to Jellyseerr) |
+| seerr | object | `{"database":{"host":"","name":"","passwordSecret":{"key":"password","name":""},"port":"5432","user":""},"image":"ghcr.io/seerr-team/seerr:v3.1.0@sha256:b35ba0461c4a1033d117ac1e5968fd4cbe777899e4cbfbdeaf3d10a42a0eb7e9","port":5055,"resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}}` | Seerr request management (successor to Jellyseerr) |
 | timezone | string | `"Europe/Berlin"` |  |
 
 ----------------------------------------------
