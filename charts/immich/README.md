@@ -21,10 +21,10 @@ Immich self-hosted photo management with external library support
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=131072","wsize=131072","hard"],"server":"","volumes":[]}` | NFS storage for external photo libraries |
 | server.image | string | `"ghcr.io/immich-app/immich-server:v2.5.6"` |  |
 | server.port | int | `2283` |  |
-| server.resources.limits.cpu | string | `"2000m"` |  |
-| server.resources.limits.memory | string | `"2Gi"` |  |
-| server.resources.requests.cpu | string | `"100m"` |  |
-| server.resources.requests.memory | string | `"256Mi"` |  |
+| server.resources.limits.cpu | string | `"4000m"` |  |
+| server.resources.limits.memory | string | `"4Gi"` |  |
+| server.resources.requests.cpu | string | `"500m"` |  |
+| server.resources.requests.memory | string | `"512Mi"` |  |
 | server.securityContext.fsGroup | int | `1001` |  |
 | server.securityContext.runAsGroup | int | `1001` |  |
 | server.securityContext.runAsUser | int | `1001` |  |
