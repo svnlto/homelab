@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/svnlto/homelab/compare/dumper-v0.4.0...dumper-v0.4.1) (2026-03-01)
+
+
+### Bug Fixes
+
+* correct Photos Library path duplication in dumper sync ([9bd3897](https://github.com/svnlto/homelab/commit/9bd38976dcc91f9c9a40e2caa4c782d49b9bb47b))
+
 ## [0.4.0](https://github.com/svnlto/homelab/compare/dumper-v0.3.0...dumper-v0.4.0) (2026-03-01)
 
 
