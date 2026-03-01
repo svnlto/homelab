@@ -51,6 +51,35 @@ jobs:
     with:
       version: ${{ needs.release-please.outputs.dumper-tag }}
 
+  deploy-dumper:
+    name: Deploy Dumper to Cluster
+    needs: [release-please, build-dumper]
+    if: needs.release-please.outputs.dumper-release-created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: main
+
+      - name: Update values.yaml with new image
+        env:
+          SEMVER: ${{ needs.build-dumper.outputs.semver }}
+          DIGEST: ${{ needs.build-dumper.outputs.digest }}
+        run: |
+          NEW_TAG="${SEMVER}@${DIGEST}"
+          sed -i "s|    tag: .*|    tag: ${NEW_TAG}|" charts/dumper/values.yaml
+          echo "Updated dumper image tag to ${NEW_TAG}"
+          grep 'tag:' charts/dumper/values.yaml
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add charts/dumper/values.yaml
+          git commit -m "chore(dumper): deploy ${{ needs.build-dumper.outputs.semver }} [skip ci]"
+          git push
+
   build-osxphotos-export:
     name: Build OSXPhotos Export Release
     needs: release-please

@@ -15,6 +15,13 @@ on:
         description: "Semver tag to apply (e.g. dumper-v1.2.3)"
         required: true
         type: string
+    outputs:
+      digest:
+        description: "Image digest (sha256:...)"
+        value: ${{ jobs.build-and-push.outputs.digest }}
+      semver:
+        description: "Semver tag (e.g. v1.2.3)"
+        value: ${{ jobs.build-and-push.outputs.semver }}
 
 permissions:
   contents: read
@@ -24,6 +31,9 @@ jobs:
   build-and-push:
     name: Build and Push OCI Image
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+      semver: ${{ steps.push.outputs.semver }}
 
     steps:
       - name: Checkout
@@ -36,6 +46,7 @@ jobs:
         run: nix build ./nix#dumper-image
 
       - name: Load and push image
+        id: push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -54,4 +65,10 @@ jobs:
             SEMVER="${SEMVER#dumper-}"
             docker tag ghcr.io/svnlto/dumper:latest "ghcr.io/svnlto/dumper:${SEMVER}"
             docker push "ghcr.io/svnlto/dumper:${SEMVER}"
+            echo "semver=${SEMVER}" >> "$GITHUB_OUTPUT"
           fi
+
+          # Capture digest for deploy step
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' \
+            ghcr.io/svnlto/dumper:latest | cut -d@ -f2)
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
