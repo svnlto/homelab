@@ -65,7 +65,7 @@ tailscale:
 dumper:
   image:
     repository: ghcr.io/svnlto/dumper
-    tag: v0.4.0
+    tag: v0.4.0@sha256:1660164ea3e4adfbbf1bdb1ff281bb60a72054e96c66ed002594d3a9a69d7e7a
   otelEndpoint: http://openobserve-openobserve-standalone.openobserve.svc:5080/api/default/
   syncInterval: "3600"
   retryInterval: "300"
