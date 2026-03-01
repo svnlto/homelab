@@ -6,6 +6,32 @@ global:
     deployed-by: argocd
     cluster: shared
 
+server:
+  gpu:
+    enabled: true
+  nodeSelector:
+    kubernetes.io/hostname: shared-worker2
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 8000m
+      memory: 12Gi
+
+machineLearning:
+  gpu:
+    enabled: false
+  nodeSelector:
+    kubernetes.io/hostname: shared-worker2
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+
 nfs:
   server: 10.10.10.13
   volumes:
