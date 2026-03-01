@@ -29,6 +29,7 @@ spec:
             - /data
             - --dbfilename
             - dump
+            - --lua_allow_undeclared_keys
             - --requirepass
             - $(DRAGONFLY_PASSWORD)
           ports:
