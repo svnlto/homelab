@@ -29,7 +29,8 @@ spec:
             - /data
             - --dbfilename
             - dump
-            - --lua_allow_undeclared_keys
+            - --cluster_mode=emulated
+            - --lock_on_hashtags
             - --requirepass
             - $(DRAGONFLY_PASSWORD)
           ports:
