@@ -18,8 +18,7 @@ set -euo pipefail
 
 DUMP_DIR="/mnt/dump"
 STATE_DIR="/cache"
-FILE_LIST="${STATE_DIR}/rsync-filelist.txt"
-FILE_LIST_MAX_AGE=86400 # rebuild if older than 24h
+FILE_LIST="${STATE_DIR}/missing-originals.txt"
 SYNC_INTERVAL="${SYNC_INTERVAL:-3600}"
 RETRY_INTERVAL="${RETRY_INTERVAL:-300}"
 RSYNC_PARALLEL="${RSYNC_PARALLEL:-8}"
@@ -127,27 +126,119 @@ while true; do
     continue
   fi
 
-  # Rebuild file list if missing or older than threshold
-  if [ ! -f "${FILE_LIST}" ] ||
-    [ "$(($(date +%s) - $(stat -c %Y "${FILE_LIST}")))" -gt ${FILE_LIST_MAX_AGE} ]; then
-    echo "Building remote file list..."
-    ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" \
-      "sudo find '${REMOTE_PATH}' \
-        -type f -print" |
-      sed "s|^${REMOTE_PATH}||" \
-        >"${FILE_LIST}.tmp"
-    mv "${FILE_LIST}.tmp" "${FILE_LIST}"
-    FILE_COUNT=$(wc -l <"${FILE_LIST}")
-    echo "File list rebuilt: ${FILE_COUNT} files"
-    otel_log INFO "File list rebuilt: ${FILE_COUNT} files from ${REMOTE_HOST}" \
-      "files.count=${FILE_COUNT}" "remote.host=${REMOTE_HOST}"
-  else
-    echo "File list cached ($(wc -l <"${FILE_LIST}") files, max age ${FILE_LIST_MAX_AGE}s)"
+  # ── Phase 1: Sync database + resources directories ─────────────────
+  LIB_PATH="${REMOTE_PATH}Photos Library.photoslibrary"
+  LOCAL_LIB="${DUMP_DIR}${LIB_PATH}"
+  DB="${LOCAL_LIB}/database/Photos.sqlite"
+
+  echo "Phase 1: Syncing database/ and resources/ from remote..."
+  otel_log INFO "Phase 1: syncing database/ and resources/" \
+    "sync.phase=1" "remote.host=${REMOTE_HOST}"
+
+  PHASE1_EXIT=0
+  rsync -rlt --partial --inplace --omit-dir-times \
+    --timeout=300 \
+    --chmod=D755,F644 \
+    --rsync-path="sudo /usr/local/bin/rsync" \
+    -e "ssh ${SSH_OPTS[*]}" \
+    "${REMOTE_USER}@${REMOTE_HOST}:${LIB_PATH}/database/" \
+    "${LOCAL_LIB}/database/" 2>&1 || PHASE1_EXIT=$?
+
+  if [ "$PHASE1_EXIT" -ne 0 ]; then
+    echo "ERROR: Phase 1 database sync failed (exit ${PHASE1_EXIT}) — retrying in ${RETRY_INTERVAL}s"
+    otel_log ERROR "Phase 1 database sync failed (exit ${PHASE1_EXIT})" \
+      "sync.phase=1" "sync.status=error" "remote.host=${REMOTE_HOST}"
+    sleep "${RETRY_INTERVAL}"
+    continue
   fi
 
-  FILE_COUNT=$(wc -l <"${FILE_LIST}")
-  echo "Starting rsync of ${FILE_COUNT} files to ${DUMP_DIR}${REMOTE_PATH}"
-  otel_log INFO "Rsync started: ${FILE_COUNT} files from ${REMOTE_HOST}" \
+  rsync -rlt --partial --inplace --omit-dir-times \
+    --timeout=300 \
+    --chmod=D755,F644 \
+    --rsync-path="sudo /usr/local/bin/rsync" \
+    -e "ssh ${SSH_OPTS[*]}" \
+    "${REMOTE_USER}@${REMOTE_HOST}:${LIB_PATH}/resources/" \
+    "${LOCAL_LIB}/resources/" 2>&1 || true
+
+  # WAL checkpoint: consolidate SQLite databases so consumers get consistent reads
+  while IFS= read -r -d '' db; do
+    if sqlite3 "$db" "PRAGMA integrity_check;" >/dev/null 2>&1; then
+      sqlite3 "$db" "PRAGMA wal_checkpoint(TRUNCATE);" >/dev/null 2>&1 || true
+      rm -f "${db}-wal" "${db}-shm"
+    fi
+  done < <(find "${LOCAL_LIB}/database" -name '*.sqlite' -print0 2>/dev/null)
+
+  echo "Phase 1 complete: database/ and resources/ synced"
+  otel_log INFO "Phase 1 complete" "sync.phase=1" "sync.status=success"
+
+  # ── Phase 2: Build targeted file list from Photos.sqlite ──────────
+  echo "Phase 2: Querying Photos.sqlite for missing originals..."
+
+  ALL_ORIGINALS="${STATE_DIR}/all-originals.txt"
+  PRESENT="${STATE_DIR}/present-originals.txt"
+
+  if [ -f "$DB" ] && sqlite3 "$DB" "SELECT COUNT(*) FROM ZASSET LIMIT 1;" >/dev/null 2>&1; then
+    sqlite3 "$DB" \
+      "SELECT 'Photos Library.photoslibrary/originals/' || ZDIRECTORY || '/' || ZFILENAME
+       FROM ZASSET
+       WHERE ZTRASHEDSTATE = 0 AND ZDIRECTORY IS NOT NULL AND ZFILENAME IS NOT NULL;" \
+      | sort > "${ALL_ORIGINALS}"
+
+    TOTAL_ORIGINALS=$(wc -l < "${ALL_ORIGINALS}")
+    echo "Photos.sqlite reports ${TOTAL_ORIGINALS} originals"
+
+    # Find originals already present on disk
+    ORIGINALS_DIR="${LOCAL_LIB}/originals"
+    if [ -d "$ORIGINALS_DIR" ]; then
+      find "$ORIGINALS_DIR" -type f \
+        | sed "s|^${DUMP_DIR}${REMOTE_PATH}||" \
+        | sort > "${PRESENT}"
+    else
+      : > "${PRESENT}"
+    fi
+
+    # Set difference: originals in DB but not on disk
+    comm -23 "${ALL_ORIGINALS}" "${PRESENT}" > "${FILE_LIST}"
+    FILE_COUNT=$(wc -l < "${FILE_LIST}")
+
+    echo "Missing originals: ${FILE_COUNT} / ${TOTAL_ORIGINALS}"
+    otel_log INFO "Phase 2: ${FILE_COUNT} missing originals (${TOTAL_ORIGINALS} total)" \
+      "sync.phase=2" "files.missing=${FILE_COUNT}" "files.total_originals=${TOTAL_ORIGINALS}" \
+      "remote.host=${REMOTE_HOST}"
+  else
+    echo "WARN: Photos.sqlite not available or unreadable — falling back to full originals sync"
+    otel_log WARN "Photos.sqlite unavailable — falling back to full originals sync" \
+      "sync.phase=2" "remote.host=${REMOTE_HOST}"
+
+    # Fallback: sync entire originals directory without a file list
+    rsync -rlt --partial --inplace --omit-dir-times \
+      --skip-compress=jpg,jpeg,heic,heif,png,mp4,mov,gif,webp,cr2,nef,arw,dng \
+      --timeout=300 \
+      --chmod=D755,F644 \
+      --rsync-path="sudo /usr/local/bin/rsync" \
+      -e "ssh ${SSH_OPTS[*]}" \
+      "${REMOTE_USER}@${REMOTE_HOST}:${LIB_PATH}/originals/" \
+      "${LOCAL_LIB}/originals/" 2>&1 || true
+
+    echo "Fallback sync complete. Next sync in ${SYNC_INTERVAL}s"
+    sleep "${SYNC_INTERVAL}"
+    continue
+  fi
+
+  # Skip rsync if all originals are present
+  if [ "$FILE_COUNT" -eq 0 ]; then
+    echo "All originals present — nothing to sync"
+    otel_log INFO "All originals present — skipping rsync" \
+      "sync.phase=2" "sync.status=success" "files.missing=0" \
+      "files.total_originals=${TOTAL_ORIGINALS}" "remote.host=${REMOTE_HOST}"
+    echo "Next sync in ${SYNC_INTERVAL}s"
+    sleep "${SYNC_INTERVAL}"
+    continue
+  fi
+
+  # ── Phase 2b: Parallel rsync of missing originals ────────────────
+  echo "Starting rsync of ${FILE_COUNT} missing originals to ${DUMP_DIR}${REMOTE_PATH}"
+  otel_log INFO "Rsync started: ${FILE_COUNT} missing originals from ${REMOTE_HOST}" \
     "files.count=${FILE_COUNT}" "remote.host=${REMOTE_HOST}"
 
   RSYNC_START=$SECONDS
@@ -275,15 +366,6 @@ while true; do
   rm -rf "$CHUNK_DIR"
 
   if [ "$RSYNC_EXIT" -eq 0 ]; then
-    # Consolidate SQLite databases (merge WAL into main DB, remove WAL/SHM)
-    # so consumers reading over NFS get a consistent database.
-    while IFS= read -r -d '' db; do
-      if sqlite3 "$db" "PRAGMA integrity_check;" >/dev/null 2>&1; then
-        sqlite3 "$db" "PRAGMA wal_checkpoint(TRUNCATE);" >/dev/null 2>&1 || true
-        rm -f "${db}-wal" "${db}-shm"
-      fi
-    done < <(find "${DUMP_DIR}${REMOTE_PATH}" -name '*.sqlite' -print0 2>/dev/null)
-
     echo "Rsync complete: ${TRANSFERRED} files, ${TOTAL_BYTES_HUMAN} in ${DURATION}s (${AVG_SPEED} MB/s)"
     otel_log INFO "Rsync complete: ${TRANSFERRED} files, ${TOTAL_BYTES_HUMAN} in ${DURATION}s (${AVG_SPEED} MB/s)" \
       "sync.status=success" "files.total=${FILE_COUNT}" \
@@ -299,12 +381,6 @@ while true; do
       "files.checked=${CHECKED}" "files.transferred=${TRANSFERRED}" \
       "bytes.transferred=${TOTAL_BYTES}" "transfer.speed_mbps=${AVG_SPEED}" \
       "remote.host=${REMOTE_HOST}" "duration_seconds=${DURATION}"
-    # Invalidate file list on connection errors so it gets rebuilt next iteration
-    case "$RSYNC_EXIT" in
-      10|12|23|24|30|35)
-        rm -f "${FILE_LIST}"
-        ;;
-    esac
     sleep "${RETRY_INTERVAL}"
   fi
 

@@ -99,8 +99,8 @@ spec:
           persistentVolumeClaim:
             claimName: nfs-dump
         - name: cache
-          emptyDir:
-            sizeLimit: 64Mi
+          persistentVolumeClaim:
+            claimName: dumper-cache
         - name: tailscale-state
           emptyDir: {}
         - name: tailscale-socket
