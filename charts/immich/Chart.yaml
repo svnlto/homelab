@@ -4,3 +4,4 @@ name: immich
 description: Immich self-hosted photo management with external library support
 type: application
 version: 0.1.0
+appVersion: "2.5.6"

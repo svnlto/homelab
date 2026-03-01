@@ -4,26 +4,22 @@ kind: Deployment
 metadata:
   name: immich-machine-learning
   labels:
-    {{- include "immich.labels" (dict "name" "immich-machine-learning") | nindent 4 }}
+    {{- include "immich.labels" (dict "name" "immich-machine-learning" "component" "machine-learning" "context" .) | nindent 4 }}
   annotations:
-    {{- range $key, $val := .Values.global.annotations }}
-    {{ $key }}: {{ $val | quote }}
-    {{- end }}
+    {{- include "immich.annotations" . | nindent 4 }}
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "immich.selectorLabels" (dict "name" "immich-machine-learning") | nindent 6 }}
+      {{- include "immich.selectorLabels" (dict "name" "immich-machine-learning" "context" .) | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "immich.selectorLabels" (dict "name" "immich-machine-learning") | nindent 8 }}
+        {{- include "immich.selectorLabels" (dict "name" "immich-machine-learning" "context" .) | nindent 8 }}
       annotations:
-        {{- range $key, $val := .Values.global.annotations }}
-        {{ $key }}: {{ $val | quote }}
-        {{- end }}
+        {{- include "immich.annotations" . | nindent 8 }}
     spec:
       containers:
         - name: immich-machine-learning

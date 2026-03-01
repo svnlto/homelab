@@ -6,9 +6,7 @@ metadata:
   labels:
     {{- include "dragonfly.labels" . | nindent 4 }}
   annotations:
-    {{- range $key, $val := .Values.global.annotations }}
-    {{ $key }}: {{ $val | quote }}
-    {{- end }}
+    {{- include "dragonfly.annotations" . | nindent 4 }}
 spec:
   replicas: 1
   strategy:
@@ -21,9 +19,7 @@ spec:
       labels:
         {{- include "dragonfly.selectorLabels" . | nindent 8 }}
       annotations:
-        {{- range $key, $val := .Values.global.annotations }}
-        {{ $key }}: {{ $val | quote }}
-        {{- end }}
+        {{- include "dragonfly.annotations" . | nindent 8 }}
     spec:
       containers:
         - name: dragonfly

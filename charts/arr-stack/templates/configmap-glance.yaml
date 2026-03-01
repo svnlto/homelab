@@ -33,6 +33,11 @@ data:
                       - title: Navidrome
                         url: https://navidrome.{{ .Values.ingress.domain }}
                         icon: si:navidrome
+                  - title: Photos
+                    links:
+                      - title: Immich
+                        url: https://immich.{{ .Values.ingress.domain }}
+                        icon: si:immich
                   - title: Infrastructure
                     links:
                       - title: Proxmox
@@ -54,6 +59,7 @@ data:
                   - jellyfin/jellyfin
                   - siderolabs/talos
                   - navidrome/navidrome
+                  - immich-app/immich
                   - Radarr/Radarr
                   - Sonarr/Sonarr
 
@@ -96,6 +102,9 @@ data:
                   - title: Navidrome
                     url: https://navidrome.{{ .Values.ingress.domain }}
                     icon: si:navidrome
+                  - title: Immich
+                    url: https://immich.{{ .Values.ingress.domain }}
+                    icon: si:immich
                   - title: OpenObserve
                     url: https://openobserve.{{ .Values.ingress.domain }}
 
