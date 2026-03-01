@@ -1,0 +1,71 @@
+---
+global:
+  annotations: {}
+
+server:
+  image: ghcr.io/immich-app/immich-server:v2.5.6
+  port: 2283
+  securityContext:
+    runAsUser: 1001
+    runAsGroup: 1001
+    fsGroup: 1001
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+machineLearning:
+  image: ghcr.io/immich-app/immich-machine-learning:v2.5.6
+  port: 3003
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+# -- NFS storage for external photo libraries
+nfs:
+  server: ""
+  mountOptions:
+    - nfsvers=4.2
+    - rsize=131072
+    - wsize=131072
+    - hard
+  volumes: []
+
+# -- CSI NFS storage for upload and ml-cache
+csi:
+  driver: org.democratic-csi.nfs-fast
+  storageClassName: truenas-nfs-fast
+  server: ""
+  basePath: /mnt/fast/kubernetes/nfs-dynamic
+  mountOptions:
+    - nfsvers=4
+    - nconnect=8
+    - hard
+    - noatime
+    - nodiratime
+  volumes: []
+
+# -- Ingress configuration
+ingress:
+  enabled: false
+  domain: ""
+  annotations: {}
+
+# -- External secrets configuration
+externalSecret:
+  refreshInterval: 1h
+  secretStoreName: onepassword
+  secretStoreKind: ClusterSecretStore
+  targetSecretName: immich-secrets
+  onePasswordItem: immich-secrets
+  keys:
+    - DB_PASSWORD
+    - REDIS_PASSWORD
+    - IMMICH_SECRET_KEY

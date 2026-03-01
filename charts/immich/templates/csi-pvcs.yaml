@@ -1,0 +1,20 @@
+{{- range .Values.csi.volumes }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .pvcName }}
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
+    {{- range $key, $val := $.Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ $.Values.csi.storageClassName }}
+  volumeName: {{ .pvName }}
+  resources:
+    requests:
+      storage: {{ .capacity }}
+{{- end }}

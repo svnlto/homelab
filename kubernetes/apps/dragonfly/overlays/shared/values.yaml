@@ -1,0 +1,11 @@
+---
+# Shared cluster overrides
+
+global:
+  annotations:
+    deployed-by: argocd
+    cluster: shared
+
+iscsi:
+  portal: 10.10.10.13:3260
+  volumes: []

@@ -1,0 +1,39 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: immich
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  sources:
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      path: charts/immich
+      helm:
+        releaseName: immich
+        valueFiles:
+          - $values/kubernetes/apps/immich/overlays/shared/values.yaml
+    - repoURL: https://github.com/svnlto/homelab
+      targetRevision: HEAD
+      ref: values
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: immich
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      jsonPointers:
+        - /data

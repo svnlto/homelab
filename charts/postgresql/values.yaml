@@ -14,7 +14,7 @@ staticVolume:
 
 cluster:
   name: postgresql
-  imageName: ghcr.io/cloudnative-pg/postgresql:17.2
+  imageName: ghcr.io/tensorchord/cloudnative-vectorchord:17-1.1.1
   instances: 1
 
   storage:
@@ -30,6 +30,8 @@ cluster:
       memory: 1Gi
 
   postgresql:
+    shared_preload_libraries:
+      - vchord.so
     parameters:
       shared_buffers: "128MB"
       effective_cache_size: "512MB"
@@ -41,3 +43,6 @@ cluster:
     initdb:
       database: seerr
       owner: seerr
+
+# -- Additional databases managed via CNPG Database CR
+databases: []
