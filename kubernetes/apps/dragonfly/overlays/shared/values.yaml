@@ -11,5 +11,5 @@ iscsi:
   volumes:
     - pvName: dragonfly-data
       pvcName: dragonfly-data
-      volumeHandle: pvc-ed81033c-3a5c-46b5-b4e6-2621cfcd852c
+      volumeHandle: pvc-fb5d1277-2699-4a34-b5fb-31bf5c342bfc
       capacity: 2Gi
