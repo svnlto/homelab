@@ -57,7 +57,7 @@ externalSecret:
 # -- Downloaders pod (gluetun VPN + download clients)
 downloaders:
   gluetun:
-    image: qmcgaw/gluetun:v3.41.1
+    image: qmcgaw/gluetun:v3.41.1@sha256:1a5bf4b4820a879cdf8d93d7ef0d2d963af56670c9ebff8981860b6804ebc8ab
     vpnProvider: protonvpn
     serverCountries: Sweden
     firewallInputPorts: "8701,8080,9696,8191,5030"
@@ -70,7 +70,7 @@ downloaders:
         cpu: 500m
         memory: 512Mi
   qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:5.1.4-r1-ls431
+    image: lscr.io/linuxserver/qbittorrent:5.1.4-r1-ls431@sha256:043498de39c3dd63eec94360c5ad966a51271d1581070f42cb73ab0cf4776f29
     port: 8701
     resources:
       requests:
@@ -80,7 +80,7 @@ downloaders:
         cpu: 1000m
         memory: 1Gi
   sabnzbd:
-    image: lscr.io/linuxserver/sabnzbd:4.5.5-ls244
+    image: lscr.io/linuxserver/sabnzbd:4.5.5-ls244@sha256:1a26f56dfc047b62d5ddc20bc92bdebfbe7c3cb58d2d3523958838a09182d77a
     port: 8080
     resources:
       requests:
@@ -90,7 +90,7 @@ downloaders:
         cpu: 1000m
         memory: 2Gi
   slskd:
-    image: slskd/slskd:0.24.4
+    image: slskd/slskd:0.24.4@sha256:4031fc99b824ed2eec3bdbd92914fe6071539f3f71f0742052276afc2c69353d
     port: 5030
     resources:
       requests:
@@ -100,7 +100,7 @@ downloaders:
         cpu: 500m
         memory: 512Mi
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:2.3.0.5236-ls137
+    image: lscr.io/linuxserver/prowlarr:2.3.0.5236-ls137@sha256:e74a1e093dcc223d671d4b7061e2b4946f1989a4d3059654ff4e623b731c9134
     port: 9696
     resources:
       requests:
@@ -110,7 +110,7 @@ downloaders:
         cpu: 500m
         memory: 512Mi
   flaresolverr:
-    image: ghcr.io/flaresolverr/flaresolverr:v3.4.6
+    image: ghcr.io/flaresolverr/flaresolverr:v3.4.6@sha256:7962759d99d7e125e108e0f5e7f3cdbcd36161776d058d1d9b7153b92ef1af9e
     port: 8191
     resources:
       requests:
@@ -120,7 +120,7 @@ downloaders:
         cpu: 500m
         memory: 512Mi
   initScratch:
-    image: busybox:1.37
+    image: busybox:1.37@sha256:b3255e7dfbcd10cb367af0d409747d511aeb66dfac98cf30e97e87e4207dd76f
     resources:
       requests:
         cpu: 10m
@@ -131,7 +131,7 @@ downloaders:
 
 # -- Arr apps (radarr, sonarr, lidarr, bazarr)
 radarr:
-  image: lscr.io/linuxserver/radarr:6.0.4.10291-ls293
+  image: lscr.io/linuxserver/radarr:6.0.4.10291-ls293@sha256:6d3e68474ea146f995af98d3fb2cb1a14e2e4457ddaf035aa5426889e2f9249c
   port: 7878
   probePath: /ping
   resources:
@@ -143,7 +143,7 @@ radarr:
       memory: 1Gi
 
 sonarr:
-  image: lscr.io/linuxserver/sonarr:4.0.16.2944-ls303
+  image: lscr.io/linuxserver/sonarr:4.0.16.2944-ls303@sha256:37be832b78548e3f55f69c45b50e3b14d18df1b6def2a4994258217e67efb1a1
   port: 8989
   probePath: /ping
   resources:
@@ -167,7 +167,7 @@ lidarr:
       memory: 1Gi
 
 bazarr:
-  image: lscr.io/linuxserver/bazarr:v1.5.5-ls336
+  image: lscr.io/linuxserver/bazarr:v1.5.5-ls336@sha256:d40ee61030a9afafddfdd58d160281b865bfcad7cb66e920116fd6fd40668cbb
   port: 6767
   probePath: /
   startupInitialDelay: 30
@@ -194,7 +194,7 @@ recyclarr:
 
 # -- Buildarr deployment
 buildarr:
-  image: callum027/buildarr:0.7.8
+  image: callum027/buildarr:0.7.8@sha256:57e2343fefe5d5701364b5e93b4985dbf08310d7b152f70556bdaba7e9475447
   resources:
     requests:
       cpu: 25m
@@ -204,7 +204,7 @@ buildarr:
       memory: 256Mi
 
 glance:
-  image: glanceapp/glance:v0.8.4
+  image: glanceapp/glance:v0.8.4@sha256:6df86a7e8868d1eda21f35205134b1962c422957e42a0c44d4717c8e8f741b1a
   port: 8080
   jellyfinUserName: ""
   jellyfinLibraries:

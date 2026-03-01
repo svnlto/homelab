@@ -39,7 +39,7 @@ csi:
 
 # -- Jellyfin media server
 jellyfin:
-  image: jellyfin/jellyfin:10.11.6
+  image: jellyfin/jellyfin:10.11.6@sha256:333b647716631443a43c7fabac4b0c46b4e2f036bad19547e00958f10f721b85
   port: 8096
   nodeSelector: {}
   resources:
@@ -52,7 +52,7 @@ jellyfin:
 
 # -- Seerr request management (successor to Jellyseerr)
 seerr:
-  image: ghcr.io/seerr-team/seerr:v3.1.0
+  image: ghcr.io/seerr-team/seerr:v3.1.0@sha256:b35ba0461c4a1033d117ac1e5968fd4cbe777899e4cbfbdeaf3d10a42a0eb7e9
   port: 5055
   database:
     host: ""

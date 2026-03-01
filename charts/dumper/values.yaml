@@ -51,7 +51,7 @@ externalSecrets:
 
 # -- Tailscale init container (sidecar)
 tailscale:
-  image: docker.io/tailscale/tailscale:v1.94.2
+  image: docker.io/tailscale/tailscale:v1.94.2@sha256:95e528798bebe75f39b10e74e7051cf51188ee615934f232ba7ad06a3390ffa1
   hostname: dumper-k8s
   resources:
     requests:
@@ -65,7 +65,7 @@ tailscale:
 dumper:
   image:
     repository: ghcr.io/svnlto/dumper
-    tag: v0.2.1
+    tag: v0.2.1@sha256:8848ce46b6b2dc0cbe7288568534ccd5a27a512366603aabb5e7b89a8bc6ef64
   otelEndpoint: http://openobserve-openobserve-standalone.openobserve.svc:5080/api/default/
   syncInterval: "3600"
   retryInterval: "300"
