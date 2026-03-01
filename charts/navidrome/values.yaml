@@ -26,7 +26,7 @@ navidrome:
     - name: ND_PROMETHEUS_METRICSPATH
       value: /metrics
     - name: ND_IMAGECACHESIZE
-      value: "500MB"
+      value: "2GB"
     - name: ND_TRANSCODINGCACHESIZE
       value: "500MB"
     - name: ND_BACKUP_COUNT
