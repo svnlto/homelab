@@ -12,14 +12,14 @@ Immich self-hosted photo management with external library support
 | externalSecret | object | `{"keys":["DB_PASSWORD","REDIS_PASSWORD","IMMICH_SECRET_KEY"],"onePasswordItem":"immich-secrets","refreshInterval":"1h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"immich-secrets"}` | External secrets configuration |
 | global.annotations | object | `{}` |  |
 | ingress | object | `{"annotations":{},"domain":"","enabled":false}` | Ingress configuration |
-| machineLearning.image | string | `"ghcr.io/immich-app/immich-machine-learning:v2.5.6"` |  |
+| machineLearning.image | string | `"ghcr.io/immich-app/immich-machine-learning:v2.5.6@sha256:b213fa3c82d27a21a299c46ffbb38a091f18384db1ad67d409a3b34fe0fce556"` |  |
 | machineLearning.port | int | `3003` |  |
 | machineLearning.resources.limits.cpu | string | `"2000m"` |  |
 | machineLearning.resources.limits.memory | string | `"4Gi"` |  |
 | machineLearning.resources.requests.cpu | string | `"100m"` |  |
 | machineLearning.resources.requests.memory | string | `"512Mi"` |  |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=131072","wsize=131072","hard"],"server":"","volumes":[]}` | NFS storage for external photo libraries |
-| server.image | string | `"ghcr.io/immich-app/immich-server:v2.5.6"` |  |
+| server.image | string | `"ghcr.io/immich-app/immich-server:v2.5.6@sha256:aa163d2e1cc2b16a9515dd1fef901e6f5231befad7024f093d7be1f2da14341a"` |  |
 | server.port | int | `2283` |  |
 | server.resources.limits.cpu | string | `"4000m"` |  |
 | server.resources.limits.memory | string | `"4Gi"` |  |
