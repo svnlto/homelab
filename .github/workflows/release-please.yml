@@ -28,12 +28,20 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       - name: Auto-merge release PR
-        if: steps.release.outputs.pr
+        if: steps.release.outputs.pr || steps.release.outputs.prs_created == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_NUMBER=$(echo '${{ steps.release.outputs.pr }}' | jq -r '.number')
-          gh pr merge "${PR_NUMBER}" --squash --auto --repo "${{ github.repository }}"
+          if [ -n '${{ steps.release.outputs.pr }}' ] && [ '${{ steps.release.outputs.pr }}' != '' ]; then
+            PR_NUMBER=$(echo '${{ steps.release.outputs.pr }}' | jq -r '.number')
+          else
+            # Find existing open release PR
+            PR_NUMBER=$(gh pr list --state open --label "autorelease: pending" \
+              --json number --jq '.[0].number' --repo "${{ github.repository }}")
+          fi
+          if [ -n "${PR_NUMBER}" ]; then
+            gh pr merge "${PR_NUMBER}" --squash --auto --repo "${{ github.repository }}"
+          fi
 
   build-dumper:
     name: Build Dumper Release
