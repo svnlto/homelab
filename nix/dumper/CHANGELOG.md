@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/svnlto/homelab/compare/dumper-v0.4.1...dumper-v0.4.2) (2026-03-01)
+
+
+### Bug Fixes
+
+* drop resources/ sync from dumper Phase 1 ([ca4806c](https://github.com/svnlto/homelab/commit/ca4806c870ac2fcd9cc5068b95ac3a067cf11e2e))
+
 ## [0.4.1](https://github.com/svnlto/homelab/compare/dumper-v0.4.0...dumper-v0.4.1) (2026-03-01)
 
 
