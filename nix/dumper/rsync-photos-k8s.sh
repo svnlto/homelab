@@ -171,7 +171,7 @@ while true; do
 
   if [ -f "$DB" ] && sqlite3 "$DB" "SELECT COUNT(*) FROM ZASSET LIMIT 1;" >/dev/null 2>&1; then
     sqlite3 "$DB" \
-      "SELECT 'Photos Library.photoslibrary/originals/' || ZDIRECTORY || '/' || ZFILENAME
+      "SELECT 'originals/' || ZDIRECTORY || '/' || ZFILENAME
        FROM ZASSET
        WHERE ZTRASHEDSTATE = 0 AND ZDIRECTORY IS NOT NULL AND ZFILENAME IS NOT NULL;" \
       | sort > "${ALL_ORIGINALS}"
