@@ -8,4 +8,8 @@ global:
 
 iscsi:
   portal: 10.10.10.13:3260
-  volumes: []
+  volumes:
+    - pvName: dragonfly-data
+      pvcName: dragonfly-data
+      volumeHandle: pvc-ed81033c-3a5c-46b5-b4e6-2621cfcd852c
+      capacity: 2Gi

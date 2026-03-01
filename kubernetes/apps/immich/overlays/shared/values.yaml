@@ -18,7 +18,15 @@ nfs:
 
 csi:
   server: 10.10.10.13
-  volumes: []
+  volumes:
+    - pvName: immich-upload
+      pvcName: immich-upload
+      volumeHandle: pvc-773ef6d7-6526-4549-83ed-82beeb8d978e
+      capacity: 50Gi
+    - pvName: immich-ml-cache
+      pvcName: immich-ml-cache
+      volumeHandle: pvc-41372307-5cb6-4296-8bdf-1129a1019c3b
+      capacity: 10Gi
 
 ingress:
   enabled: true
