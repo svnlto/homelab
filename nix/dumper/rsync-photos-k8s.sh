@@ -127,8 +127,8 @@ while true; do
   fi
 
   # ── Phase 1: Sync database + resources directories ─────────────────
-  LIB_PATH="${REMOTE_PATH}Photos Library.photoslibrary"
-  LOCAL_LIB="${DUMP_DIR}${LIB_PATH}"
+  LIB_PATH="${REMOTE_PATH%/}"
+  LOCAL_LIB="${DUMP_DIR}${REMOTE_PATH}"
   DB="${LOCAL_LIB}/database/Photos.sqlite"
 
   echo "Phase 1: Syncing database/ and resources/ from remote..."
