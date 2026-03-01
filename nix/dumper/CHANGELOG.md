@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/svnlto/homelab/compare/dumper-v0.4.3...dumper-v0.5.0) (2026-03-01)
+
+
+### Features
+
+* **dumper:** add detailed logging for Phase 1 and Phase 2 ([6ff2369](https://github.com/svnlto/homelab/commit/6ff2369594bf6ffd0957423cf41355fe8635c5ee))
+
 ## [0.4.3](https://github.com/svnlto/homelab/compare/dumper-v0.4.2...dumper-v0.4.3) (2026-03-01)
 
 
