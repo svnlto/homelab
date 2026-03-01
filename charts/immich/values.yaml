@@ -9,6 +9,9 @@ server:
     runAsUser: 1001
     runAsGroup: 1001
     fsGroup: 1001
+  gpu:
+    enabled: false
+  nodeSelector: {}
   resources:
     requests:
       cpu: 500m
@@ -20,6 +23,9 @@ server:
 machineLearning:
   image: ghcr.io/immich-app/immich-machine-learning:v2.5.6@sha256:b213fa3c82d27a21a299c46ffbb38a091f18384db1ad67d409a3b34fe0fce556
   port: 3003
+  gpu:
+    enabled: false
+  nodeSelector: {}
   resources:
     requests:
       cpu: 100m

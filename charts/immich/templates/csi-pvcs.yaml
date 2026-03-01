@@ -13,7 +13,6 @@ spec:
   accessModes:
     - ReadWriteOnce
   storageClassName: {{ $.Values.csi.storageClassName }}
-  volumeName: {{ .pvName }}
   resources:
     requests:
       storage: {{ .capacity }}
