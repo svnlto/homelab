@@ -31,6 +31,7 @@ spec:
             - dump
             - --cluster_mode=emulated
             - --lock_on_hashtags
+            - --default_lua_flags=allow-undeclared-keys
             - --requirepass
             - $(DRAGONFLY_PASSWORD)
           ports:
