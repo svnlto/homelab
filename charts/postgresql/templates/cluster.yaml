@@ -21,6 +21,10 @@ spec:
     {{- toYaml .Values.cluster.resources | nindent 4 }}
 
   postgresql:
+    {{- if .Values.cluster.postgresql.shared_preload_libraries }}
+    shared_preload_libraries:
+      {{- toYaml .Values.cluster.postgresql.shared_preload_libraries | nindent 6 }}
+    {{- end }}
     parameters:
       {{- range $key, $val := .Values.cluster.postgresql.parameters }}
       {{ $key }}: {{ $val | quote }}

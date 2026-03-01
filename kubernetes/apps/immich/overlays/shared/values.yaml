@@ -1,0 +1,27 @@
+---
+# Shared cluster overrides
+
+global:
+  annotations:
+    deployed-by: argocd
+    cluster: shared
+
+nfs:
+  server: 10.10.10.13
+  volumes:
+    - name: photos
+      pvName: immich-nfs-photos
+      pvcName: nfs-photos
+      path: /mnt/bulk/photos
+      capacity: 2Ti
+      accessMode: ReadOnlyMany
+
+csi:
+  server: 10.10.10.13
+  volumes: []
+
+ingress:
+  enabled: true
+  domain: shared.h.svenlito.com
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt

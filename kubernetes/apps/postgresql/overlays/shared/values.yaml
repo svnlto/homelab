@@ -21,3 +21,11 @@ cluster:
     limits:
       cpu: 1000m
       memory: 1Gi
+
+databases:
+  - name: immich
+    owner: immich
+    extensions:
+      - name: vectorchord
+      - name: vector
+      - name: earthdistance
