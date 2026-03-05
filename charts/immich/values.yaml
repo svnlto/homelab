@@ -21,6 +21,16 @@ server:
       cpu: 8000m
       memory: 8Gi
 
+workers:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 4000m
+      memory: 6Gi
+
 machineLearning:
   image: ghcr.io/immich-app/immich-machine-learning:v2.5.6@sha256:b213fa3c82d27a21a299c46ffbb38a091f18384db1ad67d409a3b34fe0fce556
   port: 3003

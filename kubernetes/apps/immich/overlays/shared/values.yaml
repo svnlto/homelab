@@ -20,6 +20,16 @@ server:
       cpu: 8000m
       memory: 12Gi
 
+workers:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+
 machineLearning:
   gpu:
     enabled: false
