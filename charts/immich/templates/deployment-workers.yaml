@@ -2,22 +2,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: immich-server
+  name: immich-workers
   labels:
-    {{- include "immich.labels" (dict "name" "immich-server" "component" "server" "context" .) | nindent 4 }}
+    {{- include "immich.labels" (dict "name" "immich-workers" "component" "workers" "context" .) | nindent 4 }}
   annotations:
     {{- include "immich.annotations" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.workers.replicas }}
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "immich.selectorLabels" (dict "name" "immich-server" "context" .) | nindent 6 }}
+      {{- include "immich.selectorLabels" (dict "name" "immich-workers" "context" .) | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "immich.selectorLabels" (dict "name" "immich-server" "context" .) | nindent 8 }}
+        {{- include "immich.selectorLabels" (dict "name" "immich-workers" "context" .) | nindent 8 }}
       annotations:
         {{- include "immich.annotations" . | nindent 8 }}
     spec:
@@ -33,20 +33,17 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: immich-server
+        - name: immich-workers
           image: {{ .Values.server.image }}
           {{- if .Values.server.gpu.enabled }}
           securityContext:
             privileged: true
           {{- end }}
-          ports:
-            - containerPort: {{ .Values.server.port }}
-              name: http
           envFrom:
             - configMapRef:
                 name: immich-config
           env:
-            - name: IMMICH_WORKERS_INCLUDE
+            - name: IMMICH_WORKERS_EXCLUDE
               value: api
             {{- if .Values.server.gpu.enabled }}
             - name: LIBVA_RENDER_NODE
@@ -67,28 +64,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.externalSecret.targetSecretName }}
                   key: IMMICH_SECRET_KEY
-          startupProbe:
-            httpGet:
-              path: /api/server/ping
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            failureThreshold: 30
-          livenessProbe:
-            httpGet:
-              path: /api/server/ping
-              port: http
-            periodSeconds: 30
-            timeoutSeconds: 10
-            failureThreshold: 5
-          readinessProbe:
-            httpGet:
-              path: /api/server/ping
-              port: http
-            periodSeconds: 10
-            timeoutSeconds: 10
           resources:
-            {{- toYaml .Values.server.resources | nindent 12 }}
+            {{- toYaml .Values.workers.resources | nindent 12 }}
           volumeMounts:
             - name: upload
               mountPath: /usr/src/app/upload
