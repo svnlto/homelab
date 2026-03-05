@@ -8,7 +8,7 @@ Immich self-hosted photo management with external library support
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| csi | object | `{"basePath":"/mnt/fast/kubernetes/nfs-dynamic","driver":"org.democratic-csi.nfs-fast","mountOptions":["nfsvers=4","nconnect=8","hard","noatime","nodiratime"],"server":"","storageClassName":"truenas-nfs-fast","volumes":[]}` | CSI NFS storage for upload and ml-cache |
+| csi | object | `{"basePath":"/mnt/fast/kubernetes/nfs-dynamic","driver":"org.democratic-csi.nfs-fast","mountOptions":["nfsvers=4.2","nconnect=8","hard","noatime","nodiratime"],"server":"","storageClassName":"truenas-nfs-fast","volumes":[]}` | CSI NFS storage for upload and ml-cache |
 | externalSecret | object | `{"keys":["DB_PASSWORD","REDIS_PASSWORD","IMMICH_SECRET_KEY"],"onePasswordItem":"immich-secrets","refreshInterval":"1h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"immich-secrets"}` | External secrets configuration |
 | global.annotations | object | `{}` |  |
 | ingress | object | `{"annotations":{},"domain":"","enabled":false}` | Ingress configuration |

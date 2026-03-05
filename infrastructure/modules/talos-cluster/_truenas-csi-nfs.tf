@@ -43,7 +43,7 @@ locals {
   }
 
   nfs_mount_options = [
-    "nfsvers=4",
+    "nfsvers=4.2",
     "nconnect=8",
     "hard",
     "noatime",
