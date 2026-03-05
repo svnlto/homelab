@@ -41,9 +41,11 @@ nfs:
   server: ""
   mountOptions:
     - nfsvers=4.2
-    - rsize=131072
-    - wsize=131072
+    - rsize=1048576
+    - wsize=1048576
     - hard
+    - noatime
+    - nconnect=8
   volumes: []
 
 # -- CSI storage for cache volume
@@ -53,7 +55,7 @@ csi:
   server: ""
   basePath: /mnt/fast/kubernetes/nfs-dynamic
   mountOptions:
-    - nfsvers=4
+    - nfsvers=4.2
     - nconnect=8
     - hard
     - noatime
