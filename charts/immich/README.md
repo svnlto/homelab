@@ -21,7 +21,7 @@ Immich self-hosted photo management with external library support
 | machineLearning.resources.limits.memory | string | `"8Gi"` |  |
 | machineLearning.resources.requests.cpu | string | `"100m"` |  |
 | machineLearning.resources.requests.memory | string | `"512Mi"` |  |
-| nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=131072","wsize=131072","hard"],"server":"","volumes":[]}` | NFS storage for external photo libraries |
+| nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=1048576","wsize=1048576","hard","noatime","nconnect=8"],"server":"","volumes":[]}` | NFS storage for external photo libraries |
 | server.gpu.enabled | bool | `false` |  |
 | server.gpu.renderNode | string | `"/dev/dri/renderD128"` |  |
 | server.image | string | `"ghcr.io/immich-app/immich-server:v2.5.6@sha256:aa163d2e1cc2b16a9515dd1fef901e6f5231befad7024f093d7be1f2da14341a"` |  |
