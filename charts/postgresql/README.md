@@ -15,7 +15,7 @@ CloudNativePG PostgreSQL cluster for shared database workloads
 | cluster.name | string | `"postgresql"` |  |
 | cluster.postgresql.parameters.effective_cache_size | string | `"512MB"` |  |
 | cluster.postgresql.parameters.maintenance_work_mem | string | `"64MB"` |  |
-| cluster.postgresql.parameters.max_connections | string | `"50"` |  |
+| cluster.postgresql.parameters.max_connections | string | `"200"` |  |
 | cluster.postgresql.parameters.shared_buffers | string | `"128MB"` |  |
 | cluster.postgresql.parameters.work_mem | string | `"8MB"` |  |
 | cluster.postgresql.shared_preload_libraries[0] | string | `"vchord.so"` |  |
