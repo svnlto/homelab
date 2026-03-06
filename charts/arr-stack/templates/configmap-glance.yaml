@@ -49,9 +49,6 @@ data:
                       - title: ArgoCD
                         url: https://argocd.{{ .Values.ingress.domain }}
                         icon: si:argo
-                      - title: OpenObserve
-                        url: https://openobserve.{{ .Values.ingress.domain }}
-
               - type: releases
                 cache: 1d
                 repositories:
@@ -105,9 +102,6 @@ data:
                   - title: Immich
                     url: https://immich.{{ .Values.ingress.domain }}
                     icon: si:immich
-                  - title: OpenObserve
-                    url: https://openobserve.{{ .Values.ingress.domain }}
-
               {{- range .Values.glance.jellyfinLibraries }}
               - type: custom-api
                 title: Recently Added {{ . }}
