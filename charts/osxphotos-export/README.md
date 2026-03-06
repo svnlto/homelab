@@ -9,7 +9,7 @@ OSXPhotos export service for syncing Apple Photos to NFS storage
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | csi | object | `{"basePath":"/mnt/fast/kubernetes/nfs-dynamic","driver":"org.democratic-csi.nfs-fast","mountOptions":["nfsvers=4.2","nconnect=8","hard","noatime","nodiratime"],"server":"","storageClassName":"truenas-nfs-fast","volumes":[]}` | CSI storage for cache volume |
-| env | object | `{"EXPORT_DB_PATH":"/cache/osxphotos_export.db","OTEL_EXPORTER_OTLP_ENDPOINT":"http://openobserve-openobserve-standalone.openobserve.svc:5080/api/default/","OTEL_SERVICE_NAME":"osxphotos-export","RETRY_INTERVAL":"300","SYNC_INTERVAL":"3600"}` | Environment variables |
+| env | object | `{"EXPORT_DB_PATH":"/cache/osxphotos_export.db","OTEL_SERVICE_NAME":"osxphotos-export","RETRY_INTERVAL":"300","SYNC_INTERVAL":"3600"}` | Environment variables |
 | externalSecret | object | `{"keys":["EXPORT_DEST","LIBRARY_PATH"],"onePasswordItem":"osxphotos-config","refreshInterval":"1h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"osxphotos-config"}` | External secrets configuration |
 | global.annotations | object | `{}` |  |
 | image | object | `{"repository":"ghcr.io/svnlto/osxphotos-export","tag":"latest@sha256:db703799b3a7add43dbe5dea6420f630375d873a641ee3d06e089f712806dbd6"}` | Container image |

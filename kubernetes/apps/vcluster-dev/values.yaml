@@ -15,12 +15,6 @@ controlPlane:
         storageClass: truenas-iscsi-rwo
         size: 5Gi
 
-networking:
-  replicateServices:
-    fromHost:
-      - from: openobserve/openobserve-openobserve-standalone
-        to: openobserve/openobserve
-
 sync:
   toHost:
     ingresses:
