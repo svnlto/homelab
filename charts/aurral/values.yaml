@@ -12,6 +12,8 @@ aurral:
       value: "1000"
     - name: TRUST_PROXY
       value: "1"
+    - name: NODE_OPTIONS
+      value: "--dns-result-order=ipv4first"
   # No runAsUser — container starts as root, drops to PUID/PGID internally
   securityContext:
     fsGroup: 1000
