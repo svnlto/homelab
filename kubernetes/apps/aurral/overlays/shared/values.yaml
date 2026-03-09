@@ -11,7 +11,7 @@ iscsi:
   volumes:
     - pvName: aurral-data
       pvcName: aurral-data
-      volumeHandle: pvc-a23d7d0a-c667-4752-9ca6-49103adfba7c
+      volumeHandle: pvc-d0e061f9-0fed-4feb-8372-d609a77c6112
       capacity: 5Gi
 
 nfs:
