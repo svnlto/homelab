@@ -1,0 +1,23 @@
+{{- range .Values.nfs.volumes }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .pvName }}
+  annotations:
+    {{- range $key, $val := $.Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  capacity:
+    storage: {{ .capacity }}
+  accessModes:
+    - {{ .accessMode }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: {{ $.Values.nfs.server }}
+    path: {{ .path }}
+  mountOptions:
+    {{- toYaml $.Values.nfs.mountOptions | nindent 4 }}
+{{- end }}

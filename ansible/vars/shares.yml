@@ -72,6 +72,15 @@ nfs_shares:
       - 10.0.2.0/24
     readonly: false
 
+  - path: /mnt/bulk/aurral-downloads
+    comment: "Aurral Weekly Flow downloads"
+    maproot_user: root
+    maproot_group: wheel
+    networks:
+      - 10.10.10.0/24
+      - 10.0.1.0/24
+    readonly: false
+
   - path: /mnt/fast/kubernetes/nfs-static
     comment: "Static PVs for shared configs"
     maproot_user: root
