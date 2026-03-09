@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aurral
+  labels:
+    {{- include "aurral.labels" . | nindent 4 }}
+  annotations:
+    {{- range $key, $val := .Values.global.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "aurral.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aurral.selectorLabels" . | nindent 8 }}
+      annotations:
+        {{- range $key, $val := .Values.global.annotations }}
+        {{ $key }}: {{ $val | quote }}
+        {{- end }}
+    spec:
+      securityContext:
+        fsGroup: {{ .Values.aurral.securityContext.fsGroup }}
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: aurral
+          image: {{ .Values.aurral.image }}
+          ports:
+            - containerPort: {{ .Values.aurral.port }}
+              name: http
+          env:
+            {{- toYaml .Values.aurral.env | nindent 12 }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.externalSecret.targetSecretName }}
+          resources:
+            {{- toYaml .Values.aurral.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              port: http
+              path: /
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /app/backend/data
+            {{- range .Values.nfs.volumes }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+            {{- end }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: aurral-data
+        {{- range .Values.nfs.volumes }}
+        - name: {{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .pvcName }}
+        {{- end }}

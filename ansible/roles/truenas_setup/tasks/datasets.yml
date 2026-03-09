@@ -93,6 +93,14 @@
     compression: "LZ4"
   tags: [datasets, bulk]
 
+- name: Create bulk aurral-downloads dataset
+  arensb.truenas.filesystem:
+    name: "bulk/aurral-downloads"
+    state: present
+    compression: "LZ4"
+    atime: "OFF"
+  tags: [datasets, bulk, aurral]
+
 # Fast pool datasets
 - name: Create fast kubernetes parent dataset
   arensb.truenas.filesystem:

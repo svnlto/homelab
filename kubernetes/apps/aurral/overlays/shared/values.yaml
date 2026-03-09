@@ -1,0 +1,32 @@
+---
+# Shared cluster overrides
+
+global:
+  annotations:
+    deployed-by: argocd
+    cluster: shared
+
+iscsi:
+  portal: 10.10.10.13:3260
+  volumes:
+    - pvName: aurral-data
+      pvcName: aurral-data
+      volumeHandle: pvc-a23d7d0a-c667-4752-9ca6-49103adfba7c
+      capacity: 5Gi
+
+nfs:
+  server: 10.10.10.13
+  volumes:
+    - name: downloads
+      pvName: aurral-nfs-downloads
+      pvcName: nfs-downloads
+      path: /mnt/bulk/aurral-downloads
+      capacity: 50Gi
+      accessMode: ReadWriteMany
+      mountPath: /app/downloads
+
+ingress:
+  enabled: true
+  domain: shared.h.svenlito.com
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
