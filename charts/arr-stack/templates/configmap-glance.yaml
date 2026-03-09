@@ -33,6 +33,9 @@ data:
                       - title: Navidrome
                         url: https://navidrome.{{ .Values.ingress.domain }}
                         icon: si:navidrome
+                      - title: Aurral
+                        url: https://aurral.{{ .Values.ingress.domain }}
+                        icon: si:lastdotfm
                   - title: Photos
                     links:
                       - title: Immich
@@ -102,6 +105,9 @@ data:
                   - title: Immich
                     url: https://immich.{{ .Values.ingress.domain }}
                     icon: si:immich
+                  - title: Aurral
+                    url: https://aurral.{{ .Values.ingress.domain }}
+                    icon: si:lastdotfm
               {{- range .Values.glance.jellyfinLibraries }}
               - type: custom-api
                 title: Recently Added {{ . }}
