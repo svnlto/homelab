@@ -241,7 +241,7 @@
     - bulk/media
     - bulk/photos
     - bulk/archive
-    - scratch
+    - bulk/aurral-downloads
     - scratch/downloads
     - scratch/dump
   tags: [datasets, acls]

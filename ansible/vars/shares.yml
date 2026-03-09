@@ -192,16 +192,16 @@ acl_datasets:
     uid: 1002
     gid: 1000
     everyone_read: true
-  - path: /mnt/scratch
-    uid: 0
-    gid: 0
-    everyone_read: true
   - path: /mnt/scratch/downloads
     uid: 1000
     gid: 1000
     everyone_read: true
   - path: /mnt/scratch/dump
     uid: 1003
+    gid: 1000
+    everyone_read: true
+  - path: /mnt/bulk/aurral-downloads
+    uid: 1000
     gid: 1000
     everyone_read: true
   - path: /mnt/bulk/backups/timemachine
