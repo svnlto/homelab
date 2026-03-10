@@ -32,6 +32,10 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      initContainers:
+        - name: wait-for-dragonfly
+          image: busybox:1.37
+          command: ['sh', '-c', 'until nc -z dragonfly.cache.svc.cluster.local 6379; do echo "waiting for dragonfly..."; sleep 2; done']
       containers:
         - name: immich-workers
           image: {{ .Values.server.image }}
