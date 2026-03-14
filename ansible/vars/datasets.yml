@@ -82,6 +82,13 @@ datasets:
     sync: "standard"
     quota: "1T"
 
+  fast_dump:
+    recordsize: "128K"
+    compression: "lz4"
+    sync: "standard"
+    acltype: "nfsv4"
+    aclmode: "passthrough"
+
   # Scratch pool
   scratch_kubernetes_nfs_dynamic:
     recordsize: "128K"

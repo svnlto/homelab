@@ -12,7 +12,7 @@ nfs:
     - name: dump
       pvName: dumper-nfs-dump
       pvcName: nfs-dump
-      path: /mnt/scratch/dump
+      path: /mnt/fast/dump
       capacity: 1Ti
 
 csi:
