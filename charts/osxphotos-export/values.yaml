@@ -13,8 +13,8 @@ resources:
     cpu: 100m
     memory: 256Mi
   limits:
-    cpu: 500m
-    memory: 1Gi
+    cpu: "1"
+    memory: 2Gi
 
 # -- Environment variables
 env:
