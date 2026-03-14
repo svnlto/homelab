@@ -14,7 +14,7 @@ OSXPhotos export service for syncing Apple Photos to NFS storage
 | global.annotations | object | `{}` |  |
 | image | object | `{"repository":"ghcr.io/svnlto/osxphotos-export","tag":"latest@sha256:118056dad1f9a44ee581e832268ac69743e6dc208e57e12879ba45dd78cca668"}` | Container image |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=1048576","wsize=1048576","hard","noatime","nconnect=8"],"server":"","volumes":[]}` | NFS storage for source and export |
-| resources | object | `{"limits":{"cpu":"500m","memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Container resources |
+| resources | object | `{"limits":{"cpu":"1","memory":"2Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Container resources |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1003,"seccompProfile":{"type":"RuntimeDefault"}}` | Security context for the container |
 
 ----------------------------------------------
