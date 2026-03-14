@@ -140,6 +140,13 @@
     compression: "LZ4"
   tags: [datasets, fast, ml]
 
+- name: Create fast dump dataset
+  arensb.truenas.filesystem:
+    name: "fast/dump"
+    state: present
+    compression: "LZ4"
+  tags: [datasets, fast, dumper]
+
 # Scratch pool datasets
 - name: Create scratch kubernetes parent dataset
   arensb.truenas.filesystem:
@@ -242,6 +249,7 @@
     - bulk/photos
     - bulk/archive
     - bulk/aurral-downloads
+    - fast/dump
     - scratch/downloads
     - scratch/dump
   tags: [datasets, acls]

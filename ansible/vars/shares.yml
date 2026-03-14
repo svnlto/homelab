@@ -92,6 +92,17 @@ nfs_shares:
       - 10.0.3.0/24
     readonly: false
 
+  # Fast pool
+
+  - path: /mnt/fast/dump
+    comment: "Photo dump from remote machine via rsync (K8s CronJob)"
+    maproot_user: root
+    maproot_group: wheel
+    networks:
+      - 10.10.10.0/24
+      - 10.0.1.0/24
+    readonly: false
+
   # Scratch pool
 
   - path: /mnt/scratch/dump
@@ -194,6 +205,10 @@ acl_datasets:
     everyone_read: true
   - path: /mnt/scratch/downloads
     uid: 1000
+    gid: 1000
+    everyone_read: true
+  - path: /mnt/fast/dump
+    uid: 1003
     gid: 1000
     everyone_read: true
   - path: /mnt/scratch/dump

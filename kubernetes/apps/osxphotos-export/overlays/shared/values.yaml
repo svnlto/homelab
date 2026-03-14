@@ -12,7 +12,7 @@ nfs:
     - name: source
       pvName: osxphotos-nfs-source
       pvcName: osxphotos-source
-      path: /mnt/scratch/dump
+      path: /mnt/fast/dump
       capacity: 1Ti
       accessMode: ReadOnlyMany
     - name: export
