@@ -2,7 +2,7 @@
 # Shared cluster overrides for n8n
 
 image:
-  tag: "1.122.4"
+  tag: "2.12.2"
 
 ingress:
   enabled: true
