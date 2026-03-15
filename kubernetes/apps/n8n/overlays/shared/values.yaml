@@ -46,7 +46,7 @@ main:
   persistence:
     enabled: true
     type: dynamic
-    storageClass: truenas-iscsi-fast
+    storageClass: truenas-iscsi-rwo
     accessModes:
       - ReadWriteOnce
     size: 10Gi
