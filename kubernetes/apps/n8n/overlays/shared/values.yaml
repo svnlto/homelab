@@ -1,0 +1,81 @@
+---
+# Shared cluster overrides for n8n
+
+image:
+  tag: "1.122.4"
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+  hosts:
+    - host: n8n.shared.h.svenlito.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - n8n.shared.h.svenlito.com
+
+main:
+  config:
+    db:
+      type: postgresdb
+      postgresdb:
+        host: postgresql-rw.database.svc.cluster.local
+        port: 5432
+        database: n8n
+        user: n8n
+    n8n:
+      log:
+        level: info
+
+  extraEnv:
+    DB_POSTGRESDB_PASSWORD:
+      valueFrom:
+        secretKeyRef:
+          name: n8n-secrets
+          key: DB_PASSWORD
+    N8N_ENCRYPTION_KEY:
+      valueFrom:
+        secretKeyRef:
+          name: n8n-secrets
+          key: N8N_ENCRYPTION_KEY
+
+  persistence:
+    enabled: true
+    type: dynamic
+    storageClass: truenas-iscsi-fast
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+extraManifests:
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: n8n-secrets
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        name: onepassword
+        kind: ClusterSecretStore
+      target:
+        name: n8n-secrets
+        creationPolicy: Owner
+      data:
+        - secretKey: DB_PASSWORD
+          remoteRef:
+            key: n8n-secrets/DB_PASSWORD
+        - secretKey: N8N_ENCRYPTION_KEY
+          remoteRef:
+            key: n8n-secrets/N8N_ENCRYPTION_KEY
