@@ -1,7 +1,12 @@
 # Changelog
 
-## [0.5.0](https://github.com/svnlto/homelab/compare/dumper-v0.4.3...dumper-v0.5.0) (2026-03-01)
+## [0.5.1] (2026-03-31)
 
+### Bug Fixes
+
+* fix leading slash in disk scan when REMOTE_PATH has no trailing slash, causing all originals to appear missing
+
+## [0.5.0](https://github.com/svnlto/homelab/compare/dumper-v0.4.3...dumper-v0.5.0) (2026-03-01)
 
 ### Features
 
@@ -9,13 +14,11 @@
 
 ## [0.4.3](https://github.com/svnlto/homelab/compare/dumper-v0.4.2...dumper-v0.4.3) (2026-03-01)
 
-
 ### Bug Fixes
 
 * remove library prefix from originals file list ([273a97c](https://github.com/svnlto/homelab/commit/273a97c6ebabf402ecbc1f072d072b9e4103934b))
 
 ## [0.4.2](https://github.com/svnlto/homelab/compare/dumper-v0.4.1...dumper-v0.4.2) (2026-03-01)
-
 
 ### Bug Fixes
 
@@ -23,17 +26,17 @@
 
 ## [0.4.1](https://github.com/svnlto/homelab/compare/dumper-v0.4.0...dumper-v0.4.1) (2026-03-01)
 
-
 ### Bug Fixes
 
 * correct Photos Library path duplication in dumper sync ([9bd3897](https://github.com/svnlto/homelab/commit/9bd38976dcc91f9c9a40e2caa4c782d49b9bb47b))
 
 ## [0.4.0](https://github.com/svnlto/homelab/compare/dumper-v0.3.0...dumper-v0.4.0) (2026-03-01)
 
-
 ### Features
 
-* add Immich deployment with shared Dragonfly cache and enhanced PostgreSQL ([#48](https://github.com/svnlto/homelab/issues/48)) ([cc2c030](https://github.com/svnlto/homelab/commit/cc2c0306248f40ef5869404a00806b1b96d35730))
+* add Immich deployment with shared Dragonfly cache and enhanced PostgreSQL
+  ([#48](https://github.com/svnlto/homelab/issues/48))
+  ([cc2c030](https://github.com/svnlto/homelab/commit/cc2c0306248f40ef5869404a00806b1b96d35730))
 * targeted photo sync using Photos.sqlite instead of remote find ([c7c8f78](https://github.com/svnlto/homelab/commit/c7c8f78a9917710a2e129916554290c699e018fc))
 
 ## [0.3.0](https://github.com/svnlto/homelab/compare/dumper-v0.2.4...dumper-v0.3.0) (2026-02-27)

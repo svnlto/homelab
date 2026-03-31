@@ -227,7 +227,7 @@ while true; do
     SCAN_START=$SECONDS
     if [ -d "$ORIGINALS_DIR" ]; then
       find "$ORIGINALS_DIR" -type f \
-        | sed "s|^${DUMP_DIR}${REMOTE_PATH}||" \
+        | sed "s|^${LOCAL_LIB%/}/||" \
         | sort > "${PRESENT}"
     else
       : > "${PRESENT}"
