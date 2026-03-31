@@ -88,7 +88,7 @@ inputs = {
       hostname        = "shared-worker1"
       ip_address      = "${local.k8s.worker_start}/24"
       cpu_cores       = 8
-      memory_mb       = 8192
+      memory_mb       = 16384
       disk_size_gb    = 50
       gpu_passthrough = false
     }
