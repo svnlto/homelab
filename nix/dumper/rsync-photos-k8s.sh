@@ -128,7 +128,7 @@ while true; do
 
   # ── Phase 1: Sync database + resources directories ─────────────────
   LIB_PATH="${REMOTE_PATH%/}"
-  LOCAL_LIB="${DUMP_DIR}${REMOTE_PATH}"
+  LOCAL_LIB="${DUMP_DIR}${REMOTE_PATH%/}"
   DB="${LOCAL_LIB}/database/Photos.sqlite"
 
   PHASE1_START=$SECONDS
@@ -227,7 +227,7 @@ while true; do
     SCAN_START=$SECONDS
     if [ -d "$ORIGINALS_DIR" ]; then
       find "$ORIGINALS_DIR" -type f \
-        | sed "s|^${LOCAL_LIB%/}/||" \
+        | sed "s|^${LOCAL_LIB}/||" \
         | sort > "${PRESENT}"
     else
       : > "${PRESENT}"
@@ -279,7 +279,7 @@ while true; do
   fi
 
   # ── Phase 2b: Parallel rsync of missing originals ────────────────
-  echo "Starting rsync of ${FILE_COUNT} missing originals to ${DUMP_DIR}${REMOTE_PATH}"
+  echo "Starting rsync of ${FILE_COUNT} missing originals to ${LOCAL_LIB}/"
   otel_log INFO "Rsync started: ${FILE_COUNT} missing originals from ${REMOTE_HOST}" \
     "files.count=${FILE_COUNT}" "remote.host=${REMOTE_HOST}"
 
@@ -363,8 +363,8 @@ while true; do
       --files-from="$chunk" \
       --rsync-path="sudo /usr/local/bin/rsync" \
       -e "ssh ${SSH_OPTS[*]}" \
-      "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}" \
-      "${DUMP_DIR}${REMOTE_PATH}" \
+      "${REMOTE_USER}@${REMOTE_HOST}:${LIB_PATH}/" \
+      "${LOCAL_LIB}/" \
       >>"$STREAM_LOG" 2>>"$STREAM_ERR" &
     RSYNC_PIDS+=($!)
     STREAM_IDX=$((STREAM_IDX + 1))
