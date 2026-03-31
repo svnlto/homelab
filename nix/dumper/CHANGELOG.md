@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/svnlto/homelab/compare/dumper-v0.5.0...dumper-v0.5.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* **dumper:** fix leading slash in disk scan path stripping ([2f40344](https://github.com/svnlto/homelab/commit/2f40344f6136b84d827d4ab5e11629fa9a7d9955))
+
 ## [0.5.1] (2026-03-31)
 
 ### Bug Fixes
