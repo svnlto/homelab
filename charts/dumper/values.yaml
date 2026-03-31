@@ -67,7 +67,7 @@ tailscale:
 dumper:
   image:
     repository: ghcr.io/svnlto/dumper
-    tag: v0.5.0@sha256:ac685d5070cf1d6f63d3094b848f68e405fc6b88a13d87cf3db25270e125e657
+    tag: v0.5.1@sha256:ffd28317b2c72888e92543313ccc3ba9d6d64e6d75b726b73efc9d74165a9805
   otelEndpoint: ""
   syncInterval: "3600"
   retryInterval: "300"
