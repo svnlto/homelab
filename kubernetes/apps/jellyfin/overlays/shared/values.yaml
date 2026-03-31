@@ -65,7 +65,7 @@ seerr:
 
 jellyfin:
   nodeSelector:
-    kubernetes.io/hostname: shared-worker2
+    kubernetes.io/hostname: shared-worker1
 
 ingress:
   enabled: true
