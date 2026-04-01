@@ -21,7 +21,7 @@
           config.allowUnfree = true;
         };
 
-        terraform = nixpkgs-terraform.packages.${system}."terraform-1.14.1";
+        terraform = nixpkgs-terraform.packages.${system}."terraform-1.14.3";
       in {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
@@ -30,34 +30,24 @@
             python3Packages.molecule
             pre-commit
             tflint
-            vagrant
-            qemu
             jq
-            yq-go
-            sshpass
             just
             terragrunt
             terraform
             kubernetes-helm
             kubectl
-            kubectx
             talosctl
             k9s
             argocd
             vcluster
-            popeye
             helm-docs
             kubeconform
             # MCP server runtimes
             nodejs
             deno
-            cargo
-            go
           ];
 
           shellHook = ''
-            export QEMU_DIR="${pkgs.qemu}/share/qemu"
-            export PATH="${pkgs.qemu}/bin:$PATH"
             export K9S_CONFIG_DIR=~/.config/k9s
 
             # Kubernetes context

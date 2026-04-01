@@ -21,34 +21,34 @@ spec:
       annotations:
         {{- include "immich.annotations" . | nindent 8 }}
     spec:
-      {{- if not .Values.server.gpu.enabled }}
+{{- if not .Values.server.gpu.enabled }}
       securityContext:
         runAsUser: {{ .Values.server.securityContext.runAsUser }}
         runAsGroup: {{ .Values.server.securityContext.runAsGroup }}
         fsGroup: {{ .Values.server.securityContext.fsGroup }}
         fsGroupChangePolicy: OnRootMismatch
-      {{- end }}
-      {{- with .Values.server.nodeSelector }}
+{{- end }}
+{{- with .Values.server.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+{{- end }}
       containers:
         - name: immich-workers
           image: {{ .Values.server.image }}
-          {{- if .Values.server.gpu.enabled }}
+{{- if .Values.server.gpu.enabled }}
           securityContext:
             privileged: true
-          {{- end }}
+{{- end }}
           envFrom:
             - configMapRef:
                 name: immich-config
           env:
             - name: IMMICH_WORKERS_EXCLUDE
               value: api
-            {{- if .Values.server.gpu.enabled }}
+{{- if .Values.server.gpu.enabled }}
             - name: LIBVA_RENDER_NODE
               value: {{ .Values.server.gpu.renderNode }}
-            {{- end }}
+{{- end }}
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -72,10 +72,10 @@ spec:
             - name: external-libraries
               mountPath: /external-libraries
               readOnly: true
-            {{- if .Values.server.gpu.enabled }}
+{{- if .Values.server.gpu.enabled }}
             - name: dev-dri
               mountPath: /dev/dri
-            {{- end }}
+{{- end }}
       volumes:
         - name: upload
           persistentVolumeClaim:
@@ -83,8 +83,8 @@ spec:
         - name: external-libraries
           persistentVolumeClaim:
             claimName: nfs-photos
-        {{- if .Values.server.gpu.enabled }}
+{{- if .Values.server.gpu.enabled }}
         - name: dev-dri
           hostPath:
             path: /dev/dri
-        {{- end }}
+{{- end }}

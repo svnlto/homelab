@@ -21,7 +21,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Global annotations from values.
 */}}
 {{- define "dragonfly.annotations" -}}
-{{- range $key, $val := .Values.global.annotations }}
+  {{- range $key, $val := .Values.global.annotations }}
 {{ $key }}: {{ $val | quote -}}
-{{- end }}
+  {{- end }}
 {{- end -}}

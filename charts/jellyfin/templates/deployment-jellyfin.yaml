@@ -6,9 +6,9 @@ metadata:
   labels:
     {{- include "jellyfin.labels" (dict "name" "jellyfin") | nindent 4 }}
   annotations:
-    {{- range $key, $val := .Values.global.annotations }}
+{{- range $key, $val := .Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+{{- end }}
 spec:
   replicas: 1
   strategy:
@@ -21,14 +21,14 @@ spec:
       labels:
         {{- include "jellyfin.selectorLabels" (dict "name" "jellyfin") | nindent 8 }}
       annotations:
-        {{- range $key, $val := .Values.global.annotations }}
+{{- range $key, $val := .Values.global.annotations }}
         {{ $key }}: {{ $val | quote }}
-        {{- end }}
+{{- end }}
     spec:
-      {{- with .Values.jellyfin.nodeSelector }}
+{{- with .Values.jellyfin.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+{{- end }}
       containers:
         - name: jellyfin
           image: {{ .Values.jellyfin.image }}
@@ -40,10 +40,10 @@ spec:
           env:
             - name: TZ
               value: {{ .Values.timezone }}
-            {{- if .Values.ingress.enabled }}
+{{- if .Values.ingress.enabled }}
             - name: JELLYFIN_PublishedServerUrl
               value: https://jellyfin.{{ .Values.ingress.domain }}
-            {{- end }}
+{{- end }}
           livenessProbe:
             httpGet:
               path: /health

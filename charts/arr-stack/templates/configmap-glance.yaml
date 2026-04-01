@@ -102,7 +102,7 @@ data:
                   - title: Immich
                     url: https://immich.{{ .Values.ingress.domain }}
                     icon: si:immich
-              {{- range .Values.glance.jellyfinLibraries }}
+{{- range .Values.glance.jellyfinLibraries }}
               - type: custom-api
                 title: Recently Added {{ . }}
                 frameless: true
@@ -256,7 +256,7 @@ data:
                       {{ `{{ end }}` }}
                     {{ `{{ end }}` }}
                   {{ `{{ end }}` }}
-              {{- end }}
+{{- end }}
 
               - type: group
                 widgets:

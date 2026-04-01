@@ -6,9 +6,9 @@ metadata:
   labels:
     {{- include "dumper.labels" (dict "name" "dumper") | nindent 4 }}
   annotations:
-    {{- range $key, $val := .Values.global.annotations }}
+{{- range $key, $val := .Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+{{- end }}
 spec:
   replicas: 1
   strategy:
@@ -21,9 +21,9 @@ spec:
       labels:
         {{- include "dumper.selectorLabels" (dict "name" "dumper") | nindent 8 }}
       annotations:
-        {{- range $key, $val := .Values.global.annotations }}
+{{- range $key, $val := .Values.global.annotations }}
         {{ $key }}: {{ $val | quote }}
-        {{- end }}
+{{- end }}
     spec:
       initContainers:
         - name: tailscale

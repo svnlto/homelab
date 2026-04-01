@@ -16,7 +16,7 @@ app.kubernetes.io/name: osxphotos-export
 Global annotations from values.
 */}}
 {{- define "osxphotos-export.annotations" -}}
-{{- range $key, $val := .Values.global.annotations }}
+  {{- range $key, $val := .Values.global.annotations }}
 {{ $key }}: {{ $val | quote -}}
-{{- end }}
+  {{- end }}
 {{- end -}}
