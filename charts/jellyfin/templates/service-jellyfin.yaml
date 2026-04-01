@@ -4,9 +4,9 @@ kind: Service
 metadata:
   name: jellyfin
   annotations:
-    {{- range $key, $val := .Values.global.annotations }}
+{{- range $key, $val := .Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+{{- end }}
 spec:
   ports:
     - port: {{ .Values.jellyfin.port }}

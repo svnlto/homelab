@@ -6,9 +6,9 @@ metadata:
   labels:
     {{- include "jellyfin.labels" (dict "name" "seerr") | nindent 4 }}
   annotations:
-    {{- range $key, $val := .Values.global.annotations }}
+{{- range $key, $val := .Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+{{- end }}
 spec:
   replicas: 1
   strategy:
@@ -21,9 +21,9 @@ spec:
       labels:
         {{- include "jellyfin.selectorLabels" (dict "name" "seerr") | nindent 8 }}
       annotations:
-        {{- range $key, $val := .Values.global.annotations }}
+{{- range $key, $val := .Values.global.annotations }}
         {{ $key }}: {{ $val | quote }}
-        {{- end }}
+{{- end }}
     spec:
       securityContext:
         runAsUser: 1000
@@ -47,7 +47,7 @@ spec:
           env:
             - name: TZ
               value: {{ .Values.timezone }}
-            {{- if .Values.seerr.database.host }}
+{{- if .Values.seerr.database.host }}
             - name: DB_TYPE
               value: postgres
             - name: DB_HOST
@@ -63,7 +63,7 @@ spec:
                   key: {{ .Values.seerr.database.passwordSecret.key }}
             - name: DB_NAME
               value: {{ .Values.seerr.database.name | quote }}
-            {{- end }}
+{{- end }}
           livenessProbe:
             httpGet:
               path: /api/v1/status

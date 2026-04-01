@@ -2,13 +2,11 @@
 
 ## [0.5.0](https://github.com/svnlto/homelab/compare/dumper-v0.4.3...dumper-v0.5.0) (2026-03-01)
 
-
 ### Features
 
 * **dumper:** add detailed logging for Phase 1 and Phase 2 ([6ff2369](https://github.com/svnlto/homelab/commit/6ff2369594bf6ffd0957423cf41355fe8635c5ee))
 
 ## [0.4.3](https://github.com/svnlto/homelab/compare/dumper-v0.4.2...dumper-v0.4.3) (2026-03-01)
-
 
 ### Bug Fixes
 
@@ -16,13 +14,11 @@
 
 ## [0.4.2](https://github.com/svnlto/homelab/compare/dumper-v0.4.1...dumper-v0.4.2) (2026-03-01)
 
-
 ### Bug Fixes
 
 * drop resources/ sync from dumper Phase 1 ([ca4806c](https://github.com/svnlto/homelab/commit/ca4806c870ac2fcd9cc5068b95ac3a067cf11e2e))
 
 ## [0.4.1](https://github.com/svnlto/homelab/compare/dumper-v0.4.0...dumper-v0.4.1) (2026-03-01)
-
 
 ### Bug Fixes
 
@@ -30,10 +26,11 @@
 
 ## [0.4.0](https://github.com/svnlto/homelab/compare/dumper-v0.3.0...dumper-v0.4.0) (2026-03-01)
 
-
 ### Features
 
-* add Immich deployment with shared Dragonfly cache and enhanced PostgreSQL ([#48](https://github.com/svnlto/homelab/issues/48)) ([cc2c030](https://github.com/svnlto/homelab/commit/cc2c0306248f40ef5869404a00806b1b96d35730))
+* add Immich deployment with shared Dragonfly cache and enhanced PostgreSQL
+  ([#48](https://github.com/svnlto/homelab/issues/48))
+  ([cc2c030](https://github.com/svnlto/homelab/commit/cc2c0306248f40ef5869404a00806b1b96d35730))
 * targeted photo sync using Photos.sqlite instead of remote find ([c7c8f78](https://github.com/svnlto/homelab/commit/c7c8f78a9917710a2e129916554290c699e018fc))
 
 ## [0.3.0](https://github.com/svnlto/homelab/compare/dumper-v0.2.4...dumper-v0.3.0) (2026-02-27)

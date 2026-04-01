@@ -5,18 +5,18 @@ kind: Ingress
 metadata:
   name: jellyfin
   annotations:
-    {{- range $key, $val := .Values.ingress.annotations }}
+  {{- range $key, $val := .Values.ingress.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+  {{- end }}
     {{- include "jellyfin.annotations" . | nindent 4 }}
 spec:
   tls:
     - hosts:
-        {{- range .Values.ingress.hosts }}
+  {{- range .Values.ingress.hosts }}
         - {{ .name }}.{{ $.Values.ingress.domain }}
-        {{- end }}
+  {{- end }}
   rules:
-    {{- range .Values.ingress.hosts }}
+  {{- range .Values.ingress.hosts }}
     - host: {{ .name }}.{{ $.Values.ingress.domain }}
       http:
         paths:
@@ -27,5 +27,5 @@ spec:
                 name: {{ .service }}
                 port:
                   name: {{ .portName }}
-    {{- end }}
+  {{- end }}
 {{- end }}

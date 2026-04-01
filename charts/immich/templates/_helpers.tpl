@@ -7,9 +7,9 @@ app.kubernetes.io/name: {{ .name }}
 app.kubernetes.io/instance: {{ .context.Release.Name }}
 app.kubernetes.io/version: {{ .context.Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .context.Release.Service }}
-{{- if .component }}
+  {{- if .component }}
 app.kubernetes.io/component: {{ .component }}
-{{- end -}}
+  {{- end -}}
 {{- end -}}
 
 {{/*
@@ -24,7 +24,7 @@ app.kubernetes.io/instance: {{ .context.Release.Name }}
 Global annotations from values.
 */}}
 {{- define "immich.annotations" -}}
-{{- range $key, $val := .Values.global.annotations }}
+  {{- range $key, $val := .Values.global.annotations }}
 {{ $key }}: {{ $val | quote -}}
-{{- end }}
+  {{- end }}
 {{- end -}}
