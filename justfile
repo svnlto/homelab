@@ -47,12 +47,50 @@ nixos-flash-pihole disk:
       echo "Aborted."
     fi
 
-# Deploy Pi-hole config via SSH
-nixos-deploy-pihole:
-    @echo "Syncing NixOS config to rpi-pihole..."
-    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.53:/tmp/nix-config/
-    @echo "Rebuilding NixOS on rpi-pihole..."
-    ssh svenlito@192.168.0.53 "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-pihole"
+# Deploy Pi-hole config, dumper binary, and secrets via SSH
+nixos-deploy-pihole: dumper-build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    PI="svenlito@192.168.0.53"
+    echo "Syncing NixOS config to rpi-pihole..."
+    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' \
+      nix/ "$PI":/tmp/nix-config/
+    echo "Rebuilding NixOS on rpi-pihole..."
+    ssh "$PI" "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-pihole"
+    echo "Deploying dumper binary and secrets..."
+    # Build config.json from 1Password
+    REMOTE_HOST=$(op read "op://Homelab/dumper-config/REMOTE_HOST")
+    REMOTE_USER=$(op read "op://Homelab/dumper-config/REMOTE_USER")
+    REMOTE_PATH=$(op read "op://Homelab/dumper-config/REMOTE_PATH")
+    CONFIG=$(mktemp)
+    cat > "$CONFIG" <<CONF
+    {
+      "remote_host": "$REMOTE_HOST",
+      "remote_user": "$REMOTE_USER",
+      "remote_path": "$REMOTE_PATH",
+      "ssh_key_path": "/var/lib/dumper/id_ed25519",
+      "dump_dir": "/mnt/dump",
+      "state_dir": "/var/lib/dumper",
+      "max_streams": 8
+    }
+    CONF
+    # Extract SSH key from 1Password
+    SSH_KEY=$(mktemp)
+    op read "op://Homelab/dumper-config/private_key" -o "$SSH_KEY" --force
+    # Deploy binary, config, and SSH key
+    scp bin/dumper-arm64 "$PI":/tmp/dumper
+    scp "$CONFIG" "$PI":/tmp/dumper-config.json
+    scp "$SSH_KEY" "$PI":/tmp/dumper-id_ed25519
+    ssh "$PI" "sudo mv /tmp/dumper /var/lib/dumper/dumper && \
+               sudo mv /tmp/dumper-config.json /var/lib/dumper/config.json && \
+               sudo mv /tmp/dumper-id_ed25519 /var/lib/dumper/id_ed25519 && \
+               sudo chown dumper:dumper /var/lib/dumper/dumper /var/lib/dumper/config.json /var/lib/dumper/id_ed25519 && \
+               sudo chmod +x /var/lib/dumper/dumper && \
+               sudo chmod 600 /var/lib/dumper/config.json && \
+               sudo chmod 400 /var/lib/dumper/id_ed25519 && \
+               sudo systemctl restart dumper.timer"
+    rm -f "$CONFIG" "$SSH_KEY"
+    echo "Deploy complete"
 
 # Update flake lock in VM
 nixos-flake-update-pihole:
@@ -278,44 +316,6 @@ dumper-build:
 dumper-test:
     cd nix/dumper && devbox run -- go test ./... -v
 
-# Deploy dumper binary, config, and SSH key to rpi-pihole
-dumper-deploy: dumper-build
-    #!/usr/bin/env bash
-    set -euo pipefail
-    PI="svenlito@192.168.0.53"
-    # Build config.json from 1Password
-    REMOTE_HOST=$(op read "op://Homelab/dumper-config/REMOTE_HOST")
-    REMOTE_USER=$(op read "op://Homelab/dumper-config/REMOTE_USER")
-    REMOTE_PATH=$(op read "op://Homelab/dumper-config/REMOTE_PATH")
-    CONFIG=$(mktemp)
-    cat > "$CONFIG" <<CONF
-    {
-      "remote_host": "$REMOTE_HOST",
-      "remote_user": "$REMOTE_USER",
-      "remote_path": "$REMOTE_PATH",
-      "ssh_key_path": "/var/lib/dumper/id_ed25519",
-      "dump_dir": "/mnt/dump",
-      "state_dir": "/var/lib/dumper",
-      "max_streams": 8
-    }
-    CONF
-    # Extract SSH key from 1Password
-    SSH_KEY=$(mktemp)
-    op read "op://Homelab/dumper-config/private_key" -o "$SSH_KEY" --force
-    # Deploy binary
-    scp bin/dumper-arm64 "$PI":/tmp/dumper
-    ssh "$PI" "sudo mv /tmp/dumper /var/lib/dumper/dumper && sudo chmod +x /var/lib/dumper/dumper"
-    # Deploy config and SSH key
-    scp "$CONFIG" "$PI":/tmp/dumper-config.json
-    scp "$SSH_KEY" "$PI":/tmp/dumper-id_ed25519
-    ssh "$PI" "sudo mv /tmp/dumper-config.json /var/lib/dumper/config.json && \
-               sudo mv /tmp/dumper-id_ed25519 /var/lib/dumper/id_ed25519 && \
-               sudo chown dumper:dumper /var/lib/dumper/config.json /var/lib/dumper/id_ed25519 && \
-               sudo chmod 600 /var/lib/dumper/config.json && \
-               sudo chmod 400 /var/lib/dumper/id_ed25519 && \
-               sudo systemctl restart dumper.timer"
-    rm -f "$CONFIG" "$SSH_KEY"
-    echo "Deployed binary, config, and SSH key to rpi-pihole"
 
 # --- Utilities ---
 
