@@ -88,7 +88,7 @@ nixos-deploy-pihole: dumper-build
                sudo mv /tmp/dumper-id_ed25519 /var/lib/dumper/id_ed25519 && \
                sudo chown dumper:dumper /var/lib/dumper/dumper /var/lib/dumper/config.json /var/lib/dumper/id_ed25519 && \
                sudo chmod +x /var/lib/dumper/dumper && \
-               sudo chmod 600 /var/lib/dumper/config.json && \
+               sudo chmod 640 /var/lib/dumper/config.json && \
                sudo chmod 400 /var/lib/dumper/id_ed25519 && \
                mkdir -p ~/.ssh && \
                mv /tmp/proxmox-id_ed25519 ~/.ssh/id_ed25519 && \
