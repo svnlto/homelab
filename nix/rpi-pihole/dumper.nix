@@ -12,10 +12,10 @@
     group = "dumper";
     home = "/var/lib/dumper";
   };
-  users.groups.dumper = { };
+  users.groups.dumper.members = [ "svenlito" ];
 
-  # Ensure mount point ownership
-  systemd.tmpfiles.rules = [ "d /mnt/dump 0755 dumper dumper -" ];
+  # Ensure mount point ownership (group-writable for svenlito rsync aliases)
+  systemd.tmpfiles.rules = [ "d /mnt/dump 0775 dumper dumper -" ];
 
   # Dumper systemd service (long-running, loops internally)
   systemd.services.dumper = {
