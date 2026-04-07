@@ -30,7 +30,7 @@
       Type = "oneshot";
       User = "dumper";
       Group = "dumper";
-      ExecStart = "/usr/local/bin/dumper /var/lib/dumper/config.json";
+      ExecStart = "/var/lib/dumper/dumper /var/lib/dumper/config.json";
       StateDirectory = "dumper";
 
       # Hardening

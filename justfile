@@ -304,7 +304,7 @@ dumper-deploy: dumper-build
     op read "op://Homelab/dumper-config/private_key" -o "$SSH_KEY" --force
     # Deploy binary
     scp bin/dumper-arm64 "$PI":/tmp/dumper
-    ssh "$PI" "sudo mv /tmp/dumper /usr/local/bin/dumper && sudo chmod +x /usr/local/bin/dumper"
+    ssh "$PI" "sudo mv /tmp/dumper /var/lib/dumper/dumper && sudo chmod +x /var/lib/dumper/dumper"
     # Deploy config and SSH key
     scp "$CONFIG" "$PI":/tmp/dumper-config.json
     scp "$SSH_KEY" "$PI":/tmp/dumper-id_ed25519
