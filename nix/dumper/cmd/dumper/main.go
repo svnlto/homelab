@@ -21,7 +21,12 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	cfg, err := config.Load()
+	configPath := ""
+	if len(os.Args) > 1 {
+		configPath = os.Args[1]
+	}
+
+	cfg, err := config.Load(configPath)
 	if err != nil {
 		slog.Error("failed to load config", "error", err)
 		os.Exit(1)
