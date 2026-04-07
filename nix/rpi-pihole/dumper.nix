@@ -35,10 +35,15 @@
 
     serviceConfig = {
       Type = "oneshot";
+      # 1Password service account token for non-interactive auth
+      # Create /var/lib/dumper/op-sa-token.env with: OP_SERVICE_ACCOUNT_TOKEN=<token>
+      EnvironmentFile = "/var/lib/dumper/op-sa-token.env";
       User = "dumper";
       Group = "dumper";
-      ExecStartPre =
-        "${pkgs._1password}/bin/op read op://Homelab/dumper-config/private_key -o /var/lib/dumper/id_ed25519 --force && chmod 400 /var/lib/dumper/id_ed25519";
+      ExecStartPre = [
+        "${pkgs._1password}/bin/op read op://Homelab/dumper-config/private_key -o /var/lib/dumper/id_ed25519 --force"
+        "${pkgs.coreutils}/bin/chmod 400 /var/lib/dumper/id_ed25519"
+      ];
       ExecStart =
         "${pkgs._1password}/bin/op run --env-file /etc/dumper/op-env.tpl -- /usr/local/bin/dumper";
       StateDirectory = "dumper";

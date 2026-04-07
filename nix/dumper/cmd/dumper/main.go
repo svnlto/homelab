@@ -210,5 +210,5 @@ func writeFileList(path string, files []string) error {
 	for _, file := range files {
 		fmt.Fprintln(f, file)
 	}
-	return nil
+	return f.Close()
 }

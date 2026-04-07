@@ -40,7 +40,7 @@ func QueryOriginals(dbPath string) ([]string, error) {
 }
 
 func CheckIntegrity(dbPath string) error {
-	db, err := sql.Open("sqlite", dbPath)
+	db, err := sql.Open("sqlite", dbPath+"?mode=ro")
 	if err != nil {
 		return fmt.Errorf("open db: %w", err)
 	}
