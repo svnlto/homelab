@@ -17,40 +17,6 @@
   outputs = { nixpkgs, disko, ... }:
     let pkgs-x86 = nixpkgs.legacyPackages.x86_64-linux;
     in {
-      packages.x86_64-linux.dumper-image =
-        pkgs-x86.dockerTools.buildLayeredImage {
-          name = "ghcr.io/svnlto/dumper";
-          tag = "latest";
-          contents = with pkgs-x86; [
-            rsync
-            openssh
-            tailscale
-            gnugrep
-            gnused
-            findutils
-            coreutils
-            bash
-            cacert
-            curl
-            jq
-            gawk
-            sqlite
-          ];
-          config = {
-            Cmd = [ "/bin/bash" "/app/rsync-photos.sh" ];
-            Env = [
-              "SSL_CERT_FILE=${pkgs-x86.cacert}/etc/ssl/certs/ca-bundle.crt"
-            ];
-          };
-          extraCommands = ''
-            mkdir -p app etc
-            mkdir -p -m 1777 tmp
-            cp ${./dumper/rsync-photos-k8s.sh} app/rsync-photos.sh
-            echo "dumper:x:1003:1000:dumper:/tmp:/bin/bash" >> etc/passwd
-            echo "dumper:x:1000:" >> etc/group
-          '';
-        };
-
       packages.x86_64-linux.osxphotos-export-image = let
         osxphotos-linux =
           pkgs-x86.python312Packages.osxphotos.overridePythonAttrs (old: {
