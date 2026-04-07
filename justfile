@@ -277,11 +277,44 @@ dumper-build:
 dumper-test:
     cd nix/dumper && devbox run -- go test ./... -v
 
-# Deploy dumper binary to rpi-pihole
+# Deploy dumper binary, config, and SSH key to rpi-pihole
 dumper-deploy: dumper-build
-    scp nix/dumper/dumper-arm64 svenlito@192.168.0.53:/tmp/dumper
-    ssh svenlito@192.168.0.53 "sudo mv /tmp/dumper /usr/local/bin/dumper && sudo chmod +x /usr/local/bin/dumper && sudo systemctl restart dumper.timer"
-    @echo "Deployed and restarted dumper timer"
+    #!/usr/bin/env bash
+    set -euo pipefail
+    PI="svenlito@192.168.0.53"
+    # Build config.json from 1Password
+    REMOTE_HOST=$(op read "op://Homelab/dumper-config/REMOTE_HOST")
+    REMOTE_USER=$(op read "op://Homelab/dumper-config/REMOTE_USER")
+    REMOTE_PATH=$(op read "op://Homelab/dumper-config/REMOTE_PATH")
+    CONFIG=$(mktemp)
+    cat > "$CONFIG" <<CONF
+    {
+      "remote_host": "$REMOTE_HOST",
+      "remote_user": "$REMOTE_USER",
+      "remote_path": "$REMOTE_PATH",
+      "ssh_key_path": "/var/lib/dumper/id_ed25519",
+      "dump_dir": "/mnt/dump",
+      "state_dir": "/var/lib/dumper",
+      "max_streams": 8
+    }
+    CONF
+    # Extract SSH key from 1Password
+    SSH_KEY=$(mktemp)
+    op read "op://Homelab/dumper-config/private_key" -o "$SSH_KEY" --force
+    # Deploy binary
+    scp nix/dumper/dumper-arm64 "$PI":/tmp/dumper
+    ssh "$PI" "sudo mv /tmp/dumper /usr/local/bin/dumper && sudo chmod +x /usr/local/bin/dumper"
+    # Deploy config and SSH key
+    scp "$CONFIG" "$PI":/tmp/dumper-config.json
+    scp "$SSH_KEY" "$PI":/tmp/dumper-id_ed25519
+    ssh "$PI" "sudo mv /tmp/dumper-config.json /var/lib/dumper/config.json && \
+               sudo mv /tmp/dumper-id_ed25519 /var/lib/dumper/id_ed25519 && \
+               sudo chown dumper:dumper /var/lib/dumper/config.json /var/lib/dumper/id_ed25519 && \
+               sudo chmod 600 /var/lib/dumper/config.json && \
+               sudo chmod 400 /var/lib/dumper/id_ed25519 && \
+               sudo systemctl restart dumper.timer"
+    rm -f "$CONFIG" "$SSH_KEY"
+    echo "Deployed binary, config, and SSH key to rpi-pihole"
 
 # --- Utilities ---
 

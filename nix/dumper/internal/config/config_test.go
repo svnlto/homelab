@@ -2,18 +2,22 @@ package config_test
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/svnlto/dumper/internal/config"
 )
 
 func TestLoad_AllRequired(t *testing.T) {
-	t.Setenv("REMOTE_HOST", "100.64.0.1")
-	t.Setenv("REMOTE_USER", "admin")
-	t.Setenv("REMOTE_PATH", "/Users/admin/Photos/Photos Library.photoslibrary/")
-	t.Setenv("SSH_KEY_PATH", "/tmp/test_key")
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "config.json")
+	os.WriteFile(cfgPath, []byte(`{
+		"remote_host": "100.64.0.1",
+		"remote_user": "admin",
+		"remote_path": "/Users/admin/Photos/Photos Library.photoslibrary/"
+	}`), 0644)
 
-	cfg, err := config.Load()
+	cfg, err := config.Load(cfgPath)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -29,12 +33,52 @@ func TestLoad_AllRequired(t *testing.T) {
 	if cfg.MaxStreams != 8 {
 		t.Errorf("MaxStreams = %d, want default %d", cfg.MaxStreams, 8)
 	}
+	if cfg.SSHKeyPath != "/var/lib/dumper/id_ed25519" {
+		t.Errorf("SSHKeyPath = %q, want default derived from StateDir", cfg.SSHKeyPath)
+	}
+}
+
+func TestLoad_WithOverrides(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "config.json")
+	os.WriteFile(cfgPath, []byte(`{
+		"remote_host": "100.64.0.1",
+		"remote_user": "admin",
+		"remote_path": "/photos/",
+		"dump_dir": "/data/dump",
+		"max_streams": 4,
+		"ssh_key_path": "/custom/key"
+	}`), 0644)
+
+	cfg, err := config.Load(cfgPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.DumpDir != "/data/dump" {
+		t.Errorf("DumpDir = %q, want %q", cfg.DumpDir, "/data/dump")
+	}
+	if cfg.MaxStreams != 4 {
+		t.Errorf("MaxStreams = %d, want %d", cfg.MaxStreams, 4)
+	}
+	if cfg.SSHKeyPath != "/custom/key" {
+		t.Errorf("SSHKeyPath = %q, want %q", cfg.SSHKeyPath, "/custom/key")
+	}
 }
 
 func TestLoad_MissingRequired(t *testing.T) {
-	os.Clearenv()
-	_, err := config.Load()
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "config.json")
+	os.WriteFile(cfgPath, []byte(`{}`), 0644)
+
+	_, err := config.Load(cfgPath)
 	if err == nil {
-		t.Fatal("expected error for missing required env vars, got nil")
+		t.Fatal("expected error for missing required fields, got nil")
+	}
+}
+
+func TestLoad_FileNotFound(t *testing.T) {
+	_, err := config.Load("/nonexistent/config.json")
+	if err == nil {
+		t.Fatal("expected error for missing file, got nil")
 	}
 }
