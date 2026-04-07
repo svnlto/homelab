@@ -45,11 +45,17 @@
     };
   };
 
-  # TrueNAS rsync aliases for svenlito user
+  # TrueNAS rsync aliases — reads REMOTE_PATH from config.json to target the right subdirectory
   programs.bash.shellAliases = {
-    dump-to-truenas =
-      "rsync -avP --partial --exclude=lost+found /mnt/dump/ truenas_admin@192.168.0.13:/mnt/fast/dump/";
-    dump-from-truenas =
-      "rsync -avP --partial --exclude=lost+found truenas_admin@192.168.0.13:/mnt/fast/dump/ /mnt/dump/";
+    dump-to-truenas = builtins.concatStringsSep " " [
+      "bash -c 'P=$(${pkgs.jq}/bin/jq -r .remote_path /var/lib/dumper/config.json);"
+      "rsync -avP --partial --exclude=lost+found"
+      "/mnt/dump/\"$P\" truenas_admin@192.168.0.13:/mnt/fast/dump/\"$P\"'"
+    ];
+    dump-from-truenas = builtins.concatStringsSep " " [
+      "bash -c 'P=$(${pkgs.jq}/bin/jq -r .remote_path /var/lib/dumper/config.json);"
+      "rsync -avP --partial --exclude=lost+found"
+      "truenas_admin@192.168.0.13:/mnt/fast/dump/\"$P\" /mnt/dump/\"$P\"'"
+    ];
   };
 }
