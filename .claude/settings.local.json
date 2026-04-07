@@ -13,7 +13,10 @@
       "Bash(nix flake check:*)",
       "Bash(nix fmt:*)",
       "Bash(talosctl:*)",
-      "Bash(kubectl:*)"
+      "Bash(kubectl:*)",
+      "Bash(devbox run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [
       "Bash(terraform destroy:*)",

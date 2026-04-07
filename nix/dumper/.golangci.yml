@@ -1,0 +1,35 @@
+---
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+  allow-parallel-runners: true
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/msg-group/platform-next
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - misspell
+    - unconvert
+    - bodyclose
+    - nilerr
+    - copyloopvar
+    - errname
+
+  settings:
+    misspell:
+      locale: UK
