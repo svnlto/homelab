@@ -17,20 +17,23 @@
   # Ensure mount point ownership
   systemd.tmpfiles.rules = [ "d /mnt/dump 0755 dumper dumper -" ];
 
-  # Dumper systemd service
+  # Dumper systemd service (long-running, loops internally)
   systemd.services.dumper = {
     description = "Photo sync from Mac to SanDisk via Tailscale";
     after = [ "network-online.target" "tailscaled.service" "mnt-dump.mount" ];
     wants = [ "network-online.target" "tailscaled.service" ];
     requires = [ "mnt-dump.mount" ];
+    wantedBy = [ "multi-user.target" ];
 
     path = with pkgs; [ rsync openssh tailscale ];
 
     serviceConfig = {
-      Type = "oneshot";
+      Type = "simple";
       User = "dumper";
       Group = "dumper";
       ExecStart = "/var/lib/dumper/dumper /var/lib/dumper/config.json";
+      Restart = "on-failure";
+      RestartSec = "30s";
       StateDirectory = "dumper";
 
       # Hardening
@@ -39,17 +42,6 @@
       ProtectHome = true;
       ReadWritePaths = [ "/mnt/dump" "/var/lib/dumper" ];
       PrivateTmp = true;
-    };
-  };
-
-  # Dumper systemd timer
-  systemd.timers.dumper = {
-    description = "Hourly photo sync timer";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnCalendar = "hourly";
-      RandomizedDelaySec = "5m";
-      Persistent = true;
     };
   };
 
