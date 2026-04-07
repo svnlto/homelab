@@ -270,8 +270,9 @@ k8s-cleanup-zfs:
 
 # Cross-compile dumper for aarch64 (Raspberry Pi)
 dumper-build:
-    cd nix/dumper && devbox run -- env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o dumper-arm64 ./cmd/dumper/
-    @ls -lh nix/dumper/dumper-arm64
+    mkdir -p bin
+    cd nix/dumper && devbox run -- env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o ../../bin/dumper-arm64 ./cmd/dumper/
+    @ls -lh bin/dumper-arm64
 
 # Run dumper tests
 dumper-test:
@@ -302,7 +303,7 @@ dumper-deploy: dumper-build
     SSH_KEY=$(mktemp)
     op read "op://Homelab/dumper-config/private_key" -o "$SSH_KEY" --force
     # Deploy binary
-    scp nix/dumper/dumper-arm64 "$PI":/tmp/dumper
+    scp bin/dumper-arm64 "$PI":/tmp/dumper
     ssh "$PI" "sudo mv /tmp/dumper /usr/local/bin/dumper && sudo chmod +x /usr/local/bin/dumper"
     # Deploy config and SSH key
     scp "$CONFIG" "$PI":/tmp/dumper-config.json
@@ -319,7 +320,7 @@ dumper-deploy: dumper-build
 # --- Utilities ---
 
 clean:
-    rm -rf nix/result nix/result-*
+    rm -rf nix/result nix/result-* bin/
 
 lint:
     pre-commit run --all-files
