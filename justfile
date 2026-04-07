@@ -73,11 +73,15 @@ nixos-deploy-pihole: dumper-build
     CONF
     SSH_KEY=$(mktemp)
     op read "op://Homelab/dumper-config/private_key" -o "$SSH_KEY" --force
-    # Deploy binary, config, and SSH key BEFORE NixOS rebuild
+    # Deploy proxmox SSH key for svenlito user (TrueNAS rsync aliases)
+    PROXMOX_KEY=$(mktemp)
+    op read "op://Homelab/proxmox/private key" -o "$PROXMOX_KEY" --force
+    # Deploy binary, config, and SSH keys BEFORE NixOS rebuild
     echo "Deploying dumper binary and secrets..."
     scp bin/dumper-arm64 "$PI":/tmp/dumper
     scp "$CONFIG" "$PI":/tmp/dumper-config.json
     scp "$SSH_KEY" "$PI":/tmp/dumper-id_ed25519
+    scp "$PROXMOX_KEY" "$PI":/tmp/proxmox-id_ed25519
     ssh "$PI" "sudo mkdir -p /var/lib/dumper && \
                sudo mv /tmp/dumper /var/lib/dumper/dumper && \
                sudo mv /tmp/dumper-config.json /var/lib/dumper/config.json && \
@@ -85,8 +89,11 @@ nixos-deploy-pihole: dumper-build
                sudo chown dumper:dumper /var/lib/dumper/dumper /var/lib/dumper/config.json /var/lib/dumper/id_ed25519 && \
                sudo chmod +x /var/lib/dumper/dumper && \
                sudo chmod 600 /var/lib/dumper/config.json && \
-               sudo chmod 400 /var/lib/dumper/id_ed25519"
-    rm -f "$CONFIG" "$SSH_KEY"
+               sudo chmod 400 /var/lib/dumper/id_ed25519 && \
+               mkdir -p ~/.ssh && \
+               mv /tmp/proxmox-id_ed25519 ~/.ssh/id_ed25519 && \
+               chmod 400 ~/.ssh/id_ed25519"
+    rm -f "$CONFIG" "$SSH_KEY" "$PROXMOX_KEY"
     # Sync NixOS config and rebuild (service starts automatically)
     echo "Syncing NixOS config to rpi-pihole..."
     rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' \
