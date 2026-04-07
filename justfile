@@ -71,7 +71,9 @@ nixos-deploy-pihole: dumper-build
       "ssh_key_path": "/var/lib/dumper/id_ed25519",
       "dump_dir": "/mnt/dump",
       "state_dir": "/var/lib/dumper",
-      "max_streams": 8
+      "max_streams": 8,
+      "sync_interval": 300,
+      "retry_interval": 60
     }
     CONF
     # Extract SSH key from 1Password

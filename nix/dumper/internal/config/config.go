@@ -50,10 +50,10 @@ func Load(configPath string) (Config, error) {
 		cfg.MaxStreams = 8
 	}
 	if cfg.SyncInterval == 0 {
-		cfg.SyncInterval = 3600
+		cfg.SyncInterval = 300
 	}
 	if cfg.RetryInterval == 0 {
-		cfg.RetryInterval = 300
+		cfg.RetryInterval = 60
 	}
 
 	var missing []string
