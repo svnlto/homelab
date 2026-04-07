@@ -48,8 +48,8 @@
   # TrueNAS rsync aliases for svenlito user
   programs.bash.shellAliases = {
     dump-to-truenas =
-      "rsync -avP --partial /mnt/dump/ svenlito@192.168.0.13:/mnt/scratch/dump/";
+      "rsync -avP --partial /mnt/dump/ truenas_admin@192.168.0.13:/mnt/fast/dump/";
     dump-from-truenas =
-      "rsync -avP --partial svenlito@192.168.0.13:/mnt/scratch/dump/ /mnt/dump/";
+      "rsync -avP --partial root@192.168.0.13:/mnt/fast/dump/ /mnt/dump/";
   };
 }
