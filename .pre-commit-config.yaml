@@ -58,6 +58,8 @@ repos:
         exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
       - id: terraform_tflint
         name: TFLint (infrastructure)
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
         files: ^infrastructure/.*\.tf$
         exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
 
