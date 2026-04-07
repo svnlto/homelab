@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{ pkgs, constants, ... }: {
   # Mount SanDisk USB drive
   fileSystems."/mnt/dump" = {
     device = "/dev/disk/by-label/dump";
@@ -6,16 +6,8 @@
     options = [ "nofail" "noatime" ];
   };
 
-  # Dumper system user
-  users.users.dumper = {
-    isSystemUser = true;
-    group = "dumper";
-    home = "/var/lib/dumper";
-  };
-  users.groups.dumper.members = [ "svenlito" ];
-
-  # Ensure mount point ownership (group-writable for svenlito rsync aliases)
-  systemd.tmpfiles.rules = [ "d /mnt/dump 0775 dumper dumper -" ];
+  # Ensure mount point ownership
+  systemd.tmpfiles.rules = [ "d /mnt/dump 0755 ${constants.username} users -" ];
 
   # Dumper systemd service (long-running, loops internally)
   systemd.services.dumper = {
@@ -29,17 +21,16 @@
 
     serviceConfig = {
       Type = "simple";
-      User = "dumper";
-      Group = "dumper";
+      User = constants.username;
       ExecStart = "/var/lib/dumper/dumper /var/lib/dumper/config.json";
       Restart = "on-failure";
       RestartSec = "30s";
       StateDirectory = "dumper";
+      StateDirectoryMode = "0755";
 
       # Hardening
       NoNewPrivileges = true;
       ProtectSystem = "strict";
-      ProtectHome = true;
       ReadWritePaths = [ "/mnt/dump" "/var/lib/dumper" ];
       PrivateTmp = true;
     };
