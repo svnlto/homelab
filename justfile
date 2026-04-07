@@ -266,6 +266,23 @@ k8s-cleanup-zfs:
         done' || true
     done
 
+# --- Dumper (Go binary for Pi photo sync) ---
+
+# Cross-compile dumper for aarch64 (Raspberry Pi)
+dumper-build:
+    cd nix/dumper && devbox run -- env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o dumper-arm64 ./cmd/dumper/
+    @ls -lh nix/dumper/dumper-arm64
+
+# Run dumper tests
+dumper-test:
+    cd nix/dumper && devbox run -- go test ./... -v
+
+# Deploy dumper binary to rpi-pihole
+dumper-deploy: dumper-build
+    scp nix/dumper/dumper-arm64 svenlito@192.168.0.53:/tmp/dumper
+    ssh svenlito@192.168.0.53 "sudo mv /tmp/dumper /usr/local/bin/dumper && sudo chmod +x /usr/local/bin/dumper && sudo systemctl restart dumper.timer"
+    @echo "Deployed and restarted dumper timer"
+
 # --- Utilities ---
 
 clean:
