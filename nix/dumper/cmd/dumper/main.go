@@ -39,16 +39,45 @@ func main() {
 		"remote_host", cfg.RemoteHost,
 		"dump_dir", cfg.DumpDir,
 		"max_streams", cfg.MaxStreams,
+		"sync_interval", cfg.SyncInterval,
+		"retry_interval", cfg.RetryInterval,
 	)
 
-	if err := run(ctx, cfg); err != nil {
-		slog.Error("sync failed", "error", err)
-		os.Exit(1)
+	for {
+		err := runSync(ctx, cfg)
+		if err != nil {
+			slog.Error("sync failed, retrying",
+				"error", err,
+				"retry_in", cfg.RetryInterval,
+			)
+			if !sleep(ctx, time.Duration(cfg.RetryInterval)*time.Second) {
+				break
+			}
+			continue
+		}
+
+		slog.Info("sync complete, next sync",
+			"next_in", cfg.SyncInterval,
+		)
+		if !sleep(ctx, time.Duration(cfg.SyncInterval)*time.Second) {
+			break
+		}
 	}
-	slog.Info("dumper finished successfully")
+
+	slog.Info("dumper shutting down")
 }
 
-func run(ctx context.Context, cfg config.Config) error {
+// sleep returns false if the context was cancelled during the wait.
+func sleep(ctx context.Context, d time.Duration) bool {
+	select {
+	case <-time.After(d):
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
+
+func runSync(ctx context.Context, cfg config.Config) error {
 	// Phase 1: Tailscale connectivity
 	slog.Info("phase 1: checking tailscale connectivity")
 	if err := tailscale.CheckConnected(ctx, cfg.RemoteHost); err != nil {
@@ -178,7 +207,6 @@ func runDynamicSync(ctx context.Context, cfg config.Config, opts sync.RsyncOpts,
 		currThroughput = int64(float64(totalBytes) / elapsed)
 	}
 
-	// Log scaling decision (for observability, even though we're done)
 	_ = sync.DecideStreams(sync.StreamMetrics{
 		CurrentStreams:  activeStreams,
 		MaxStreams:      cfg.MaxStreams,

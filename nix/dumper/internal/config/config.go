@@ -8,13 +8,15 @@ import (
 )
 
 type Config struct {
-	RemoteHost string `json:"remote_host"`
-	RemoteUser string `json:"remote_user"`
-	RemotePath string `json:"remote_path"`
-	SSHKeyPath string `json:"ssh_key_path"`
-	DumpDir    string `json:"dump_dir"`
-	StateDir   string `json:"state_dir"`
-	MaxStreams  int    `json:"max_streams"`
+	RemoteHost    string `json:"remote_host"`
+	RemoteUser    string `json:"remote_user"`
+	RemotePath    string `json:"remote_path"`
+	SSHKeyPath    string `json:"ssh_key_path"`
+	DumpDir       string `json:"dump_dir"`
+	StateDir      string `json:"state_dir"`
+	MaxStreams     int    `json:"max_streams"`
+	SyncInterval  int    `json:"sync_interval"`
+	RetryInterval int    `json:"retry_interval"`
 }
 
 // Load reads config from a JSON file. If configPath is empty,
@@ -46,6 +48,12 @@ func Load(configPath string) (Config, error) {
 	}
 	if cfg.MaxStreams == 0 {
 		cfg.MaxStreams = 8
+	}
+	if cfg.SyncInterval == 0 {
+		cfg.SyncInterval = 3600
+	}
+	if cfg.RetryInterval == 0 {
+		cfg.RetryInterval = 300
 	}
 
 	var missing []string

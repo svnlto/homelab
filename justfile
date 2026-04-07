@@ -88,7 +88,7 @@ nixos-deploy-pihole: dumper-build
                sudo chmod +x /var/lib/dumper/dumper && \
                sudo chmod 600 /var/lib/dumper/config.json && \
                sudo chmod 400 /var/lib/dumper/id_ed25519 && \
-               sudo systemctl restart dumper.timer"
+               sudo systemctl restart dumper.service"
     rm -f "$CONFIG" "$SSH_KEY"
     echo "Deploy complete"
 
