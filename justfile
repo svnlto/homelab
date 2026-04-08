@@ -99,7 +99,7 @@ nixos-deploy-pihole: dumper-build
     rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' \
       nix/ "$PI":/tmp/nix-config/
     echo "Rebuilding NixOS on rpi-pihole..."
-    ssh "$PI" "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-pihole"
+    ssh "$PI" "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-pihole --accept-flake-config"
     echo "Deploy complete"
 
 # Update flake lock in VM
@@ -149,7 +149,7 @@ nixos-deploy-qdevice:
     @echo "Syncing NixOS config to rpi-qdevice..."
     rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.54:/tmp/nix-config/
     @echo "Rebuilding NixOS on rpi-qdevice..."
-    ssh svenlito@192.168.0.54 "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-qdevice"
+    ssh svenlito@192.168.0.54 "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-qdevice --accept-flake-config"
 
 # --- NixOS Arr Stack (Proxmox VM) ---
 
@@ -169,7 +169,7 @@ nixos-update-arr-stack:
     @echo "Syncing NixOS config to arr-stack..."
     rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.50:/tmp/nix-config/
     @echo "Rebuilding NixOS on arr-stack..."
-    ssh svenlito@192.168.0.50 "sudo nixos-rebuild switch --flake /tmp/nix-config#arr-stack"
+    ssh svenlito@192.168.0.50 "sudo nixos-rebuild switch --flake /tmp/nix-config#arr-stack --accept-flake-config"
 
 # --- Ansible ---
 
