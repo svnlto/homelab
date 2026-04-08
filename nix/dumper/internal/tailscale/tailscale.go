@@ -11,8 +11,11 @@ func ParseStatusOutput(output string, exitCode int) bool {
 	return exitCode == 0 && strings.TrimSpace(output) != ""
 }
 
+// ParsePingOutput returns true if the output contains "pong".
+// tailscale ping exits 1 for peer-relayed connections even with a successful pong,
+// so we only check the output, not the exit code.
 func ParsePingOutput(output string, exitCode int) bool {
-	return exitCode == 0 && strings.Contains(output, "pong")
+	return strings.Contains(output, "pong from")
 }
 
 func CheckConnected(ctx context.Context, remoteHost string) error {
