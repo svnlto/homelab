@@ -179,7 +179,7 @@ func runDynamicSync(ctx context.Context, cfg config.Config, opts sync.RsyncOpts,
 		streamOpts := opts
 		streamOpts.FilesFrom = listPath
 		go func(idx int, o sync.RsyncOpts) {
-			r := sync.RunRsync(ctx, sync.BuildRsyncArgs(o))
+			r := sync.RunRsync(ctx, sync.BuildRsyncArgs(o), idx, len(missing))
 			results <- streamResult{result: r, index: idx}
 		}(i, streamOpts)
 
