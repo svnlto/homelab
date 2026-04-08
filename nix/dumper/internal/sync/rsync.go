@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"log/slog"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type RsyncOpts struct {
@@ -91,7 +93,10 @@ type RsyncResult struct {
 	Err         error
 }
 
-func RunRsync(ctx context.Context, args []string) RsyncResult {
+// RunRsync executes rsync, parses output, and logs progress periodically.
+// streamID identifies this stream in log output. totalFiles is the total
+// across all streams (for percentage calculation, 0 to disable).
+func RunRsync(ctx context.Context, args []string, streamID int, totalFiles int) RsyncResult {
 	cmd := exec.CommandContext(ctx, "rsync", args...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -103,6 +108,8 @@ func RunRsync(ctx context.Context, args []string) RsyncResult {
 	}
 
 	var result RsyncResult
+	start := time.Now()
+	lastLog := start
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -111,6 +118,29 @@ func RunRsync(ctx context.Context, args []string) RsyncResult {
 		if xfer {
 			result.Transferred++
 			result.Bytes += bytes
+
+			// Log progress every 30 seconds
+			if time.Since(lastLog) >= 30*time.Second {
+				elapsed := time.Since(start).Seconds()
+				speed := float64(0)
+				if elapsed > 0 {
+					speed = float64(result.Bytes) / 1048576 / elapsed
+				}
+				attrs := []any{
+					"stream", streamID,
+					"transferred", result.Transferred,
+					"checked", result.Checked,
+					"bytes_mb", fmt.Sprintf("%.1f", float64(result.Bytes)/1048576),
+					"speed_mbps", fmt.Sprintf("%.1f", speed),
+					"last_file", line,
+				}
+				if totalFiles > 0 {
+					pct := result.Checked * 100 / totalFiles
+					attrs = append(attrs, "progress_pct", pct)
+				}
+				slog.Info("rsync progress", attrs...)
+				lastLog = time.Now()
+			}
 		}
 	}
 
