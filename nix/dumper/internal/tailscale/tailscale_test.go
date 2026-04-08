@@ -28,6 +28,15 @@ func TestParsePing_Pong(t *testing.T) {
 	}
 }
 
+func TestParsePing_PongRelayed(t *testing.T) {
+	// tailscale ping exits 1 for peer-relayed connections but still returns pong
+	output := "pong from myhost (100.64.0.1) via peer-relay(1.2.3.4:41642:vni:513) in 624ms\ndirect connection not established"
+	ok := tailscale.ParsePingOutput(output, 1)
+	if !ok {
+		t.Error("expected pong for relayed connection, got no pong")
+	}
+}
+
 func TestParsePing_NoPong(t *testing.T) {
 	ok := tailscale.ParsePingOutput("timeout waiting for pong", 1)
 	if ok {
