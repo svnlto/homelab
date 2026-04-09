@@ -21,7 +21,7 @@ type RsyncOpts struct {
 }
 
 var sshFlags = []string{
-	"-o", "StrictHostKeyChecking=accept-new",
+	"-o", "StrictHostKeyChecking=no",
 	"-o", "UserKnownHostsFile=/dev/null",
 	"-o", "ConnectTimeout=30",
 	"-o", "ServerAliveInterval=30",
@@ -33,7 +33,7 @@ var sshFlags = []string{
 var skipCompressExts = "jpg,jpeg,heic,heif,png,mp4,mov,gif,webp,cr2,nef,arw,dng"
 
 func BuildRsyncArgs(opts RsyncOpts) []string {
-	sshCmd := fmt.Sprintf("ssh -i %s %s", opts.SSHKeyPath, strings.Join(sshFlags, " "))
+	sshCmd := fmt.Sprintf("ssh -i '%s' %s", opts.SSHKeyPath, strings.Join(sshFlags, " "))
 	args := []string{
 		"-rlt", "--partial", "--inplace", "--omit-dir-times",
 		"--skip-compress=" + skipCompressExts,
@@ -53,7 +53,7 @@ func BuildRsyncArgs(opts RsyncOpts) []string {
 }
 
 func BuildDatabaseRsyncArgs(opts RsyncOpts) []string {
-	sshCmd := fmt.Sprintf("ssh -i %s %s", opts.SSHKeyPath, strings.Join(sshFlags, " "))
+	sshCmd := fmt.Sprintf("ssh -i '%s' %s", opts.SSHKeyPath, strings.Join(sshFlags, " "))
 	remotePath := strings.TrimRight(opts.RemotePath, "/")
 	localPath := strings.TrimRight(opts.LocalPath, "/")
 	return []string{
@@ -68,84 +68,98 @@ func BuildDatabaseRsyncArgs(opts RsyncOpts) []string {
 	}
 }
 
-func ParseTransferLine(line string) (transferred bool, bytes int64) {
+// ParseTransferLine parses an rsync --out-format="%i %l %n" line.
+// Returns whether this is a transfer, the byte count, and the filename.
+func ParseTransferLine(line string) (transferred bool, bytes int64, name string) {
 	if len(line) == 0 {
-		return false, 0
+		return false, 0, ""
 	}
 	parts := strings.SplitN(line, " ", 3)
 	if len(parts) < 3 {
-		return false, 0
+		return false, 0, ""
 	}
 	if !strings.HasPrefix(parts[0], ">") {
-		return false, 0
+		return false, 0, ""
 	}
+	// Size may be unparseable on malformed lines; treat as 0 bytes but still count as transfer.
 	n, err := strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64)
 	if err != nil {
-		return true, 0
+		return true, 0, parts[2]
 	}
-	return true, n
+	return true, n, parts[2]
 }
 
 type RsyncResult struct {
-	Checked     int
 	Transferred int
 	Bytes       int64
 	Err         error
 }
 
 // RunRsync executes rsync, parses output, and logs progress periodically.
-// streamID identifies this stream in log output. totalFiles is the total
-// across all streams (for percentage calculation, 0 to disable).
-func RunRsync(ctx context.Context, args []string, streamID int, totalFiles int) RsyncResult {
+// streamID identifies this stream in log output. streamFiles is the number
+// of files assigned to this stream (for percentage calculation).
+func RunRsync(ctx context.Context, args []string, streamID int, streamFiles int) RsyncResult {
 	cmd := exec.CommandContext(ctx, "rsync", args...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return RsyncResult{Err: fmt.Errorf("stdout pipe: %w", err)}
 	}
 
+	var stderrBuf strings.Builder
+	cmd.Stderr = &stderrBuf
+
 	if err := cmd.Start(); err != nil {
 		return RsyncResult{Err: fmt.Errorf("start rsync: %w", err)}
 	}
 
 	var result RsyncResult
+	var checked int
+	var lastFile string
 	start := time.Now()
 	lastLog := start
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		line := scanner.Text()
-		result.Checked++
-		xfer, bytes := ParseTransferLine(line)
+		checked++
+		xfer, bytes, name := ParseTransferLine(line)
 		if xfer {
 			result.Transferred++
 			result.Bytes += bytes
+			lastFile = name
+		}
 
-			// Log progress every 30 seconds
-			if time.Since(lastLog) >= 30*time.Second {
-				elapsed := time.Since(start).Seconds()
-				speed := float64(0)
-				if elapsed > 0 {
-					speed = float64(result.Bytes) / 1048576 / elapsed
-				}
-				attrs := []any{
-					"stream", streamID,
-					"transferred", result.Transferred,
-					"checked", result.Checked,
-					"bytes_mb", fmt.Sprintf("%.1f", float64(result.Bytes)/1048576),
-					"speed_mbps", fmt.Sprintf("%.1f", speed),
-					"last_file", line,
-				}
-				if totalFiles > 0 {
-					pct := result.Checked * 100 / totalFiles
-					attrs = append(attrs, "progress_pct", pct)
-				}
-				slog.Info("rsync progress", attrs...)
-				lastLog = time.Now()
+		// Log progress every 30 seconds
+		if time.Since(lastLog) >= 30*time.Second {
+			elapsed := time.Since(start).Seconds()
+			speed := float64(0)
+			if elapsed > 0 {
+				speed = float64(result.Bytes) / 1048576 / elapsed
 			}
+			attrs := []any{
+				"stream", streamID,
+				"transferred", result.Transferred,
+				"bytes_mb", fmt.Sprintf("%.1f", float64(result.Bytes)/1048576),
+				"speed_mbps", fmt.Sprintf("%.1f", speed),
+			}
+			if streamFiles > 0 {
+				pct := checked * 100 / streamFiles
+				attrs = append(attrs, "progress_pct", pct)
+			}
+			if lastFile != "" {
+				attrs = append(attrs, "last_file", lastFile)
+			}
+			slog.Info("rsync progress", attrs...)
+			lastLog = time.Now()
 		}
 	}
 
 	if err := cmd.Wait(); err != nil {
-		result.Err = err
+		stderr := strings.TrimSpace(stderrBuf.String())
+		if stderr != "" {
+			result.Err = fmt.Errorf("%w: %s", err, stderr)
+		} else {
+			result.Err = err
+		}
 	}
 	return result
 }

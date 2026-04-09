@@ -70,5 +70,15 @@ func Load(configPath string) (Config, error) {
 		return Config{}, fmt.Errorf("missing required config fields: %v", missing)
 	}
 
+	if cfg.MaxStreams < 1 {
+		return Config{}, fmt.Errorf("max_streams must be >= 1, got %d", cfg.MaxStreams)
+	}
+	if cfg.SyncInterval < 1 {
+		return Config{}, fmt.Errorf("sync_interval must be >= 1, got %d", cfg.SyncInterval)
+	}
+	if cfg.RetryInterval < 1 {
+		return Config{}, fmt.Errorf("retry_interval must be >= 1, got %d", cfg.RetryInterval)
+	}
+
 	return cfg, nil
 }

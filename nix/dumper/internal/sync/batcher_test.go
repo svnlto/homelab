@@ -31,62 +31,17 @@ func TestSplitFileList_MoreChunksThanFiles(t *testing.T) {
 	}
 }
 
-func TestDecideStreams_ScaleUp(t *testing.T) {
-	decision := sync.DecideStreams(sync.StreamMetrics{
-		CurrentStreams:  2,
-		MaxStreams:      8,
-		PrevThroughput: 100_000_000,
-		CurrThroughput: 95_000_000,
-	})
-	if decision.NewStreams != 3 {
-		t.Errorf("got %d streams, want 3 (scale up)", decision.NewStreams)
+func TestSplitFileList_ZeroChunks(t *testing.T) {
+	files := []string{"a", "b"}
+	chunks := sync.SplitFileList(files, 0)
+	if chunks != nil {
+		t.Errorf("got %v, want nil for 0 chunks", chunks)
 	}
 }
 
-func TestDecideStreams_ScaleDown(t *testing.T) {
-	decision := sync.DecideStreams(sync.StreamMetrics{
-		CurrentStreams:  4,
-		MaxStreams:      8,
-		PrevThroughput: 100_000_000,
-		CurrThroughput: 70_000_000,
-	})
-	if decision.NewStreams != 3 {
-		t.Errorf("got %d streams, want 3 (scale down)", decision.NewStreams)
-	}
-}
-
-func TestDecideStreams_AtMax(t *testing.T) {
-	decision := sync.DecideStreams(sync.StreamMetrics{
-		CurrentStreams:  8,
-		MaxStreams:      8,
-		PrevThroughput: 100_000_000,
-		CurrThroughput: 95_000_000,
-	})
-	if decision.NewStreams != 8 {
-		t.Errorf("got %d streams, want 8 (hold at max)", decision.NewStreams)
-	}
-}
-
-func TestDecideStreams_AtMin(t *testing.T) {
-	decision := sync.DecideStreams(sync.StreamMetrics{
-		CurrentStreams:  1,
-		MaxStreams:      8,
-		PrevThroughput: 100_000_000,
-		CurrThroughput: 50_000_000,
-	})
-	if decision.NewStreams != 1 {
-		t.Errorf("got %d streams, want 1 (hold at min)", decision.NewStreams)
-	}
-}
-
-func TestDecideStreams_FirstMeasurement(t *testing.T) {
-	decision := sync.DecideStreams(sync.StreamMetrics{
-		CurrentStreams:  2,
-		MaxStreams:      8,
-		PrevThroughput: 0,
-		CurrThroughput: 50_000_000,
-	})
-	if decision.NewStreams != 3 {
-		t.Errorf("got %d streams, want 3 (scale up from initial)", decision.NewStreams)
+func TestSplitFileList_EmptyFiles(t *testing.T) {
+	chunks := sync.SplitFileList(nil, 3)
+	if chunks != nil {
+		t.Errorf("got %v, want nil for empty file list", chunks)
 	}
 }

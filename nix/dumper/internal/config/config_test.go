@@ -82,3 +82,26 @@ func TestLoad_FileNotFound(t *testing.T) {
 		t.Fatal("expected error for missing file, got nil")
 	}
 }
+
+func TestLoad_NegativeValues(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "config.json")
+
+	cases := []struct {
+		name string
+		json string
+	}{
+		{"negative max_streams", `{"remote_host":"h","remote_user":"u","remote_path":"/p","max_streams":-1}`},
+		{"negative sync_interval", `{"remote_host":"h","remote_user":"u","remote_path":"/p","sync_interval":-5}`},
+		{"negative retry_interval", `{"remote_host":"h","remote_user":"u","remote_path":"/p","retry_interval":-1}`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			os.WriteFile(cfgPath, []byte(tc.json), 0644)
+			_, err := config.Load(cfgPath)
+			if err == nil {
+				t.Fatalf("expected error for %s, got nil", tc.name)
+			}
+		})
+	}
+}

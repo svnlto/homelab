@@ -21,6 +21,7 @@ func QueryOriginals(dbPath string) ([]string, error) {
 		WHERE ZTRASHEDSTATE = 0
 		  AND ZDIRECTORY IS NOT NULL
 		  AND ZFILENAME IS NOT NULL
+		ORDER BY ZDIRECTORY, ZFILENAME
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("query originals: %w", err)
