@@ -154,14 +154,28 @@ func RunRsync(ctx context.Context, args []string, streamID int, streamFiles int)
 	}
 
 	if err := cmd.Wait(); err != nil {
-		stderr := strings.TrimSpace(stderrBuf.String())
-		if stderr != "" {
-			result.Err = fmt.Errorf("%w: %s", err, stderr)
+		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 255 {
+			result.Err = fmt.Errorf("connection lost (exit 255)")
 		} else {
-			result.Err = err
+			stderr := TruncateStderr(stderrBuf.String(), 500)
+			if stderr != "" {
+				result.Err = fmt.Errorf("%w: %s", err, stderr)
+			} else {
+				result.Err = err
+			}
 		}
 	}
 	return result
+}
+
+// TruncateStderr trims stderr to maxLen bytes to avoid flooding logs
+// when rsync dumps thousands of per-file errors on connection loss.
+func TruncateStderr(s string, maxLen int) string {
+	s = strings.TrimSpace(s)
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "... (truncated)"
 }
 
 func RunRsyncSimple(ctx context.Context, args []string) (string, error) {
