@@ -49,17 +49,18 @@ func TestQueryOriginals(t *testing.T) {
 	}
 
 	if len(originals) != 3 {
-		t.Errorf("got %d originals, want 3 (trashed excluded)", len(originals))
+		t.Fatalf("got %d originals, want 3 (trashed excluded)", len(originals))
 	}
 
-	expected := map[string]bool{
-		"originals/ABCD/IMG_0001.HEIC": true,
-		"originals/ABCD/IMG_0002.HEIC": true,
-		"originals/EFGH/IMG_0003.HEIC": true,
+	// Verify deterministic ordering by directory then filename
+	want := []string{
+		"originals/ABCD/IMG_0001.HEIC",
+		"originals/ABCD/IMG_0002.HEIC",
+		"originals/EFGH/IMG_0003.HEIC",
 	}
-	for _, o := range originals {
-		if !expected[o] {
-			t.Errorf("unexpected original: %q", o)
+	for i, o := range originals {
+		if o != want[i] {
+			t.Errorf("originals[%d] = %q, want %q", i, o, want[i])
 		}
 	}
 }

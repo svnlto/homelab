@@ -60,19 +60,23 @@ func TestParseTransferLine(t *testing.T) {
 		line      string
 		wantXfer  bool
 		wantBytes int64
+		wantName  string
 	}{
-		{">f+++++++++ 12345 originals/ABCD/IMG.HEIC", true, 12345},
-		{".f          0 originals/ABCD/IMG.HEIC", false, 0},
-		{"", false, 0},
+		{">f+++++++++ 12345 originals/ABCD/IMG.HEIC", true, 12345, "originals/ABCD/IMG.HEIC"},
+		{".f          0 originals/ABCD/IMG.HEIC", false, 0, ""},
+		{"", false, 0, ""},
 	}
 
 	for _, tt := range tests {
-		xfer, bytes := sync.ParseTransferLine(tt.line)
+		xfer, bytes, name := sync.ParseTransferLine(tt.line)
 		if xfer != tt.wantXfer {
 			t.Errorf("ParseTransferLine(%q): xfer = %v, want %v", tt.line, xfer, tt.wantXfer)
 		}
 		if bytes != tt.wantBytes {
 			t.Errorf("ParseTransferLine(%q): bytes = %d, want %d", tt.line, bytes, tt.wantBytes)
+		}
+		if name != tt.wantName {
+			t.Errorf("ParseTransferLine(%q): name = %q, want %q", tt.line, name, tt.wantName)
 		}
 	}
 }

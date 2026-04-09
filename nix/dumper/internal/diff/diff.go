@@ -10,7 +10,11 @@ func ComputeMissing(dbOriginals []string, localDir string) ([]string, error) {
 	present := make(map[string]struct{})
 	originalsDir := filepath.Join(localDir, "originals")
 
-	if info, err := os.Stat(originalsDir); err == nil && info.IsDir() {
+	info, err := os.Stat(originalsDir)
+	if err != nil || !info.IsDir() {
+		slog.Warn("originals directory not found, treating all as missing", "path", originalsDir)
+	}
+	if err == nil && info.IsDir() {
 		err := filepath.WalkDir(originalsDir, func(path string, d os.DirEntry, err error) error {
 			if err != nil {
 				return err

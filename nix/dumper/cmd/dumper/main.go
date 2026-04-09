@@ -69,8 +69,10 @@ func main() {
 
 // sleep returns false if the context was cancelled during the wait.
 func sleep(ctx context.Context, d time.Duration) bool {
+	timer := time.NewTimer(d)
+	defer timer.Stop()
 	select {
-	case <-time.After(d):
+	case <-timer.C:
 		return true
 	case <-ctx.Done():
 		return false
@@ -108,8 +110,9 @@ func runSync(ctx context.Context, cfg config.Config) error {
 	// SQLite integrity check + WAL checkpoint
 	dbPath := filepath.Join(localLib, "database", "Photos.sqlite")
 	if err := photos.CheckIntegrity(dbPath); err != nil {
-		slog.Warn("integrity check failed, continuing anyway", "error", err)
-	} else if err := photos.CheckpointWAL(dbPath); err != nil {
+		return fmt.Errorf("database integrity check: %w", err)
+	}
+	if err := photos.CheckpointWAL(dbPath); err != nil {
 		slog.Warn("WAL checkpoint failed", "error", err)
 	}
 
@@ -135,23 +138,18 @@ func runSync(ctx context.Context, cfg config.Config) error {
 		"total", len(originals),
 	)
 
-	// Phase 4: Dynamic parallel rsync
-	return runDynamicSync(ctx, cfg, rsyncOpts, missing)
+	// Phase 4: Parallel rsync
+	return runParallelSync(ctx, cfg, rsyncOpts, missing)
 }
 
-func runDynamicSync(ctx context.Context, cfg config.Config, opts sync.RsyncOpts, missing []string) error {
-	initialStreams := 2
-	if initialStreams > cfg.MaxStreams {
-		initialStreams = cfg.MaxStreams
+func runParallelSync(ctx context.Context, cfg config.Config, opts sync.RsyncOpts, missing []string) error {
+	streams := cfg.MaxStreams
+	if streams > len(missing) {
+		streams = len(missing)
 	}
 
-	activeStreams := initialStreams
-	var totalTransferred int
-	var totalBytes int64
-	var prevThroughput int64
 	start := time.Now()
-
-	chunks := sync.SplitFileList(missing, activeStreams)
+	chunks := sync.SplitFileList(missing, streams)
 
 	// Write file lists to state dir
 	var fileListPaths []string
@@ -178,18 +176,23 @@ func runDynamicSync(ctx context.Context, cfg config.Config, opts sync.RsyncOpts,
 	for i, listPath := range fileListPaths {
 		streamOpts := opts
 		streamOpts.FilesFrom = listPath
-		go func(idx int, o sync.RsyncOpts) {
-			r := sync.RunRsync(ctx, sync.BuildRsyncArgs(o), idx, len(missing))
+		chunkSize := len(chunks[i])
+		go func(idx int, o sync.RsyncOpts, nFiles int) {
+			r := sync.RunRsync(ctx, sync.BuildRsyncArgs(o), idx, nFiles)
 			results <- streamResult{result: r, index: idx}
-		}(i, streamOpts)
+		}(i, streamOpts, chunkSize)
 
 		// Stagger stream starts
 		if i < len(fileListPaths)-1 {
-			time.Sleep(2 * time.Second)
+			if !sleep(ctx, 2*time.Second) {
+				break
+			}
 		}
 	}
 
 	// Collect results
+	var totalTransferred int
+	var totalBytes int64
 	var windowErrors int
 	for range chunks {
 		sr := <-results
@@ -200,19 +203,6 @@ func runDynamicSync(ctx context.Context, cfg config.Config, opts sync.RsyncOpts,
 			slog.Warn("rsync stream error", "stream", sr.index, "error", sr.result.Err)
 		}
 	}
-
-	elapsed := time.Since(start).Seconds()
-	currThroughput := int64(0)
-	if elapsed > 0 {
-		currThroughput = int64(float64(totalBytes) / elapsed)
-	}
-
-	_ = sync.DecideStreams(sync.StreamMetrics{
-		CurrentStreams:  activeStreams,
-		MaxStreams:      cfg.MaxStreams,
-		PrevThroughput:  prevThroughput,
-		CurrThroughput:  currThroughput,
-	})
 
 	totalDuration := time.Since(start)
 	avgSpeed := float64(0)
@@ -225,7 +215,7 @@ func runDynamicSync(ctx context.Context, cfg config.Config, opts sync.RsyncOpts,
 		"bytes", totalBytes,
 		"duration", totalDuration.Round(time.Second),
 		"avg_mbps", fmt.Sprintf("%.1f", avgSpeed),
-		"streams", activeStreams,
+		"streams", streams,
 	)
 
 	if windowErrors > 0 {
@@ -239,9 +229,11 @@ func writeFileList(path string, files []string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 	for _, file := range files {
-		fmt.Fprintln(f, file)
+		if _, err := fmt.Fprintln(f, file); err != nil {
+			f.Close()
+			return err
+		}
 	}
 	return f.Close()
 }
