@@ -55,6 +55,29 @@ func TestBuildDatabaseRsyncArgs(t *testing.T) {
 	}
 }
 
+func TestTruncateStderr(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		maxLen int
+		want   string
+	}{
+		{"short", "some error", 500, "some error"},
+		{"exact", "abcde", 5, "abcde"},
+		{"truncated", "abcdef", 5, "abcde... (truncated)"},
+		{"whitespace", "  error  \n", 500, "error"},
+		{"empty", "", 500, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := sync.TruncateStderr(tt.input, tt.maxLen)
+			if got != tt.want {
+				t.Errorf("TruncateStderr(%q, %d) = %q, want %q", tt.input, tt.maxLen, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestParseTransferLine(t *testing.T) {
 	tests := []struct {
 		line      string
