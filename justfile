@@ -151,26 +151,6 @@ nixos-deploy-qdevice:
     @echo "Rebuilding NixOS on rpi-qdevice..."
     ssh svenlito@192.168.0.54 "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-qdevice --accept-flake-config"
 
-# --- NixOS Arr Stack (Proxmox VM) ---
-
-# Install NixOS on arr-stack VM via nixos-anywhere
-nixos-install-arr-stack ip:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "Installing NixOS arr-stack to VM at {{ip}}..."
-    cd nix && nix --extra-experimental-features "nix-command flakes" run github:nix-community/nixos-anywhere -- \
-      --flake .#arr-stack \
-      --build-on-remote \
-      root@{{ip}}
-    echo "Done! SSH: ssh svenlito@192.168.0.50"
-
-# Deploy arr-stack config via SSH
-nixos-update-arr-stack:
-    @echo "Syncing NixOS config to arr-stack..."
-    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.50:/tmp/nix-config/
-    @echo "Rebuilding NixOS on arr-stack..."
-    ssh svenlito@192.168.0.50 "sudo nixos-rebuild switch --flake /tmp/nix-config#arr-stack --accept-flake-config"
-
 # --- Ansible ---
 
 ansible-lint:
