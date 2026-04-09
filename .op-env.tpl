@@ -22,3 +22,4 @@ SIGNOZ_API_KEY=op://Homelab/SigNoz API Key/credential
 TF_VAR_linode_api_token=op://Homelab/Linode API Token/credential
 TF_VAR_tailscale_auth_key=op://Homelab/Tailscale Photo Relay Auth Key/credential
 TF_VAR_ssh_public_key=op://Homelab/proxmox/public key
+TF_VAR_github_token=op://Homelab/GitHub PAT Flux/credential

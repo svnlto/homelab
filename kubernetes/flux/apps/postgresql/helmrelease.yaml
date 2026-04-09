@@ -1,0 +1,29 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: postgresql
+  namespace: database
+spec:
+  interval: 10m
+  releaseName: postgresql
+  chart:
+    spec:
+      chart: ./charts/postgresql
+      sourceRef:
+        kind: GitRepository
+        name: homelab
+        namespace: flux-system
+      reconcileStrategy: Revision
+  valuesFrom:
+    - kind: ConfigMap
+      name: postgresql-values
+      valuesKey: values.yaml
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  driftDetection:
+    mode: enabled

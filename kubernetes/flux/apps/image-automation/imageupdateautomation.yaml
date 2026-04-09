@@ -1,0 +1,25 @@
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageUpdateAutomation
+metadata:
+  name: homelab
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: homelab
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: flux-image-automation
+        email: flux@svenlito.com
+      messageTemplate: "chore: update image {{range .Changed.Changes}}{{print .OldValue}} -> {{print .NewValue}} {{end}}"
+    push:
+      branch: main
+  update:
+    path: ./kubernetes/apps
+    strategy: Setters
