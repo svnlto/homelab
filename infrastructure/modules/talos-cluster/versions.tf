@@ -4,7 +4,7 @@ terraform {
   required_providers {
     proxmox = {
       source  = "bpg/proxmox"
-      version = "0.97.1"
+      version = "0.101.1"
     }
     talos = {
       source  = "siderolabs/talos"
@@ -12,7 +12,7 @@ terraform {
     }
     local = {
       source  = "hashicorp/local"
-      version = "2.7.0"
+      version = "2.8.0"
     }
     helm = {
       source  = "hashicorp/helm"
@@ -24,7 +24,7 @@ terraform {
     }
     kubectl = {
       source  = "alekc/kubectl"
-      version = "2.1.3"
+      version = "2.2.0"
     }
   }
 }
