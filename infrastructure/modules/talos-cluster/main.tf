@@ -76,6 +76,13 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
     }
   }
 
+  lifecycle {
+    # file_id references the source image used at VM creation; after the disk
+    # is cloned it has no meaning and is null on import. Ignore to prevent
+    # spurious replacements.
+    ignore_changes = [disk[0].file_id]
+  }
+
 }
 
 # ==============================================================================
@@ -163,6 +170,11 @@ resource "proxmox_virtual_environment_vm" "worker" {
       rombar  = true
       xvga    = false
     }
+  }
+
+  lifecycle {
+    # See control_plane: ignore disk file_id to prevent spurious replacements.
+    ignore_changes = [disk[0].file_id]
   }
 
 }

@@ -39,7 +39,7 @@ inputs = {
   talos_version          = "v1.12.4"
   kubernetes_version     = "v1.35.0"
   talos_image_id         = dependency.images.outputs.talos_image_id_din
-  talos_gpu_image_id     = dependency.images.outputs.talos_image_gpu_id_grogu
+  talos_gpu_image_id     = dependency.images.outputs.talos_image_gpu_id_din
   talos_schematic_id     = local.talos.schematic_id
   talos_gpu_schematic_id = local.talos.gpu_schematic_id
 
@@ -71,7 +71,7 @@ inputs = {
       disk_size_gb = 50
     }
     cp3 = {
-      node_name    = "grogu"
+      node_name    = "din"
       vm_id        = 402
       hostname     = "shared-cp3"
       ip_address   = "10.0.1.13/24"
@@ -87,21 +87,20 @@ inputs = {
       vm_id           = 410
       hostname        = "shared-worker1"
       ip_address      = "${local.k8s.worker_start}/24"
-      cpu_cores       = 8
-      memory_mb       = 8192
+      cpu_cores       = 16
+      memory_mb       = 16384
       disk_size_gb    = 50
       gpu_passthrough = false
     }
     worker2 = {
-      node_name           = "grogu"
-      vm_id               = 411
-      hostname            = "shared-worker2"
-      ip_address          = "10.0.1.22/24"
-      cpu_cores           = 16
-      memory_mb           = 16384
-      disk_size_gb        = 50
-      gpu_passthrough     = true
-      gpu_mapping_id      = local.proxmox.resource_mappings.arc_a310
+      node_name       = "din"
+      vm_id           = 411
+      hostname        = "shared-worker2"
+      ip_address      = "10.0.1.22/24"
+      cpu_cores       = 16
+      memory_mb       = 16384
+      disk_size_gb    = 50
+      gpu_passthrough = false
     }
   }
 
