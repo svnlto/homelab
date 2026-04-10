@@ -29,7 +29,6 @@ inputs = {
   talos_schematic_id     = local.talos.schematic_id
   talos_gpu_schematic_id = local.talos.gpu_schematic_id
 
-  proxmox_node_primary   = local.proxmox.nodes.primary
-  proxmox_node_secondary = local.proxmox.nodes.secondary
-  datastore_id           = "local"
+  proxmox_node_primary = local.proxmox.nodes.primary
+  datastore_id         = "local"
 }
