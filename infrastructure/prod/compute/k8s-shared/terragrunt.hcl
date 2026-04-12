@@ -59,7 +59,7 @@ inputs = {
       ip_address   = "${local.k8s.control_start}/24"
       cpu_cores    = 4
       memory_mb    = 4096
-      disk_size_gb = 50
+      disk_size_gb = 15
     }
     cp2 = {
       node_name    = "din"
@@ -68,7 +68,7 @@ inputs = {
       ip_address   = "10.0.1.12/24"
       cpu_cores    = 4
       memory_mb    = 4096
-      disk_size_gb = 50
+      disk_size_gb = 15
     }
     cp3 = {
       node_name    = "din"
@@ -77,7 +77,7 @@ inputs = {
       ip_address   = "10.0.1.13/24"
       cpu_cores    = 4
       memory_mb    = 4096
-      disk_size_gb = 50
+      disk_size_gb = 15
     }
   }
 
