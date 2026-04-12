@@ -23,8 +23,10 @@
               # packaging>=22.0 chokes on non-PEP 440 kernel versions
               # (e.g. "6.11.0-1018-azure", "6.18.5-talos")
               sed -i '/platform_release/d' pyproject.toml setup.cfg setup.py 2>/dev/null || true
-              # Also strip utitools (macOS-only)
+              # Also strip utitools (macOS-only) from package metadata and source imports
               sed -i '/utitools/d' pyproject.toml setup.cfg setup.py 2>/dev/null || true
+              # Stub out utitools imports in Python source (macOS-only, not available on Linux)
+              sed -i 's/from utitools import.*/def conforms_to_uti(*a, **kw): return False\ndef uti_for_path(*a, **kw): return ""/' src/osxphotos/image_file_utils.py 2>/dev/null || true
               # Relax whenever version pin — nixpkgs has 0.9.5, osxphotos pins <0.9.0
               sed -i 's/whenever>=0.8.3,<0.9.0/whenever>=0.8.3/' pyproject.toml setup.cfg setup.py 2>/dev/null || true
             '';
