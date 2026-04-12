@@ -16,7 +16,8 @@
           pkgs-x86.python312Packages.osxphotos.overridePythonAttrs (old: {
             dependencies =
               builtins.filter (dep: (dep.pname or "") != "utitools")
-              (old.dependencies or [ ]);
+              (old.dependencies or [ ])
+              ++ [ pkgs-x86.python312Packages.psutil ];
             postPatch = (old.postPatch or "") + ''
               # Strip macOS-only markers that reference platform_release —
               # packaging>=22.0 chokes on non-PEP 440 kernel versions
