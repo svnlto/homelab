@@ -33,6 +33,7 @@
         tag = "latest";
         contents = with pkgs-x86; [
           osxphotos-linux
+          exiftool
           gnugrep
           coreutils
           bash
