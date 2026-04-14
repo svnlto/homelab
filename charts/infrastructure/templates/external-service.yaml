@@ -7,9 +7,9 @@ metadata:
   labels:
     {{- include "infrastructure.labels" (dict "name" .name) | nindent 4 }}
   annotations:
-    {{- range $key, $val := $.Values.global.annotations }}
+  {{- range $key, $val := $.Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+  {{- end }}
 spec:
   ports:
     - port: {{ .port }}
@@ -25,9 +25,9 @@ metadata:
     {{- include "infrastructure.labels" (dict "name" .name) | nindent 4 }}
     kubernetes.io/service-name: {{ .name }}
   annotations:
-    {{- range $key, $val := $.Values.global.annotations }}
+  {{- range $key, $val := $.Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+  {{- end }}
 addressType: IPv4
 endpoints:
   - addresses:
@@ -44,12 +44,12 @@ metadata:
   labels:
     {{- include "infrastructure.labels" (dict "name" .name) | nindent 4 }}
   annotations:
-    {{- range $key, $val := $.Values.global.annotations }}
+  {{- range $key, $val := $.Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
-    {{- range $key, $val := $.Values.ingress.annotations }}
+  {{- end }}
+  {{- range $key, $val := $.Values.ingress.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+  {{- end }}
 spec:
   tls:
     - hosts:

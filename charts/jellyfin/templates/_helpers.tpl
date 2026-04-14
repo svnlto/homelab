@@ -16,7 +16,7 @@ app.kubernetes.io/name: {{ .name }}
 Global annotations from values.
 */}}
 {{- define "jellyfin.annotations" -}}
-{{- range $key, $val := .Values.global.annotations }}
+  {{- range $key, $val := .Values.global.annotations }}
 {{ $key }}: {{ $val | quote -}}
-{{- end }}
+  {{- end }}
 {{- end -}}

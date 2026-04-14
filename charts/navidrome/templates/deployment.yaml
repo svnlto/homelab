@@ -6,9 +6,9 @@ metadata:
   labels:
     {{- include "navidrome.labels" . | nindent 4 }}
   annotations:
-    {{- range $key, $val := .Values.global.annotations }}
+{{- range $key, $val := .Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+{{- end }}
 spec:
   replicas: 1
   strategy:
@@ -21,9 +21,9 @@ spec:
       labels:
         {{- include "navidrome.selectorLabels" . | nindent 8 }}
       annotations:
-        {{- range $key, $val := .Values.global.annotations }}
+{{- range $key, $val := .Values.global.annotations }}
         {{ $key }}: {{ $val | quote }}
-        {{- end }}
+{{- end }}
     spec:
       securityContext:
         runAsUser: {{ .Values.navidrome.securityContext.runAsUser }}

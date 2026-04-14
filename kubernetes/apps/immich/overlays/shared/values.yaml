@@ -10,8 +10,9 @@ server:
   gpu:
     enabled: true
     renderNode: /dev/dri/renderD129
-  nodeSelector:
-    kubernetes.io/hostname: shared-worker2
+  # nodeSelector removed — was pinned to shared-worker2 for Arc A310 GPU.
+  # Restore once worker2 is back with GPU recovered.
+  nodeSelector: {}
   resources:
     requests:
       cpu: 500m
@@ -33,8 +34,9 @@ workers:
 machineLearning:
   gpu:
     enabled: false
-  nodeSelector:
-    kubernetes.io/hostname: shared-worker2
+  # nodeSelector removed — was pinned to shared-worker2 for Arc A310 GPU.
+  # Restore once worker2 is back with GPU recovered.
+  nodeSelector: {}
   resources:
     requests:
       cpu: 1000m

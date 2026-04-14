@@ -6,9 +6,9 @@ metadata:
   name: {{ .pvName }}
   annotations:
     pv.kubernetes.io/provisioned-by: {{ $.Values.csi.driver }}
-    {{- range $key, $val := $.Values.global.annotations }}
+  {{- range $key, $val := $.Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+  {{- end }}
 spec:
   capacity:
     storage: {{ .capacity }}

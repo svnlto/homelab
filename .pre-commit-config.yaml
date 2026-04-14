@@ -20,28 +20,34 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/google/yamlfmt
-    rev: v0.20.0
+    rev: v0.21.0
     hooks:
       - id: yamlfmt
         args: ["-conf", ".yamlfmt.yaml"]
         exclude: ^(\.git/|charts/.*/templates/)
 
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1
+  - repo: https://github.com/digitalstudium/helmfmt
+    rev: v0.5.0
+    hooks:
+      - id: helmfmt
+
+  - repo: local
     hooks:
       - id: shellcheck
-        args: [-x]
+        name: shellcheck
+        entry: shellcheck -x
+        language: system
         files: \.sh$
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.47.0
+    rev: v0.48.0
     hooks:
       - id: markdownlint
         args: ["--fix", "--config", ".markdownlint.yaml"]
         exclude: ^(\.git/|charts/)
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.104.0
+    rev: v1.105.0
     hooks:
       # Terragrunt infrastructure
       - id: terraform_fmt
@@ -52,20 +58,20 @@ repos:
         exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
       - id: terraform_tflint
         name: TFLint (infrastructure)
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
         files: ^infrastructure/.*\.tf$
         exclude: ^infrastructure/(\.terragrunt-cache|\.terraform-state)/
 
-  - repo: https://github.com/ansible/ansible-lint
-    rev: v26.1.1
+  - repo: local
     hooks:
       - id: ansible-lint
+        name: ansible-lint
+        entry: env ANSIBLE_CONFIG=ansible/ansible.cfg ansible-lint -c .ansible-lint.yaml ansible/
+        language: system
         files: ^ansible/
-        args: ["-c", ".ansible-lint.yaml", "ansible/"]
         pass_filenames: false
-        additional_dependencies:
-          - ansible-core>=2.12
         require_serial: true
-        entry: env ANSIBLE_CONFIG=ansible/ansible.cfg ansible-lint
 
   - repo: local
     hooks:
@@ -116,7 +122,7 @@ repos:
         files: \.nix$
 
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v4.0.0
+    rev: v4.4.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]

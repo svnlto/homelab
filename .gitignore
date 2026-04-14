@@ -38,6 +38,7 @@ provider.tf
 infrastructure/.backups/
 
 # Build outputs
+bin/
 output/
 *.box
 

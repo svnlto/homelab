@@ -6,9 +6,9 @@ metadata:
   name: {{ .Values.staticVolume.pvName }}
   annotations:
     pv.kubernetes.io/provisioned-by: {{ .Values.staticVolume.driver }}
-    {{- range $key, $val := .Values.global.annotations }}
+  {{- range $key, $val := .Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+  {{- end }}
 spec:
   capacity:
     storage: {{ .Values.cluster.storage.size }}

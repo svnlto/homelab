@@ -7,9 +7,9 @@ metadata:
   labels:
     {{- include "immich.labels" (dict "name" "immich" "context" .) | nindent 4 }}
   annotations:
-    {{- range $key, $val := .Values.ingress.annotations }}
+  {{- range $key, $val := .Values.ingress.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+  {{- end }}
     {{- include "immich.annotations" . | nindent 4 }}
 spec:
   tls:

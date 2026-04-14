@@ -59,6 +59,7 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
     file_format  = "raw"
     file_id      = var.talos_image_id
     ssd          = true
+    discard      = "on"
   }
 
   network_device {
@@ -74,6 +75,13 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
         gateway = var.network_gateway
       }
     }
+  }
+
+  lifecycle {
+    # file_id references the source image used at VM creation; after the disk
+    # is cloned it has no meaning and is null on import. Ignore to prevent
+    # spurious replacements.
+    ignore_changes = [disk[0].file_id, disk[0].size]
   }
 
 }
@@ -136,6 +144,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
     file_format  = "raw"
     file_id      = each.value.gpu_passthrough && var.talos_gpu_image_id != "" ? var.talos_gpu_image_id : var.talos_image_id
     ssd          = true
+    discard      = "on"
   }
 
   network_device {
@@ -163,6 +172,11 @@ resource "proxmox_virtual_environment_vm" "worker" {
       rombar  = true
       xvga    = false
     }
+  }
+
+  lifecycle {
+    # See control_plane: ignore disk file_id and size to prevent spurious replacements.
+    ignore_changes = [disk[0].file_id, disk[0].size]
   }
 
 }

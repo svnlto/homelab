@@ -33,19 +33,11 @@ data:
                       - title: Navidrome
                         url: https://navidrome.{{ .Values.ingress.domain }}
                         icon: si:navidrome
-                      - title: Aurral
-                        url: https://aurral.{{ .Values.ingress.domain }}
-                        icon: si:lastdotfm
                   - title: Photos
                     links:
                       - title: Immich
                         url: https://immich.{{ .Values.ingress.domain }}
                         icon: si:immich
-                  - title: Automation
-                    links:
-                      - title: n8n
-                        url: https://n8n.{{ .Values.ingress.domain }}
-                        icon: si:n8n
                   - title: Infrastructure
                     links:
                       - title: Proxmox
@@ -65,7 +57,6 @@ data:
                   - siderolabs/talos
                   - navidrome/navidrome
                   - immich-app/immich
-                  - n8n-io/n8n
                   - Radarr/Radarr
                   - Sonarr/Sonarr
 
@@ -111,13 +102,7 @@ data:
                   - title: Immich
                     url: https://immich.{{ .Values.ingress.domain }}
                     icon: si:immich
-                  - title: Aurral
-                    url: https://aurral.{{ .Values.ingress.domain }}
-                    icon: si:lastdotfm
-                  - title: n8n
-                    url: https://n8n.{{ .Values.ingress.domain }}
-                    icon: si:n8n
-              {{- range .Values.glance.jellyfinLibraries }}
+{{- range .Values.glance.jellyfinLibraries }}
               - type: custom-api
                 title: Recently Added {{ . }}
                 frameless: true
@@ -271,7 +256,7 @@ data:
                       {{ `{{ end }}` }}
                     {{ `{{ end }}` }}
                   {{ `{{ end }}` }}
-              {{- end }}
+{{- end }}
 
               - type: group
                 widgets:

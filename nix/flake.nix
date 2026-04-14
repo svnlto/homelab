@@ -6,64 +6,27 @@
     extra-platforms = "aarch64-linux x86_64-linux";
   };
 
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    disko = {
-      url = "github:nix-community/disko";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-  };
+  inputs = { nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable"; };
 
-  outputs = { nixpkgs, disko, ... }:
+  outputs = { nixpkgs, ... }:
     let pkgs-x86 = nixpkgs.legacyPackages.x86_64-linux;
     in {
-      packages.x86_64-linux.dumper-image =
-        pkgs-x86.dockerTools.buildLayeredImage {
-          name = "ghcr.io/svnlto/dumper";
-          tag = "latest";
-          contents = with pkgs-x86; [
-            rsync
-            openssh
-            tailscale
-            gnugrep
-            gnused
-            findutils
-            coreutils
-            bash
-            cacert
-            curl
-            jq
-            gawk
-            sqlite
-          ];
-          config = {
-            Cmd = [ "/bin/bash" "/app/rsync-photos.sh" ];
-            Env = [
-              "SSL_CERT_FILE=${pkgs-x86.cacert}/etc/ssl/certs/ca-bundle.crt"
-            ];
-          };
-          extraCommands = ''
-            mkdir -p app etc
-            mkdir -p -m 1777 tmp
-            cp ${./dumper/rsync-photos-k8s.sh} app/rsync-photos.sh
-            echo "dumper:x:1003:1000:dumper:/tmp:/bin/bash" >> etc/passwd
-            echo "dumper:x:1000:" >> etc/group
-          '';
-        };
-
       packages.x86_64-linux.osxphotos-export-image = let
         osxphotos-linux =
           pkgs-x86.python312Packages.osxphotos.overridePythonAttrs (old: {
             dependencies =
               builtins.filter (dep: (dep.pname or "") != "utitools")
-              (old.dependencies or [ ]);
+              (old.dependencies or [ ])
+              ++ [ pkgs-x86.python312Packages.psutil ];
             postPatch = (old.postPatch or "") + ''
               # Strip macOS-only markers that reference platform_release —
               # packaging>=22.0 chokes on non-PEP 440 kernel versions
               # (e.g. "6.11.0-1018-azure", "6.18.5-talos")
               sed -i '/platform_release/d' pyproject.toml setup.cfg setup.py 2>/dev/null || true
-              # Also strip utitools (macOS-only)
+              # Also strip utitools (macOS-only) from package metadata and source imports
               sed -i '/utitools/d' pyproject.toml setup.cfg setup.py 2>/dev/null || true
+              # Stub out utitools imports in Python source (macOS-only, not available on Linux)
+              find . -name "image_file_utils.py" -exec sed -i 's/from utitools import.*/def conforms_to_uti(*a, **kw): return False\ndef uti_for_path(*a, **kw): return ""/' {} +
               # Relax whenever version pin — nixpkgs has 0.9.5, osxphotos pins <0.9.0
               sed -i 's/whenever>=0.8.3,<0.9.0/whenever>=0.8.3/' pyproject.toml setup.cfg setup.py 2>/dev/null || true
             '';
@@ -113,16 +76,6 @@
               # Faster builds (disable compression)
               sdImage.compressImage = false;
             }
-          ];
-          specialArgs = { constants = import ./common/constants.nix; };
-        };
-
-        arr-stack = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          modules = [
-            disko.nixosModules.disko
-            ./arr-stack/disk-config.nix
-            ./arr-stack/configuration.nix
           ];
           specialArgs = { constants = import ./common/constants.nix; };
         };

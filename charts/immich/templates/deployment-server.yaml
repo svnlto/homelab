@@ -21,28 +21,24 @@ spec:
       annotations:
         {{- include "immich.annotations" . | nindent 8 }}
     spec:
-      {{- if not .Values.server.gpu.enabled }}
+{{- if not .Values.server.gpu.enabled }}
       securityContext:
         runAsUser: {{ .Values.server.securityContext.runAsUser }}
         runAsGroup: {{ .Values.server.securityContext.runAsGroup }}
         fsGroup: {{ .Values.server.securityContext.fsGroup }}
         fsGroupChangePolicy: OnRootMismatch
-      {{- end }}
-      {{- with .Values.server.nodeSelector }}
+{{- end }}
+{{- with .Values.server.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
-      {{- end }}
-      initContainers:
-        - name: wait-for-dragonfly
-          image: busybox:1.37
-          command: ['sh', '-c', 'until nc -z dragonfly.cache.svc.cluster.local 6379; do echo "waiting for dragonfly..."; sleep 2; done']
+{{- end }}
       containers:
         - name: immich-server
           image: {{ .Values.server.image }}
-          {{- if .Values.server.gpu.enabled }}
+{{- if .Values.server.gpu.enabled }}
           securityContext:
             privileged: true
-          {{- end }}
+{{- end }}
           ports:
             - containerPort: {{ .Values.server.port }}
               name: http
@@ -52,10 +48,10 @@ spec:
           env:
             - name: IMMICH_WORKERS_INCLUDE
               value: api
-            {{- if .Values.server.gpu.enabled }}
+{{- if .Values.server.gpu.enabled }}
             - name: LIBVA_RENDER_NODE
               value: {{ .Values.server.gpu.renderNode }}
-            {{- end }}
+{{- end }}
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -99,10 +95,10 @@ spec:
             - name: external-libraries
               mountPath: /external-libraries
               readOnly: true
-            {{- if .Values.server.gpu.enabled }}
+{{- if .Values.server.gpu.enabled }}
             - name: dev-dri
               mountPath: /dev/dri
-            {{- end }}
+{{- end }}
       volumes:
         - name: upload
           persistentVolumeClaim:
@@ -110,8 +106,8 @@ spec:
         - name: external-libraries
           persistentVolumeClaim:
             claimName: nfs-photos
-        {{- if .Values.server.gpu.enabled }}
+{{- if .Values.server.gpu.enabled }}
         - name: dev-dri
           hostPath:
             path: /dev/dri
-        {{- end }}
+{{- end }}

@@ -22,10 +22,12 @@ resource "tailscale_acl" "this" {
       { src = ["autogroup:member"], dst = ["tag:dumper-src"], ip = ["*"] },
       { src = ["autogroup:member"], dst = ["tag:photo-relay"], ip = ["*"] },
 
-      // K8s pods can reach Pi-hole (DNS), dumper-src (rsync), and photo-relay
+      // K8s pods can reach Pi-hole (DNS) and photo-relay
       { src = ["tag:k8s"], dst = ["tag:pihole"], ip = ["*"] },
-      { src = ["tag:k8s"], dst = ["tag:dumper-src"], ip = ["*"] },
       { src = ["tag:k8s"], dst = ["tag:photo-relay"], ip = ["*"] },
+
+      // Pi dumper can reach dumper-src Mac for rsync
+      { src = ["tag:pihole"], dst = ["tag:dumper-src"], ip = ["*"] },
 
       // dumper-src Mac can reach photo-relay (relay path)
       { src = ["tag:dumper-src"], dst = ["tag:photo-relay"], ip = ["*"] },
@@ -38,9 +40,9 @@ resource "tailscale_acl" "this" {
         dst = ["tag:pihole"]
         app = { "tailscale.com/cap/relay" = [{}] }
       },
-      // K8s pods and dumper-src Mac can use photo-relay (Linode Singapore) as a peer relay
+      // K8s pods, Pi, and dumper-src Mac can use photo-relay (Linode Singapore) as a peer relay
       {
-        src = ["tag:k8s", "tag:dumper-src"]
+        src = ["tag:k8s", "tag:dumper-src", "tag:pihole"]
         dst = ["tag:photo-relay"]
         app = { "tailscale.com/cap/relay" = [{}] }
       }
@@ -69,11 +71,11 @@ resource "tailscale_acl" "this" {
         dst    = ["tag:dumper-src"]
         users  = ["autogroup:nonroot", "root"]
       },
-      // K8s dumper CronJob pods can SSH into dumper-src for rsync
+      // Pi dumper service can SSH into dumper-src Mac for rsync
       // Tagged device → tagged device requires action = "accept" (check not supported)
       {
         action = "accept"
-        src    = ["tag:k8s"]
+        src    = ["tag:pihole"]
         dst    = ["tag:dumper-src"]
         users  = ["autogroup:nonroot", "root"]
       }

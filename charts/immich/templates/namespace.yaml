@@ -3,9 +3,9 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: {{ .Release.Namespace }}
-  {{- if or .Values.server.gpu.enabled .Values.machineLearning.gpu.enabled }}
+{{- if or .Values.server.gpu.enabled .Values.machineLearning.gpu.enabled }}
   labels:
     pod-security.kubernetes.io/enforce: privileged
-  {{- end }}
+{{- end }}
   annotations:
     {{- include "immich.annotations" . | nindent 4 }}
