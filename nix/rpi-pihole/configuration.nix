@@ -1,5 +1,5 @@
 { pkgs, constants, ... }: {
-  imports = [ ./hardware.nix ./pihole.nix ./tailscale.nix ];
+  imports = [ ./hardware.nix ./pihole.nix ./tailscale.nix ./dumper.nix ];
 
   # Network configuration
   networking = {

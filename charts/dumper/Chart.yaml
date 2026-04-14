@@ -1,6 +1,0 @@
----
-apiVersion: v2
-name: dumper
-description: Photo dump service with Tailscale sidecar and rsync
-type: application
-version: 0.1.0

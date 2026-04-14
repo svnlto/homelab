@@ -16,9 +16,9 @@ app.kubernetes.io/name: {{ .name }}
 Global annotations from values.
 */}}
 {{- define "arr-stack.annotations" -}}
-{{- range $key, $val := .Values.global.annotations }}
+  {{- range $key, $val := .Values.global.annotations }}
 {{ $key }}: {{ $val | quote -}}
-{{- end }}
+  {{- end }}
 {{- end -}}
 
 {{/*
@@ -70,9 +70,9 @@ metadata:
   labels:
     {{- include "arr-stack.labels" . | nindent 4 }}
   annotations:
-    {{- range $key, $val := .Values.global.annotations }}
+  {{- range $key, $val := .Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+  {{- end }}
 spec:
   replicas: 1
   strategy:
@@ -85,9 +85,9 @@ spec:
       labels:
         {{- include "arr-stack.selectorLabels" . | nindent 8 }}
       annotations:
-        {{- range $key, $val := .Values.global.annotations }}
+  {{- range $key, $val := .Values.global.annotations }}
         {{ $key }}: {{ $val | quote }}
-        {{- end }}
+  {{- end }}
     spec:
       containers:
         - name: {{ .name }}
@@ -146,9 +146,9 @@ kind: Service
 metadata:
   name: {{ .name }}
   annotations:
-    {{- range $key, $val := .Values.global.annotations }}
+  {{- range $key, $val := .Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+  {{- end }}
 spec:
   ports:
     - port: {{ .app.port }}

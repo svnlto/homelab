@@ -47,12 +47,60 @@ nixos-flash-pihole disk:
       echo "Aborted."
     fi
 
-# Deploy Pi-hole config via SSH
-nixos-deploy-pihole:
-    @echo "Syncing NixOS config to rpi-pihole..."
-    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.53:/tmp/nix-config/
-    @echo "Rebuilding NixOS on rpi-pihole..."
-    ssh svenlito@192.168.0.53 "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-pihole"
+# Deploy Pi-hole config, dumper binary, and secrets via SSH
+nixos-deploy-pihole: dumper-build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    PI="svenlito@192.168.0.53"
+    # Resolve secrets from 1Password
+    echo "Resolving dumper secrets from 1Password..."
+    REMOTE_HOST=$(op read "op://Homelab/dumper-config/REMOTE_HOST")
+    REMOTE_USER=$(op read "op://Homelab/dumper-config/REMOTE_USER")
+    REMOTE_PATH=$(op read "op://Homelab/dumper-config/REMOTE_PATH")
+    CONFIG=$(mktemp)
+    cat > "$CONFIG" <<CONF
+    {
+      "remote_host": "$REMOTE_HOST",
+      "remote_user": "$REMOTE_USER",
+      "remote_path": "$REMOTE_PATH",
+      "ssh_key_path": "/var/lib/dumper/id_ed25519",
+      "dump_dir": "/mnt/dump",
+      "state_dir": "/var/lib/dumper",
+      "max_streams": 8,
+      "sync_interval": 300,
+      "retry_interval": 60
+    }
+    CONF
+    SSH_KEY=$(mktemp)
+    op read "op://Homelab/dumper-config/private_key" -o "$SSH_KEY" --force
+    # Deploy proxmox SSH key for svenlito user (TrueNAS rsync aliases)
+    PROXMOX_KEY=$(mktemp)
+    op read "op://Homelab/proxmox/private key" -o "$PROXMOX_KEY" --force
+    # Deploy binary, config, and SSH keys BEFORE NixOS rebuild
+    echo "Deploying dumper binary and secrets..."
+    scp bin/dumper-arm64 "$PI":/tmp/dumper
+    scp "$CONFIG" "$PI":/tmp/dumper-config.json
+    scp "$SSH_KEY" "$PI":/tmp/dumper-id_ed25519
+    scp "$PROXMOX_KEY" "$PI":/tmp/proxmox-id_ed25519
+    ssh "$PI" "sudo mkdir -p /var/lib/dumper && \
+               sudo mv /tmp/dumper /var/lib/dumper/dumper && \
+               sudo mv /tmp/dumper-config.json /var/lib/dumper/config.json && \
+               sudo mv /tmp/dumper-id_ed25519 /var/lib/dumper/id_ed25519 && \
+               sudo chown svenlito /var/lib/dumper/dumper /var/lib/dumper/config.json /var/lib/dumper/id_ed25519 && \
+               sudo chmod +x /var/lib/dumper/dumper && \
+               sudo chmod 640 /var/lib/dumper/config.json && \
+               sudo chmod 400 /var/lib/dumper/id_ed25519 && \
+               mkdir -p ~/.ssh && \
+               mv /tmp/proxmox-id_ed25519 ~/.ssh/id_ed25519 && \
+               chmod 400 ~/.ssh/id_ed25519"
+    rm -f "$CONFIG" "$SSH_KEY" "$PROXMOX_KEY"
+    # Sync NixOS config and rebuild (service starts automatically)
+    echo "Syncing NixOS config to rpi-pihole..."
+    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' \
+      nix/ "$PI":/tmp/nix-config/
+    echo "Rebuilding NixOS on rpi-pihole..."
+    ssh "$PI" "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-pihole --accept-flake-config"
+    echo "Deploy complete"
 
 # Update flake lock in VM
 nixos-flake-update-pihole:
@@ -101,27 +149,7 @@ nixos-deploy-qdevice:
     @echo "Syncing NixOS config to rpi-qdevice..."
     rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.54:/tmp/nix-config/
     @echo "Rebuilding NixOS on rpi-qdevice..."
-    ssh svenlito@192.168.0.54 "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-qdevice"
-
-# --- NixOS Arr Stack (Proxmox VM) ---
-
-# Install NixOS on arr-stack VM via nixos-anywhere
-nixos-install-arr-stack ip:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "Installing NixOS arr-stack to VM at {{ip}}..."
-    cd nix && nix --extra-experimental-features "nix-command flakes" run github:nix-community/nixos-anywhere -- \
-      --flake .#arr-stack \
-      --build-on-remote \
-      root@{{ip}}
-    echo "Done! SSH: ssh svenlito@192.168.0.50"
-
-# Deploy arr-stack config via SSH
-nixos-update-arr-stack:
-    @echo "Syncing NixOS config to arr-stack..."
-    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' nix/ svenlito@192.168.0.50:/tmp/nix-config/
-    @echo "Rebuilding NixOS on arr-stack..."
-    ssh svenlito@192.168.0.50 "sudo nixos-rebuild switch --flake /tmp/nix-config#arr-stack"
+    ssh svenlito@192.168.0.54 "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-qdevice --accept-flake-config"
 
 # --- Ansible ---
 
@@ -266,10 +294,23 @@ k8s-cleanup-zfs:
         done' || true
     done
 
+# --- Dumper (Go binary for Pi photo sync) ---
+
+# Cross-compile dumper for aarch64 (Raspberry Pi)
+dumper-build:
+    mkdir -p bin
+    cd nix/dumper && devbox run -- env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o ../../bin/dumper-arm64 ./cmd/dumper/
+    @ls -lh bin/dumper-arm64
+
+# Run dumper tests
+dumper-test:
+    cd nix/dumper && devbox run -- go test ./... -v
+
+
 # --- Utilities ---
 
 clean:
-    rm -rf nix/result nix/result-*
+    rm -rf nix/result nix/result-* bin/
 
 lint:
     pre-commit run --all-files

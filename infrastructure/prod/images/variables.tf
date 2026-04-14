@@ -40,11 +40,6 @@ variable "proxmox_node_primary" {
   description = "Primary Proxmox node name"
 }
 
-variable "proxmox_node_secondary" {
-  type        = string
-  description = "Secondary Proxmox node name"
-}
-
 variable "datastore_id" {
   type        = string
   description = "Datastore for ISO storage"
