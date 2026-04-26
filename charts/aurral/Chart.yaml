@@ -1,0 +1,6 @@
+---
+apiVersion: v2
+name: aurral
+description: Music discovery and request manager for Lidarr with Weekly Flow playlists
+type: application
+version: 0.1.0

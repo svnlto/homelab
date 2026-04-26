@@ -1,0 +1,27 @@
+{{- if .Values.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aurral
+  annotations:
+    {{- range $key, $val := .Values.ingress.annotations }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end }}
+    {{- include "aurral.annotations" . | nindent 4 }}
+spec:
+  tls:
+    - hosts:
+        - aurral.{{ .Values.ingress.domain }}
+  rules:
+    - host: aurral.{{ .Values.ingress.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: aurral
+                port:
+                  name: http
+{{- end }}
