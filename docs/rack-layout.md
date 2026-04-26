@@ -94,7 +94,7 @@ BESIDE RACK (floor/adjacent, tower workstation):
   ┌─────────────────────────────────────────┐
   │  Lenovo ThinkStation P700 (grogu)        │
   │  Proxmox VE — single compute node        │
-  │  AMT (Intel)  → Patch 5 → CRS310 ether5 │
+  │  AMT (Intel)  → Patch 5 → CRS310 ether4 │
   │  Arc A310 GPU + 2× HBA + 10GbE SFP+ NIC │
   │  Internal HBA  → bulk pool drives        │
   │  External HBA  → SAS to MD1220 (fast)   │
@@ -144,7 +144,7 @@ On the back side, cables arrive from devices above, beside, or below the panel.
 - Patch 1 front → Nevarro ether1 (WAN)
 - Patch 2 front → Nevarro ether3 (Beryl AP)
 - Patch 3 front → Nevarro ether2 (Pi-hole)
-- Patch 5 front → Nevarro ether5 (grogu AMT)
+- Patch 5 front → Nevarro ether4 (grogu AMT)
 - Patch 9 front → Nevarro SFP+ 1 (grogu 10GbE)
 
 **Direct SAS** (P700 external HBA → shelf, no switch):
@@ -159,7 +159,7 @@ On the back side, cables arrive from devices above, beside, or below the panel.
 | 2 | Cat6A RJ45 | Beryl AP (from top) | Nevarro ether3 |
 | 3 | Cat6A RJ45 | Pi-hole (rear shelf) | Nevarro ether2 |
 | 4 | Blank | — | — |
-| 5 | Cat6A RJ45 | grogu AMT (via cable run) | Nevarro ether5 |
+| 5 | Cat6A RJ45 | grogu AMT (via cable run) | Nevarro ether4 |
 | 6-8 | Blank | — | — |
 | 9 | LC Duplex OM4 | grogu 10GbE SFP+ (via cable run) | Nevarro SFP+ 1 |
 | 10-24 | Blank | — | — |
@@ -174,7 +174,7 @@ Gateway, NAT, firewall, DHCP, DNS forwarding. Managed via Terragrunt.
 | ether2 | Pi-hole (via patch 3) | access | 20 (LAN) | 192.168.0.53 |
 | ether3 | Beryl AP (via patch 2) | access | 20 (LAN) | DHCP |
 | ether4 | (available) | — | — | — |
-| ether5 | grogu AMT (via patch 5) | access | 1 (Mgmt) | 10.10.1.10 |
+| ether4 | grogu AMT (via patch 5) | access | 1 (Mgmt) | 10.10.1.10 |
 | ether6-8 | (available) | — | — | — |
 | SFP+ 1 | grogu 10GbE SFP+ (via patch 9) | trunk (all VLANs) | tagged | — |
 | SFP+ 2 | (available) | — | — | — |
