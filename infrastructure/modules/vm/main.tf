@@ -9,7 +9,6 @@ resource "proxmox_virtual_environment_vm" "vm" {
   name        = var.vm_name
   description = var.vm_description
   tags        = var.tags
-  pool_id     = var.pool_id
   node_name   = var.node_name
   vm_id       = var.vm_id
   on_boot     = var.start_on_boot

@@ -6,6 +6,7 @@
     cmd: midclt call api_key.query '[["name", "=", "{{ truenas_api_key_name }}"]]'
   register: key_check
   changed_when: false
+  check_mode: false
 
 - name: Set key exists fact
   ansible.builtin.set_fact:

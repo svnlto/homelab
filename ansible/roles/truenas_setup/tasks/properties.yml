@@ -91,38 +91,11 @@
   changed_when: false
   tags: [properties, fast, ml]
 
-- name: Set scratch/kubernetes/nfs-dynamic properties
+- name: Set bulk/downloads recordsize to 128K
   ansible.builtin.command:
     cmd: >
       midclt call pool.dataset.update
-      'scratch/kubernetes/nfs-dynamic'
-      '{"recordsize": "128K", "quota": 8796093022208}'
-  changed_when: false
-  tags: [properties, scratch, k8s]
-
-- name: Set scratch/downloads recordsize to 128K
-  ansible.builtin.command:
-    cmd: >
-      midclt call pool.dataset.update
-      'scratch/downloads'
+      'bulk/downloads'
       '{"recordsize": "128K"}'
   changed_when: false
-  tags: [properties, scratch, downloads]
-
-- name: Set scratch/ci-runners/cache recordsize to 128K
-  ansible.builtin.command:
-    cmd: >
-      midclt call pool.dataset.update
-      'scratch/ci-runners/cache'
-      '{"recordsize": "128K"}'
-  changed_when: false
-  tags: [properties, scratch, ci]
-
-- name: Set scratch/ml-datasets recordsize to 1M
-  ansible.builtin.command:
-    cmd: >
-      midclt call pool.dataset.update
-      'scratch/ml-datasets'
-      '{"recordsize": "1M"}'
-  changed_when: false
-  tags: [properties, scratch, ml]
+  tags: [properties, bulk, downloads]

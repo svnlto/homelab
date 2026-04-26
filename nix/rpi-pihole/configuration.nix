@@ -4,7 +4,7 @@
     ./pihole.nix
     ./tailscale.nix
     ./dumper.nix
-    ./meshcommander.nix
+    ./meshcentral.nix
   ];
 
   # Network configuration
@@ -25,7 +25,7 @@
         22 # SSH
         53 # DNS
         80 # Pi-hole web interface
-        3000 # MeshCommander Intel AMT console
+        8443 # MeshCentral Intel AMT console (HTTPS, KVM via WebRTC)
         9100 # Prometheus node exporter
       ];
       allowedUDPPorts = [

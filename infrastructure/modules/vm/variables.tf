@@ -27,12 +27,6 @@ variable "tags" {
   default     = []
 }
 
-variable "pool_id" {
-  description = "Proxmox resource pool ID (e.g., 'prod-compute')"
-  type        = string
-  default     = null
-}
-
 variable "start_on_boot" {
   description = "Start VM when Proxmox host boots"
   type        = bool
@@ -113,7 +107,7 @@ variable "boot_disk_size_gb" {
 variable "boot_disk_storage" {
   description = "Storage backend for boot disk"
   type        = string
-  default     = "local-lvm"
+  default     = "local-nvme-thin"
 }
 
 variable "additional_disks" {
@@ -125,7 +119,7 @@ variable "additional_disks" {
 variable "network_bridge" {
   description = "Network bridge for primary interface"
   type        = string
-  default     = "vmbr20"
+  default     = "vmbr0"
 }
 
 variable "vlan_id" {
@@ -149,7 +143,7 @@ variable "enable_dual_network" {
 variable "secondary_bridge" {
   description = "Network bridge for secondary interface"
   type        = string
-  default     = "vmbr20"
+  default     = "vmbr0"
 }
 
 variable "secondary_vlan_id" {

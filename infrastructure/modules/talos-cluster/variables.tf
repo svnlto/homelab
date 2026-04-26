@@ -67,7 +67,7 @@ variable "vip_ip" {
 variable "datastore_id" {
   description = "Proxmox datastore for VM disks"
   type        = string
-  default     = "local-lvm"
+  default     = "local-nvme-thin"
 }
 
 # Control Plane Nodes

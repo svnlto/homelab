@@ -1,79 +1,78 @@
-# ==============================================================================
 # Proxmox Network Configuration - {{ inventory_hostname }}
-# ==============================================================================
 # Managed by Ansible - DO NOT EDIT MANUALLY
 # Generated: {{ ansible_date_time.iso8601 }}
+#
+# Layout: vmbr0 carries untagged VLAN 20 (management); other VLANs use tagged
+# sub-interfaces of {{ primary_interface }}. MikroTik trunk port matches: VLAN 20
+# untagged, others tagged.
 
 auto lo
 iface lo inet loopback
 
-# ==============================================================================
-# Physical Interfaces
-# ==============================================================================
-# Intel X520 10GbE (primary interface: {{ primary_interface }})
-# All VLANs trunked over this interface
-
-# X520 10GbE - Primary (all VLANs trunked)
+# Physical 10GbE NIC — carries untagged VLAN 20 + tagged 10/30/31/32
 auto {{ primary_interface }}
 iface {{ primary_interface }} inet manual
     mtu {{ storage_mtu }}
 
-# ==============================================================================
-# VLAN 10 - Storage (10GbE, Jumbo Frames)
-# ==============================================================================
+# vmbr0: untagged path = VLAN 20 (Proxmox management + infra VMs)
+auto vmbr0
+iface vmbr0 inet static
+    address {{ management_ip }}/24
+    gateway {{ gateway_ip }}
+    bridge-ports {{ primary_interface }}
+    bridge-stp off
+    bridge-fd 2
+    mtu {{ storage_mtu }}
+
+# VLAN 10 — Storage (10GbE jumbo frames)
+auto {{ primary_interface }}.10
+iface {{ primary_interface }}.10 inet manual
+    mtu {{ storage_mtu }}
+
 auto vmbr10
 iface vmbr10 inet static
     address {{ storage_ip }}/24
     bridge-ports {{ primary_interface }}.10
     bridge-stp off
     bridge-fd 2
-    bridge-vlan-aware no
-    # No gateway - storage VLAN is L2 only for server-to-server
-    # MTU inherited from physical interface (9000)
+    mtu {{ storage_mtu }}
+    # No gateway - storage VLAN is L2 only
 
-# ==============================================================================
-# VLAN 20 - LAN (Proxmox Management + Infrastructure VMs)
-# ==============================================================================
-auto vmbr20
-iface vmbr20 inet static
-    address {{ management_ip }}/24
-    gateway {{ gateway_ip }}
-    dns-nameservers {{ dns_server | default('192.168.0.53') }}
-    bridge-ports {{ primary_interface }}.20
-    bridge-stp off
-    bridge-fd 2
-    bridge-vlan-aware no
-    # This is how you reach Proxmox web UI
+# VLAN 30 — K8s shared services
+auto {{ primary_interface }}.30
+iface {{ primary_interface }}.30 inet manual
 
-# ==============================================================================
-# VLAN 30 - K8s Shared Services Cluster
-# ==============================================================================
 auto vmbr30
 iface vmbr30 inet manual
     bridge-ports {{ primary_interface }}.30
     bridge-stp off
     bridge-fd 2
-    bridge-vlan-aware no
-    # No IP - VMs only
+    mtu {{ storage_mtu }}
 
-# ==============================================================================
-# VLAN 31 - K8s Apps Cluster
-# ==============================================================================
+# VLAN 31 — K8s production apps
+auto {{ primary_interface }}.31
+iface {{ primary_interface }}.31 inet manual
+
 auto vmbr31
 iface vmbr31 inet manual
     bridge-ports {{ primary_interface }}.31
     bridge-stp off
     bridge-fd 2
-    bridge-vlan-aware no
-    # No IP - VMs only
+    mtu {{ storage_mtu }}
 
-# ==============================================================================
-# VLAN 32 - K8s Test Cluster
-# ==============================================================================
+# VLAN 32 — K8s testing/staging
+auto {{ primary_interface }}.32
+iface {{ primary_interface }}.32 inet manual
+
 auto vmbr32
 iface vmbr32 inet manual
     bridge-ports {{ primary_interface }}.32
     bridge-stp off
     bridge-fd 2
-    bridge-vlan-aware no
-    # No IP - VMs only
+    mtu {{ storage_mtu }}
+
+iface nic0 inet manual
+iface nic1 inet manual
+iface nic3 inet manual
+
+source /etc/network/interfaces.d/*

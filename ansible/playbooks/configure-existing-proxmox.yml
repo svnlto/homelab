@@ -100,13 +100,6 @@
           tags: [ssh]
       tags: [ssh]
 
-    - name: Allow unsupported SFP+ modules
-      ansible.builtin.include_role:
-        name: proxmox_configure
-        tasks_from: ixgbe_unsupported_sfp.yml
-      when: configure_ixgbe_unsupported_sfp | default(false)
-      tags: [ixgbe]
-
     - name: Configure PCI resource mappings
       ansible.builtin.include_role:
         name: proxmox_configure
@@ -115,12 +108,6 @@
           tags: [passthrough, pci-mappings]
       when: pci_resource_mappings is defined and pci_resource_mappings | length > 0
       tags: [passthrough, pci-mappings]
-
-    - name: Configure Dell fan control
-      ansible.builtin.include_role:
-        name: proxmox_configure
-        tasks_from: dell_fan_control.yml
-      tags: [fan]
 
     - name: Configure Dell enclosure fan control
       ansible.builtin.include_role:

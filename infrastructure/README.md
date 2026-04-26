@@ -48,8 +48,7 @@ Region: eu-central-003 (Amsterdam datacenter)
 Endpoint: s3.eu-central-003.backblazeb2.com
 
 State files:
-├── prod/resource-pools/terraform.tfstate
-├── prod/iso-images/terraform.tfstate
+├── prod/images/terraform.tfstate
 ├── prod/storage/truenas-primary/terraform.tfstate
 ├── prod/storage/truenas-backup/terraform.tfstate
 └── prod/mikrotik/.../terraform.tfstate (when deployed)

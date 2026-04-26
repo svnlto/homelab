@@ -122,36 +122,6 @@
       tags: [ssh]
 
     # ==========================================================================
-    # DELL FAN CONTROL
-    # ==========================================================================
-
-    - name: Verify dell-fan-control service exists
-      ansible.builtin.stat:
-        path: /etc/systemd/system/dell-fan-control.service
-      register: fan_service
-      failed_when: not fan_service.stat.exists
-      tags: [fan]
-
-    - name: Verify dell-fan-control script exists
-      ansible.builtin.stat:
-        path: /usr/local/bin/dell-fan-control.sh
-      register: fan_script
-      failed_when: not fan_script.stat.exists
-      tags: [fan]
-
-    # ==========================================================================
-    # IXGBE SFP
-    # ==========================================================================
-
-    - name: Verify ixgbe unsupported SFP config exists
-      ansible.builtin.stat:
-        path: /etc/modprobe.d/ixgbe.conf
-      register: ixgbe_conf
-      failed_when: not ixgbe_conf.stat.exists
-      when: configure_ixgbe_unsupported_sfp | default(false)
-      tags: [ixgbe]
-
-    # ==========================================================================
     # DATACENTER CONFIG
     # ==========================================================================
 

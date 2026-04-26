@@ -40,12 +40,12 @@
   programs.bash.shellAliases = {
     dump-to-truenas = builtins.concatStringsSep " " [
       "bash -c 'P=$(${pkgs.jq}/bin/jq -r .remote_path /var/lib/dumper/config.json);"
-      "rsync -avP --partial --omit-dir-times --exclude=lost+found"
+      "rsync -rltvP --partial --omit-dir-times --no-perms --no-owner --no-group --exclude=lost+found"
       "/mnt/dump/\"$P\" truenas_admin@192.168.0.13:/mnt/fast/dump/\"$P\"'"
     ];
     dump-from-truenas = builtins.concatStringsSep " " [
       "bash -c 'P=$(${pkgs.jq}/bin/jq -r .remote_path /var/lib/dumper/config.json);"
-      "rsync -avP --partial --omit-dir-times --exclude=lost+found"
+      "rsync -rltvP --partial --omit-dir-times --no-perms --no-owner --no-group --exclude=lost+found"
       "truenas_admin@192.168.0.13:/mnt/fast/dump/\"$P\" /mnt/dump/\"$P\"'"
     ];
   };

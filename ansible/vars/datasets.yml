@@ -14,6 +14,11 @@ datasets:
     atime: "off"
     acltype: "nfsv4"
     aclmode: "passthrough"
+    children:
+      - books
+      - movies
+      - music
+      - tv
 
   bulk_photos:
     recordsize: "1M"
@@ -55,6 +60,26 @@ datasets:
     acltype: "nfsv4"
     aclmode: "passthrough"
 
+  bulk_downloads:
+    recordsize: "128K"
+    compression: "off"
+    sync: "disabled"
+    children:
+      - incomplete
+      - complete
+    acltype: "nfsv4"
+    aclmode: "passthrough"
+
+  bulk_aurral_downloads:
+    recordsize: "128K"
+    compression: "lz4"
+    sync: "disabled"
+
+  bulk_registry_cache:
+    recordsize: "128K"
+    compression: "lz4"
+    sync: "standard"
+
   # Fast pool
   fast_kubernetes_nfs_dynamic:
     recordsize: "16K"
@@ -82,51 +107,9 @@ datasets:
     sync: "standard"
     quota: "1T"
 
-  # Scratch pool
-  scratch_kubernetes_nfs_dynamic:
-    recordsize: "128K"
-    compression: "lz4"
-    sync: "disabled"
-    quota: "8T"
-
-  scratch_downloads:
-    recordsize: "128K"
-    compression: "off"
-    sync: "disabled"
-    children:
-      - incomplete
-      - complete
-    acltype: "nfsv4"
-    aclmode: "passthrough"
-
-  scratch_ci_runners:
-    recordsize: "128K"
-    compression: "lz4"
-    sync: "disabled"
-    children:
-      - cache
-      - artifacts
-
-  scratch_ml_datasets:
-    recordsize: "1M"
-    compression: "lz4"
-    sync: "disabled"
-
-  scratch_dump:
+  fast_dump:
     recordsize: "128K"
     compression: "lz4"
     sync: "standard"
     acltype: "nfsv4"
     aclmode: "passthrough"
-
-  scratch_immich_migration:
-    recordsize: "128K"
-    compression: "lz4"
-    sync: "standard"
-    acltype: "nfsv4"
-    aclmode: "passthrough"
-
-  scratch_temp:
-    recordsize: "128K"
-    compression: "lz4"
-    sync: "disabled"

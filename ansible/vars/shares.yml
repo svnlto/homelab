@@ -83,18 +83,7 @@ nfs_shares:
       - 10.0.3.0/24
     readonly: false
 
-  # Scratch pool
-
-  - path: /mnt/scratch/dump
-    comment: "Photo dump from remote machine via rsync (K8s CronJob)"
-    maproot_user: root
-    maproot_group: wheel
-    networks:
-      - 10.10.10.0/24
-      - 10.0.1.0/24
-    readonly: false
-
-  - path: /mnt/scratch/downloads
+  - path: /mnt/bulk/downloads
     comment: "Downloads pool (incomplete + complete, sync=disabled)"
     maproot_user: root
     maproot_group: wheel
@@ -102,16 +91,6 @@ nfs_shares:
       - 10.10.10.0/24
       - 192.168.0.0/24
       - 10.0.1.0/24
-    readonly: false
-
-  - path: /mnt/scratch/ci-runners
-    comment: "Forgejo CI runner cache and artifacts"
-    maproot_user: root
-    maproot_group: wheel
-    networks:
-      - 10.10.10.0/24
-      - 10.0.1.0/24
-      - 10.0.2.0/24
     readonly: false
 
 smb_shares:
@@ -134,11 +113,6 @@ smb_shares:
     path: /mnt/bulk/photos
     purpose: DEFAULT_SHARE
     comment: "Photo library"
-
-  - name: Scratch
-    path: /mnt/scratch
-    purpose: DEFAULT_SHARE
-    comment: "Scratch pool"
 
 storage_users:
   - name: media
@@ -183,16 +157,8 @@ acl_datasets:
     uid: 1002
     gid: 1000
     everyone_read: true
-  - path: /mnt/scratch
-    uid: 0
-    gid: 0
-    everyone_read: true
-  - path: /mnt/scratch/downloads
+  - path: /mnt/bulk/downloads
     uid: 1000
-    gid: 1000
-    everyone_read: true
-  - path: /mnt/scratch/dump
-    uid: 1003
     gid: 1000
     everyone_read: true
   - path: /mnt/bulk/backups/timemachine

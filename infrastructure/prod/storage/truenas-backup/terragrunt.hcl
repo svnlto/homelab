@@ -9,16 +9,15 @@ include "provider" {
 }
 
 dependencies {
-  paths = ["../../resource-pools", "../../images"]
+  paths = ["../../images"]
 }
 
 locals {
-  global_vars  = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
-  truenas      = local.global_vars.locals.truenas
-  ips          = local.global_vars.locals.infrastructure_ips
-  vlans        = local.global_vars.locals.vlans
-  environments = local.global_vars.locals.environments
-  proxmox      = local.global_vars.locals.proxmox
+  global_vars = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
+  truenas     = local.global_vars.locals.truenas
+  ips         = local.global_vars.locals.infrastructure_ips
+  vlans       = local.global_vars.locals.vlans
+  proxmox     = local.global_vars.locals.proxmox
 }
 
 inputs = {
@@ -39,15 +38,14 @@ inputs = {
   mac_address         = "BC:24:11:2E:D4:04"
   storage_bridge      = local.proxmox.bridges.storage
 
-  pool_id = local.environments.prod.pools.storage
-
   enable_network_init = true
   management_ip       = "${local.ips.truenas_backup_mgmt}/24"
   management_gateway  = local.vlans.lan.gateway
   storage_ip          = "${local.ips.truenas_backup_storage}/24"
   dns_server          = local.ips.pihole
 
-  hostpci_mappings = [
-    local.proxmox.resource_mappings.truenas_internal_hba,
-  ]
+  # TODO: assign HBA for backup pool drives (8×3TB).
+  # Bulk + fast HBAs are claimed by truenas-primary; backup needs its own
+  # controller. Empty until the right card/cabling is decided.
+  hostpci_mappings = []
 }

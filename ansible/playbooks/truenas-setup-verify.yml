@@ -51,22 +51,17 @@
       when: fast_pool_check.stdout != '[]'
       tags: [datasets, fast]
 
-    - name: Verify scratch pool datasets exist
+    - name: Verify bulk/downloads child datasets exist
       ansible.builtin.command:
         cmd: midclt call pool.dataset.query '[["id", "=", "{{ item }}"]]'
-      register: scratch_datasets
+      register: downloads_datasets
       changed_when: false
-      failed_when: "'[]' == scratch_datasets.stdout"
+      failed_when: "'[]' == downloads_datasets.stdout"
       loop:
-        - scratch/kubernetes/nfs-dynamic
-        - scratch/downloads
-        - scratch/ci-runners/cache
-        - scratch/ci-runners/artifacts
-        - scratch/ml-datasets
-        - scratch/temp
-        - scratch/immich-migration
-        - scratch/dump
-      tags: [datasets, scratch]
+        - bulk/downloads
+        - bulk/downloads/incomplete
+        - bulk/downloads/complete
+      tags: [datasets, downloads]
 
     # Dataset properties
     - name: Query bulk/media recordsize
@@ -244,10 +239,7 @@
         - bulk/media
         - bulk/photos
         - bulk/archive
-        - scratch
-        - scratch/downloads
-        - scratch/immich-migration
-        - scratch/dump
+        - bulk/downloads
       tags: [acls, datasets]
 
     - name: Verify Time Machine dataset has NFSv4 ACL type (restricted)
@@ -284,9 +276,7 @@
         - path: bulk/media
         - path: bulk/photos
         - path: bulk/archive
-        - path: scratch/downloads
-        - path: scratch/immich-migration
-        - path: scratch/dump
+        - path: bulk/downloads
       # bulk/backups/timemachine excluded — SMB manages its own ACLs
       loop_control:
         label: "{{ item.path }}"
@@ -335,7 +325,7 @@
           - item in (scrub_tasks.stdout | from_json | map(attribute='pool_name') | list)
         fail_msg: "Scrub task missing for pool: {{ item }}"
         quiet: true
-      loop: "{{ ['bulk', 'scratch'] + (['fast'] if fast_pool_check.stdout != '[]' else []) }}"
+      loop: "{{ ['bulk'] + (['fast'] if fast_pool_check.stdout != '[]' else []) }}"
       tags: [scrub]
 
     # Snapshot tasks

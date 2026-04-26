@@ -50,8 +50,6 @@ snapshot_policies:
     monthly: 6
     replicate: true
 
-  # Scratch pool — no snapshots, data is ephemeral by design
-
 # Replication tasks (truenas-primary -> truenas-backup, both on grogu)
 replication_tasks:
   - source: fast/kubernetes
@@ -106,7 +104,7 @@ offsite_backup_datasets:
     - fast/kubernetes/iscsi-zvols/*
     - bulk/media/*
     - bulk/photos/*
-    - scratch/*
+    - bulk/downloads/*
 
   retention:
     hourly: 24
