@@ -166,12 +166,6 @@ variable "truenas_nfs_fast_dataset" {
   default     = ""
 }
 
-variable "truenas_nfs_scratch_dataset" {
-  description = "TrueNAS ZFS dataset for NFS (scratch pool, temporary)"
-  type        = string
-  default     = ""
-}
-
 variable "truenas_iscsi_portal" {
   description = "TrueNAS iSCSI portal (IP:port)"
   type        = string

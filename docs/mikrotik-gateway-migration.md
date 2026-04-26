@@ -20,9 +20,8 @@ Internet -> O2 Homespot (192.168.8.1) -> Beryl AX (192.168.8.2, NAT/DHCP/WiFi)
 Internet -> O2 Homespot (192.168.8.1) -> MikroTik ether1 (192.168.8.2, WAN)
                                           MikroTik ether2 -> Pi-hole (VLAN 20)
                                           MikroTik ether3 -> Beryl AP (VLAN 20)
-                                          MikroTik ether4 -> din iDRAC (VLAN 1)
-                                          MikroTik ether5 -> grogu iDRAC (VLAN 1)
-                                          MikroTik sfp+1/2 -> grogu/din (trunks)
+                                          MikroTik ether4 -> grogu AMT (VLAN 1)
+                                          MikroTik sfp+1 -> grogu (trunk)
 ```
 
 - **MikroTik CRS310 (nevarro, 192.168.0.1)**: Main gateway, NAT, DHCP, firewall

@@ -33,7 +33,7 @@ module "k8s_cluster" {
   talos_image_id = "local:iso/talos-<schematic>-v1.12.2-nocloud.img"
 
   # Proxmox Storage
-  proxmox_node_storage = "din"
+  proxmox_node_storage = "grogu"
   datastore_id         = "local-zfs"
 
   # Network
@@ -54,7 +54,7 @@ module "k8s_cluster" {
       disk_size_gb = 32
     }
     cp2 = {
-      node_name    = "din"
+      node_name    = "grogu"
       vm_id        = 111
       hostname     = "talos-cp2"
       ip_address   = "10.0.1.12/24"

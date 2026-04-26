@@ -1,4 +1,4 @@
-# TrueNAS Backup (VMID 301) on grogu — HP H241 HBA passthrough for MD1200 shelf.
+# TrueNAS Backup (VMID 301) on grogu — shares internal HBA for backup pool drives.
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -48,6 +48,6 @@ inputs = {
   dns_server          = local.ips.pihole
 
   hostpci_mappings = [
-    local.proxmox.resource_mappings.truenas_h241,
+    local.proxmox.resource_mappings.truenas_internal_hba,
   ]
 }

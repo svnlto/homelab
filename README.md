@@ -7,22 +7,20 @@ Infrastructure as Code for a homelab running NixOS, Terragrunt, and Ansible.
 | Layer | Tool | What it manages |
 | ----- | ---- | --------------- |
 | **DNS** | NixOS + Pi-hole | Ad-blocking DNS on Raspberry Pi (Unbound recursive via Mullvad DoT) |
-| **Quorum** | NixOS | Corosync QDevice on Raspberry Pi for Proxmox cluster quorum |
 | **Media** | NixOS + Docker | Arr stack (Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd) on Proxmox VM |
 | **Dumper** | NixOS | Tailscale rsync automation (photo dump to TrueNAS) |
 | **VMs** | Terragrunt | Proxmox VM orchestration with environment separation (prod/dev) |
 | **Storage** | Ansible | TrueNAS SCALE datasets, shares, snapshots, replication |
 | **Network** | Terragrunt | MikroTik VLANs, firewall, DHCP, DNS forwarding |
-| **Backup** | Ansible | Restic to Backblaze B2, ZFS replication (din to grogu) |
+| **Backup** | Ansible | Restic to Backblaze B2, ZFS replication (primary to backup TrueNAS) |
 | **K8s** | Terragrunt | Talos cluster with ArgoCD GitOps |
 
 ## Hardware
 
 | Node | Role | Specs |
 | ---- | ---- | ----- |
-| **din** (R730xd) | Storage + compute | 24C/48T, ~54TB ZFS (3 pools), 10GbE |
-| **grogu** (R630) | Compute + backup | 36C/72T, Intel Arc A310, 10GbE |
-| **Raspberry Pi 4B** | DNS (Pi-hole) + QDevice | Dedicated, independent of Proxmox |
+| **grogu** (P700) | Single-node Proxmox host | 28C/56T, Intel Arc A310, ~54TB ZFS, 10GbE |
+| **Raspberry Pi 4B** | DNS (Pi-hole) | Dedicated, independent of Proxmox |
 | **MikroTik CRS310** | Switching | L3 core + 10G aggregation |
 
 **Design principle:** Raspberry Pi runs DNS independently of Proxmox so DNS stays operational during maintenance.
@@ -33,15 +31,11 @@ Infrastructure as Code for a homelab running NixOS, Terragrunt, and Ansible.
 | ---- | ------------- | ----------------- |
 | MikroTik (nevarro) | 192.168.0.1 | -- |
 | Pi-hole (RPi) | 192.168.0.53 | -- |
-| QDevice (RPi) | 192.168.0.54 | -- |
-| Arr Stack | 192.168.0.50 | 10.10.10.50 |
-| Dumper | 192.168.0.52 | 10.10.10.52 |
-| grogu (R630) | 192.168.0.10 | 10.10.10.10 |
-| din (R730xd) | 192.168.0.11 | 10.10.10.11 |
+| grogu (P700) | 192.168.0.10 | 10.10.10.10 |
 | TrueNAS Primary | 192.168.0.13 | 10.10.10.13 |
 | TrueNAS Backup | 192.168.0.14 | 10.10.10.14 |
 
-VLANs: 1 (management/iDRAC), 10 (storage/10GbE), 20 (LAN), 30-32 (K8s clusters).
+VLANs: 1 (management/AMT), 10 (storage/10GbE), 20 (LAN), 30-32 (K8s clusters).
 All IPs and VLANs defined in `infrastructure/globals.hcl`.
 
 ## Project Structure
@@ -61,7 +55,7 @@ infrastructure/              Terragrunt deployments
     resource-pools/          Proxmox pool management
     images/                  Centralized ISO downloads (TrueNAS, NixOS)
     compute/                 arr-stack, dumper VMs
-    storage/                 truenas-primary (din), truenas-backup (grogu)
+    storage/                 truenas-primary (VMID 300), truenas-backup (VMID 301)
     mikrotik/                base, dhcp, dns, firewall
   dev/
     resource-pools/
@@ -69,7 +63,7 @@ infrastructure/              Terragrunt deployments
     compute/                 test-cluster, argocd
 nix/                         NixOS configurations
   rpi-pihole/                Pi-hole + Unbound DNS (aarch64)
-  rpi-qdevice/               Corosync QDevice (aarch64)
+  rpi-qdevice/               (decommissioned) Corosync QDevice (aarch64)
   arr-stack/                 Media automation stack (x86_64)
   dumper/                    Tailscale rsync automation (x86_64)
   common/constants.nix       Shared config (versions, IPs)

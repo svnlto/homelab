@@ -13,28 +13,24 @@ You are managing homelab infrastructure spanning Proxmox VE, MikroTik, TrueNAS, 
 
 ### Proxmox Nodes
 
-| Node  | Role             | LAN IP       | Storage IP  | iDRAC IP   |
-|-------|------------------|--------------|-------------|------------|
-| din   | Primary (R730xd) | 192.168.0.11 | 10.10.10.11 | 10.10.1.11 |
-| grogu | Secondary (R630) | 192.168.0.10 | 10.10.10.10 | 10.10.1.10 |
+| Node  | Role               | LAN IP       | Storage IP  | AMT IP     |
+|-------|--------------------|--------------|-------------|------------|
+| grogu | Single node (P700) | 192.168.0.10 | 10.10.10.10 | 10.10.1.10 |
 
 ### VM Inventory
 
-| VMID    | Name            | Node      | Purpose                        |
-|---------|-----------------|-----------|--------------------------------|
-| 200     | arr-stack       | din       | NixOS media automation         |
-| 300     | truenas-primary | din       | TrueNAS SCALE (H330+LSI HBA)   |
-| 301     | truenas-backup  | grogu     | TrueNAS SCALE (H241 HBA)       |
-| 400-402 | shared-cp*      | din/grogu | Talos K8s shared control plane |
-| 410-411 | shared-worker*  | din/grogu | Talos K8s shared workers       |
-| 500-502 | apps-cp*        | grogu     | Talos K8s apps control plane   |
-| 510-511 | apps-worker*    | grogu     | Talos K8s apps workers         |
+| VMID    | Name            | Node  | Purpose                        |
+|---------|-----------------|-------|--------------------------------|
+| 300     | truenas-primary | grogu | TrueNAS SCALE (HBA passthrough)|
+| 301     | truenas-backup  | grogu | TrueNAS SCALE (8×3TB backup)   |
+| 400-402 | shared-cp*      | grogu | Talos K8s shared control plane |
+| 410-411 | shared-worker*  | grogu | Talos K8s shared workers       |
 
 ### Network (VLANs)
 
 | VLAN | Name       | Subnet         | Bridge | Purpose            |
 |------|------------|----------------|--------|--------------------|
-| 1    | management | 10.10.1.0/24   | —      | iDRAC, switches    |
+| 1    | management | 10.10.1.0/24   | —      | AMT, switches      |
 | 10   | storage    | 10.10.10.0/24  | vmbr10 | 10GbE NFS/iSCSI    |
 | 20   | lan        | 192.168.0.0/24 | vmbr20 | VMs, clients, WiFi |
 | 30   | k8s-shared | 10.0.1.0/24    | vmbr30 | K8s shared cluster |
@@ -103,7 +99,7 @@ prod/
     k8s-apps/                  # Talos apps cluster (use /talos instead)
     argocd/                    # ArgoCD on k8s-shared (Helm)
   storage/
-    truenas-primary/           # TrueNAS primary VM (din, HBA passthrough)
+    truenas-primary/           # TrueNAS primary VM (grogu, HBA passthrough)
     truenas-backup/            # TrueNAS backup VM (grogu, HBA passthrough)
   mikrotik/
     base/                      # Bridge, VLANs, ports, WAN, jumbo frames
@@ -132,7 +128,7 @@ dev/
   # Proxmox nodes
   just ansible-ping                              # Test connectivity
   just ansible-configure-all                     # Configure all nodes
-  just ansible-configure <host>                  # Configure specific node (din/grogu)
+  just ansible-configure <host>                  # Configure specific node (e.g., grogu)
 
   # Proxmox networking
   just proxmox-configure-networking              # Configure VLAN bridges
@@ -146,7 +142,7 @@ dev/
   just truenas-ping                              # Test connectivity
   just truenas-setup                             # Configure primary TrueNAS
   just truenas-backup-setup                      # Configure backup TrueNAS
-  just truenas-replication                       # ZFS replication din -> grogu
+  just truenas-replication                       # ZFS replication primary -> backup TrueNAS
 
   # Backups
   just restic-setup                              # Configure B2 cloud backups
@@ -169,11 +165,6 @@ dev/
   just nixos-flash-pihole /dev/rdiskX            # Flash to SD card
   just nixos-deploy-pihole                       # Deploy via SSH
 
-  # QDevice (Raspberry Pi, corosync-qnetd)
-  just nixos-build-qdevice                       # Build SD image
-  just nixos-flash-qdevice /dev/rdiskX           # Flash to SD card
-  just nixos-deploy-qdevice                      # Deploy via SSH
-
   # Arr Stack (Proxmox VM at 192.168.0.50)
   just nixos-install-arr-stack <ip>              # Initial install (nixos-anywhere)
   just nixos-update-arr-stack                    # Deploy via SSH
@@ -181,7 +172,7 @@ dev/
   ```
 
 - `/infra nixos-show <config>` — Show a NixOS configuration
-  Read files from `nix/<config>/` (e.g., `rpi-pihole`, `rpi-qdevice`, `arr-stack`).
+  Read files from `nix/<config>/` (e.g., `rpi-pihole`, `arr-stack`).
 
 ### Proxmox
 
@@ -192,7 +183,7 @@ dev/
   - `proxmox_get_vms` for all VMs
 
 - `/infra proxmox node <name>` — Show detailed node status
-  Use `proxmox_get_node_status` with node name (din or grogu).
+  Use `proxmox_get_node_status` with node name (grogu).
 
 - `/infra proxmox vm <vmid>` — Show VM status
   Use `proxmox_get_vm_status`. Determine node from the VM inventory above.

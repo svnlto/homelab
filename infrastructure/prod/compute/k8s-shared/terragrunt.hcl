@@ -38,8 +38,8 @@ inputs = {
 
   talos_version          = "v1.12.4"
   kubernetes_version     = "v1.35.0"
-  talos_image_id         = dependency.images.outputs.talos_image_id_din
-  talos_gpu_image_id     = dependency.images.outputs.talos_image_gpu_id_din
+  talos_image_id         = dependency.images.outputs.talos_image_id_grogu
+  talos_gpu_image_id     = dependency.images.outputs.talos_image_gpu_id_grogu
   talos_schematic_id     = local.talos.schematic_id
   talos_gpu_schematic_id = local.talos.gpu_schematic_id
 
@@ -53,7 +53,7 @@ inputs = {
 
   control_plane_nodes = {
     cp1 = {
-      node_name    = "din"
+      node_name    = "grogu"
       vm_id        = 400
       hostname     = "shared-cp1"
       ip_address   = "${local.k8s.control_start}/24"
@@ -62,7 +62,7 @@ inputs = {
       disk_size_gb = 15
     }
     cp2 = {
-      node_name    = "din"
+      node_name    = "grogu"
       vm_id        = 401
       hostname     = "shared-cp2"
       ip_address   = "10.0.1.12/24"
@@ -71,7 +71,7 @@ inputs = {
       disk_size_gb = 15
     }
     cp3 = {
-      node_name    = "din"
+      node_name    = "grogu"
       vm_id        = 402
       hostname     = "shared-cp3"
       ip_address   = "10.0.1.13/24"
@@ -83,7 +83,7 @@ inputs = {
 
   worker_nodes = {
     worker1 = {
-      node_name       = "din"
+      node_name       = "grogu"
       vm_id           = 410
       hostname        = "shared-worker1"
       ip_address      = "${local.k8s.worker_start}/24"
@@ -93,7 +93,7 @@ inputs = {
       gpu_passthrough = false
     }
     worker2 = {
-      node_name       = "din"
+      node_name       = "grogu"
       vm_id           = 411
       hostname        = "shared-worker2"
       ip_address      = "10.0.1.22/24"
@@ -110,9 +110,8 @@ inputs = {
   # Democratic-CSI — TrueNAS primary (storage VLAN)
   truenas_api_url             = "https://${local.ips.truenas_primary_storage}"
   truenas_api_key             = get_env("TF_VAR_truenas_api_key", "")
-  truenas_nfs_dataset         = "bulk/kubernetes/nfs-dynamic"
-  truenas_nfs_fast_dataset    = "fast/kubernetes/nfs-dynamic"
-  truenas_nfs_scratch_dataset = "scratch/kubernetes/nfs-dynamic"
+  truenas_nfs_dataset      = "bulk/kubernetes/nfs-dynamic"
+  truenas_nfs_fast_dataset = "fast/kubernetes/nfs-dynamic"
 
   # iSCSI — fast pool (10K SAS)
   truenas_iscsi_portal  = "10.10.10.13:3260"

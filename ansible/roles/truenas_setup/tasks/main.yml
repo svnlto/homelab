@@ -1,5 +1,5 @@
 ---
-# Configure TrueNAS SCALE primary storage (din).
+# Configure TrueNAS SCALE primary storage (VMID 300 on grogu).
 # Pools must be created manually via midclt before running this.
 
 - name: Check if fast pool exists

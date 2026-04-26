@@ -1,8 +1,8 @@
 ---
-# Configure ZFS replication from din (primary) to grogu (backup).
-# Requires SSH keys set up between the two TrueNAS instances.
+# Configure ZFS replication from truenas-primary to truenas-backup (both on grogu).
+# Requires SSH keys set up between the two TrueNAS VMs.
 
-- name: Setup ZFS replication from din to grogu
+- name: Setup ZFS replication from truenas-primary to truenas-backup
   hosts: truenas_primary
   become: true
 
@@ -15,7 +15,7 @@
       ansible.builtin.command:
         cmd: >
           midclt call keychaincredential.create '{
-            "name": "replication-to-grogu",
+            "name": "replication-to-truenas-backup",
             "type": "SSH_KEY_PAIR",
             "attributes": {}
           }'
@@ -42,7 +42,7 @@
     - name: Display public key
       ansible.builtin.debug:
         msg: |
-          Copy this public key to grogu backup TrueNAS (192.168.0.14)
+          Copy this public key to TrueNAS backup VM (192.168.0.14)
           and add it to /root/.ssh/authorized_keys:
 
           {{ (keypair_info.stdout | from_json)[0].attributes.public_key }}
@@ -64,7 +64,7 @@
       ansible.builtin.debug:
         msg: |
           1. Ensure backup TrueNAS (grogu) has 'backup' pool created
-          2. SSH to din (192.168.0.13) as root
+          2. SSH to primary TrueNAS (192.168.0.13) as root
           3. Get grogu's host key: ssh-keyscan -H 192.168.0.14
           4. Create SSH credential via midclt (see comments in playbook)
           5. Create replication tasks via midclt

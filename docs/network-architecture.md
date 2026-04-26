@@ -16,7 +16,7 @@ multiple Kubernetes clusters with proper network isolation.
 - **O2 Homespot**: WAN uplink (modem/bridge mode, 192.168.8.1)
 - **Beryl AX (sorgan)**: WiFi-only access point on ether3 (no routing/NAT)
 - **Pi-hole**: DNS server for network-wide ad blocking
-- **2x Dell PowerEdge servers**: grogu (R630), din (R730xd) with 10GbE X520 NICs
+- **Lenovo ThinkStation P700 (grogu)**: Single Proxmox node with 10GbE SFP+ NIC, Intel AMT for out-of-band management
 
 MikroTik is the main gateway at 192.168.0.1, performing NAT to the O2 Homespot WAN uplink.
 Servers connect directly to router SFP+ ports with all VLANs trunked.
@@ -27,8 +27,8 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
 
 - Dedicated 10GbE aggregation switch for storage fabric
 - Reduced router CPU load (L2 switching offloaded to aggregation switch)
-- Additional SFP+ ports for expansion (GPU server, future nodes)
-- No configuration changes needed (just cable migration)
+- Additional SFP+ ports for expansion (future nodes, GPU server)
+- No configuration changes needed on Proxmox (just cable migration)
 
 ## Network Topology
 
@@ -54,19 +54,18 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
         │  8x 2.5GbE      2x 10G SFP+    │
         │  ┌─┬─┬─┬─┬───┐  ┌──────┬────┐  │
         │  │1│2│3│4│5-8│  │ SFP+1│SFP+2│ │
-        └──┴─┴─┴─┴─┴───┴──┴──┬───┴─┬───┴─┘
-           │ │ │ │           │     │
-         WAN Pi Beryl iDRAC grogu  din
-              hole AP        X520   X520
-                           10GbE  10GbE
-                         (trunk)(trunk)
+        └──┴─┴─┴─┴─┴───┴──┴──┬───┴────┴─┘
+           │ │ │ │           │
+         WAN Pi Beryl AMT  grogu
+              hole AP        10GbE SFP+
+                           (trunk)
                          All VLANs: 1,10,20,30,31,32
-                             │     │
-                        ┌────┴─────┴────┐
-                        │ R630      R730xd │
-                        │ grogu     din    │
-                        │ Proxmox   Proxmox│
-                        └──────────────────┘
+                               │
+                        ┌──────┴───────┐
+                        │ P700 (grogu) │
+                        │   Proxmox VE │
+                        │  (single node│
+                        └──────────────┘
 ```
 
 ### Future (Two-Switch Design)
@@ -90,11 +89,11 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
                   │   nevarro-switch            │
                   │   L2 10GbE Aggregation      │
                   │   4x SFP+ + 5x SFP + 1GbE   │
-                  └─┬──────┬──────┬────────────┘
-                    │      │      │
-                  grogu   din   future
-                  X520    X520   GPU
-                   10G     10G   10G
+                  └─┬──────┬────────────┘
+                    │      │
+                  grogu  future
+                  P700    GPU
+                   10G    10G
 ```
 
 **Migration benefits:**
@@ -108,7 +107,7 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
 
 | VLAN | Name               | Subnet          | Gateway      | Purpose                           |
 | ---- | ------------------ | --------------- | ------------ | --------------------------------- |
-| 1    | Management         | 10.10.1.0/24    | 10.10.1.1    | iDRAC, switch management          |
+| 1    | Management         | 10.10.1.0/24    | 10.10.1.1    | AMT (Intel), switch management    |
 | 10   | Storage            | 10.10.10.0/24   | 10.10.10.1   | 10GbE NFS/iSCSI, TrueNAS          |
 | 20   | LAN                | 192.168.0.0/24  | 192.168.0.1  | VMs, clients, WiFi (via Beryl AP) |
 | 30   | K8s Shared Services| 10.0.1.0/24     | 10.0.1.1     | Infrastructure cluster            |
@@ -145,8 +144,7 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
 | --------------- | --------------- | --------------------- |
 | 10.10.1.1       | Router gateway  | CRS310-8G+2S+IN       |
 | 10.10.1.2       | Switch (future) | CRS310-1G-5S-4S+IN    |
-| 10.10.1.10      | grogu iDRAC     | R630 management       |
-| 10.10.1.11      | din iDRAC       | R730xd management     |
+| 10.10.1.10      | grogu AMT       | P700 out-of-band mgmt |
 | 10.10.1.12-50   | Reserved        | Future servers        |
 | 10.10.1.100-200 | DHCP pool       | Auto-assigned devices |
 
@@ -156,10 +154,10 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
 | -------------- | -------------------- | --------------------------- |
 | 10.10.10.1     | Storage gateway      | Router L3 interface         |
 | 10.10.10.2     | Switch mgmt (future) | Aggregation switch          |
-| 10.10.10.10    | grogu storage        | Proxmox X520 interface      |
-| 10.10.10.11    | din storage          | Proxmox X520 interface      |
+| 10.10.10.10    | grogu storage        | Proxmox P700 SFP+ interface |
+| 10.10.10.11    | Reserved (future)    | Future node                 |
 | 10.10.10.12    | Reserved (future GPU)| Future GPU server           |
-| 10.10.10.13    | TrueNAS Primary      | VM on din (192.168.0.13)    |
+| 10.10.10.13    | TrueNAS Primary      | VM on grogu (192.168.0.13)  |
 | 10.10.10.14    | TrueNAS Backup       | VM on grogu (192.168.0.14)  |
 | 10.10.10.20-50 | Reserved VMs         | Future storage services     |
 
@@ -168,8 +166,7 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
 | Range             | Purpose          | Notes                            |
 | ----------------- | ---------------- | -------------------------------- |
 | 192.168.0.1       | Gateway/Router   | MikroTik CRS310 (nevarro)        |
-| 192.168.0.10      | grogu Proxmox    | Management interface             |
-| 192.168.0.11      | din Proxmox      | Management interface             |
+| 192.168.0.10      | grogu Proxmox    | Management interface (P700)      |
 | 192.168.0.13      | TrueNAS Primary  | NAS management UI                |
 | 192.168.0.14      | TrueNAS Backup   | Backup NAS UI                    |
 | 192.168.0.53      | Pi-hole          | DNS/DHCP server                  |
@@ -260,11 +257,10 @@ This simplifies DNS (all services -> one IP) and TLS management (centralized cer
 | ether1   | WAN (standalone) | —                | O2 Homespot uplink | Cat6A         |
 | ether2   | access           | 20               | Pi-hole            | Cat6A         |
 | ether3   | access           | 20               | Beryl AX WiFi AP   | Cat6A         |
-| ether4   | access           | 1                | din iDRAC          | Cat6A         |
-| ether5   | access           | 1                | grogu iDRAC        | Cat6A         |
-| ether6-8 | access           | 20               | Future devices     | -             |
-| sfp+1    | trunk            | 1,10,20,30,31,32 | grogu X520         | 10G DAC/Fiber |
-| sfp+2    | trunk            | 1,10,20,30,31,32 | din X520           | 10G DAC/Fiber |
+| ether4   | access           | 1                | grogu AMT (P700)   | Cat6A         |
+| ether5-8 | access           | —                | (available)        | -             |
+| sfp+1    | trunk            | 1,10,20,30,31,32 | grogu 10GbE SFP+   | 10G DAC/Fiber |
+| sfp+2    | available        | —                | (available)        | -             |
 
 **Future (With Aggregation Switch):**
 
@@ -305,22 +301,21 @@ add name=bridge1 vlan-filtering=yes
 /interface bridge port
 add bridge=bridge1 interface=ether2 pvid=20
 add bridge=bridge1 interface=ether3 pvid=20
-add bridge=bridge1 interface=ether4 pvid=1
+add bridge=bridge1 interface=ether4 pvid=20
 add bridge=bridge1 interface=ether5 pvid=1
 add bridge=bridge1 interface=ether6 pvid=20
 add bridge=bridge1 interface=ether7 pvid=20
 add bridge=bridge1 interface=ether8 pvid=20
 add bridge=bridge1 interface=sfp-sfpplus1 frame-types=admit-only-vlan-tagged
-add bridge=bridge1 interface=sfp-sfpplus2 frame-types=admit-only-vlan-tagged
 
 # VLAN membership
 /interface bridge vlan
-add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 untagged=ether4,ether5 vlan-ids=1
-add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 vlan-ids=10
-add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 untagged=ether2,ether3,ether6,ether7,ether8 vlan-ids=20
-add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 vlan-ids=30
-add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 vlan-ids=31
-add bridge=bridge1 tagged=bridge1,sfp-sfpplus1,sfp-sfpplus2 vlan-ids=32
+add bridge=bridge1 tagged=bridge1,sfp-sfpplus1 untagged=ether5 vlan-ids=1
+add bridge=bridge1 tagged=bridge1,sfp-sfpplus1 vlan-ids=10
+add bridge=bridge1 tagged=bridge1,sfp-sfpplus1 untagged=ether2,ether3,ether4,ether6,ether7,ether8 vlan-ids=20
+add bridge=bridge1 tagged=bridge1,sfp-sfpplus1 vlan-ids=30
+add bridge=bridge1 tagged=bridge1,sfp-sfpplus1 vlan-ids=31
+add bridge=bridge1 tagged=bridge1,sfp-sfpplus1 vlan-ids=32
 ```
 
 ## Inter-VLAN Routing & Firewall Rules
@@ -434,15 +429,15 @@ add chain=forward action=drop comment="Drop all other inter-VLAN (default deny)"
 
 ### Network Interfaces
 
-**Physical interfaces on both grogu and din (Proxmox biosdevname):**
+**Physical interfaces on grogu (Lenovo P700, Proxmox biosdevname):**
 
-- `nic0`, `nic1`: Intel I350 1GbE (unused, no cable)
-- `nic2`: Intel X520 10GbE SFP+ Port 1 (primary, all VLANs trunked)
-- `nic3`: Intel X520 10GbE SFP+ Port 2 (spare/future LACP)
+- `nic0`: onboard 1GbE (unused, no cable)
+- `nic1`: Intel 10GbE SFP+ NIC Port 1 (primary, all VLANs trunked)
+- `nic2`: Intel 10GbE SFP+ NIC Port 2 (spare/future LACP)
 
-### Bridge Configuration (Proxmox Hosts)
+### Bridge Configuration (Proxmox Host)
 
-Edit `/etc/network/interfaces` on **both grogu and din**:
+Edit `/etc/network/interfaces` on **grogu**:
 
 ```bash
 # ============================================================================
@@ -453,15 +448,15 @@ auto lo
 iface lo inet loopback
 
 # Physical interface (all VLANs trunked)
-auto nic2
-iface nic2 inet manual
+auto nic1
+iface nic1 inet manual
     mtu 9000
 
 # VLAN 10 - Storage (10GbE, Jumbo Frames)
 auto vmbr10
 iface vmbr10 inet static
-    address 10.10.10.10/24    # grogu: .10, din: .11
-    bridge-ports nic2.10
+    address 10.10.10.10/24    # grogu P700
+    bridge-ports nic1.10
     bridge-stp off
     bridge-fd 0
     mtu 9000
@@ -470,9 +465,9 @@ iface vmbr10 inet static
 # VLAN 20 - LAN (Proxmox Management + Traditional VMs)
 auto vmbr20
 iface vmbr20 inet static
-    address 192.168.0.10/24   # grogu: .10, din: .11
+    address 192.168.0.10/24   # grogu P700
     gateway 192.168.0.1       # Internet via MikroTik
-    bridge-ports nic2.20
+    bridge-ports nic1.20
     bridge-stp off
     bridge-fd 0
     # This is how you reach Proxmox web UI
@@ -480,7 +475,7 @@ iface vmbr20 inet static
 # VLAN 30 - K8s Shared Services
 auto vmbr30
 iface vmbr30 inet manual
-    bridge-ports nic2.30
+    bridge-ports nic1.30
     bridge-stp off
     bridge-fd 0
     bridge-vlan-aware no
@@ -488,7 +483,7 @@ iface vmbr30 inet manual
 # VLAN 31 - K8s Apps
 auto vmbr31
 iface vmbr31 inet manual
-    bridge-ports nic2.31
+    bridge-ports nic1.31
     bridge-stp off
     bridge-fd 0
     bridge-vlan-aware no
@@ -496,7 +491,7 @@ iface vmbr31 inet manual
 # VLAN 32 - K8s Test
 auto vmbr32
 iface vmbr32 inet manual
-    bridge-ports nic2.32
+    bridge-ports nic1.32
     bridge-stp off
     bridge-fd 0
     bridge-vlan-aware no
@@ -518,7 +513,7 @@ ifreload -a
 
 ```hcl
 resource "proxmox_virtual_environment_container" "arr_stack" {
-  node_name = "din"
+  node_name = "grogu"
   vm_id     = 200
 
   network_interface {
@@ -581,10 +576,10 @@ K8s Apps Jellyfin pod (10.0.2.x)
 Jellyfin pod (10.0.2.50, VLAN 31)
     ↓ K8s network
 Worker node vmbr31
-    ↓ nic2.31 (VLAN 31 tagged)
+    ↓ nic1.31 (VLAN 31 tagged)
 Router SFP+1 (inter-VLAN routing: VLAN 31 → VLAN 10)
-    ↓ nic2.10 on din (VLAN 10 tagged)
-din vmbr10 (10.10.10.11)
+    ↓ nic1.10 on grogu (VLAN 10 tagged)
+grogu vmbr10 (10.10.10.10)
     ↓ VM bridge
 TrueNAS VM (10.10.10.13)
     ↓ NFS export
@@ -599,10 +594,10 @@ ZFS dataset: bulk/media
 Prometheus pod (10.0.1.25, VLAN 30)
     ↓
 Worker node vmbr30
-    ↓ nic2.30 (VLAN 30 tagged)
+    ↓ nic1.30 (VLAN 30 tagged)
 Router (inter-VLAN routing: VLAN 30 → VLAN 10)
-    ↓ nic2.10 on din (VLAN 10 tagged)
-din vmbr10
+    ↓ nic1.10 on grogu (VLAN 10 tagged)
+grogu vmbr10
     ↓
 TrueNAS VM (10.10.10.13:9273)
 ```
@@ -615,9 +610,9 @@ TrueNAS VM (10.10.10.13:9273)
 App pod (10.0.2.45, VLAN 31)
     ↓ Push metrics
 Worker node vmbr31
-    ↓ nic2.31 (VLAN 31 tagged)
+    ↓ nic1.31 (VLAN 31 tagged)
 Router (inter-VLAN routing: VLAN 31 → VLAN 30)
-    ↓ nic2.30 on grogu (VLAN 30 tagged)
+    ↓ nic1.30 on grogu (VLAN 30 tagged)
 grogu vmbr30
     ↓
 Prometheus pod (10.0.1.25, VLAN 30)
@@ -642,37 +637,16 @@ Internet
 
 ### 6. Storage Replication (TrueNAS Primary → Backup)
 
-**Current (Single Router):**
+Both TrueNAS VMs run on the same Proxmox host (grogu P700). Replication traffic stays
+local on the VLAN 10 bridge — no router hop needed.
 
 ```text
-TrueNAS Primary (din) - 10.10.10.13
-    ↓ VLAN 10
-din nic2.10
-    ↓ SFP+2 trunk
-Router (L2 switching, same VLAN)
-    ↓ SFP+1 trunk
-grogu nic2.10
-    ↓ VLAN 10
-TrueNAS Backup (grogu) - 10.10.10.14
+TrueNAS Primary (grogu VM) - 10.10.10.13
+    ↓ VLAN 10 (vmbr10, L2 local on grogu)
+TrueNAS Backup (grogu VM)  - 10.10.10.14
 ```
 
-**All traffic goes through router, but stays on VLAN 10 (L2 switching, not routed).**
-
-**Future (With Aggregation Switch):**
-
-```text
-TrueNAS Primary (din) - 10.10.10.13
-    ↓ SAS to MD1220
-din nic2.10
-    ↓ SFP+2 trunk (VLAN 10)
-Aggregation Switch (L2 switching)
-    ↓ SFP+1 trunk (VLAN 10)
-grogu nic2.10
-    ↓ SAS to MD1200
-TrueNAS Backup (grogu) - 10.10.10.14
-```
-
-**Traffic stays on aggregation switch (pure L2), router not involved.**
+**Traffic is purely local (same Proxmox host, same bridge), no physical switch involved.**
 
 ## DNS Configuration (Pi-hole)
 
@@ -682,13 +656,11 @@ TrueNAS Backup (grogu) - 10.10.10.14
 # Management VLAN (10.10.1.0/24)
 10.10.1.1       router.mgmt.home.arpa nevarro-router.mgmt.home.arpa
 10.10.1.2       switch.mgmt.home.arpa nevarro-switch.mgmt.home.arpa
-10.10.1.10      grogu-idrac.mgmt.home.arpa
-10.10.1.11      din-idrac.mgmt.home.arpa
+10.10.1.10      grogu-amt.mgmt.home.arpa
 
 # Storage VLAN (10.10.10.0/24)
 10.10.10.1      router-stor.home.arpa
 10.10.10.10     grogu-stor.home.arpa
-10.10.10.11     din-stor.home.arpa
 10.10.10.13     truenas-primary.stor.home.arpa nas-stor.home.arpa
 10.10.10.14     truenas-backup.stor.home.arpa backup-stor.home.arpa
 
@@ -696,7 +668,6 @@ TrueNAS Backup (grogu) - 10.10.10.14
 192.168.0.1     router.home.arpa nevarro-router.home.arpa
 # Beryl AX (sorgan) - WiFi AP, gets IP via DHCP
 192.168.0.10    grogu.home.arpa
-192.168.0.11    din.home.arpa
 192.168.0.13    truenas.home.arpa nas.home.arpa
 192.168.0.14    backup.home.arpa
 192.168.0.53    pihole.home.arpa dns.home.arpa
@@ -740,9 +711,8 @@ TrueNAS Backup (grogu) - 10.10.10.14
 
 1. Configure CRS310-1G-5S-4S+IN as L2 switch
 2. Connect router SFP+1 → switch SFP+4 (10G DAC trunk)
-3. Move grogu nic2 → switch SFP+1
-4. Move din nic2 → switch SFP+2
-5. Test connectivity (no config changes needed on Proxmox/VMs)
+3. Move grogu 10GbE SFP+ → switch SFP+1
+4. Test connectivity (no config changes needed on Proxmox/VMs)
 
 **Benefits:**
 
@@ -884,9 +854,8 @@ nslookup google.com 192.168.0.53  # DNS via Pi-hole
 | ------- | --- | ---- | ----- |
 | **Infrastructure** | | | |
 | Proxmox grogu | <https://192.168.0.10:8006> | 20 | Admin |
-| Proxmox din | <https://192.168.0.11:8006> | 20 | Admin |
-| grogu iDRAC | <https://10.10.1.10> | 1 | Out-of-band mgmt |
-| din iDRAC | <https://10.10.1.11> | 1 | Out-of-band mgmt |
+| grogu AMT | <https://10.10.1.10> | 1 | Out-of-band mgmt (Intel AMT) |
+| MeshCommander | <http://192.168.0.53:3000> | 20 | AMT web UI (on Pi-hole) |
 | Router | <https://192.168.0.1> | 20 | Winbox/WebFig |
 | TrueNAS Primary | <https://192.168.0.13> | 20 | NAS management |
 | TrueNAS Backup | <https://192.168.0.14> | 20 | Backup NAS |
@@ -956,10 +925,10 @@ set api-ssl disabled=yes
 **Router:** CRS310-8G+2S+IN (nevarro-router) - 192.168.0.1 / 10.10.1.1
 **Gateway:** O2 Homespot - 192.168.8.1 (WAN)
 **DNS:** Pi-hole - 192.168.0.53
-**Proxmox:** grogu (192.168.0.10), din (192.168.0.11)
+**Proxmox:** grogu P700 (192.168.0.10), AMT: 10.10.1.10 (MeshCommander: <http://192.168.0.53:3000>)
 **TrueNAS:** Primary (192.168.0.13), Backup (192.168.0.14)
 
-**VLANs:** 1 (mgmt), 10 (storage), 20 (LAN), 30 (K8s shared), 31 (K8s apps), 32 (K8s test)
+**VLANs:** 1 (mgmt/AMT), 10 (storage), 20 (LAN), 30 (K8s shared), 31 (K8s apps), 32 (K8s test)
 
 **Current Production:** arr-stack LXC (192.168.0.200) on VLAN 20
 **Future Production:** K8s Apps cluster on VLAN 31 (migration target)

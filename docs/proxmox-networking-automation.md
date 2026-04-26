@@ -25,16 +25,10 @@ We use **Terraform to trigger Ansible playbooks** that configure Proxmox host ne
 
 ### Host IPs
 
-**grogu (R630):**
+**grogu (P700):**
 
 - vmbr10: 10.10.10.10/24 (storage)
 - vmbr20: 192.168.0.10/24 (management, gateway 192.168.0.1)
-- vmbr30-32: No IP (VMs only)
-
-**din (R730xd):**
-
-- vmbr10: 10.10.10.11/24 (storage)
-- vmbr20: 192.168.0.11/24 (management, gateway 192.168.0.1)
 - vmbr30-32: No IP (VMs only)
 
 ## Usage
@@ -206,9 +200,8 @@ If this fails, the playbook aborts and doesn't apply changes.
 **Mitigation:**
 
 1. Always test with `--check` first
-2. Use iDRAC for out-of-band access if needed:
-   - grogu iDRAC: <https://10.10.1.10>
-   - din iDRAC: <https://10.10.1.11>
+2. Use Intel AMT (MeshCommander) for out-of-band access if needed:
+   - grogu AMT: <http://192.168.0.53:3000> (via MeshCommander on Pi-hole)
 3. Configuration is applied via `ifreload`, not `systemctl restart`, which is safer
 
 ### Rollback
@@ -223,10 +216,10 @@ cp /etc/network/interfaces.backup.* /etc/network/interfaces
 ifreload -a
 ```
 
-**Via iDRAC (if SSH is broken):**
+**Via Intel AMT (if SSH is broken):**
 
-1. Open iDRAC console: <https://10.10.1.10> or .11
-2. Launch virtual console
+1. Open MeshCommander: <http://192.168.0.53:3000>
+2. Launch remote desktop for grogu
 3. Log in as root
 4. Restore backup and reboot:
 
@@ -325,9 +318,9 @@ After configuring Proxmox networking:
 
 **Cause:** IP address or gateway misconfigured.
 
-**Fix via iDRAC:**
+**Fix via Intel AMT:**
 
-1. Access iDRAC console: <https://10.10.1.10>
+1. Open MeshCommander: <http://192.168.0.53:3000>
 2. Launch virtual console
 3. Log in as root
 4. Check interfaces:

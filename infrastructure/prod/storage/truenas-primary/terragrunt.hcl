@@ -1,4 +1,4 @@
-# TrueNAS Primary (VMID 300) on din — H330 Mini (internal) + H200E (MD1220 shelf) passthrough.
+# TrueNAS Primary (VMID 300) on grogu — internal HBA (bulk) + external HBA (fast/MD1220) passthrough.
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -48,7 +48,7 @@ inputs = {
   dns_server          = local.ips.pihole
 
   hostpci_mappings = [
-    local.proxmox.resource_mappings.truenas_h330,
-    local.proxmox.resource_mappings.truenas_lsi,
+    local.proxmox.resource_mappings.truenas_internal_hba,
+    local.proxmox.resource_mappings.truenas_external_hba,
   ]
 }

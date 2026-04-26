@@ -79,8 +79,8 @@
       ansible.builtin.debug:
         msg: |
           SSH setup for replication:
-          1. On din: ssh-keygen -t ed25519 -f /root/.ssh/id_replication -N ""
-          2. Copy to grogu: ssh-copy-id -i /root/.ssh/id_replication.pub root@192.168.0.14
+          1. On primary TrueNAS (192.168.0.13): ssh-keygen -t ed25519 -f /root/.ssh/id_replication -N ""
+          2. Copy to backup TrueNAS: ssh-copy-id -i /root/.ssh/id_replication.pub root@192.168.0.14
           3. Test: ssh -i /root/.ssh/id_replication root@192.168.0.14
           4. Configure replication: just truenas-replication
       tags: [ssh, info]
@@ -210,6 +210,6 @@
           {% endfor %}
 
           Next steps:
-          1. Configure SSH key on din (primary TrueNAS)
+          1. Configure SSH key on primary TrueNAS (192.168.0.13)
           2. Run: just truenas-replication
       tags: [verify, info]

@@ -93,8 +93,8 @@ ansible-playbook ansible/playbooks/configure-proxmox-networking.yml
 
 **Bridges configured:**
 
-- `vmbr10` - VLAN 10 (Storage) - grogu: 10.10.10.10, din: 10.10.10.11
-- `vmbr20` - VLAN 20 (LAN/Management) - grogu: 192.168.0.10, din: 192.168.0.11
+- `vmbr10` - VLAN 10 (Storage) - grogu: 10.10.10.10
+- `vmbr20` - VLAN 20 (LAN/Management) - grogu: 192.168.0.10
 - `vmbr30` - VLAN 30 (K8s Shared Services) - No IP (VMs only)
 - `vmbr31` - VLAN 31 (K8s Apps) - No IP (VMs only)
 - `vmbr32` - VLAN 32 (K8s Test) - No IP (VMs only)

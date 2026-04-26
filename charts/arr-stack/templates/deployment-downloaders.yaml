@@ -21,24 +21,6 @@ spec:
       annotations:
         {{- include "arr-stack.annotations" . | nindent 8 }}
     spec:
-      initContainers:
-        - name: init-scratch
-          image: {{ .Values.downloaders.initScratch.image }}
-          resources:
-            {{- toYaml .Values.downloaders.initScratch.resources | nindent 12 }}
-          command:
-            - sh
-            - -c
-            - |
-              mkdir -p /data-scratch/incomplete
-              mkdir -p /data-scratch/complete/torrents
-              mkdir -p /data-scratch/complete/usenet
-              mkdir -p /data-scratch/complete/soulseek
-              chown -R 1000:1000 /data-scratch/incomplete /data-scratch/complete
-          volumeMounts:
-            - name: scratch
-              mountPath: /data-scratch
-
       containers:
         - name: gluetun
           image: {{ .Values.downloaders.gluetun.image }}
@@ -159,8 +141,6 @@ spec:
           volumeMounts:
             - name: slskd-config
               mountPath: /app
-            - name: scratch
-              mountPath: /data-scratch
             - name: media-music
               mountPath: /data/media/music
               readOnly: true
