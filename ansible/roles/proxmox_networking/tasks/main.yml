@@ -43,6 +43,6 @@
     msg: |
       Network configuration has been updated.
       Changes will be applied via 'ifreload -a' if config test passes.
-      If SSH connection is lost, use Intel AMT (MeshCommander at http://192.168.0.53:3000) to troubleshoot.
+      If SSH connection is lost, use Intel AMT (MeshCentral at https://192.168.0.53:8443) to troubleshoot.
   tags:
     - config

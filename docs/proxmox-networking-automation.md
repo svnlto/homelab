@@ -200,8 +200,8 @@ If this fails, the playbook aborts and doesn't apply changes.
 **Mitigation:**
 
 1. Always test with `--check` first
-2. Use Intel AMT (MeshCommander) for out-of-band access if needed:
-   - grogu AMT: <http://192.168.0.53:3000> (via MeshCommander on Pi-hole)
+2. Use Intel AMT (MeshCentral) for out-of-band access if needed:
+   - grogu AMT: <https://192.168.0.53:8443> (via MeshCentral on Pi-hole)
 3. Configuration is applied via `ifreload`, not `systemctl restart`, which is safer
 
 ### Rollback
@@ -218,7 +218,7 @@ ifreload -a
 
 **Via Intel AMT (if SSH is broken):**
 
-1. Open MeshCommander: <http://192.168.0.53:3000>
+1. Open MeshCentral: <https://192.168.0.53:8443>
 2. Launch remote desktop for grogu
 3. Log in as root
 4. Restore backup and reboot:
@@ -320,7 +320,7 @@ After configuring Proxmox networking:
 
 **Fix via Intel AMT:**
 
-1. Open MeshCommander: <http://192.168.0.53:3000>
+1. Open MeshCentral: <https://192.168.0.53:8443>
 2. Launch virtual console
 3. Log in as root
 4. Check interfaces:

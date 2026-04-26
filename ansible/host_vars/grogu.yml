@@ -1,40 +1,48 @@
 ---
 # Host-specific configuration for grogu (Lenovo ThinkStation P700)
 
-# PCIe passthrough: Intel Arc A310 + internal HBA (bulk pool) + external HBA (fast pool via MD1220)
-# PCI device IDs are placeholders — update after Proxmox install via lspci -nn
-pci_device_ids: "8086:56a6,XXXX:XXXX,XXXX:XXXX"
+# PCIe passthrough: Intel Arc A310 + LSI 9300-16i (2× SAS3008 chips) + Dell H310 (MD1220)
+pci_device_ids: "8086:56a6,1000:0097,1000:0072"
 vfio_blacklist_drivers: [i915, xe]
 
 # Intel Arc FLR workaround — clears reset_method before VM start to prevent QEMU hang
-# PCI address is a placeholder — update after Proxmox install via lspci -s
-intel_arc_pci_addresses: ["0000:XX:00.0"]
+intel_arc_pci_addresses: ["0000:06:00.0"]
 intel_arc_vm_ids: [411]
 
 # Proxmox PCI resource mappings (Datacenter > Resource Mappings)
-# All values are placeholders — update after Proxmox install via lspci -nn
+# The 9300-16i is one physical card with two SAS3008 chips (each = a separate PCI
+# device). Both chips must be passed through to TrueNAS for all internal drives.
 pci_resource_mappings:
   arc-a310:
     description: "Intel Arc A310 for Jellyfin transcoding"
     device_id: "8086:56a6"
-    iommu_group: TBD
-    path: "0000:XX:00.0"
-    subsystem_id: "XXXX:XXXX"
-  truenas-internal-hba:
-    description: "Internal HBA for TrueNAS Primary bulk pool (6x drives in P700 bays)"
-    device_id: "XXXX:XXXX"
-    iommu_group: TBD
-    path: "0000:XX:00.0"
-    subsystem_id: "XXXX:XXXX"
-  truenas-external-hba:
-    description: "External HBA for TrueNAS Primary fast pool (MD1220 shelf)"
-    device_id: "XXXX:XXXX"
-    iommu_group: TBD
-    path: "0000:XX:00.0"
-    subsystem_id: "XXXX:XXXX"
+    iommu_group: 64
+    path: "0000:06:00.0"
+    subsystem_id: "172f:4019"
+  truenas-bulk-hba-a:
+    description: "LSI 9300-16i (chip A) — TrueNAS Primary bulk pool (8TB drives)"
+    device_id: "1000:0097"
+    iommu_group: 7
+    path: "0000:83:00.0"
+    subsystem_id: "1000:3130"
+  truenas-bulk-hba-b:
+    description: "LSI 9300-16i (chip B) — TrueNAS Primary bulk pool (8TB drives)"
+    device_id: "1000:0097"
+    iommu_group: 8
+    path: "0000:85:00.0"
+    subsystem_id: "1000:3130"
+  truenas-fast-hba:
+    description: "Dell H310 (SAS2008) — TrueNAS Primary fast pool (MD1220, 900GB SAS)"
+    device_id: "1000:0072"
+    iommu_group: 9
+    path: "0000:86:00.0"
+    subsystem_id: "1028:1f78"
 
-# 10GbE SFP+ NIC — update interface name after Proxmox install via ip link
-primary_interface: "FIXME"
+# 10GbE SFP+ NIC (Mellanox ConnectX, MAC 00:fd:45:4b:a8:b8) — uses mlx5/mlx4 driver,
+# no ixgbe SFP+ allow-unsupported flag needed.
+primary_interface: "nic2"
 
-# Allow non-Intel SFP+ transceivers (if using ixgbe driver; skip if using i40e/ice)
-configure_ixgbe_unsupported_sfp: false
+# MD1220 enclosure fan control (MN657 cable to EMM debug serial port → motherboard COM1).
+# Default fan speed of 5% silences the shelf; restore 25% on service stop.
+enclosure_serial_device: /dev/ttyS0
+enclosure_fan_speed: 5

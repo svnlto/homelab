@@ -52,13 +52,11 @@ infrastructure/              Terragrunt deployments
     argocd/                  ArgoCD deployment
   prod/
     provider.hcl             Proxmox provider + generated credential variables
-    resource-pools/          Proxmox pool management
     images/                  Centralized ISO downloads (TrueNAS, NixOS)
     compute/                 arr-stack, dumper VMs
     storage/                 truenas-primary (VMID 300), truenas-backup (VMID 301)
     mikrotik/                base, dhcp, dns, firewall
   dev/
-    resource-pools/
     images/
     compute/                 test-cluster, argocd
 nix/                         NixOS configurations

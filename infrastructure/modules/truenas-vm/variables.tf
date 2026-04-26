@@ -27,12 +27,6 @@ variable "tags" {
   default     = ["truenas", "storage", "nas"]
 }
 
-variable "pool_id" {
-  description = "Proxmox resource pool ID (e.g., 'prod-storage', 'dev-compute')"
-  type        = string
-  default     = null
-}
-
 variable "truenas_version" {
   description = "TrueNAS version (for description)"
   type        = string
@@ -64,13 +58,13 @@ variable "boot_disk_size_gb" {
 variable "boot_disk_storage" {
   description = "Storage backend for boot disk"
   type        = string
-  default     = "local-lvm"
+  default     = "local-nvme-thin"
 }
 
 variable "network_bridge" {
   description = "Network bridge for VM interfaces"
   type        = string
-  default     = "vmbr20"
+  default     = "vmbr0"
 }
 
 variable "mac_address" {

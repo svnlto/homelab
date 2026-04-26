@@ -2,7 +2,11 @@
 - name: test network config
   command: ifreload -a -s
   register: network_test
-  failed_when: network_test.rc != 0
+  # ifreload -s exits 1 on benign warnings (e.g. "bridge inherits mtu") — treat
+  # only real syntax errors / fatal lines as failure.
+  failed_when: >
+    network_test.rc != 0 and
+    (network_test.stderr | regex_findall('^(?:error|fatal):', multiline=True) | length > 0)
   changed_when: false
 
 - name: apply network config

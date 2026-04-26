@@ -46,11 +46,6 @@ variable "mac_address" {
   type = string
 }
 
-variable "pool_id" {
-  type    = string
-  default = null
-}
-
 variable "enable_dual_network" {
   type = bool
 }

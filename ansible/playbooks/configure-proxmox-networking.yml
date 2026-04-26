@@ -1,6 +1,6 @@
 ---
 # Configure VLAN bridges on Proxmox hosts.
-# If SSH connection is lost, use Intel AMT (MeshCommander) to troubleshoot.
+# If SSH connection is lost, use Intel AMT (MeshCentral at https://192.168.0.53:8443) to troubleshoot.
 
 - name: Configure Proxmox Network Bridges
   hosts: proxmox
@@ -24,8 +24,6 @@
             - Management (vmbr20): {{ management_ip }}/24
             - Storage (vmbr10): {{ storage_ip }}/24
             - K8s Shared (vmbr30): No IP (VMs only)
-            - K8s Apps (vmbr31): No IP (VMs only)
-            - K8s Test (vmbr32): No IP (VMs only)
             - Gateway: {{ gateway_ip }}
 
     - name: Apply proxmox_networking role

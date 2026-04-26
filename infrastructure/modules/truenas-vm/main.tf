@@ -4,7 +4,6 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   name        = var.vm_name
   description = "${var.vm_description} - TrueNAS SCALE ${var.truenas_version}"
   tags        = var.tags
-  pool_id     = var.pool_id
   node_name   = var.node_name
   vm_id       = var.vm_id
   on_boot     = true

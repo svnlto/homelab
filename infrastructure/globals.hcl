@@ -4,18 +4,10 @@ locals {
     prod = {
       name        = "production"
       description = "Production environment"
-      pools = {
-        storage = "prod-storage"
-        compute = "prod-compute"
-      }
     }
     dev = {
       name        = "development"
       description = "Development environment"
-      pools = {
-        storage = "dev-storage"
-        compute = "dev-compute"
-      }
     }
   }
   vlans = {
@@ -174,9 +166,12 @@ locals {
 
     api_url = "https://192.168.0.10:8006/api2/json"
 
+    # Proxmox network bridges (managed by Ansible — see proxmox_networking role).
+    # vmbr0 = untagged VLAN 20 (mgmt). vmbr10/30/31/32 are tagged sub-bridges on the
+    # 10GbE trunk for storage and K8s clusters.
     bridges = {
       storage    = "vmbr10"
-      lan        = "vmbr20"
+      lan        = "vmbr0"
       k8s_shared = "vmbr30"
       k8s_apps   = "vmbr31"
       k8s_test   = "vmbr32"
@@ -185,11 +180,12 @@ locals {
     template_vm_id = 9000
 
     # Proxmox PCI resource mappings (managed by Ansible, see host_vars/)
-    # PCI IDs are placeholders — update after Proxmox install via lspci -nn
+    # 9300-16i is one physical card with 2× SAS3008 chips — both must be passed through.
     resource_mappings = {
-      truenas_internal_hba = "truenas-internal-hba"
-      truenas_external_hba = "truenas-external-hba"
-      arc_a310             = "arc-a310"
+      truenas_bulk_hba_a = "truenas-bulk-hba-a"
+      truenas_bulk_hba_b = "truenas-bulk-hba-b"
+      truenas_fast_hba   = "truenas-fast-hba"
+      arc_a310           = "arc-a310"
     }
   }
 

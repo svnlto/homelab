@@ -49,7 +49,7 @@ inputs = {
   ntp_servers     = [local.ips.pihole]
   vip_ip          = local.k8s.vip
 
-  datastore_id = "local-lvm"
+  datastore_id = "local-nvme-thin"
 
   control_plane_nodes = {
     cp1 = {

@@ -98,7 +98,6 @@ infrastructure/
 │   └── argocd/              # Argo CD deployment
 ├── prod/
 │   ├── provider.hcl         # Proxmox provider (credentials from 1Password)
-│   ├── resource-pools/      # Proxmox pool management
 │   ├── images/              # Centralized ISO downloads (TrueNAS, NixOS)
 │   ├── compute/k8s-shared/  # Talos K8s cluster (VLAN 30)
 │   ├── compute/argocd/      # ArgoCD on k8s-shared
@@ -109,7 +108,7 @@ infrastructure/
 │   ├── tailscale/acl/       # Tailscale ACL policy (Mullvad exit node, K8s tags)
 │   └── dns/cloudns/         # ClouDNS wildcard records (*.shared.h.svenlito.com)
 └── dev/
-    └── resource-pools/
+    └── images/
 ```
 
 **Terragrunt module pattern** — every deployment has:

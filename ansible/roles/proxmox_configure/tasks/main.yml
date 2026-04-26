@@ -21,13 +21,6 @@
   ansible.builtin.include_tasks: pcie_passthrough.yml
   when: configure_pcie_passthrough | default(false)
 
-- name: Allow unsupported SFP+ modules
-  ansible.builtin.include_tasks: ixgbe_unsupported_sfp.yml
-  when: configure_ixgbe_unsupported_sfp | default(false)
-
-- name: Configure Dell fan control
-  ansible.builtin.include_tasks: dell_fan_control.yml
-
 - name: Configure Dell enclosure fan control
   ansible.builtin.include_tasks: dell_enclosure_fan_control.yml
 

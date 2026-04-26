@@ -9,16 +9,15 @@ include "provider" {
 }
 
 dependencies {
-  paths = ["../../resource-pools", "../../images"]
+  paths = ["../../images"]
 }
 
 locals {
-  global_vars  = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
-  truenas      = local.global_vars.locals.truenas
-  ips          = local.global_vars.locals.infrastructure_ips
-  vlans        = local.global_vars.locals.vlans
-  environments = local.global_vars.locals.environments
-  proxmox      = local.global_vars.locals.proxmox
+  global_vars = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
+  truenas     = local.global_vars.locals.truenas
+  ips         = local.global_vars.locals.infrastructure_ips
+  vlans       = local.global_vars.locals.vlans
+  proxmox     = local.global_vars.locals.proxmox
 }
 
 inputs = {
@@ -39,8 +38,6 @@ inputs = {
   mac_address         = "BC:24:11:2E:D4:03"
   storage_bridge      = local.proxmox.bridges.storage
 
-  pool_id = local.environments.prod.pools.storage
-
   enable_network_init = true
   management_ip       = "${local.ips.truenas_primary_mgmt}/24"
   management_gateway  = local.vlans.lan.gateway
@@ -48,7 +45,8 @@ inputs = {
   dns_server          = local.ips.pihole
 
   hostpci_mappings = [
-    local.proxmox.resource_mappings.truenas_internal_hba,
-    local.proxmox.resource_mappings.truenas_external_hba,
+    local.proxmox.resource_mappings.truenas_bulk_hba_a,
+    local.proxmox.resource_mappings.truenas_bulk_hba_b,
+    local.proxmox.resource_mappings.truenas_fast_hba,
   ]
 }

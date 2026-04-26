@@ -855,7 +855,7 @@ nslookup google.com 192.168.0.53  # DNS via Pi-hole
 | **Infrastructure** | | | |
 | Proxmox grogu | <https://192.168.0.10:8006> | 20 | Admin |
 | grogu AMT | <https://10.10.1.10> | 1 | Out-of-band mgmt (Intel AMT) |
-| MeshCommander | <http://192.168.0.53:3000> | 20 | AMT web UI (on Pi-hole) |
+| MeshCentral | <https://192.168.0.53:8443> | 20 | AMT web UI (on Pi-hole, KVM via WebRTC) |
 | Router | <https://192.168.0.1> | 20 | Winbox/WebFig |
 | TrueNAS Primary | <https://192.168.0.13> | 20 | NAS management |
 | TrueNAS Backup | <https://192.168.0.14> | 20 | Backup NAS |
@@ -925,7 +925,7 @@ set api-ssl disabled=yes
 **Router:** CRS310-8G+2S+IN (nevarro-router) - 192.168.0.1 / 10.10.1.1
 **Gateway:** O2 Homespot - 192.168.8.1 (WAN)
 **DNS:** Pi-hole - 192.168.0.53
-**Proxmox:** grogu P700 (192.168.0.10), AMT: 10.10.1.10 (MeshCommander: <http://192.168.0.53:3000>)
+**Proxmox:** grogu P700 (192.168.0.10), AMT: 10.10.1.10 (MeshCentral: <https://192.168.0.53:8443>)
 **TrueNAS:** Primary (192.168.0.13), Backup (192.168.0.14)
 
 **VLANs:** 1 (mgmt/AMT), 10 (storage), 20 (LAN), 30 (K8s shared), 31 (K8s apps), 32 (K8s test)
