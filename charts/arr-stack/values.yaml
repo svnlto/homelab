@@ -4,7 +4,7 @@ global:
 
 timezone: Europe/Berlin
 
-# -- NFS storage for media and scratch
+# -- NFS storage for media
 nfs:
   server: ""
   mountOptions:
@@ -121,15 +121,6 @@ downloaders:
       limits:
         cpu: 500m
         memory: 512Mi
-  initScratch:
-    image: busybox:1.37@sha256:b3255e7dfbcd10cb367af0d409747d511aeb66dfac98cf30e97e87e4207dd76f
-    resources:
-      requests:
-        cpu: 10m
-        memory: 32Mi
-      limits:
-        cpu: 100m
-        memory: 64Mi
 
 # -- Arr apps (radarr, sonarr, lidarr, bazarr)
 radarr:

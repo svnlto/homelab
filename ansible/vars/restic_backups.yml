@@ -10,7 +10,7 @@ restic_backup_jobs:
           - /mnt/fast/kubernetes
           - /mnt/fast/vms
           - /mnt/fast/ml-models
-        tags: [critical, hourly, din]
+        tags: [critical, hourly, grogu]
         excludes: ["*.log", "*.tmp", "lost+found", ".cache"]
         retention:
           hourly: 48
@@ -26,7 +26,7 @@ restic_backup_jobs:
     backup_sets:
       - paths:
           - /mnt/bulk/photos
-        tags: [photos, daily, din]
+        tags: [photos, daily, grogu]
         excludes: ["*.tmp", "lost+found", ".DS_Store", "Thumbs.db"]
         retention:
           daily: 30
@@ -41,7 +41,7 @@ restic_backup_jobs:
     backup_sets:
       - paths:
           - /mnt/bulk/music
-        tags: [music, daily, din]
+        tags: [music, daily, grogu]
         excludes: ["*.log", "lost+found"]
         retention:
           daily: 7
@@ -49,7 +49,7 @@ restic_backup_jobs:
           monthly: 6
       - paths:
           - /mnt/bulk/backups/proxmox
-        tags: [proxmox, daily, din]
+        tags: [proxmox, daily, grogu]
         excludes: ["*.tmp"]
         retention:
           daily: 7
@@ -62,7 +62,7 @@ restic_backup_jobs:
     backup_sets:
       - paths:
           - /mnt/bulk/backups/timemachine
-        tags: [timemachine, weekly, din]
+        tags: [timemachine, weekly, grogu]
         excludes: ["*.tmp", ".Spotlight-*", ".fseventsd"]
         condition: "[ -d /mnt/bulk/backups/timemachine ]"
         retention:
@@ -71,7 +71,7 @@ restic_backup_jobs:
           yearly: 2
       - paths:
           - /mnt/bulk/archive
-        tags: [archive, weekly, din]
+        tags: [archive, weekly, grogu]
         excludes: ["*.tmp"]
         condition: "[ -d /mnt/bulk/archive ]"
         retention:

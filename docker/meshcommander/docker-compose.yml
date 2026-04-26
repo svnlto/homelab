@@ -1,0 +1,17 @@
+---
+# MeshCommander — Intel AMT web management console.
+# Runs on rpi-pihole so AMT access is independent of Proxmox.
+# Access: http://192.168.0.53:3000
+services:
+  meshcommander:
+    image: ghcr.io/nicholasgasior/meshcommander:latest
+    container_name: meshcommander
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge

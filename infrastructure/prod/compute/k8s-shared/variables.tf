@@ -126,11 +126,6 @@ variable "truenas_nfs_fast_dataset" {
   default = ""
 }
 
-variable "truenas_nfs_scratch_dataset" {
-  type    = string
-  default = ""
-}
-
 variable "metallb_ip_range" {
   type    = string
   default = ""

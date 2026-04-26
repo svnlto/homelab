@@ -13,10 +13,9 @@ You are managing Talos Linux Kubernetes clusters in a homelab environment runnin
 
 | Cluster | VLAN | Subnet      | VIP (API) | CP Nodes    | Workers     | Hosts       |
 |---------|------|-------------|-----------|-------------|-------------|-------------|
-| shared  | 30   | 10.0.1.0/24 | 10.0.1.10 | 3 (400-402) | 2 (410-411) | din + grogu |
-| apps    | 31   | 10.0.2.0/24 | 10.0.2.10 | 3 (500-502) | 2 (510-511) | grogu only  |
+| shared  | 30   | 10.0.1.0/24 | 10.0.1.10 | 3 (400-402) | 2 (410-411) | grogu       |
 
-Worker2 in the shared cluster (VMID 411, grogu) has Intel Arc A310 GPU passthrough.
+Worker2 in the shared cluster (VMID 411) has Intel Arc A310 GPU passthrough.
 
 ## Config File Paths
 

@@ -7,7 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Homelab infrastructure automation using NixOS, Terragrunt, and Ansible:
 
 - **Raspberry Pi**: Immutable Pi-hole DNS server (NixOS, Mullvad DNS-over-TLS via Unbound)
-- **Proxmox VE**: Terragrunt-based VM deployment with environment separation (prod/dev)
+- **Proxmox VE**: Single-node Lenovo ThinkStation P700 ("grogu"), managed via Terragrunt;
+  Intel AMT for out-of-band management (MeshCommander at <http://192.168.0.53:3000>)
 - **TrueNAS SCALE**: ZFS-based network storage (Terragrunt VMs + Ansible configuration)
 - **MikroTik**: Router configuration via Terragrunt (VLANs, firewall, DHCP)
 - **Kubernetes**: Talos K8s cluster on Proxmox with ArgoCD GitOps (arr-stack, Jellyfin, etc.)
@@ -34,11 +35,6 @@ just nixos-flash-pihole /dev/rdiskX      # Flash to SD card
 just nixos-deploy-pihole                 # Deploy config via SSH (rsync + nixos-rebuild)
 just nixos-flake-update-pihole           # Update flake lock in VM
 
-# QDevice (Raspberry Pi) - corosync-qnetd for Proxmox quorum
-just nixos-build-qdevice                 # Build SD image
-just nixos-flash-qdevice /dev/rdiskX     # Flash to SD card
-just nixos-deploy-qdevice               # Deploy config via SSH
-
 # Arr Stack (legacy NixOS config, now runs on K8s)
 just nixos-install-arr-stack <ip>        # Initial install via nixos-anywhere
 just nixos-update-arr-stack              # Deploy config via SSH
@@ -62,10 +58,9 @@ just tg-graph                            # Show dependency graph
 ```bash
 just ansible-ping                        # Test Proxmox connectivity
 just ansible-configure-all               # Configure all Proxmox nodes
-just ansible-configure din               # Configure specific node
 just truenas-setup                       # Configure primary TrueNAS
 just truenas-backup-setup                # Configure backup TrueNAS
-just truenas-replication                 # Setup ZFS replication (din -> grogu)
+just truenas-replication                 # Setup ZFS replication (primary -> backup, both on grogu)
 just restic-setup                        # Configure B2 backups
 just proxmox-configure-networking        # Configure Proxmox VLAN bridges
 just proxmox-configure-networking-check  # Dry-run networking configuration
@@ -108,7 +103,7 @@ infrastructure/
 │   ├── compute/k8s-shared/  # Talos K8s cluster (VLAN 30)
 │   ├── compute/argocd/      # ArgoCD on k8s-shared
 │   ├── storage/
-│   │   ├── truenas-primary/ # VMID 300 on din (5×8TB + 21×900GB)
+│   │   ├── truenas-primary/ # VMID 300 on grogu (bulk drives in P700 bays + 21×900GB MD1220)
 │   │   └── truenas-backup/  # VMID 301 on grogu (8×3TB)
 │   ├── mikrotik/            # Router: base, dhcp, firewall, dns, qos
 │   ├── tailscale/acl/       # Tailscale ACL policy (Mullvad exit node, K8s tags)
@@ -132,10 +127,11 @@ infrastructure/
 
 ```text
 nix/
-├── flake.nix                # Three configs: rpi-pihole, rpi-qdevice (aarch64), arr-stack (x86_64)
+├── flake.nix                # Two active configs: rpi-pihole (aarch64), arr-stack (x86_64)
+│                            #   rpi-qdevice decommissioned (QDevice Pi removed)
 ├── common/constants.nix     # Shared values (IPs, image versions)
 ├── rpi-pihole/              # Pi-hole: pihole.nix, configuration.nix, tailscale.nix
-├── rpi-qdevice/             # QDevice: qdevice.nix, configuration.nix (corosync-qnetd)
+├── rpi-qdevice/             # (decommissioned) QDevice: corosync-qnetd
 └── arr-stack/               # Media stack: arr.nix, configuration.nix, disk-config.nix
 ```
 
@@ -189,18 +185,16 @@ SSH uses 1Password SSH agent. See `docs/1password-setup.md` for setup.
 
 ## Network
 
-| Host              | LAN (VLAN 20)  | Storage (VLAN 10) | WAN              |
-| ----------------- | -------------- | ----------------- | ---------------- |
-| MikroTik (nevarro)| 192.168.0.1    | —                 | 192.168.8.2      |
-| Pi-hole (RPi)     | 192.168.0.53   | —                 | —                |
-| QDevice (RPi)     | 192.168.0.54   | —                 | —                |
-| grogu (r630)      | 192.168.0.10   | 10.10.10.10       | —                |
-| din (r730xd)      | 192.168.0.11   | 10.10.10.11       | —                |
-| TrueNAS Primary   | 192.168.0.13   | 10.10.10.13       | —                |
-| TrueNAS Backup    | 192.168.0.14   | 10.10.10.14       | —                |
-| O2 Homespot       | —              | —                 | 192.168.8.1 (GW) |
+| Host               | LAN (VLAN 20) | Storage (VLAN 10) | Mgmt (VLAN 1)    |
+| ------------------ | ------------- | ----------------- | ---------------- |
+| MikroTik (nevarro) | 192.168.0.1   | 10.10.10.1        | 10.10.1.2        |
+| Pi-hole (RPi)      | 192.168.0.53  | —                 | —                |
+| grogu (P700)       | 192.168.0.10  | 10.10.10.10       | 10.10.1.10 (AMT) |
+| TrueNAS Primary    | 192.168.0.13  | 10.10.10.13       | —                |
+| TrueNAS Backup     | 192.168.0.14  | 10.10.10.14       | —                |
+| O2 Homespot        | —             | —                 | 192.168.8.1 (GW) |
 
-VLANs: 1 (management/iDRAC), 10 (storage/10GbE), 20 (LAN), 30-32 (K8s clusters).
+VLANs: 1 (management/AMT), 10 (storage/10GbE), 20 (LAN), 30-32 (K8s clusters).
 
 All IPs and VLANs defined in `infrastructure/globals.hcl`. Proxmox host networking configured via Ansible, not Terragrunt.
 
