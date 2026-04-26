@@ -13,7 +13,7 @@ spec:
   capacity:
     storage: {{ .capacity }}
   accessModes:
-    - ReadWriteOnce
+    - {{ .accessMode | default "ReadWriteOnce" }}
   persistentVolumeReclaimPolicy: Retain
   storageClassName: {{ $.Values.csi.storageClassName }}
   claimRef:

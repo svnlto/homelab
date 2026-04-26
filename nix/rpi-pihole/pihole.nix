@@ -131,7 +131,7 @@
   # dnsmasq address= is a wildcard — matches the domain and all subdomains
   environment.etc."pihole/05-homelab.conf".text = ''
     # K8s shared cluster: *.shared.h.svenlito.com → Traefik MetalLB IP
-    address=/shared.h.svenlito.com/10.0.1.100
+    address=/shared.h.svenlito.com/10.0.1.101
     # Future clusters (uncomment when deployed):
     # address=/test.h.svenlito.com/10.0.3.x
   '';
