@@ -26,7 +26,7 @@ module "nixos_iso" {
   proxmox_filename = var.nixos_filename
 }
 
-module "talos_image_din" {
+module "talos_image_grogu" {
   source = "../../modules/proxmox-image"
 
   download_url       = "https://factory.talos.dev/image/${var.talos_schematic_id}/${var.talos_version}/nocloud-amd64.raw.xz"
@@ -39,7 +39,7 @@ module "talos_image_din" {
   proxmox_filename = "talos-${var.talos_schematic_id}-${var.talos_version}-nocloud.img"
 }
 
-module "talos_image_gpu_din" {
+module "talos_image_gpu_grogu" {
   source = "../../modules/proxmox-image"
 
   download_url       = "https://factory.talos.dev/image/${var.talos_gpu_schematic_id}/${var.talos_version}/nocloud-amd64.raw.xz"
