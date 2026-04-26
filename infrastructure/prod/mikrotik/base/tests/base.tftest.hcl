@@ -59,16 +59,13 @@ variables {
   }
 
   access_ports = {
-    pihole      = { interface = "ether2", pvid = 20, comment = "Pi-hole DNS" }
-    beryl_ap    = { interface = "ether3", pvid = 20, comment = "Beryl AX WiFi AP" }
-    din_idrac   = { interface = "ether4", pvid = 1, comment = "din iDRAC" }
-    grogu_idrac = { interface = "ether5", pvid = 1, comment = "grogu iDRAC" }
-    qdevice     = { interface = "ether6", pvid = 20, comment = "Proxmox QDevice" }
+    pihole    = { interface = "ether2", pvid = 20, comment = "Pi-hole DNS" }
+    beryl_ap  = { interface = "ether3", pvid = 20, comment = "Beryl AX WiFi AP" }
+    grogu_amt = { interface = "ether5", pvid = 1, comment = "grogu AMT" }
   }
 
   trunk_ports = {
     sfp_plus1 = { interface = "sfp-sfpplus1", comment = "grogu 10GbE" }
-    sfp_plus2 = { interface = "sfp-sfpplus2", comment = "din 10GbE" }
   }
 
   allowed_management_subnets = "192.168.0.0/24,10.10.1.0/24"
@@ -191,16 +188,16 @@ run "validate_vlan_membership" {
 run "validate_ports" {
   command = plan
 
-  # Should have 5 access ports (pihole, beryl_ap, din_idrac, grogu_idrac, qdevice)
+  # Should have 3 access ports (pihole, beryl_ap, grogu_amt)
   assert {
-    condition     = length(routeros_interface_bridge_port.access_ports) == 5
-    error_message = "Expected 5 access ports (pihole, beryl_ap, din_idrac, grogu_idrac, qdevice)"
+    condition     = length(routeros_interface_bridge_port.access_ports) == 3
+    error_message = "Expected 3 access ports (pihole, beryl_ap, grogu_amt)"
   }
 
-  # Should have 2 trunk ports (sfp+1, sfp+2)
+  # Should have 1 trunk port (sfp+1)
   assert {
-    condition     = length(routeros_interface_bridge_port.trunk_ports) == 2
-    error_message = "Expected 2 trunk ports (sfp_plus1, sfp_plus2)"
+    condition     = length(routeros_interface_bridge_port.trunk_ports) == 1
+    error_message = "Expected 1 trunk port (sfp_plus1)"
   }
 }
 
@@ -267,8 +264,8 @@ run "validate_jumbo_frames" {
   command = plan
 
   assert {
-    condition     = length(routeros_interface_ethernet.sfp_mtu) == 2
-    error_message = "Both SFP+ trunk ports should have MTU configured"
+    condition     = length(routeros_interface_ethernet.sfp_mtu) == 1
+    error_message = "SFP+ trunk port should have MTU configured"
   }
 }
 
