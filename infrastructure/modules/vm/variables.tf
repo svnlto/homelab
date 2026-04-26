@@ -1,7 +1,7 @@
 # Generic VM module variables.
 
 variable "node_name" {
-  description = "Proxmox node name (e.g., 'din', 'grogu')"
+  description = "Proxmox node name (e.g., 'grogu')"
   type        = string
 }
 

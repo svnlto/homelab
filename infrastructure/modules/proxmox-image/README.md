@@ -30,7 +30,7 @@ module "talos_image" {
   image_name          = "talos-v1.12.2-nocloud-amd64.raw"
   compression_format  = "xz"
 
-  proxmox_node        = "din"
+  proxmox_node        = "grogu"
   datastore_id        = "local"
   content_type        = "iso"
   proxmox_filename    = "talos-v1.12.2-nocloud.img"
@@ -47,7 +47,7 @@ module "truenas_iso" {
   image_name          = "TrueNAS-SCALE-Dragonfish-24.10.0.iso"
   compression_format  = "none"
 
-  proxmox_node        = "din"
+  proxmox_node        = "grogu"
   datastore_id        = "local"
   content_type        = "iso"
   proxmox_filename    = "truenas-scale-24.10.0.iso"
@@ -63,7 +63,7 @@ module "custom_image" {
   local_file_path     = "/path/to/custom-image.iso"
   image_name          = "custom-image.iso"
 
-  proxmox_node        = "din"
+  proxmox_node        = "grogu"
   datastore_id        = "local"
   content_type        = "iso"
   proxmox_filename    = "custom-v1.0.iso"

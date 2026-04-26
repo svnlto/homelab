@@ -1,9 +1,9 @@
 # TrueNAS SCALE Ansible Automation Guide
 
-> **Last Updated:** January 2026
+> **Last Updated:** January 2026 (hardware references updated April 2026 for P700 consolidation)
 > **Target:** TrueNAS SCALE 25.04+ (Fangtooth)
 > **API Method:** WebSocket via `midclt` (REST API deprecated)
-> **Hardware:** Dell R730xd ("din") running TrueNAS VM on Proxmox
+> **Hardware:** Lenovo ThinkStation P700 ("grogu") running TrueNAS VMs on Proxmox
 
 ## Executive Summary
 

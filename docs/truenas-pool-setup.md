@@ -1,6 +1,6 @@
-# TrueNAS Pool Setup - R730xd (din)
+# TrueNAS Pool Setup - P700 (grogu)
 
-Complete guide for creating the 3-pool ZFS configuration on TrueNAS SCALE running on the R730xd.
+Complete guide for creating the ZFS pool configuration on TrueNAS SCALE (VMID 300) running on Proxmox (grogu).
 
 ## Hardware Configuration
 
@@ -313,7 +313,7 @@ scratch/
 
 ## Backup Strategy (3-2-1)
 
-### Tier 1: Local Snapshots (din)
+### Tier 1: Local Snapshots (truenas-primary)
 
 - **fast/kubernetes**: Hourly (keep 24)
 - **fast/vms**: Every 4 hours (keep 6)
@@ -322,7 +322,7 @@ scratch/
 - **bulk/photos**: Daily (keep 30)
 - **scratch/***: No snapshots (ephemeral by design)
 
-### Tier 2: Replication (din → grogu backup pool)
+### Tier 2: Replication (truenas-primary → truenas-backup pool)
 
 - **fast/kubernetes**: Hourly
 - **fast/vms**: Every 4 hours

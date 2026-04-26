@@ -52,7 +52,7 @@ snapshot_policies:
 
   # Scratch pool — no snapshots, data is ephemeral by design
 
-# Replication tasks (din -> grogu backup pool)
+# Replication tasks (truenas-primary -> truenas-backup, both on grogu)
 replication_tasks:
   - source: fast/kubernetes
     destination: backup/kubernetes

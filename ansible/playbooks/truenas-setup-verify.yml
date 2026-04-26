@@ -2,7 +2,7 @@
 # Verify TrueNAS SCALE setup applied correctly.
 # Run after truenas-setup.yml to validate expected state.
 
-- name: Verify TrueNAS SCALE setup on din (primary)
+- name: Verify TrueNAS SCALE setup on primary (VMID 300)
   hosts: truenas_primary
   gather_facts: false
 

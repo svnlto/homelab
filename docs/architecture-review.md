@@ -1,7 +1,9 @@
 # Homelab Architecture Review
 
 **Date**: 2026-02-05
-**Status**: Pre-deployment configuration review
+**Status**: Historical reference — superseded by P700 consolidation (2026-04-23)
+**Note**: This document describes the two-node (din R730xd + grogu R630) topology.
+The current setup is a single Lenovo ThinkStation P700 named "grogu".
 **Purpose**: Comprehensive analysis of storage, backup, and deployment architecture
 
 ---
