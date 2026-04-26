@@ -24,7 +24,7 @@
   environment.etc."meshcommander/docker-compose.yml".text = ''
     services:
       meshcommander:
-        image: ghcr.io/nicholasgasior/meshcommander:latest
+        image: taskinen/meshcommander:latest
         container_name: meshcommander
         ports:
           - "3000:3000"

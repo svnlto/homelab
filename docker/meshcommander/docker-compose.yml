@@ -4,7 +4,7 @@
 # Access: http://192.168.0.53:3000
 services:
   meshcommander:
-    image: ghcr.io/nicholasgasior/meshcommander:latest
+    image: taskinen/meshcommander:latest
     container_name: meshcommander
     restart: unless-stopped
     ports:
