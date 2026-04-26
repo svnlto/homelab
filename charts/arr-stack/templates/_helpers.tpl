@@ -22,7 +22,7 @@ Global annotations from values.
 {{- end -}}
 
 {{/*
-Media + scratch volume mounts (shared across arr apps and downloaders).
+Media volume mounts (shared across arr apps and downloaders).
 */}}
 {{- define "arr-stack.mediaVolumeMounts" -}}
 - name: media-movies
@@ -33,12 +33,10 @@ Media + scratch volume mounts (shared across arr apps and downloaders).
   mountPath: /data/media/music
 - name: media-books
   mountPath: /data/media/books
-- name: scratch
-  mountPath: /data-scratch
 {{- end -}}
 
 {{/*
-Media + scratch volumes (PVC references).
+Media volumes (PVC references).
 */}}
 {{- define "arr-stack.mediaVolumes" -}}
 - name: media-movies
@@ -53,9 +51,6 @@ Media + scratch volumes (PVC references).
 - name: media-books
   persistentVolumeClaim:
     claimName: nfs-media-books
-- name: scratch
-  persistentVolumeClaim:
-    claimName: nfs-scratch
 {{- end -}}
 
 {{/*

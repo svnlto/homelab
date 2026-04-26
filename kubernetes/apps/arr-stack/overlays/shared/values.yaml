@@ -29,11 +29,6 @@ nfs:
       pvcName: nfs-media-books
       path: /mnt/bulk/media/books
       capacity: 1Ti
-    - name: scratch
-      pvName: arr-nfs-scratch
-      pvcName: nfs-scratch
-      path: /mnt/scratch/downloads
-      capacity: 1Ti
 
 iscsi:
   portal: 10.10.10.13:3260
