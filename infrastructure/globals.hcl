@@ -24,7 +24,7 @@ locals {
       name        = "management"
       subnet      = "10.10.1.0/24"
       gateway     = "10.10.1.1"
-      description = "iDRAC, switch management"
+      description = "AMT, switch management"
     }
 
     storage = {
@@ -78,13 +78,7 @@ locals {
 
     grogu_mgmt    = "192.168.0.10"
     grogu_storage = "10.10.10.10"
-    grogu_idrac   = "10.10.1.10"
-
-    din_mgmt    = "192.168.0.11"
-    din_storage = "10.10.10.11"
-    din_idrac   = "10.10.1.11"
-
-    qdevice = "192.168.0.54"
+    grogu_amt     = "10.10.1.10"
 
     truenas_primary_mgmt    = "192.168.0.13"
     truenas_primary_storage = "10.10.10.13"
@@ -165,16 +159,13 @@ locals {
     }
 
     access_ports = {
-      pihole      = { interface = "ether2", pvid = 20, comment = "Pi-hole DNS" }
-      beryl_ap    = { interface = "ether3", pvid = 20, comment = "Beryl AX WiFi AP" }
-      din_idrac   = { interface = "ether4", pvid = 1, comment = "din iDRAC" }
-      grogu_idrac = { interface = "ether5", pvid = 1, comment = "grogu iDRAC" }
-      qdevice     = { interface = "ether6", pvid = 20, comment = "Proxmox QDevice" }
+      pihole    = { interface = "ether2", pvid = 20, comment = "Pi-hole DNS" }
+      beryl_ap  = { interface = "ether3", pvid = 20, comment = "Beryl AX WiFi AP" }
+      grogu_amt = { interface = "ether5", pvid = 1, comment = "grogu AMT" }
     }
 
     trunk_ports = {
       sfp_plus1 = { interface = "sfp-sfpplus1", comment = "grogu 10GbE" }
-      sfp_plus2 = { interface = "sfp-sfpplus2", comment = "din 10GbE" }
     }
 
     bridge_name = "bridge-vlans"
@@ -190,11 +181,10 @@ locals {
 
   proxmox = {
     nodes = {
-      primary   = "din"
-      secondary = "grogu"
+      primary = "grogu"
     }
 
-    api_url = "https://192.168.0.11:8006/api2/json"
+    api_url = "https://192.168.0.10:8006/api2/json"
 
     bridges = {
       storage    = "vmbr10"
@@ -207,11 +197,11 @@ locals {
     template_vm_id = 9000
 
     # Proxmox PCI resource mappings (managed by Ansible, see host_vars/)
+    # PCI IDs are placeholders — update after Proxmox install via lspci -nn
     resource_mappings = {
-      truenas_h330 = "truenas-h330"
-      truenas_lsi  = "truenas-lsi"
-      truenas_h241 = "truenas-h241"
-      arc_a310     = "arc-a310"
+      truenas_internal_hba = "truenas-internal-hba"
+      truenas_external_hba = "truenas-external-hba"
+      arc_a310             = "arc-a310"
     }
   }
 
@@ -223,7 +213,7 @@ locals {
 
     primary = {
       vm_id     = 300
-      node_name = "din"
+      node_name = "grogu"
       hostname  = "truenas-server"
       cores     = 8
       memory_mb = 32768
