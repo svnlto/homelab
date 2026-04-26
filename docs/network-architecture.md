@@ -257,9 +257,8 @@ This simplifies DNS (all services -> one IP) and TLS management (centralized cer
 | ether1   | WAN (standalone) | —                | O2 Homespot uplink | Cat6A         |
 | ether2   | access           | 20               | Pi-hole            | Cat6A         |
 | ether3   | access           | 20               | Beryl AX WiFi AP   | Cat6A         |
-| ether4   | access           | —                | (available)        | -             |
-| ether5   | access           | 1                | grogu AMT (P700)   | Cat6A         |
-| ether6-8 | access           | 20               | Future devices     | -             |
+| ether4   | access           | 1                | grogu AMT (P700)   | Cat6A         |
+| ether5-8 | access           | —                | (available)        | -             |
 | sfp+1    | trunk            | 1,10,20,30,31,32 | grogu 10GbE SFP+   | 10G DAC/Fiber |
 | sfp+2    | available        | —                | (available)        | -             |
 
