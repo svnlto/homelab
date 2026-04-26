@@ -1,6 +1,6 @@
 ---
 # Configure VLAN bridges on Proxmox hosts.
-# If SSH connection is lost, use iDRAC to troubleshoot.
+# If SSH connection is lost, use Intel AMT (MeshCommander) to troubleshoot.
 
 - name: Configure Proxmox Network Bridges
   hosts: proxmox
@@ -16,12 +16,6 @@
         storage_ip: "10.10.10.10"
         management_ip: "192.168.0.10"
       when: inventory_hostname == 'grogu'
-
-    - name: Set host-specific IPs for din
-      set_fact:
-        storage_ip: "10.10.10.11"
-        management_ip: "192.168.0.11"
-      when: inventory_hostname == 'din'
 
     - name: Display configuration summary
       debug:

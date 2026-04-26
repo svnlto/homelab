@@ -15,6 +15,6 @@ locals {
 inputs = {
   talos_version = "v1.12.2"
   schematic_id  = "dc7b152cb3ea99b821fcb7340ce7168313ce393d663740b791c36f6e95fc8586"
-  proxmox_node  = "din"
+  proxmox_node  = "grogu"
   datastore_id  = "local"
 }

@@ -133,18 +133,6 @@ locals {
       fqdn_suffix        = "shared.h.svenlito.com"
       tailscale_hostname = "traefik-shared"
     }
-
-    test = {
-      vip                = "10.0.3.10"
-      control_start      = "10.0.3.11"
-      control_end        = "10.0.3.13"
-      worker_start       = "10.0.3.21"
-      worker_end         = "10.0.3.23"
-      metallb_start      = "10.0.3.100"
-      metallb_end        = "10.0.3.150"
-      fqdn_suffix        = "test.h.svenlito.com"
-      tailscale_hostname = "traefik-test"
-    }
   }
 
   mikrotik = {

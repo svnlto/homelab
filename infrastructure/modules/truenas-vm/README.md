@@ -21,7 +21,7 @@ module "truenas_primary" {
   source = "../../modules/truenas-vm"
 
   # Basic Configuration
-  node_name    = "din"
+  node_name    = "grogu"
   vm_id        = 300
   vm_name      = "truenas-server"
   vm_description = "TrueNAS SCALE Primary Storage"
