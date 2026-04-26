@@ -1,5 +1,11 @@
 { pkgs, constants, ... }: {
-  imports = [ ./hardware.nix ./pihole.nix ./tailscale.nix ./dumper.nix ];
+  imports = [
+    ./hardware.nix
+    ./pihole.nix
+    ./tailscale.nix
+    ./dumper.nix
+    ./meshcommander.nix
+  ];
 
   # Network configuration
   networking = {
@@ -19,6 +25,7 @@
         22 # SSH
         53 # DNS
         80 # Pi-hole web interface
+        3000 # MeshCommander Intel AMT console
         9100 # Prometheus node exporter
       ];
       allowedUDPPorts = [
