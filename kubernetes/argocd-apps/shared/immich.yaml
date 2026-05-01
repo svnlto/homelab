@@ -43,3 +43,10 @@ spec:
       kind: PersistentVolumeClaim
       jsonPointers:
         - /spec/volumeName
+    - group: "external-secrets.io"
+      kind: ExternalSecret
+      jqPathExpressions:
+        - .spec.target.deletionPolicy
+        - .spec.data[].remoteRef.conversionStrategy
+        - .spec.data[].remoteRef.decodingStrategy
+        - .spec.data[].remoteRef.metadataPolicy
