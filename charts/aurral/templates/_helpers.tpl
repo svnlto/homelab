@@ -16,7 +16,7 @@ app.kubernetes.io/name: aurral
 Global annotations from values.
 */}}
 {{- define "aurral.annotations" -}}
-{{- range $key, $val := .Values.global.annotations }}
+  {{- range $key, $val := .Values.global.annotations }}
 {{ $key }}: {{ $val | quote -}}
-{{- end }}
+  {{- end }}
 {{- end -}}

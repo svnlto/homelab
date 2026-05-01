@@ -6,9 +6,9 @@ metadata:
   labels:
     {{- include "aurral.labels" . | nindent 4 }}
   annotations:
-    {{- range $key, $val := .Values.global.annotations }}
+{{- range $key, $val := .Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
-    {{- end }}
+{{- end }}
 spec:
   replicas: 1
   strategy:
@@ -21,9 +21,9 @@ spec:
       labels:
         {{- include "aurral.selectorLabels" . | nindent 8 }}
       annotations:
-        {{- range $key, $val := .Values.global.annotations }}
+{{- range $key, $val := .Values.global.annotations }}
         {{ $key }}: {{ $val | quote }}
-        {{- end }}
+{{- end }}
     spec:
       securityContext:
         fsGroup: {{ .Values.aurral.securityContext.fsGroup }}
@@ -59,16 +59,16 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /app/backend/data
-            {{- range .Values.nfs.volumes }}
+{{- range .Values.nfs.volumes }}
             - name: {{ .name }}
               mountPath: {{ .mountPath }}
-            {{- end }}
+{{- end }}
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: aurral-data
-        {{- range .Values.nfs.volumes }}
+{{- range .Values.nfs.volumes }}
         - name: {{ .name }}
           persistentVolumeClaim:
             claimName: {{ .pvcName }}
-        {{- end }}
+{{- end }}

@@ -29,6 +29,11 @@ nfs:
       pvcName: nfs-media-books
       path: /mnt/bulk/media/books
       capacity: 1Ti
+    - name: downloads
+      pvName: arr-nfs-downloads
+      pvcName: nfs-downloads
+      path: /mnt/bulk/downloads
+      capacity: 10Ti
 
 iscsi:
   portal: 10.10.10.13:3260
