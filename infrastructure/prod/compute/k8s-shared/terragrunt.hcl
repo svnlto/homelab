@@ -100,7 +100,7 @@ inputs = {
       cpu_cores       = 16
       memory_mb       = 16384
       disk_size_gb    = 50
-      gpu_passthrough = false
+      gpu_passthrough = true
     }
   }
 
