@@ -9,9 +9,7 @@ global:
 server:
   gpu:
     enabled: true
-    renderNode: /dev/dri/renderD129
-  # nodeSelector removed — was pinned to shared-worker2 for Arc A310 GPU.
-  # Restore once worker2 is back with GPU recovered.
+    renderNode: /dev/dri/renderD128
   nodeSelector: {}
   resources:
     requests:
@@ -32,10 +30,9 @@ workers:
       memory: 8Gi
 
 machineLearning:
+  image: ghcr.io/immich-app/immich-machine-learning:v2.7.4-openvino
   gpu:
-    enabled: false
-  # nodeSelector removed — was pinned to shared-worker2 for Arc A310 GPU.
-  # Restore once worker2 is back with GPU recovered.
+    enabled: true
   nodeSelector: {}
   resources:
     requests:

@@ -64,8 +64,6 @@ seerr:
       key: password
 
 jellyfin:
-  # nodeSelector removed — was pinned to shared-worker2 for Arc A310 GPU
-  # transcoding. Restore once worker2 is back with GPU recovered.
   nodeSelector: {}
 
 ingress:
