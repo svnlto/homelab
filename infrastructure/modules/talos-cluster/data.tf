@@ -155,6 +155,11 @@ data "talos_machine_configuration" "worker" {
             }
           ]
         } : {}
+        kubelet = each.value.gpu_passthrough ? {
+          nodeLabels = {
+            "gpu" = "intel-arc"
+          }
+        } : {}
         sysctls = {
           "net.ipv6.conf.all.disable_ipv6"     = "1"
           "net.ipv6.conf.default.disable_ipv6" = "1"
