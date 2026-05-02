@@ -1,5 +1,9 @@
 # ISO and disk image management for production VMs.
 
+terraform {
+  source = "${get_terragrunt_dir()}//"
+}
+
 include "root" {
   path = find_in_parent_folders("root.hcl")
 }
