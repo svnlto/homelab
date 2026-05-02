@@ -10,7 +10,8 @@ server:
   gpu:
     enabled: true
     renderNode: /dev/dri/renderD128
-  nodeSelector: {}
+  nodeSelector:
+    gpu: intel-arc
   resources:
     requests:
       cpu: 500m
@@ -33,7 +34,8 @@ machineLearning:
   image: ghcr.io/immich-app/immich-machine-learning:v2.7.4-openvino
   gpu:
     enabled: true
-  nodeSelector: {}
+  nodeSelector:
+    gpu: intel-arc
   resources:
     requests:
       cpu: 1000m

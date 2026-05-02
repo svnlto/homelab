@@ -64,7 +64,8 @@ seerr:
       key: password
 
 jellyfin:
-  nodeSelector: {}
+  nodeSelector:
+    gpu: intel-arc
 
 ingress:
   enabled: true
