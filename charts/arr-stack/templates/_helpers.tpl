@@ -33,6 +33,8 @@ Media volume mounts (shared across arr apps and downloaders).
   mountPath: /data/media/music
 - name: media-books
   mountPath: /data/media/books
+- name: downloads
+  mountPath: /data/downloads
 {{- end -}}
 
 {{/*
@@ -51,6 +53,9 @@ Media volumes (PVC references).
 - name: media-books
   persistentVolumeClaim:
     claimName: nfs-media-books
+- name: downloads
+  persistentVolumeClaim:
+    claimName: nfs-downloads
 {{- end -}}
 
 {{/*
