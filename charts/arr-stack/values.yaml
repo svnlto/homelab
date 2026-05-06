@@ -102,7 +102,7 @@ downloaders:
         cpu: 500m
         memory: 512Mi
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:2.3.0.5236-ls139@sha256:9ef5d8bf832edcacb6082f9262cb36087854e78eb7b1c3e1d4375056055b2d82
+    image: lscr.io/linuxserver/prowlarr:2.3.5.5327-ls145@sha256:4b52038b7b6452a20c145239fa07d8218d1541d736a96c43aa0a5f60141cab28
     port: 9696
     resources:
       requests:
