@@ -8,7 +8,7 @@ Homelab infrastructure automation using NixOS, Terragrunt, and Ansible:
 
 - **Raspberry Pi**: Immutable Pi-hole DNS server (NixOS, Mullvad DNS-over-TLS via Unbound)
 - **Proxmox VE**: Single-node Lenovo ThinkStation P700 ("grogu"), managed via Terragrunt;
-  Intel AMT for out-of-band management (MeshCommander at <http://192.168.0.53:3000>)
+  Intel AMT for out-of-band management (MeshCentral at <https://192.168.0.53:8443>)
 - **TrueNAS SCALE**: ZFS-based network storage (Terragrunt VMs + Ansible configuration)
 - **MikroTik**: Router configuration via Terragrunt (VLANs, firewall, DHCP)
 - **Kubernetes**: Talos K8s cluster on Proxmox with ArgoCD GitOps (arr-stack, Jellyfin, etc.)
@@ -59,9 +59,7 @@ just tg-graph                            # Show dependency graph
 just ansible-ping                        # Test Proxmox connectivity
 just ansible-configure-all               # Configure all Proxmox nodes
 just truenas-setup                       # Configure primary TrueNAS
-just truenas-backup-setup                # Configure backup TrueNAS
-just truenas-replication                 # Setup ZFS replication (primary -> backup, both on grogu)
-just restic-setup                        # Configure B2 backups
+just restic-setup                        # Configure B2 backups (offsite, Backblaze)
 just proxmox-configure-networking        # Configure Proxmox VLAN bridges
 just proxmox-configure-networking-check  # Dry-run networking configuration
 just verify-all                          # Molecule verify on all hosts
@@ -102,8 +100,7 @@ infrastructure/
 │   ├── compute/k8s-shared/  # Talos K8s cluster (VLAN 30)
 │   ├── compute/argocd/      # ArgoCD on k8s-shared
 │   ├── storage/
-│   │   ├── truenas-primary/ # VMID 300 on grogu (bulk drives in P700 bays + 21×900GB MD1220)
-│   │   └── truenas-backup/  # VMID 301 on grogu (8×3TB)
+│   │   └── truenas-primary/ # VMID 300 on grogu (bulk + ssd + scratch + 21×900GB MD1220)
 │   ├── mikrotik/            # Router: base, dhcp, firewall, dns, qos
 │   ├── tailscale/acl/       # Tailscale ACL policy (Mullvad exit node, K8s tags)
 │   └── dns/cloudns/         # ClouDNS wildcard records (*.shared.h.svenlito.com)
@@ -190,7 +187,6 @@ SSH uses 1Password SSH agent. See `docs/1password-setup.md` for setup.
 | Pi-hole (RPi)      | 192.168.0.53  | —                 | —                |
 | grogu (P700)       | 192.168.0.10  | 10.10.10.10       | 10.10.1.10 (AMT) |
 | TrueNAS Primary    | 192.168.0.13  | 10.10.10.13       | —                |
-| TrueNAS Backup     | 192.168.0.14  | 10.10.10.14       | —                |
 | O2 Homespot        | —             | —                 | 192.168.8.1 (GW) |
 
 VLANs: 1 (management/AMT), 10 (storage/10GbE), 20 (LAN), 30-32 (K8s clusters).

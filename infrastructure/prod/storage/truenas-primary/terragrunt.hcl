@@ -49,4 +49,12 @@ inputs = {
     local.proxmox.resource_mappings.truenas_bulk_hba_b,
     local.proxmox.resource_mappings.truenas_fast_hba,
   ]
+
+  # 'ssd' pool SSDs on grogu's onboard SATA (not on a passthrough HBA) — handed
+  # to TrueNAS as raw scsi disks so it can import the ssd mirror. Serials set to
+  # avoid TrueNAS's duplicate-empty-serial pool-create block.
+  passthrough_disks = [
+    { path_in_datastore = "/dev/disk/by-id/ata-SAMSUNG_MZNTY256HDHP-000L7_S305NYAH672931", serial = "S305NYAH672931" },
+    { path_in_datastore = "/dev/disk/by-id/ata-Micron_1100_MTFDDAV256TBN_18341E3E72A3", serial = "18341E3E72A3" },
+  ]
 }

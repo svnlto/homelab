@@ -10,16 +10,16 @@ Infrastructure as Code for a homelab running NixOS, Terragrunt, and Ansible.
 | **Media** | NixOS + Docker | Arr stack (Sonarr, Radarr, Prowlarr, qBittorrent, SABnzbd) on Proxmox VM |
 | **Dumper** | NixOS | Tailscale rsync automation (photo dump to TrueNAS) |
 | **VMs** | Terragrunt | Proxmox VM orchestration with environment separation (prod/dev) |
-| **Storage** | Ansible | TrueNAS SCALE datasets, shares, snapshots, replication |
+| **Storage** | Ansible | TrueNAS SCALE datasets, shares, snapshots |
 | **Network** | Terragrunt | MikroTik VLANs, firewall, DHCP, DNS forwarding |
-| **Backup** | Ansible | Restic to Backblaze B2, ZFS replication (primary to backup TrueNAS) |
+| **Backup** | Ansible | Restic to Backblaze B2 (offsite) |
 | **K8s** | Terragrunt | Talos cluster with ArgoCD GitOps |
 
 ## Hardware
 
 | Node | Role | Specs |
 | ---- | ---- | ----- |
-| **grogu** (P700) | Single-node Proxmox host | 28C/56T, Intel Arc A310, ~54TB ZFS, 10GbE |
+| **grogu** (P700) | Single-node Proxmox host | 28C/56T, Intel Arc A310, ~28TB ZFS, 10GbE |
 | **Raspberry Pi 4B** | DNS (Pi-hole) | Dedicated, independent of Proxmox |
 | **MikroTik CRS310** | Switching | L3 core + 10G aggregation |
 
@@ -33,7 +33,6 @@ Infrastructure as Code for a homelab running NixOS, Terragrunt, and Ansible.
 | Pi-hole (RPi) | 192.168.0.53 | -- |
 | grogu (P700) | 192.168.0.10 | 10.10.10.10 |
 | TrueNAS Primary | 192.168.0.13 | 10.10.10.13 |
-| TrueNAS Backup | 192.168.0.14 | 10.10.10.14 |
 
 VLANs: 1 (management/AMT), 10 (storage/10GbE), 20 (LAN), 30-32 (K8s clusters).
 All IPs and VLANs defined in `infrastructure/globals.hcl`.
@@ -54,7 +53,7 @@ infrastructure/              Terragrunt deployments
     provider.hcl             Proxmox provider + generated credential variables
     images/                  Centralized ISO downloads (TrueNAS, NixOS)
     compute/                 arr-stack, dumper VMs
-    storage/                 truenas-primary (VMID 300), truenas-backup (VMID 301)
+    storage/                 truenas-primary (VMID 300)
     mikrotik/                base, dhcp, dns, firewall
   dev/
     images/

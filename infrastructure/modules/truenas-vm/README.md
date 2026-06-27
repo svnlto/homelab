@@ -46,46 +46,11 @@ module "truenas_primary" {
 }
 ```
 
-### TrueNAS Backup (dual network, cloud-init)
+### Optional: Dual Network + Cloud-init
 
-```hcl
-module "truenas_backup" {
-  source = "../../modules/truenas-vm"
-
-  # Basic Configuration
-  node_name    = "grogu"
-  vm_id        = 301
-  vm_name      = "truenas-backup"
-  vm_description = "TrueNAS SCALE Backup Storage"
-  tags         = ["truenas", "storage", "nas", "backup"]
-
-  # TrueNAS ISO
-  truenas_url      = "https://download.truenas.com/TrueNAS-SCALE-25.10.1/TrueNAS-SCALE-25.10.1.iso"
-  truenas_filename = "TrueNAS-SCALE-25.10.1.iso"
-  truenas_version  = "25.10.1"
-
-  # Hardware
-  cpu_cores        = 8
-  memory_mb        = 32768
-  boot_disk_size_gb = 32
-
-  # Dual Network
-  enable_dual_network = true
-  mac_address         = "BC:24:11:2E:D4:04"
-  vlan_id             = 20  # LAN/Management
-  storage_vlan_id     = 10  # Storage
-
-  # Cloud-init Network Configuration
-  enable_network_init = true
-  management_ip       = "192.168.0.14/24"
-  management_gateway  = "192.168.0.1"
-  storage_ip          = "10.10.10.14/24"
-  dns_server          = "192.168.0.53"
-
-  # Lifecycle (ignore manual changes)
-  ignore_changes = ["cdrom", "disk", "hostpci", "network_device"]
-}
-```
+The module also supports a second storage NIC plus cloud-init network configuration
+(set `enable_dual_network` and `enable_network_init`, then provide `management_ip`,
+`management_gateway`, `storage_ip`, and `dns_server`). See the variables table below.
 
 ## Variables
 
@@ -128,6 +93,6 @@ module "truenas_backup" {
 ## Notes
 
 - HBA passthrough must be configured in Proxmox UI after VM creation (Terraform limitation)
-- For primary server, manual network configuration is expected (hence no cloud-init)
-- For backup server, cloud-init handles dual-NIC network configuration
+- For the primary server, manual network configuration is expected (hence no cloud-init)
+- When `enable_network_init` is set, cloud-init handles dual-NIC network configuration
 - Lifecycle ignore_changes prevents Terraform from reverting manual HBA additions

@@ -184,14 +184,6 @@ proxmox-verify:
 proxmox-verify-networking:
     cd ansible && molecule verify -s proxmox-networking
 
-# Configure backup TrueNAS
-truenas-backup-setup:
-    cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-backup-setup.yml
-
-# Setup ZFS replication (din -> grogu)
-truenas-replication:
-    cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-replication.yml
-
 # Set enclosure fan speeds (MD1200/MD1220)
 enclosure-fan:
     cd ansible && ansible-playbook -i inventory.ini \

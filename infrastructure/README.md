@@ -18,8 +18,7 @@ infrastructure/
 │
 ├── proxmox/                     # Proxmox VM/container management
 │   ├── provider.hcl             # Proxmox provider
-│   ├── truenas-primary/         # TrueNAS Primary VM (VMID 300)
-│   └── truenas-backup/          # TrueNAS Backup VM (VMID 301)
+│   └── truenas-primary/         # TrueNAS Primary VM (VMID 300)
 │
 └── modules/                     # Reusable Terraform modules
     ├── truenas-vm/              # TrueNAS VM deployment module
@@ -50,7 +49,6 @@ Endpoint: s3.eu-central-003.backblazeb2.com
 State files:
 ├── prod/images/terraform.tfstate
 ├── prod/storage/truenas-primary/terraform.tfstate
-├── prod/storage/truenas-backup/terraform.tfstate
 └── prod/mikrotik/.../terraform.tfstate (when deployed)
 ```
 
@@ -198,7 +196,6 @@ terraform plan
 
    ```bash
    cd infrastructure/proxmox/truenas-primary && terragrunt apply
-   cd ../truenas-backup && terragrunt apply
    ```
 
 2. **MikroTik Setup** (see `mikrotik/SETUP.md`):

@@ -74,8 +74,6 @@ locals {
 
     truenas_primary_mgmt    = "192.168.0.13"
     truenas_primary_storage = "10.10.10.13"
-    truenas_backup_mgmt     = "192.168.0.14"
-    truenas_backup_storage  = "10.10.10.14"
   }
 
   dhcp_pools = {
@@ -201,17 +199,6 @@ locals {
       hostname  = "truenas-server"
       cores     = 8
       memory_mb = 32768
-      disks = {
-        boot_size_gb = 32
-      }
-    }
-
-    backup = {
-      vm_id     = 301
-      node_name = "grogu"
-      hostname  = "truenas-backup"
-      cores     = 6
-      memory_mb = 12288
       disks = {
         boot_size_gb = 32
       }

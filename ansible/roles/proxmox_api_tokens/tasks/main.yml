@@ -117,3 +117,13 @@
       - "token_secret={{ api_token_secret }}"
   when: token_output.changed
   changed_when: true
+  # Best-effort: the op CLI needs the 1Password desktop app running. If it is not
+  # available (headless/CI), don't fail the whole play — the token is shown above
+  # and can be saved manually.
+  register: op_save
+  failed_when: false
+
+- name: Warn if 1Password save failed
+  ansible.builtin.debug:
+    msg: "WARNING: could not save token to 1Password (op rc={{ op_save.rc }}). Save it manually from the output above."
+  when: token_output.changed and (op_save.rc | default(0)) != 0

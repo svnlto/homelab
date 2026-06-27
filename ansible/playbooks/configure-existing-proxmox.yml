@@ -6,6 +6,10 @@
   hosts: proxmox
   become: true
   gather_facts: true
+  # Run notified handlers (Update GRUB, Update initramfs, etc.) even if a later
+  # task fails — otherwise a non-critical failure (e.g. the 1Password token save)
+  # silently skips the bootloader/initramfs updates needed for passthrough.
+  force_handlers: true
 
   vars:
     pve_remove_subscription_warning: true
@@ -50,6 +54,13 @@
         tasks_from: remove_subscription_nag.yml
       when: pve_remove_subscription_warning | default(true)
       tags: [nag]
+
+    - name: Pin NIC names by MAC (systemd .link)
+      ansible.builtin.include_role:
+        name: proxmox_configure
+        tasks_from: nic_naming.yml
+      when: nic_link_map | default({}) | length > 0
+      tags: [networking, nic-naming]
 
     - name: Configure PCIe passthrough
       ansible.builtin.include_role:

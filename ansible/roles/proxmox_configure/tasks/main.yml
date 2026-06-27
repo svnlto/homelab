@@ -4,6 +4,10 @@
 - name: Ensure /etc/hosts is correct
   ansible.builtin.include_tasks: hosts.yml
 
+- name: Pin NIC names by MAC (systemd .link)
+  ansible.builtin.include_tasks: nic_naming.yml
+  when: nic_link_map | default({}) | length > 0
+
 - name: Configure apt repositories (enterprise -> no-subscription)
   ansible.builtin.include_tasks: repositories.yml
 

@@ -65,7 +65,6 @@
   loop:
     - proxmox
     - restic-repo
-    - forgejo
   tags: [datasets, bulk, backups]
 
 - name: Create bulk/backups/timemachine dataset (case-insensitive for macOS)
@@ -93,44 +92,30 @@
     compression: "LZ4"
   tags: [datasets, bulk]
 
-# Fast pool datasets
-- name: Create fast kubernetes parent dataset
+# SSD pool datasets (K8s)
+- name: Create ssd kubernetes parent dataset
   arensb.truenas.filesystem:
-    name: "fast/kubernetes"
+    name: "ssd/kubernetes"
     state: present
     compression: "LZ4"
-  tags: [datasets, fast, k8s]
+  tags: [datasets, ssd, k8s]
 
-- name: Create fast kubernetes NFS datasets
+- name: Create ssd kubernetes NFS datasets
   arensb.truenas.filesystem:
-    name: "fast/kubernetes/{{ item }}"
+    name: "ssd/kubernetes/{{ item }}"
     state: present
     compression: "LZ4"
   loop:
     - nfs-dynamic
     - nfs-static
-  tags: [datasets, fast, k8s]
+  tags: [datasets, ssd, k8s]
 
-- name: Create fast kubernetes iSCSI parent dataset
+- name: Create ssd kubernetes iSCSI parent dataset
   arensb.truenas.filesystem:
-    name: "fast/kubernetes/iscsi-zvols"
+    name: "ssd/kubernetes/iscsi-zvols"
     state: present
     compression: "LZ4"
-  tags: [datasets, fast, k8s, iscsi]
-
-- name: Create fast VMs dataset
-  arensb.truenas.filesystem:
-    name: "fast/vms"
-    state: present
-    compression: "LZ4"
-  tags: [datasets, fast, vms]
-
-- name: Create fast ML models dataset
-  arensb.truenas.filesystem:
-    name: "fast/ml-models"
-    state: present
-    compression: "LZ4"
-  tags: [datasets, fast, ml]
+  tags: [datasets, ssd, k8s, iscsi]
 
 # Bulk pool — downloads (moved from removed scratch pool)
 - name: Create bulk downloads parent dataset

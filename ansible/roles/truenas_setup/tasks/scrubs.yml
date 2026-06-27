@@ -15,13 +15,27 @@
   tags: [scrub]
   failed_when: false
 
-- name: Configure weekly scrub for fast pool
+- name: Configure weekly scrub for ssd pool
   arensb.truenas.pool_scrub_task:
-    pool: fast
+    pool: ssd
     threshold: 35
-    description: "Weekly scrub - fast"
+    description: "Weekly scrub - ssd"
     minute: "0"
     hour: "3"
+    day: "*"
+    month: "*"
+    weekday: "sun"
+    enabled: true
+  tags: [scrub]
+  failed_when: false
+
+- name: Configure weekly scrub for scratch pool
+  arensb.truenas.pool_scrub_task:
+    pool: scratch
+    threshold: 35
+    description: "Weekly scrub - scratch"
+    minute: "0"
+    hour: "4"
     day: "*"
     month: "*"
     weekday: "sun"

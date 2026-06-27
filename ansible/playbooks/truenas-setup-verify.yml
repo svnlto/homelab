@@ -24,32 +24,29 @@
         - bulk/backups
         - bulk/backups/proxmox
         - bulk/backups/restic-repo
-        - bulk/backups/forgejo
         - bulk/backups/timemachine
         - bulk/archive
       tags: [datasets, bulk]
 
-    - name: Check if fast pool exists
-      ansible.builtin.command:
-        cmd: midclt call pool.query '[["name", "=", "fast"]]'
-      register: fast_pool_check
-      changed_when: false
-      tags: [always]
-
-    - name: Verify fast pool datasets exist
+    - name: Verify ssd pool datasets exist
       ansible.builtin.command:
         cmd: midclt call pool.dataset.query '[["id", "=", "{{ item }}"]]'
-      register: fast_datasets
+      register: ssd_datasets
       changed_when: false
-      failed_when: "'[]' == fast_datasets.stdout"
+      failed_when: "'[]' == ssd_datasets.stdout"
       loop:
-        - fast/kubernetes/nfs-dynamic
-        - fast/kubernetes/nfs-static
-        - fast/kubernetes/iscsi-zvols
-        - fast/vms
-        - fast/ml-models
-      when: fast_pool_check.stdout != '[]'
-      tags: [datasets, fast]
+        - ssd/kubernetes/nfs-dynamic
+        - ssd/kubernetes/nfs-static
+        - ssd/kubernetes/iscsi-zvols
+      tags: [datasets, ssd]
+
+    - name: Verify scratch pool dump dataset exists
+      ansible.builtin.command:
+        cmd: midclt call pool.dataset.query '[["id", "=", "scratch/dump"]]'
+      register: scratch_dump_ds
+      changed_when: false
+      failed_when: "'[]' == scratch_dump_ds.stdout"
+      tags: [datasets, scratch]
 
     - name: Verify bulk/downloads child datasets exist
       ansible.builtin.command:
@@ -125,8 +122,7 @@
           - item.path in (nfs_shares_result.stdout | from_json | map(attribute='path') | list)
         fail_msg: "NFS share missing: {{ item.path }}"
         quiet: true
-      loop: "{{ nfs_shares | rejectattr('path', 'match', '/mnt/fast/') | list if fast_pool_check.stdout == '[]' else nfs_shares
-        }}"
+      loop: "{{ nfs_shares }}"
       loop_control:
         label: "{{ item.path }}"
       tags: [nfs]
@@ -325,7 +321,7 @@
           - item in (scrub_tasks.stdout | from_json | map(attribute='pool_name') | list)
         fail_msg: "Scrub task missing for pool: {{ item }}"
         quiet: true
-      loop: "{{ ['bulk'] + (['fast'] if fast_pool_check.stdout != '[]' else []) }}"
+      loop: "{{ ['bulk', 'ssd', 'scratch'] }}"
       tags: [scrub]
 
     # Snapshot tasks
@@ -342,18 +338,15 @@
           - item in (snapshot_tasks.stdout | from_json | map(attribute='dataset') | list)
         fail_msg: "Snapshot task missing for dataset: {{ item }}"
         quiet: true
-      loop: >-
-        {{ ['bulk/media', 'bulk/photos']
-           + (['fast/kubernetes', 'fast/vms', 'fast/ml-models'] if fast_pool_check.stdout != '[]' else []) }}
+      loop: "{{ ['bulk/media', 'bulk/photos', 'ssd/kubernetes'] }}"
       tags: [snapshots]
 
-    # iSCSI portal and initiator (only relevant when fast pool exists)
+    # iSCSI portal and initiator (ssd/kubernetes/iscsi-zvols)
     - name: Query iSCSI portals
       ansible.builtin.command:
         cmd: midclt call iscsi.portal.query
       register: iscsi_portals
       changed_when: false
-      when: fast_pool_check.stdout != '[]'
       tags: [iscsi]
 
     - name: Verify iSCSI portal exists on storage VLAN
@@ -364,7 +357,6 @@
             | list)"
         fail_msg: "iSCSI portal missing or not listening on 10.10.10.13"
         quiet: true
-      when: fast_pool_check.stdout != '[]'
       tags: [iscsi]
 
     - name: Query iSCSI initiator groups
@@ -372,7 +364,6 @@
         cmd: midclt call iscsi.initiator.query
       register: iscsi_initiators
       changed_when: false
-      when: fast_pool_check.stdout != '[]'
       tags: [iscsi]
 
     - name: Verify iSCSI initiator group exists with K8s networks
@@ -381,5 +372,4 @@
           - iscsi_initiators.stdout | from_json | length > 0
         fail_msg: "iSCSI initiator group missing"
         quiet: true
-      when: fast_pool_check.stdout != '[]'
       tags: [iscsi]

@@ -47,12 +47,6 @@ datasets:
     compression: "off" # Restic handles own compression
     sync: "standard"
 
-  bulk_backups_forgejo:
-    recordsize: "128K"
-    compression: "zstd"
-    sync: "standard"
-    quota: "100G"
-
   bulk_archive:
     recordsize: "1M"
     compression: "lz4"
@@ -80,34 +74,23 @@ datasets:
     compression: "lz4"
     sync: "standard"
 
-  # Fast pool
-  fast_kubernetes_nfs_dynamic:
+  # SSD pool (K8s) + scratch (dump)
+  ssd_kubernetes_nfs_dynamic:
     recordsize: "16K"
     compression: "lz4"
     sync: "standard"
     quota: "4T"
 
-  fast_kubernetes_nfs_static:
+  ssd_kubernetes_nfs_static:
     recordsize: "128K"
     compression: "lz4"
     sync: "standard"
 
-  fast_kubernetes_iscsi_zvols:
+  ssd_kubernetes_iscsi_zvols:
     type: "filesystem" # Parent is filesystem, children are zvols
     compression: "lz4"
 
-  fast_vms:
-    recordsize: "64K"
-    compression: "lz4"
-    sync: "standard"
-
-  fast_ml_models:
-    recordsize: "1M"
-    compression: "lz4"
-    sync: "standard"
-    quota: "1T"
-
-  fast_dump:
+  scratch_dump:
     recordsize: "128K"
     compression: "lz4"
     sync: "standard"

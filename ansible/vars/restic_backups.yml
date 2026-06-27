@@ -7,9 +7,7 @@ restic_backup_jobs:
     weekly_integrity_check: true
     backup_sets:
       - paths:
-          - /mnt/fast/kubernetes
-          - /mnt/fast/vms
-          - /mnt/fast/ml-models
+          - /mnt/ssd/kubernetes
         tags: [critical, hourly, grogu]
         excludes: ["*.log", "*.tmp", "lost+found", ".cache"]
         retention:

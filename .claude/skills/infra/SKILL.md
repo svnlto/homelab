@@ -22,7 +22,6 @@ You are managing homelab infrastructure spanning Proxmox VE, MikroTik, TrueNAS, 
 | VMID    | Name            | Node  | Purpose                        |
 |---------|-----------------|-------|--------------------------------|
 | 300     | truenas-primary | grogu | TrueNAS SCALE (HBA passthrough)|
-| 301     | truenas-backup  | grogu | TrueNAS SCALE (8×3TB backup)   |
 | 400-402 | shared-cp*      | grogu | Talos K8s shared control plane |
 | 410-411 | shared-worker*  | grogu | Talos K8s shared workers       |
 
@@ -100,7 +99,6 @@ prod/
     argocd/                    # ArgoCD on k8s-shared (Helm)
   storage/
     truenas-primary/           # TrueNAS primary VM (grogu, HBA passthrough)
-    truenas-backup/            # TrueNAS backup VM (grogu, HBA passthrough)
   mikrotik/
     base/                      # Bridge, VLANs, ports, WAN, jumbo frames
     firewall/                  # Firewall rules (depends on base)
@@ -140,12 +138,10 @@ dev/
 
   # TrueNAS
   just truenas-ping                              # Test connectivity
-  just truenas-setup                             # Configure primary TrueNAS
-  just truenas-backup-setup                      # Configure backup TrueNAS
-  just truenas-replication                       # ZFS replication primary -> backup TrueNAS
+  just truenas-setup                             # Configure TrueNAS
 
   # Backups
-  just restic-setup                              # Configure B2 cloud backups
+  just restic-setup                              # Configure B2 cloud backups (offsite)
   ```
 
 - `/infra ansible-check` — Run Ansible lint
@@ -213,14 +209,13 @@ dev/
   just truenas-ping
   ```
 
-  Also use `proxmox_get_vm_status` for VMIDs 300 (primary) and 301 (backup).
+  Also use `proxmox_get_vm_status` for VMID 300 (primary).
 
 - `/infra truenas setup` — Run TrueNAS configuration
   **Ask for confirmation.**
 
   ```bash
-  just truenas-setup                             # Primary
-  just truenas-backup-setup                      # Backup
+  just truenas-setup
   ```
 
 ### Globals

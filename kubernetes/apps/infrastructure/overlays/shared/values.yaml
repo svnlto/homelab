@@ -18,8 +18,3 @@ externalServices:
     port: 443
     portName: https
     hostname: truenas
-  - name: truenas-backup
-    ip: 10.10.10.14
-    port: 443
-    portName: https
-    hostname: truenas-backup

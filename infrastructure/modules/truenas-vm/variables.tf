@@ -125,3 +125,17 @@ variable "hostpci_mappings" {
   type        = list(string)
   default     = []
 }
+
+variable "passthrough_disks" {
+  description = <<-EOT
+    Raw physical host disks to pass through to the VM (e.g. SSDs on onboard SATA
+    that the HBA passthrough can't cover, like the 'ssd' pool mirror). Each is
+    attached as a raw scsi disk (scsi1, scsi2, ...). 'serial' is set so TrueNAS
+    sees a unique identifier (avoids duplicate-empty-serial pool-create blocks).
+  EOT
+  type = list(object({
+    path_in_datastore = string # stable by-id path, e.g. /dev/disk/by-id/ata-...
+    serial            = string
+  }))
+  default = []
+}

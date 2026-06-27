@@ -158,7 +158,6 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
 | 10.10.10.11    | Reserved (future)    | Future node                 |
 | 10.10.10.12    | Reserved (future GPU)| Future GPU server           |
 | 10.10.10.13    | TrueNAS Primary      | VM on grogu (192.168.0.13)  |
-| 10.10.10.14    | TrueNAS Backup       | VM on grogu (192.168.0.14)  |
 | 10.10.10.20-50 | Reserved VMs         | Future storage services     |
 
 ### VLAN 20 - LAN (192.168.0.0/24)
@@ -168,7 +167,6 @@ Servers connect directly to router SFP+ ports with all VLANs trunked.
 | 192.168.0.1       | Gateway/Router   | MikroTik CRS310 (nevarro)        |
 | 192.168.0.10      | grogu Proxmox    | Management interface (P700)      |
 | 192.168.0.13      | TrueNAS Primary  | NAS management UI                |
-| 192.168.0.14      | TrueNAS Backup   | Backup NAS UI                    |
 | 192.168.0.53      | Pi-hole          | DNS/DHCP server                  |
 | 192.168.0.100-149 | DHCP pool        | Dynamic clients (MikroTik DHCP)  |
 | 192.168.0.150-159 | Entertainment    | Apple TV, HomePod, etc.          |
@@ -635,18 +633,22 @@ Internet
 
 **Result:** K8s nodes can update packages, pull container images, etc.
 
-### 6. Storage Replication (TrueNAS Primary → Backup)
+### 6. TrueNAS → Backblaze B2 (Offsite Backup)
 
-Both TrueNAS VMs run on the same Proxmox host (grogu P700). Replication traffic stays
-local on the VLAN 10 bridge — no router hop needed.
+Restic backs up critical datasets straight to offsite Backblaze B2 — there is no local
+backup TrueNAS. Backup traffic egresses via the router's WAN NAT.
 
 ```text
 TrueNAS Primary (grogu VM) - 10.10.10.13
-    ↓ VLAN 10 (vmbr10, L2 local on grogu)
-TrueNAS Backup (grogu VM)  - 10.10.10.14
+    ↓ VLAN 10 → VLAN 20 (inter-VLAN routing)
+MikroTik (NAT / masquerade)
+    ↓ ether1 (WAN, 192.168.8.2)
+O2 Homespot (192.168.8.1)
+    ↓
+Backblaze B2 (svnlto-offsite-backup)
 ```
 
-**Traffic is purely local (same Proxmox host, same bridge), no physical switch involved.**
+**Backups go straight offsite; there is no local replication target.**
 
 ## DNS Configuration (Pi-hole)
 
@@ -662,14 +664,12 @@ TrueNAS Backup (grogu VM)  - 10.10.10.14
 10.10.10.1      router-stor.home.arpa
 10.10.10.10     grogu-stor.home.arpa
 10.10.10.13     truenas-primary.stor.home.arpa nas-stor.home.arpa
-10.10.10.14     truenas-backup.stor.home.arpa backup-stor.home.arpa
 
 # LAN (192.168.0.0/24)
 192.168.0.1     router.home.arpa nevarro-router.home.arpa
 # Beryl AX (sorgan) - WiFi AP, gets IP via DHCP
 192.168.0.10    grogu.home.arpa
 192.168.0.13    truenas.home.arpa nas.home.arpa
-192.168.0.14    backup.home.arpa
 192.168.0.53    pihole.home.arpa dns.home.arpa
 ```
 
@@ -858,7 +858,6 @@ nslookup google.com 192.168.0.53  # DNS via Pi-hole
 | MeshCentral | <https://192.168.0.53:8443> | 20 | AMT web UI (on Pi-hole, KVM via WebRTC) |
 | Router | <https://192.168.0.1> | 20 | Winbox/WebFig |
 | TrueNAS Primary | <https://192.168.0.13> | 20 | NAS management |
-| TrueNAS Backup | <https://192.168.0.14> | 20 | Backup NAS |
 | Pi-hole | <http://192.168.0.53/admin> | 20 | DNS/DHCP admin |
 | **Kubernetes Services (via Ingress)** | | | |
 | SigNoz | <https://signoz.home.arpa> | 30 | Centralized observability |
@@ -926,7 +925,7 @@ set api-ssl disabled=yes
 **Gateway:** O2 Homespot - 192.168.8.1 (WAN)
 **DNS:** Pi-hole - 192.168.0.53
 **Proxmox:** grogu P700 (192.168.0.10), AMT: 10.10.1.10 (MeshCentral: <https://192.168.0.53:8443>)
-**TrueNAS:** Primary (192.168.0.13), Backup (192.168.0.14)
+**TrueNAS:** Primary (192.168.0.13)
 
 **VLANs:** 1 (mgmt/AMT), 10 (storage), 20 (LAN), 30 (K8s shared), 31 (K8s apps), 32 (K8s test)
 

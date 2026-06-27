@@ -37,59 +37,32 @@
   changed_when: false
   tags: [properties, bulk, backups, timemachine]
 
-- name: Set bulk/backups/forgejo quota (100GB)
+- name: Set ssd/kubernetes/nfs-dynamic properties
   ansible.builtin.command:
     cmd: >
       midclt call pool.dataset.update
-      'bulk/backups/forgejo'
-      '{"quota": 107374182400}'
-  changed_when: false
-  tags: [properties, bulk, backups, forgejo]
-
-- name: Set fast/kubernetes/nfs-dynamic properties
-  ansible.builtin.command:
-    cmd: >
-      midclt call pool.dataset.update
-      'fast/kubernetes/nfs-dynamic'
+      'ssd/kubernetes/nfs-dynamic'
       '{"recordsize": "16K", "quota": 4398046511104}'
   changed_when: false
-  tags: [properties, fast, k8s]
+  tags: [properties, ssd, k8s]
 
-- name: Set fast/kubernetes/nfs-static recordsize to 128K
+- name: Set ssd/kubernetes/nfs-static recordsize to 128K
   ansible.builtin.command:
     cmd: >
       midclt call pool.dataset.update
-      'fast/kubernetes/nfs-static'
+      'ssd/kubernetes/nfs-static'
       '{"recordsize": "128K"}'
   changed_when: false
-  tags: [properties, fast, k8s]
+  tags: [properties, ssd, k8s]
 
-- name: Set fast/kubernetes/iscsi-zvols properties
+- name: Set ssd/kubernetes/iscsi-zvols properties
   ansible.builtin.command:
     cmd: >
       midclt call pool.dataset.update
-      'fast/kubernetes/iscsi-zvols'
+      'ssd/kubernetes/iscsi-zvols'
       '{"compression": "LZ4", "sync": "STANDARD"}'
   changed_when: false
-  tags: [properties, fast, k8s, iscsi]
-
-- name: Set fast/vms recordsize to 64K
-  ansible.builtin.command:
-    cmd: >
-      midclt call pool.dataset.update
-      'fast/vms'
-      '{"recordsize": "64K"}'
-  changed_when: false
-  tags: [properties, fast, vms]
-
-- name: Set fast/ml-models properties
-  ansible.builtin.command:
-    cmd: >
-      midclt call pool.dataset.update
-      'fast/ml-models'
-      '{"recordsize": "1M", "quota": 1099511627776}'
-  changed_when: false
-  tags: [properties, fast, ml]
+  tags: [properties, ssd, k8s, iscsi]
 
 - name: Set bulk/downloads recordsize to 128K
   ansible.builtin.command:

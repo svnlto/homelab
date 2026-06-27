@@ -1,13 +1,6 @@
 ---
 # Configure TrueNAS SCALE primary storage (VMID 300 on grogu).
-# Pools must be created manually via midclt before running this.
-
-- name: Check if fast pool exists
-  ansible.builtin.command:
-    cmd: midclt call pool.query '[["name", "=", "fast"]]'
-  register: fast_pool_check
-  changed_when: false
-  tags: [always]
+# Pools (bulk, ssd, scratch) must be created manually via midclt before running this.
 
 - name: Network configuration
   ansible.builtin.include_tasks: network.yml

@@ -25,9 +25,7 @@
     networks: "{{ item.networks }}"
     readonly: "{{ item.readonly | default(false) }}"
     state: present
-  loop: >-
-    {{ nfs_shares | rejectattr('path', 'match', '/mnt/fast/')
-       | list if fast_pool_check.stdout == '[]' else nfs_shares }}
+  loop: "{{ nfs_shares }}"
   loop_control:
     label: "{{ item.path }}"
   tags: [nfs, shares]

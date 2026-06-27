@@ -59,11 +59,11 @@
   changed_when: true
   tags: [snapshots, photos]
 
-- name: Create snapshot task for fast/kubernetes (hourly, keep 24)
+- name: Create snapshot task for ssd/kubernetes (hourly, keep 24)
   ansible.builtin.command:
     cmd: >
       midclt call pool.snapshottask.create '{
-        "dataset": "fast/kubernetes",
+        "dataset": "ssd/kubernetes",
         "recursive": true,
         "lifetime_value": 24,
         "lifetime_unit": "HOUR",
@@ -78,55 +78,6 @@
         "enabled": true
       }'
   when:
-    - fast_pool_check.stdout != '[]'
-    - "'fast/kubernetes' not in existing_snapshot_datasets"
+    - "'ssd/kubernetes' not in existing_snapshot_datasets"
   changed_when: true
-  tags: [snapshots, fast]
-
-- name: Create snapshot task for fast/vms (every 4 hours, keep 6)
-  ansible.builtin.command:
-    cmd: >
-      midclt call pool.snapshottask.create '{
-        "dataset": "fast/vms",
-        "recursive": true,
-        "lifetime_value": 6,
-        "lifetime_unit": "HOUR",
-        "naming_schema": "auto-%Y-%m-%d_%H-%M",
-        "schedule": {
-          "minute": "0",
-          "hour": "*/4",
-          "dom": "*",
-          "month": "*",
-          "dow": "*"
-        },
-        "enabled": true
-      }'
-  when:
-    - fast_pool_check.stdout != '[]'
-    - "'fast/vms' not in existing_snapshot_datasets"
-  changed_when: true
-  tags: [snapshots, fast, vms]
-
-- name: Create snapshot task for fast/ml-models (daily, keep 7)
-  ansible.builtin.command:
-    cmd: >
-      midclt call pool.snapshottask.create '{
-        "dataset": "fast/ml-models",
-        "recursive": true,
-        "lifetime_value": 7,
-        "lifetime_unit": "DAY",
-        "naming_schema": "daily-%Y-%m-%d_%H-%M",
-        "schedule": {
-          "minute": "0",
-          "hour": "5",
-          "dom": "*",
-          "month": "*",
-          "dow": "*"
-        },
-        "enabled": true
-      }'
-  when:
-    - fast_pool_check.stdout != '[]'
-    - "'fast/ml-models' not in existing_snapshot_datasets"
-  changed_when: true
-  tags: [snapshots, fast, ml]
+  tags: [snapshots, ssd, k8s]

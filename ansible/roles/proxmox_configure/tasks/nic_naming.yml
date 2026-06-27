@@ -1,0 +1,29 @@
+---
+# Pin NIC names to stable nicX names by MAC via systemd .link files.
+#
+# Why: the VLAN bridge config (proxmox_networking) and `primary_interface` reference
+# nicX names, not kernel-assigned predictable names (ens3f0, etc.). Predictable names
+# change when cards move PCIe slots — which happened during the P700 consolidation.
+# MAC-based .link files keep the names stable across slot changes.
+#
+# Takes effect on next boot (piggybacks on the post-passthrough reboot). It does NOT
+# rename a live interface, so applying this on a running host is safe.
+
+- name: Ensure /etc/systemd/network exists
+  ansible.builtin.file:
+    path: /etc/systemd/network
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy systemd .link files to pin NIC names by MAC
+  ansible.builtin.template:
+    src: nic.link.j2
+    dest: "/etc/systemd/network/10-{{ item.key }}.link"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ nic_link_map | dict2items }}"
+  loop_control:
+    label: "{{ item.key }} -> {{ item.value }}"

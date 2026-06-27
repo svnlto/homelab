@@ -76,6 +76,20 @@ resource "proxmox_virtual_environment_vm" "truenas" {
     cache        = "none"
   }
 
+  # Raw physical disk passthrough (e.g. the 'ssd' pool SSDs on onboard SATA that
+  # the HBA passthrough can't cover). serial set so TrueNAS sees unique IDs.
+  dynamic "disk" {
+    for_each = var.passthrough_disks
+    content {
+      datastore_id      = ""
+      path_in_datastore = disk.value.path_in_datastore
+      file_format       = "raw"
+      interface         = "scsi${disk.key + 1}"
+      serial            = disk.value.serial
+      backup            = false
+    }
+  }
+
   # HBA passthrough (one block per mapping)
   dynamic "hostpci" {
     for_each = var.hostpci_mappings

@@ -1,9 +1,16 @@
 # Homelab Architecture Review
 
 **Date**: 2026-02-05
-**Status**: Historical reference — superseded by P700 consolidation (2026-04-23)
-**Note**: This document describes the two-node (din R730xd + grogu R630) topology.
-The current setup is a single Lenovo ThinkStation P700 named "grogu".
+**Status**: Historical reference — superseded by P700 consolidation (2026-04-23) and the
+storage restructure (2026-06)
+**Note**: This document describes the two-node (din R730xd + grogu R630) topology and
+predates the storage restructure, so the pools, backup design, and dataset layout below are
+no longer current. The setup is now a single Lenovo ThinkStation P700 named "grogu" with
+three pools: `ssd` (2× 256GB mirror — Kubernetes PVCs and databases), `bulk`
+(6× 8TB RAIDZ2 — media, photos, backups), and `scratch` (single 3TB — photo dump). The
+`fast` pool and the backup TrueNAS VM (VMID 301) are decommissioned; there is no local ZFS
+replication — backups now go straight offsite to Backblaze B2 (`svnlto-offsite-backup`) via
+restic.
 **Purpose**: Comprehensive analysis of storage, backup, and deployment architecture
 
 ---

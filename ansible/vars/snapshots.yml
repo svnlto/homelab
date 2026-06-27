@@ -1,6 +1,5 @@
 ---
 snapshot_policies:
-  # Bulk pool
   bulk_media:
     hourly: 0
     daily: 7
@@ -28,86 +27,9 @@ snapshot_policies:
     monthly: 6
     replicate: false
 
-  # Fast pool
-  fast_kubernetes:
+  ssd_kubernetes:
     hourly: 24
     daily: 7
     weekly: 4
     monthly: 6
     replicate: true
-
-  fast_vms:
-    hourly: 6
-    daily: 7
-    weekly: 4
-    monthly: 3
-    replicate: true
-
-  fast_ml_models:
-    hourly: 0
-    daily: 7
-    weekly: 4
-    monthly: 6
-    replicate: true
-
-# Replication tasks (truenas-primary -> truenas-backup, both on grogu)
-replication_tasks:
-  - source: fast/kubernetes
-    destination: backup/kubernetes
-    schedule: hourly
-    recursive: true
-    priority: critical
-    retention:
-      hourly: 48
-      daily: 14
-      weekly: 8
-
-  - source: fast/vms
-    destination: backup/vms
-    schedule: "*/4 * * * *"
-    recursive: true
-    priority: critical
-    retention:
-      hourly: 24
-      daily: 7
-      weekly: 4
-
-  - source: bulk/photos
-    destination: backup/photos
-    schedule: daily 04:00
-    recursive: true
-    priority: critical
-    retention:
-      daily: 60
-      weekly: 12
-      monthly: 24
-
-  - source: fast/ml-models
-    destination: backup/ml-models
-    schedule: daily 05:00
-    recursive: true
-    priority: high
-
-  - source: bulk/media
-    destination: backup/media
-    schedule: weekly
-    recursive: true
-    priority: low
-
-# Offsite backup (Backblaze B2 via Restic)
-offsite_backup_datasets:
-  include:
-    - fast/kubernetes/nfs-static
-    - bulk/backups/forgejo
-
-  exclude:
-    - fast/kubernetes/iscsi-zvols/*
-    - bulk/media/*
-    - bulk/photos/*
-    - bulk/downloads/*
-
-  retention:
-    hourly: 24
-    daily: 7
-    weekly: 4
-    monthly: 12

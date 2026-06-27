@@ -52,7 +52,7 @@ csi:
   driver: org.democratic-csi.nfs-fast
   storageClassName: truenas-nfs-fast
   server: ""
-  basePath: /mnt/fast/kubernetes/nfs-dynamic
+  basePath: /mnt/ssd/kubernetes/nfs-dynamic
   mountOptions:
     - nfsvers=4.2
     - nconnect=8

@@ -6,41 +6,57 @@ pci_device_ids: "8086:56a6,1000:0097,1000:0072"
 vfio_blacklist_drivers: [i915, xe]
 
 # Intel Arc FLR workaround — clears reset_method before VM start to prevent QEMU hang
-intel_arc_pci_addresses: ["0000:06:00.0"]
+intel_arc_pci_addresses: ["0000:84:00.0"]
 intel_arc_vm_ids: [411]
 
 # Proxmox PCI resource mappings (Datacenter > Resource Mappings)
 # The 9300-16i is one physical card with two SAS3008 chips (each = a separate PCI
 # device). Both chips must be passed through to TrueNAS for all internal drives.
+#
+# PCI addresses AND iommu_group values re-verified 2026-06-27 against live hardware
+# (intel_iommu=on) after the P700 consolidation slot reshuffle. Device IDs and
+# subsystem IDs unchanged (same cards); only paths and IOMMU groups moved. Each
+# device sits cleanly isolated in its own IOMMU group. Re-confirm groups with:
+#   for d in 0000:84:00.0 0000:06:00.0 0000:08:00.0 0000:03:00.0; do \
+#     echo "$d -> group $(basename $(readlink -f /sys/bus/pci/devices/$d/iommu_group))"; done
 pci_resource_mappings:
   arc-a310:
     description: "Intel Arc A310 for Jellyfin transcoding"
     device_id: "8086:56a6"
-    iommu_group: 64
-    path: "0000:06:00.0"
+    iommu_group: 8
+    path: "0000:84:00.0"
     subsystem_id: "172f:4019"
   truenas-bulk-hba-a:
     description: "LSI 9300-16i (chip A) — TrueNAS Primary bulk pool (8TB drives)"
     device_id: "1000:0097"
-    iommu_group: 7
-    path: "0000:83:00.0"
+    iommu_group: 65
+    path: "0000:06:00.0"
     subsystem_id: "1000:3130"
   truenas-bulk-hba-b:
     description: "LSI 9300-16i (chip B) — TrueNAS Primary bulk pool (8TB drives)"
     device_id: "1000:0097"
-    iommu_group: 8
-    path: "0000:85:00.0"
+    iommu_group: 66
+    path: "0000:08:00.0"
     subsystem_id: "1000:3130"
   truenas-fast-hba:
     description: "Dell H310 (SAS2008) — TrueNAS Primary fast pool (MD1220, 900GB SAS)"
     device_id: "1000:0072"
-    iommu_group: 9
-    path: "0000:86:00.0"
+    iommu_group: 60
+    path: "0000:03:00.0"
     subsystem_id: "1028:1f78"
 
-# 10GbE SFP+ NIC (Mellanox ConnectX, MAC 00:fd:45:4b:a8:b8) — uses mlx5/mlx4 driver,
-# no ixgbe SFP+ allow-unsupported flag needed.
+# 10GbE SFP+ NIC (Emulex OneConnect Skyhawk [10df:0720] at 0000:81:00.0, be2net driver,
+# MAC 00:fd:45:4b:a8:b8 → ens3f0 pre-rename). No ixgbe allow-unsupported flag needed.
 primary_interface: "nic2"
+
+# NIC name pinning (stable nicX name -> MAC) via systemd .link files
+# (proxmox_configure/nic_naming.yml). Required because the VLAN bridges and
+# primary_interface reference nicX names; kernel predictable names (ens3f0, etc.)
+# shift when cards change PCIe slots. nic2 = the 10GbE Emulex trunk uplink.
+nic_link_map:
+  nic0: "6c:0b:84:67:10:9e"   # Intel I218-LM (onboard 1GbE)
+  nic1: "6c:0b:84:67:10:9f"   # Intel I210 (1GbE)
+  nic2: "00:fd:45:4b:a8:b8"   # Emulex OneConnect 10GbE port 0 — VLAN trunk uplink
 
 # MD1220 enclosure fan control (MN657 cable to EMM debug serial port → motherboard COM1).
 # Default fan speed of 5% silences the shelf; restore 25% on service stop.

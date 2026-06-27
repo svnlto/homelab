@@ -1,0 +1,7 @@
+# Managed by Ansible (proxmox_configure / nic_naming.yml) — do not edit by hand.
+# Pins {{ item.key }} to a fixed NIC by MAC so the name survives PCIe slot changes.
+[Match]
+MACAddress={{ item.value }}
+
+[Link]
+Name={{ item.key }}

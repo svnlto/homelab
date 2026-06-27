@@ -7,10 +7,10 @@ Complete guide for creating the ZFS pool configuration on TrueNAS SCALE (VMID 30
 | Component | Drives | Layout | Raw | Usable | Purpose |
 | --------- | ------ | ------ | --- | ------ | ------- |
 | **Proxmox OS** | 2× 256GB NVMe | Mirror | — | — | Hypervisor boot (includes Talos images on local-zfs) |
-| **fast** | 21× 900GB + 2× 120GB SSD | 3× 7-drive RAIDZ2 + mirrored SLOG | ~17.1TB | ~14TB | K8s PVCs (iSCSI), VMs, databases, ML models |
+| **ssd** | 2× 256GB SSD | Mirror (raw disks to VM) | ~256GB | ~230GB | K8s PVCs (iSCSI/NFS), databases |
 | **bulk** | 6× 7.15TB (limited by smallest) | 1× 6-drive RAIDZ2 | 42.9TB | 25.3TB | Media, photos, cold observability data |
-| **scratch** | 6× 2.73TB (limited by smallest) | 1× 6-drive RAIDZ1 | 16.4TB | 12.9TB | Downloads, CI cache, ML datasets staging |
-| **Total** | | | **~76TB** | **~52TB** | |
+| **scratch** | 1× 2.73TB | Single disk | 2.73TB | 2.73TB | Photo dump |
+| **Total** | | | **~46TB** | **~28TB** | |
 
 ## Pre-Flight Checks
 
@@ -21,17 +21,14 @@ ssh admin@192.168.0.13
 # List all available disks with identifiers (for pool creation)
 midclt call disk.query | jq '.[] | {name, identifier, size, model}'
 
-# Find 900GB drives by size (for fast pool)
-midclt call disk.query | jq '.[] | select(.size > 800000000000 and .size < 1000000000000) | {name, identifier, size, model}'
+# Find 256GB SSDs by size (for ssd pool mirror)
+midclt call disk.query | jq '.[] | select(.size > 200000000000 and .size < 300000000000) | {name, identifier, size, model}'
 
 # Find 8TB drives by size (for bulk pool)
 midclt call disk.query | jq '.[] | select(.size > 7000000000000 and .size < 9000000000000) | {name, identifier, size, model}'
 
-# Find 3TB drives by size (for scratch pool)
+# Find 3TB drive by size (for scratch pool)
 midclt call disk.query | jq '.[] | select(.size > 2800000000000 and .size < 3200000000000) | {name, identifier, size, model}'
-
-# Find 128GB SSD drives by size (for SLOG)
-midclt call disk.query | jq '.[] | select(.size > 100000000000 and .size < 150000000000) | {name, identifier, size, model}'
 
 # Alternative: Show only unused disks (not in any pool)
 midclt call disk.get_unused | jq '.[] | {name, identifier, size, model}'
@@ -39,33 +36,18 @@ midclt call disk.get_unused | jq '.[] | {name, identifier, size, model}'
 
 ## Pool Creation
 
-### Step 1: Create Fast Pool (CRITICAL - Do This First)
+### Step 1: Create SSD Pool (CRITICAL - Do This First)
 
 **Kubernetes needs this immediately for PVCs and databases.**
 
 ```bash
-# Create 3× 7-drive RAIDZ2 with mirrored SLOG
-# Note: Originally 24× 900GB drives, 3 failed during sector reformatting (NetApp 520→512 byte)
+# Create a 2-drive mirror from the 256GB SSDs (passed to the TrueNAS VM as raw disks)
 # midclt call pool.create accepts device names (e.g. "sdo") not /dev/disk/by-id/ paths
 # Use `midclt call disk.get_unused | jq ...` to find current device names
 midclt call pool.create '{
-  "name": "fast",
+  "name": "ssd",
   "topology": {
     "data": [
-      {
-        "type": "RAIDZ2",
-        "disks": ["disk1", "disk2", "disk3", "disk4", "disk5", "disk6", "disk7"]
-      },
-      {
-        "type": "RAIDZ2",
-        "disks": ["disk8", "disk9", "disk10", "disk11", "disk12", "disk13", "disk14"]
-      },
-      {
-        "type": "RAIDZ2",
-        "disks": ["disk15", "disk16", "disk17", "disk18", "disk19", "disk20", "disk21"]
-      }
-    ],
-    "log": [
       {
         "type": "MIRROR",
         "disks": ["ssd1", "ssd2"]
@@ -76,20 +58,19 @@ midclt call pool.create '{
 }'
 ```
 
-**Why RAIDZ2 not RAIDZ1?**
+**Why a mirror?**
 
-- RAIDZ1 = only 1-drive fault tolerance (risky for critical K8s data)
-- RAIDZ2 = 2-drive fault tolerance per vdev (safe for databases)
-- Tradeoff: Lose capacity to parity for much better protection
+- 1-drive fault tolerance with simple, fast resilvering
+- All-SSD, so no separate SLOG is needed (sync writes are already fast)
+- Reads are balanced across both members
 
-**Verify fast pool**:
+**Verify ssd pool**:
 
 ```bash
-zpool status fast
+zpool status ssd
 # Should show:
-#   - 3 RAIDZ2 vdevs (7 drives each)
-#   - 1 mirror log vdev (2 SSDs)
-#   - ~14TB usable
+#   - 1 mirror vdev (2 SSDs)
+#   - ~230GB usable
 ```
 
 ### Step 2: Create Bulk Pool
@@ -119,7 +100,7 @@ midclt call pool.create '{
 }'
 ```
 
-**Note**: SLOG is only on fast pool (bulk pool doesn't need it - sequential large writes).
+**Note**: The bulk pool has no SLOG (sequential large writes don't benefit from one).
 
 **Verify bulk pool**:
 
@@ -146,23 +127,16 @@ zfs list bulk
 ### Step 3: Create Scratch Pool
 
 ```bash
-# Create 6-drive RAIDZ1 (16.4TB raw, 12.9TB usable)
-# Note: Pool is limited to smallest drive size (2.73TB)
-# RAIDZ1 is OK here - ephemeral data, can be recreated
-# Actual: 6× 2.73TB drives = 16.4TB raw, RAIDZ1 provides 12.9TB usable
+# Create a single-disk pool (2.73TB) for the photo dump
+# Single disk = no redundancy; it holds only reproducible/transient data
 midclt call pool.create '{
   "name": "scratch",
   "topology": {
     "data": [
       {
-        "type": "RAIDZ1",
+        "type": "STRIPE",
         "disks": [
-          "/dev/disk/by-id/... (2.73TB #1)",
-          "/dev/disk/by-id/... (2.73TB #2)",
-          "/dev/disk/by-id/... (2.73TB #3)",
-          "/dev/disk/by-id/... (2.73TB #4)",
-          "/dev/disk/by-id/... (2.73TB #5)",
-          "/dev/disk/by-id/... (2.73TB #6)"
+          "/dev/disk/by-id/... (2.73TB)"
         ]
       }
     ]
@@ -176,21 +150,20 @@ midclt call pool.create '{
 ```bash
 zpool status scratch
 # Should show:
-#   - 1 RAIDZ1 vdev (6 drives)
+#   - 1 single-disk vdev
 #   - ONLINE status
 
 zpool list scratch
 # Expected output:
 # NAME      SIZE  ALLOC   FREE  CKPOINT  EXPANDSZ   FRAG    CAP  DEDUP    HEALTH
-# scratch  16.4T  1.05M  16.4T        -         -     0%     0%  1.00x    ONLINE
+# scratch  2.73T  1.05M  2.73T        -         -     0%     0%  1.00x    ONLINE
 
 zfs list scratch
 # Expected output:
 # NAME      USED  AVAIL  REFER  MOUNTPOINT
-# scratch   863K  12.9T   153K  /mnt/scratch
+# scratch   863K  2.68T   153K  /mnt/scratch
 
-# Note: 16.4T raw capacity, 12.9T available for datasets
-# Difference accounts for RAIDZ1 parity (1 drive) + ZFS metadata overhead
+# Note: single 2.73TB disk, no parity (no redundancy)
 ```
 
 ## Post-Creation Verification
@@ -202,26 +175,20 @@ zpool list
 # Expected output:
 # NAME      SIZE  ALLOC   FREE  CKPOINT  EXPANDSZ   FRAG    CAP  DEDUP    HEALTH
 # bulk     42.9T  1.21G  42.9T     -         -      0%     0%   1.00x    ONLINE
-# fast     17.1T    0    17.1T     -         -      0%     0%   1.00x    ONLINE
-# scratch  16.4T  1.05M  16.4T     -         -      0%     0%   1.00x    ONLINE
+# scratch  2.73T  1.05M  2.73T     -         -      0%     0%   1.00x    ONLINE
+# ssd       256G    0     256G     -         -      0%     0%   1.00x    ONLINE
 
 # List available capacity for datasets
-zfs list -o name,avail,used,refer,mountpoint | grep -E "^(bulk|fast|scratch)"
+zfs list -o name,avail,used,refer,mountpoint | grep -E "^(bulk|scratch|ssd)"
 
 # Expected output:
 # NAME      AVAIL  USED  REFER  MOUNTPOINT
 # bulk      25.3T  734M   170K  /mnt/bulk
-# fast      14.0T  512M   170K  /mnt/fast
-# scratch   12.9T  863K   153K  /mnt/scratch
-
-# Check SLOG is attached to fast pool
-zpool status fast | grep log
-# Should show:
-#   log
-#     mirror-1  ONLINE
+# scratch   2.68T  863K   153K  /mnt/scratch
+# ssd        230G  512M   170K  /mnt/ssd
 
 # Check scrub is configured
-zpool scrub fast
+zpool scrub ssd
 zpool scrub bulk
 zpool scrub scratch
 ```
@@ -259,51 +226,46 @@ bulk/
 ├── media/{music,movies,tv,books}     # Jellyfin streaming
 ├── photos/                            # Immich photo library
 ├── signoz-cold/                       # Observability data (30+ days)
-├── backups/{timemachine,proxmox,forgejo,restic-repo}
+├── backups/{timemachine,proxmox,restic-repo}
 └── archive/                           # Cold storage
 ```
 
-### Fast Pool (~14TB)
+### SSD Pool (~230GB)
 
 ```text
-fast/
-├── kubernetes/
-│   ├── nfs-dynamic/                   # democratic-csi provisions PVCs here
-│   │   ├── pvc-<uuid>/                # App data (auto-created)
-│   │   └── pvc-<uuid>/                # Configs (auto-created)
-│   ├── nfs-static/                    # Static PVs (manual mounts)
-│   └── iscsi-zvols/                   # iSCSI zvols (databases)
-│       ├── <zvol-name>                # PostgreSQL (auto-created)
-│       └── <zvol-name>                # ClickHouse (auto-created)
-├── vms/                               # VM disk images
-└── ml-models/                         # Trained ML models
+ssd/
+└── kubernetes/
+    ├── nfs-dynamic/                   # democratic-csi provisions PVCs here
+    │   ├── pvc-<uuid>/                # App data (auto-created)
+    │   └── pvc-<uuid>/                # Configs (auto-created)
+    ├── nfs-static/                    # Static PVs (manual mounts)
+    └── iscsi-zvols/                   # iSCSI zvols (databases)
+        ├── <zvol-name>                # PostgreSQL (auto-created)
+        └── <zvol-name>                # ClickHouse (auto-created)
 ```
 
 **Note**: Talos cluster boot images are stored on Proxmox's `local-zfs`, not TrueNAS.
 
-### Scratch Pool (~15TB)
+### Scratch Pool (~2.73TB)
 
 ```text
 scratch/
-├── kubernetes/
-│   └── nfs-dynamic/                   # democratic-csi provisions PVCs here
-│       └── pvc-<uuid>/                # CI cache (auto-created)
-├── downloads/{incomplete,complete,usenet}  # Torrent/Usenet staging
-├── ci-runners/{cache,artifacts}            # Manual NFS mounts (optional)
-├── ml-datasets/                            # Training data staging
-└── temp/                                   # General scratch space
+├── dump/                             # Photo dump landing (rsync from rpi-pihole dumper)
+└── kubernetes/
+    └── nfs-dynamic/                   # democratic-csi provisions PVCs here (truenas-nfs-scratch)
+        └── pvc-<uuid>/                # Ephemeral PVCs (auto-created)
 ```
 
 ## Storage Class Matrix
 
 | Workload | Pool | Type | Storage Class | Access Mode | Why |
 | -------- | ---- | ---- | ------------- | ----------- | --- |
-| **PostgreSQL, MySQL** | fast | iSCSI | `truenas-iscsi-fast` | ReadWriteOnce | Block storage, better IOPS |
-| **Redis, databases** | fast | iSCSI | `truenas-iscsi-fast` | ReadWriteOnce | Low latency critical |
-| **Forgejo Git repos DB** | fast | iSCSI | `truenas-iscsi-fast` | ReadWriteOnce | Critical data protection |
-| **Signoz ClickHouse** | fast | iSCSI | `truenas-iscsi-fast` | ReadWriteOnce | Time-series DB performance |
-| **Shared configs** | fast | NFS | `truenas-nfs-fast` | ReadWriteMany | Multiple pods need access |
-| **App data (small)** | fast | NFS | `truenas-nfs-fast` | ReadWriteOnce | General purpose, fast access |
+| **PostgreSQL, MySQL** | ssd | iSCSI | `truenas-iscsi-fast` | ReadWriteOnce | Block storage, better IOPS |
+| **Redis, databases** | ssd | iSCSI | `truenas-iscsi-fast` | ReadWriteOnce | Low latency critical |
+| **Forgejo Git repos DB** | ssd | iSCSI | `truenas-iscsi-fast` | ReadWriteOnce | Critical data protection |
+| **Signoz ClickHouse** | ssd | iSCSI | `truenas-iscsi-fast` | ReadWriteOnce | Time-series DB performance |
+| **Shared configs** | ssd | NFS | `truenas-nfs-fast` | ReadWriteMany | Multiple pods need access |
+| **App data (small)** | ssd | NFS | `truenas-nfs-fast` | ReadWriteOnce | General purpose, fast access |
 | **Forgejo registry** | bulk | NFS | `truenas-nfs-bulk` | ReadWriteOnce | Large images (~500GB), read-heavy |
 | **Large app data** | bulk | NFS | `truenas-nfs-bulk` | ReadWriteOnce | Non-critical, size > speed |
 | **Media streaming** | bulk | NFS | Static PV | ReadOnlyMany | Manual mount `/mnt/bulk/media` |
@@ -311,41 +273,30 @@ scratch/
 | **CI cache** | scratch | NFS | `truenas-nfs-scratch` | ReadWriteOnce | Ephemeral, rebuild on demand |
 | **Build artifacts** | scratch | NFS | `truenas-nfs-scratch` | ReadWriteOnce | Temporary, purged after 7 days |
 
-## Backup Strategy (3-2-1)
+**Note**: The democratic-csi storage classes keep their `-fast` names (`truenas-iscsi-fast`,
+`truenas-nfs-fast`) for backwards compatibility — they now provision on the `ssd` pool.
+
+## Backup Strategy
 
 ### Tier 1: Local Snapshots (truenas-primary)
 
-- **fast/kubernetes**: Hourly (keep 24)
-- **fast/vms**: Every 4 hours (keep 6)
-- **fast/ml-models**: Daily (keep 7)
+- **ssd/kubernetes**: Hourly (keep 24)
 - **bulk/media**: Daily (keep 7)
 - **bulk/photos**: Daily (keep 30)
-- **scratch/***: No snapshots (ephemeral by design)
+- **scratch/***: No snapshots (reproducible photo dump)
 
-### Tier 2: Replication (truenas-primary → truenas-backup pool)
+### Tier 2: Offsite (Backblaze B2 via Restic)
 
-- **fast/kubernetes**: Hourly
-- **fast/vms**: Every 4 hours
-- **fast/ml-models**: Daily
-- **bulk/photos**: Daily (CRITICAL - irreplaceable)
-- **bulk/signoz-cold**: Daily
-- **bulk/media**: Weekly (replaceable)
-- **bulk/backups**: Daily
+Backups go straight offsite to the `svnlto-offsite-backup` B2 bucket — there is no local
+backup TrueNAS or ZFS replication.
 
-### Tier 3: Offsite (Backblaze B2 via Restic)
-
-- **fast/kubernetes**: Hourly (~4TB, K8s PVCs, databases in iSCSI zvols)
-- **fast/vms**: Hourly (~2TB, VM disk images)
-- **fast/ml-models**: Hourly (~1TB, trained models)
-- **bulk/photos**: Daily (~5TB, CRITICAL - irreplaceable Immich photos)
-- **bulk/music**: Daily (~10TB, music library)
+- **ssd/kubernetes**: Hourly (K8s PVCs, databases in iSCSI zvols)
+- **bulk/photos**: Daily (CRITICAL - irreplaceable Immich photos)
+- **bulk/music**: Daily (music library)
 - **bulk/backups/proxmox**: Daily (Proxmox VM backups)
-- **bulk/backups/forgejo**: Daily (~100GB, Git repos)
-- **bulk/backups/timemachine**: Weekly (~2TB, macOS backups)
+- **bulk/backups/timemachine**: Weekly (macOS backups)
 - **bulk/archive**: Weekly (cold storage)
-- **Exclude**: bulk/media/movies, bulk/media/tv (replaceable), scratch/* (ephemeral)
-
-**Estimated Offsite Cost**: ~$100-150/month (~20-30TB at $5/TB/month)
+- **Exclude**: bulk/media/movies, bulk/media/tv (replaceable), scratch/* (reproducible)
 
 ## Network Configuration
 
@@ -363,13 +314,11 @@ scratch/
 
 ## Capacity Planning
 
-### Fast Pool (14TB) - Reduced Quotas for Headroom ✅
+### SSD Pool (~230GB)
 
-- Kubernetes NFS dynamic: **4TB quota** (reduced from 6TB)
-- iSCSI zvols (databases): ~4TB (PostgreSQL, MySQL, ClickHouse)
-- VMs: ~2TB
-- ML models: **1TB quota** (reduced from 2TB)
-- **Reserve**: **~3TB headroom (21%)** ← Safe margin
+- Kubernetes NFS dynamic: app configs and small PVCs
+- iSCSI zvols (databases): PostgreSQL, MySQL, ClickHouse
+- **Reserve**: keep ~15-20% free for COW write performance
 
 **Why headroom matters**: ZFS performance degrades above 90% full, COW needs free space for writes.
 
@@ -379,15 +328,13 @@ scratch/
 - Media: ~10TB (movies, music, TV, books)
 - Photos (Immich): ~5TB
 - Signoz cold: ~1TB
-- Backups: ~2TB (timemachine, proxmox, forgejo, restic staging)
+- Backups: ~2TB (timemachine, proxmox, restic staging)
 - **Reserve**: **~1TB headroom (3%)** ← Tight but acceptable for large files
 
-### Scratch Pool (15TB)
+### Scratch Pool (~2.73TB)
 
-- Kubernetes NFS dynamic: **8TB quota** (CI cache ephemeral)
-- Downloads: ~5TB (incomplete torrents, usenet staging)
-- ML datasets: ~1TB
-- **Reserve**: **~1TB headroom (7%)** ← Acceptable for ephemeral data
+- Photo dump: rsync landing from the rpi-pihole dumper
+- **Reserve**: single disk, no redundancy — holds only reproducible data
 
 ## Troubleshooting
 
@@ -401,15 +348,6 @@ zpool destroy poolname
 
 # Check disk availability
 midclt call disk.unused
-```
-
-### SLOG Not Attached
-
-```bash
-# Add SLOG to existing pool
-zpool add fast log mirror \
-  /dev/disk/by-id/ssd1 \
-  /dev/disk/by-id/ssd2
 ```
 
 ### Verify Pool Health
@@ -429,9 +367,8 @@ zpool events -v
 
 1. ✅ Create pools (this document)
 2. ✅ Run Ansible playbook to create datasets/shares
-3. ⬜ Deploy democratic-csi in Kubernetes (3 instances: fast-iscsi, fast-nfs, bulk-nfs, scratch-nfs)
-4. ⬜ Configure replication to grogu backup pool
-5. ⬜ Set up Restic offsite backup to B2
+3. ⬜ Deploy democratic-csi in Kubernetes (fast-iscsi, fast-nfs, bulk-nfs, scratch-nfs)
+4. ⬜ Set up Restic offsite backup to B2 (`svnlto-offsite-backup`)
 
 ## References
 

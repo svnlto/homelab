@@ -7,7 +7,7 @@
   become: true
 
   vars:
-    restic_repo: "b2:homelab-truenas-backup:/"
+    restic_repo: "b2:svnlto-offsite-backup:/"
     restic_password: "{{ vault_restic_password }}"
     b2_account_id: "{{ vault_b2_account_id }}"
     b2_account_key: "{{ vault_b2_account_key }}"

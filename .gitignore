@@ -76,3 +76,5 @@ ansible/group_vars/all/vault.yml
 kubeconfig
 talosconfig
 infrastructure/**/configs/
+
+.claude/worktrees
