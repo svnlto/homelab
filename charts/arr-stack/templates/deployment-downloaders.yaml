@@ -145,6 +145,8 @@ spec:
           volumeMounts:
             - name: slskd-config
               mountPath: /app
+            - name: downloads
+              mountPath: /data/downloads
             - name: media-music
               mountPath: /data/media/music
               readOnly: true
