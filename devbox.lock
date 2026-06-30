@@ -65,67 +65,67 @@
         }
       }
     },
-    "ansible@2.20.4": {
-      "last_modified": "2026-04-16T08:46:55Z",
-      "resolved": "github:NixOS/nixpkgs/b86751bc4085f48661017fa226dee99fab6c651b#ansible",
+    "ansible@2.21.1": {
+      "last_modified": "2026-06-27T07:37:20Z",
+      "resolved": "github:NixOS/nixpkgs/3d46470bb3030020f7e1361f33514854f5bfa86d#ansible",
       "source": "devbox-search",
-      "version": "2.20.4",
+      "version": "2.21.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/dqsxnz3wpyl1fgqq2fszvwfnsn8ji5xs-python3.13-ansible-core-2.20.4",
+              "path": "/nix/store/krg483398knz13vzxhsg1rnd9y3fpwba-python3.13-ansible-core-2.21.1",
               "default": true
             },
             {
               "name": "dist",
-              "path": "/nix/store/qf3li3pg1h7zf3x5p59d0iw3wfx53dsi-python3.13-ansible-core-2.20.4-dist"
+              "path": "/nix/store/zgjvv3r8wcaxbjxgk74jj9y41ahy9klz-python3.13-ansible-core-2.21.1-dist"
             }
           ],
-          "store_path": "/nix/store/dqsxnz3wpyl1fgqq2fszvwfnsn8ji5xs-python3.13-ansible-core-2.20.4"
+          "store_path": "/nix/store/krg483398knz13vzxhsg1rnd9y3fpwba-python3.13-ansible-core-2.21.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/aa5l2n47mpnkafnrkaqpvsjjhm0awlmj-python3.13-ansible-core-2.20.4",
+              "path": "/nix/store/v1s3zlvdhisddcmd7jjzkgnby1sal2a9-python3.13-ansible-core-2.21.1",
               "default": true
             },
             {
               "name": "dist",
-              "path": "/nix/store/y9nwmnq6d4qmqfp18gir5nxbrxy9fx70-python3.13-ansible-core-2.20.4-dist"
+              "path": "/nix/store/6mamiiqazf1x1vdja0cfcvhp6fr6g1l8-python3.13-ansible-core-2.21.1-dist"
             }
           ],
-          "store_path": "/nix/store/aa5l2n47mpnkafnrkaqpvsjjhm0awlmj-python3.13-ansible-core-2.20.4"
+          "store_path": "/nix/store/v1s3zlvdhisddcmd7jjzkgnby1sal2a9-python3.13-ansible-core-2.21.1"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/9rpzirm6n3fvlmlksdlkviyj9cysnkg8-python3.13-ansible-core-2.20.4",
+              "path": "/nix/store/291ym9bdzf65w9bij0n7hgih9np4lzd4-python3.13-ansible-core-2.21.1",
               "default": true
             },
             {
               "name": "dist",
-              "path": "/nix/store/3jw49k6b6p4glid1r12n3ljcsdjn4i4a-python3.13-ansible-core-2.20.4-dist"
+              "path": "/nix/store/zpsfwv55vvv228rm95yvvw3i1q5j26jy-python3.13-ansible-core-2.21.1-dist"
             }
           ],
-          "store_path": "/nix/store/9rpzirm6n3fvlmlksdlkviyj9cysnkg8-python3.13-ansible-core-2.20.4"
+          "store_path": "/nix/store/291ym9bdzf65w9bij0n7hgih9np4lzd4-python3.13-ansible-core-2.21.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/hnki0zfwy27xq537k0p9vm0djq8i5kp9-python3.13-ansible-core-2.20.4",
+              "path": "/nix/store/vl7gpdqdd384wsnrbiz69jwr01lkzwwb-python3.13-ansible-core-2.21.1",
               "default": true
             },
             {
               "name": "dist",
-              "path": "/nix/store/z2xi3si5x87jdbq78c3a6l9swn87hld7-python3.13-ansible-core-2.20.4-dist"
+              "path": "/nix/store/bf3x43wmgz7dv9qmvgicqk0h7a4fqb8g-python3.13-ansible-core-2.21.1-dist"
             }
           ],
-          "store_path": "/nix/store/hnki0zfwy27xq537k0p9vm0djq8i5kp9-python3.13-ansible-core-2.20.4"
+          "store_path": "/nix/store/vl7gpdqdd384wsnrbiz69jwr01lkzwwb-python3.13-ansible-core-2.21.1"
         }
       }
     },
@@ -771,7 +771,7 @@
     },
     "nodejs@25.9.0": {
       "last_modified": "2026-04-16T08:46:55Z",
-      "plugin_version": "0.0.2",
+      "plugin_version": "0.0.4",
       "resolved": "github:NixOS/nixpkgs/b86751bc4085f48661017fa226dee99fab6c651b#nodejs_25",
       "source": "devbox-search",
       "version": "25.9.0",
