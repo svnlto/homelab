@@ -40,13 +40,15 @@
   programs.bash.shellAliases = {
     dump-to-truenas = builtins.concatStringsSep " " [
       "bash -c 'P=$(${pkgs.jq}/bin/jq -r .remote_path /var/lib/dumper/config.json);"
-      "rsync -rltvP --partial --omit-dir-times --no-perms --no-owner --no-group --exclude=lost+found"
-      "/mnt/dump/\"$P\" truenas_admin@192.168.0.13:/mnt/fast/dump/\"$P\"'"
+      # WAL/SHM are folded into Photos.sqlite by the dumper's wal_checkpoint(TRUNCATE);
+      # never ship the sidecars or a stale copy corrupts the DB osxphotos reads.
+      "rsync -rltvP --partial --omit-dir-times --no-perms --no-owner --no-group --exclude=lost+found --exclude=*.sqlite-wal --exclude=*.sqlite-shm"
+      "/mnt/dump/\"$P\" truenas_admin@192.168.0.13:/mnt/scratch/dump/\"$P\"'"
     ];
     dump-from-truenas = builtins.concatStringsSep " " [
       "bash -c 'P=$(${pkgs.jq}/bin/jq -r .remote_path /var/lib/dumper/config.json);"
-      "rsync -rltvP --partial --omit-dir-times --no-perms --no-owner --no-group --exclude=lost+found"
-      "truenas_admin@192.168.0.13:/mnt/fast/dump/\"$P\" /mnt/dump/\"$P\"'"
+      "rsync -rltvP --partial --omit-dir-times --no-perms --no-owner --no-group --exclude=lost+found --exclude=*.sqlite-wal --exclude=*.sqlite-shm"
+      "truenas_admin@192.168.0.13:/mnt/scratch/dump/\"$P\" /mnt/dump/\"$P\"'"
     ];
   };
 }
