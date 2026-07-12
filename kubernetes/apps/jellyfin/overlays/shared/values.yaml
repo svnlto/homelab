@@ -64,7 +64,10 @@ seerr:
       key: password
 
 jellyfin:
-  nodeSelector: {}
+  # Pin to the node with Intel GPU passthrough; the /dev/dri hostPath mount
+  # only exists on shared-worker2, so scheduling elsewhere fails to mount.
+  nodeSelector:
+    gpu: intel-arc
 
 ingress:
   enabled: true
