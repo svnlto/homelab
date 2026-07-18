@@ -110,6 +110,19 @@ nixos-flake-update-pihole:
 nixos-check-pihole:
     cd nix && vagrant ssh -c "cd /vagrant && nix flake check"
 
+# Deploy config to rpi-devbox (native aarch64 rebuild over SSH, no reflash)
+nixos-deploy-devbox:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    PI="svenlito@192.168.0.54"
+    echo "Syncing NixOS config to rpi-devbox..."
+    rsync -a --exclude='.vagrant' --exclude='result*' --exclude='*.img' --exclude='*.qcow2' \
+      nix/ "$PI":/tmp/nix-config/
+    echo "Rebuilding NixOS on rpi-devbox..."
+    ssh "$PI" "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-devbox --accept-flake-config"
+    echo "Deploy complete. If first Tailscale run, authenticate with:"
+    echo "  ssh $PI 'sudo tailscale up --accept-dns=false --ssh'"
+
 # Free disk space in VM
 nixos-clean:
     cd nix && vagrant ssh -c "sudo rm -rf /tmp/nix-* /tmp/nixos-build /tmp/tmp.* && nix-collect-garbage -d && df -h /"
