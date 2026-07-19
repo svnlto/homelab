@@ -27,7 +27,8 @@ resource "proxmox_virtual_environment_vm" "truenas" {
 
   memory {
     dedicated = var.memory_mb
-    floating  = var.memory_mb
+    # No ballooning — ZFS ARC needs a fixed RAM allocation.
+    floating = 0
   }
 
   operating_system {
@@ -46,8 +47,8 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   }
 
   vga {
-    type   = "virtio"
-    memory = 32
+    type   = "std"
+    memory = 16
   }
 
   network_device {
