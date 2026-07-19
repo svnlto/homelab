@@ -19,10 +19,12 @@
     "helm-docs@1.14.2",
     "kubeconform@0.7.0",
     "nodejs@25.9.0",
-    "deno@2.7.12"
+    "deno@2.7.12",
+    "terraform@1.14.9"
   ],
   "env": {
-    "K9S_CONFIG_DIR": "~/.config/k9s"
+    "K9S_CONFIG_DIR": "$HOME/.config/k9s",
+    "TERRAGRUNT_TFPATH": "terraform"
   },
   "shell": {
     "init_hook": [

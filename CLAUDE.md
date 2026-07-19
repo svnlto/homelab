@@ -34,10 +34,6 @@ just nixos-build-pihole                  # Build SD image
 just nixos-flash-pihole /dev/rdiskX      # Flash to SD card
 just nixos-deploy-pihole                 # Deploy config via SSH (rsync + nixos-rebuild)
 just nixos-flake-update-pihole           # Update flake lock in VM
-
-# Arr Stack (legacy NixOS config, now runs on K8s)
-just nixos-install-arr-stack <ip>        # Initial install via nixos-anywhere
-just nixos-update-arr-stack              # Deploy config via SSH
 ```
 
 ### Terragrunt
@@ -123,11 +119,9 @@ infrastructure/
 
 ```text
 nix/
-├── flake.nix                # Two active configs: rpi-pihole (aarch64), arr-stack (x86_64)
-│                            #   rpi-qdevice decommissioned (QDevice Pi removed)
+├── flake.nix                # Active configs: rpi-pihole (aarch64), arr-stack (x86_64)
 ├── common/constants.nix     # Shared values (IPs, image versions)
 ├── rpi-pihole/              # Pi-hole: pihole.nix, configuration.nix, tailscale.nix
-├── rpi-qdevice/             # (decommissioned) QDevice: corosync-qnetd
 └── arr-stack/               # Media stack: arr.nix, configuration.nix, disk-config.nix
 ```
 
@@ -208,29 +202,19 @@ Pinned via Nix flakes (`flake.nix`):
 
 ## Pre-commit Hooks
 
-Configured in `.pre-commit-config.yaml`:
+Run via `just lint`. Configured in `.pre-commit-config.yaml`:
 
 - **General**: trailing-whitespace, end-of-file-fixer, check-yaml, yamlfmt, shellcheck, markdownlint
-- **Terraform**: `terraform_fmt`, `terraform_tflint` for `infrastructure/**/*.tf`
-- **Ansible**: ansible-lint for `ansible/`
-- **Nix**: nixfmt, statix, deadnix (statix W20 "repeated_keys" suppressed in `statix.toml`)
-- **Helm**: helm-lint, helm-template, helm-docs, kubeconform for `charts/*/`
-- **Exclusions**: `check-yaml` and `yamlfmt` exclude `charts/*/templates/` (Helm `{{ }}` syntax);
-  `markdownlint` excludes `charts/` (auto-generated READMEs)
+- **Terraform**: terraform_fmt, terraform_tflint (`infrastructure/**/*.tf`)
+- **Ansible**: ansible-lint
+- **Nix**: nixfmt, statix, deadnix (statix W20 suppressed in `statix.toml`)
+- **Helm**: helm-lint, helm-template, helm-docs, kubeconform (`charts/*/`)
+- `check-yaml`/`yamlfmt` exclude `charts/*/templates/`; `markdownlint` excludes `charts/`
 
 ## Formatting Rules
 
-- When outputting shell commands that are long or have multiple arguments, always use
-  backslash line continuations so they are easy to copy-paste:
-
-  ```bash
-  rsync -avP --partial \
-    /source/path/ \
-    user@host:/destination/path/
-  ```
-
-- Never output a shell command that wraps mid-argument without a backslash — it will
-  break when pasted into a terminal.
+- Use backslash line continuations for long shell commands so they are easy to copy-paste.
+- Never wrap mid-argument without a backslash.
 
 ## Common Issues
 

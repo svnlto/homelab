@@ -771,7 +771,7 @@
     },
     "nodejs@25.9.0": {
       "last_modified": "2026-04-16T08:46:55Z",
-      "plugin_version": "0.0.2",
+      "plugin_version": "0.0.4",
       "resolved": "github:NixOS/nixpkgs/b86751bc4085f48661017fa226dee99fab6c651b#nodejs_25",
       "source": "devbox-search",
       "version": "25.9.0",
@@ -975,6 +975,54 @@
             }
           ],
           "store_path": "/nix/store/r7h0dhc88k3mzv60dc91ckh6cpscvlzv-talosctl-1.12.6"
+        }
+      }
+    },
+    "terraform@1.14.9": {
+      "last_modified": "2026-04-23T13:07:47Z",
+      "resolved": "github:NixOS/nixpkgs/01fbdeef22b76df85ea168fbfe1bfd9e63681b30#terraform",
+      "source": "devbox-search",
+      "version": "1.14.9",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/599ha3dq1mn0k8p93gmvisll138n0xws-terraform-1.14.9",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/599ha3dq1mn0k8p93gmvisll138n0xws-terraform-1.14.9"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4w4rp0435dfy1407np47ry0b15r5w9k0-terraform-1.14.9",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/4w4rp0435dfy1407np47ry0b15r5w9k0-terraform-1.14.9"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/hr2kldlgaxf4gb918i386cm9w8xnaif9-terraform-1.14.9",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/hr2kldlgaxf4gb918i386cm9w8xnaif9-terraform-1.14.9"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/mjrd83by016cxblwh5aja645jnh3qmbj-terraform-1.14.9",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/mjrd83by016cxblwh5aja645jnh3qmbj-terraform-1.14.9"
         }
       }
     },
