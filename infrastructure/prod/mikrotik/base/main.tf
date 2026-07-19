@@ -33,8 +33,8 @@ resource "routeros_interface_bridge_port" "trunk_ports" {
 
   interface   = each.value.interface
   bridge      = routeros_interface_bridge.main.name
-  pvid        = 1
-  frame_types = "admit-only-vlan-tagged"
+  pvid        = each.value.pvid
+  frame_types = each.value.frame_types
   comment     = each.value.comment
 
   depends_on = [routeros_interface_bridge_vlan.vlan_membership]
@@ -83,12 +83,12 @@ resource "routeros_interface_bridge_vlan" "vlan_membership" {
   vlan_ids = [each.value.id]
   tagged = concat(
     [routeros_interface_bridge.main.name],
-    [for k, v in var.trunk_ports : v.interface]
+    [for k, v in var.trunk_ports : v.interface if v.pvid != each.value.id]
   )
-  untagged = [
-    for k, v in var.access_ports : v.interface
-    if v.pvid == each.value.id
-  ]
+  untagged = concat(
+    [for k, v in var.access_ports : v.interface if v.pvid == each.value.id],
+    [for k, v in var.trunk_ports : v.interface if v.pvid == each.value.id]
+  )
   comment = "VLAN ${each.value.id} (${each.value.name})"
 }
 

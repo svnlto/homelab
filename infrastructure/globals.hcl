@@ -143,7 +143,7 @@ locals {
     }
 
     trunk_ports = {
-      sfp_plus1 = { interface = "sfp-sfpplus1", comment = "grogu 10GbE" }
+      sfp_plus1 = { interface = "sfp-sfpplus1", comment = "grogu 10GbE", pvid = 20, frame_types = "admit-all" }
     }
 
     bridge_name = "bridge-vlans"

@@ -26,6 +26,10 @@ variable "trunk_ports" {
   type = map(object({
     interface = string
     comment   = string
+    # pvid/frame_types default to a pure tagged trunk; hybrid trunks with a
+    # native untagged VLAN override them (sfp_plus1 = untagged VLAN 20).
+    pvid        = optional(number, 1)
+    frame_types = optional(string, "admit-only-vlan-tagged")
   }))
 }
 
