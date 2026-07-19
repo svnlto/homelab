@@ -42,7 +42,9 @@ inputs = {
   mac_address         = "BC:24:11:2E:D4:03"
   storage_bridge      = local.proxmox.bridges.storage
 
-  enable_network_init = true
+  # false: TrueNAS sets its own static IPs in-OS. Cloud-init here attaches an
+  # ide2 drive and forces a VM restart on apply (broke it 2026-07-19).
+  enable_network_init = false
   management_ip       = "${local.ips.truenas_primary_mgmt}/24"
   management_gateway  = local.vlans.lan.gateway
   storage_ip          = "${local.ips.truenas_primary_storage}/24"

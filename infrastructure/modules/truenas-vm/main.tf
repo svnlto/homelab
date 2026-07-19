@@ -128,15 +128,18 @@ resource "proxmox_virtual_environment_vm" "truenas" {
     }
   }
 
-  # Ignore manual changes (ejected ISO, disk additions, USB devices)
-  # hostpci kept in ignore_changes due to bpg/proxmox provider bug:
-  # phantom disk with null interface in state blocks applies
+  # Ignore manual/live changes so a routine apply never restarts this VM.
+  # hostpci: bpg phantom-disk-with-null-interface bug blocks applies.
+  # initialization: cloud-init is unused by TrueNAS (static IPs set in-OS);
+  # adding it attaches an ide2 drive and forces a restart — see 2026-07-19.
   lifecycle {
     ignore_changes = [
       cdrom,
       disk,
       hostpci,
+      initialization,
       network_device,
+      tags,
       usb,
     ]
   }
