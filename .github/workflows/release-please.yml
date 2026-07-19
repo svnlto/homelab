@@ -19,7 +19,7 @@ jobs:
       osxphotos-release-created: ${{ steps.release.outputs['nix/osxphotos-export--release_created'] }}
       osxphotos-tag: ${{ steps.release.outputs['nix/osxphotos-export--tag_name'] }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: release
         with:
           config-file: release-please-config.json
