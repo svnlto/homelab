@@ -66,39 +66,21 @@
         "unboundImage\\s*=\\s*\"(?<depName>[^\"]+?):(?<currentValue>[^\"]+?)\";"
       ],
       "datasourceTemplate": "docker"
+    },
+    {
+      // Flat "image: repo:tag@sha256:..." refs in Helm chart values.
+      // helm-values only reads nested image.repository/tag, so the arr-stack
+      // apps + downloaders (flat image strings) are matched here instead.
+      "customType": "regex",
+      "fileMatch": ["^charts/.+/values\\.yaml$"],
+      "matchStrings": [
+        "image:\\s*(?<depName>[^\\s:]+):(?<currentValue>[^\\s@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?"
+      ],
+      "datasourceTemplate": "docker"
     }
   ],
 
   "packageRules": [
-    // Group pre-commit hooks (minor + patch)
-    {
-      "groupName": "pre-commit hooks",
-      "matchManagers": ["pre-commit"],
-      "matchUpdateTypes": ["minor", "patch"]
-    },
-
-    // Group Terraform providers (minor + patch)
-    {
-      "groupName": "terraform providers",
-      "matchManagers": ["terraform"],
-      "matchUpdateTypes": ["minor", "patch"]
-    },
-
-    // Group Nix flake inputs (minor + patch)
-    {
-      "groupName": "nix flake inputs",
-      "matchManagers": ["nix"],
-      "matchUpdateTypes": ["minor", "patch"]
-    },
-
-    // Group Kubernetes container images (minor + patch)
-    {
-      "groupName": "kubernetes containers",
-      "matchFileNames": ["kubernetes/apps/**"],
-      "matchDatasources": ["docker"],
-      "matchUpdateTypes": ["minor", "patch"]
-    },
-
     // Disable digest pinning for Kubernetes manifests
     {
       "matchFileNames": ["kubernetes/apps/**"],
@@ -112,10 +94,12 @@
       "labels": ["dependencies", "major"]
     },
 
-    // Disable digest pinning for custom regex-managed Nix files —
-    // Nix string format ("image:tag") has no place for @sha256: digests
+    // Disable digest pinning for the Nix custom-regex managers only
+    // (Nix "image:tag" strings have no place for @sha256 digests).
+    // The charts custom manager keeps digests via docker:pinDigests.
     {
       "matchManagers": ["custom.regex"],
+      "matchFileNames": ["nix/**"],
       "pinDigests": false
     },
 
