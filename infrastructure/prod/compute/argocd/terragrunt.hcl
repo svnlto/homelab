@@ -1,5 +1,9 @@
 # ArgoCD on shared cluster — GitOps hub.
 
+terraform {
+  source = "${get_repo_root()}/infrastructure/modules//argocd"
+}
+
 include "root" {
   path = find_in_parent_folders("root.hcl")
 }

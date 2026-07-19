@@ -182,7 +182,6 @@ locals {
     resource_mappings = {
       truenas_bulk_hba_a = "truenas-bulk-hba-a"
       truenas_bulk_hba_b = "truenas-bulk-hba-b"
-      truenas_fast_hba   = "truenas-fast-hba"
       arc_a310           = "arc-a310"
     }
   }

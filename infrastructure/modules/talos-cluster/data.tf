@@ -38,6 +38,7 @@ data "talos_machine_configuration" "control_plane" {
             }
           ]
           nameservers = var.dns_servers
+          hostname    = each.value.hostname
         }
         time = {
           servers = var.ntp_servers
@@ -108,6 +109,14 @@ data "talos_machine_configuration" "control_plane" {
           }
         ] : []
       }
+    }),
+    # Talos 1.12 emits a default HostnameConfig (auto:stable -> random talos-xxx
+    # names) that conflicts with the legacy machine.network.hostname above.
+    # Delete it so the static hostname wins. See docs: network/hostnameconfig.
+    yamlencode({
+      "$patch"   = "delete"
+      apiVersion = "v1alpha1"
+      kind       = "HostnameConfig"
     })
   ]
 }
@@ -140,6 +149,7 @@ data "talos_machine_configuration" "worker" {
             }
           ]
           nameservers = var.dns_servers
+          hostname    = each.value.hostname
         }
         time = {
           servers = var.ntp_servers
@@ -155,10 +165,9 @@ data "talos_machine_configuration" "worker" {
             }
           ]
         } : {}
-        kubelet = each.value.gpu_passthrough ? {
-          nodeLabels = {
-            "gpu" = "intel-arc"
-          }
+        kubelet = {}
+        nodeLabels = each.value.gpu_passthrough ? {
+          "gpu" = "intel-arc"
         } : {}
         sysctls = {
           "net.ipv6.conf.all.disable_ipv6"     = "1"
@@ -173,6 +182,13 @@ data "talos_machine_configuration" "worker" {
           }
         } : null
       }
+    }),
+    # Delete Talos 1.12's default HostnameConfig (auto:stable) so the static
+    # machine.network.hostname above wins instead of a random talos-xxx name.
+    yamlencode({
+      "$patch"   = "delete"
+      apiVersion = "v1alpha1"
+      kind       = "HostnameConfig"
     })
   ]
 }

@@ -1,5 +1,9 @@
 # Shared services Talos K8s cluster — VLAN 30 (10.0.1.0/24).
 
+terraform {
+  source = "${get_repo_root()}/infrastructure/modules//talos-cluster"
+}
+
 include "root" {
   path = find_in_parent_folders("root.hcl")
 }
@@ -101,21 +105,26 @@ inputs = {
       memory_mb       = 16384
       disk_size_gb    = 50
       gpu_passthrough = true
+      gpu_mapping_id  = local.proxmox.resource_mappings.arc_a310
     }
   }
 
   tags             = ["production", "k8s", "shared"]
   deploy_bootstrap = true
 
+  # Write kubeconfig/talosconfig to the live dir, not the .terragrunt-cache dir
+  # (path.cwd). provider.hcl, argocd, and the dev-shell KUBECONFIG all read here.
+  config_output_dir = get_terragrunt_dir()
+
   # Democratic-CSI — TrueNAS primary (storage VLAN)
   truenas_api_url             = "https://${local.ips.truenas_primary_storage}"
   truenas_api_key             = get_env("TF_VAR_truenas_api_key", "")
   truenas_nfs_dataset      = "bulk/kubernetes/nfs-dynamic"
-  truenas_nfs_fast_dataset = "fast/kubernetes/nfs-dynamic"
+  truenas_nfs_fast_dataset = "ssd/kubernetes/nfs-dynamic"
 
-  # iSCSI — fast pool (10K SAS)
+  # iSCSI — ssd pool (mirror SSDs)
   truenas_iscsi_portal  = "10.10.10.13:3260"
-  truenas_iscsi_dataset = "fast/kubernetes/iscsi-zvols"
+  truenas_iscsi_dataset = "ssd/kubernetes/iscsi-zvols"
 
   # MetalLB
   metallb_ip_range = "${local.k8s.metallb_start}-${local.k8s.metallb_end}"

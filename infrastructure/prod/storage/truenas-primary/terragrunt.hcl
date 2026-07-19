@@ -1,4 +1,8 @@
-# TrueNAS Primary (VMID 300) on grogu — internal HBA (bulk) + external HBA (fast/MD1220) passthrough.
+# TrueNAS Primary (VMID 300) on grogu — internal HBA (bulk) passthrough + SCSI SSD passthrough (ssd pool).
+
+terraform {
+  source = "${get_repo_root()}/infrastructure/modules//truenas-vm"
+}
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -47,7 +51,6 @@ inputs = {
   hostpci_mappings = [
     local.proxmox.resource_mappings.truenas_bulk_hba_a,
     local.proxmox.resource_mappings.truenas_bulk_hba_b,
-    local.proxmox.resource_mappings.truenas_fast_hba,
   ]
 
   # 'ssd' pool SSDs on grogu's onboard SATA (not on a passthrough HBA) — handed

@@ -140,6 +140,14 @@ variable "deploy_bootstrap" {
   default     = false
 }
 
+# Directory for generated kubeconfig/talosconfig. Must be the live terragrunt dir,
+# not path.cwd — with terraform.source, path.cwd resolves to the .terragrunt-cache dir.
+variable "config_output_dir" {
+  description = "Directory to write kubeconfig/talosconfig into (pass get_terragrunt_dir())"
+  type        = string
+  default     = ""
+}
+
 variable "truenas_api_url" {
   description = "TrueNAS API URL (e.g., https://192.168.0.13)"
   type        = string

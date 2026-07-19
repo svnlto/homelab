@@ -22,7 +22,7 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
 
   bios            = "ovmf"
   machine         = "q35"
-  scsi_hardware   = "virtio-scsi-pci"
+  scsi_hardware   = "virtio-scsi-single"
   boot_order      = ["scsi0"]
   stop_on_destroy = true
 
@@ -38,12 +38,15 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
 
   agent {
     enabled = true
-    type    = "virtio"
+  }
+
+  operating_system {
+    type = "l26"
   }
 
   vga {
-    type   = "virtio"
-    memory = 32
+    type   = "std"
+    memory = 16
   }
 
   efi_disk {
@@ -65,16 +68,6 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
   network_device {
     bridge = var.network_bridge
     model  = "virtio"
-  }
-
-  initialization {
-    datastore_id = var.datastore_id
-    ip_config {
-      ipv4 {
-        address = each.value.ip_address
-        gateway = var.network_gateway
-      }
-    }
   }
 
   lifecycle {
@@ -106,7 +99,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
 
   bios            = "ovmf"
   machine         = "q35"
-  scsi_hardware   = "virtio-scsi-pci"
+  scsi_hardware   = "virtio-scsi-single"
   boot_order      = ["scsi0"]
   stop_on_destroy = true
 
@@ -123,12 +116,15 @@ resource "proxmox_virtual_environment_vm" "worker" {
 
   agent {
     enabled = true
-    type    = "virtio"
+  }
+
+  operating_system {
+    type = "l26"
   }
 
   vga {
-    type   = "virtio"
-    memory = 4
+    type   = each.value.gpu_passthrough ? "virtio" : "std"
+    memory = 16
   }
 
   efi_disk {
@@ -150,16 +146,6 @@ resource "proxmox_virtual_environment_vm" "worker" {
   network_device {
     bridge = var.network_bridge
     model  = "virtio"
-  }
-
-  initialization {
-    datastore_id = var.datastore_id
-    ip_config {
-      ipv4 {
-        address = each.value.ip_address
-        gateway = var.network_gateway
-      }
-    }
   }
 
   dynamic "hostpci" {
@@ -198,11 +184,19 @@ resource "talos_machine_configuration_apply" "control_plane" {
   on_destroy = {
     graceful = true
     reboot   = false
-    reset    = true
+    # reset=false on purpose: replace_triggered_by (below) recreates this
+    # resource on ANY in-place VM change, and reset=true would then wipe the
+    # node to maintenance mode. Keep false so config re-applies non-destructively.
+    # For a genuine teardown, reset the node explicitly with `talosctl reset`.
+    reset = false
   }
 
   lifecycle {
-    replace_triggered_by = [proxmox_virtual_environment_vm.control_plane[each.key]]
+    # Reference .id (not the whole resource) so this only fires when the VM is
+    # RECREATED, not on in-place metadata updates. The whole-resource form wiped
+    # the cluster on 2026-07-19: cosmetic VM drift -> config-apply replace ->
+    # reset. See memory: talos-config-apply-reset-footgun.
+    replace_triggered_by = [proxmox_virtual_environment_vm.control_plane[each.key].id]
   }
 
   depends_on = [proxmox_virtual_environment_vm.control_plane]
@@ -225,11 +219,17 @@ resource "talos_machine_configuration_apply" "worker" {
   on_destroy = {
     graceful = true
     reboot   = false
-    reset    = true
+    # reset=false on purpose: replace_triggered_by (below) recreates this
+    # resource on ANY in-place VM change, and reset=true would then wipe the
+    # node to maintenance mode. Keep false so config re-applies non-destructively.
+    # For a genuine teardown, reset the node explicitly with `talosctl reset`.
+    reset = false
   }
 
   lifecycle {
-    replace_triggered_by = [proxmox_virtual_environment_vm.worker[each.key]]
+    # See control_plane: .id so only VM recreation (not in-place drift) triggers
+    # a config re-apply. Whole-resource form caused the 2026-07-19 cluster wipe.
+    replace_triggered_by = [proxmox_virtual_environment_vm.worker[each.key].id]
   }
 
   depends_on = [proxmox_virtual_environment_vm.worker]
@@ -301,12 +301,12 @@ resource "local_sensitive_file" "kubeconfig" {
   count = var.deploy_bootstrap ? 1 : 0
 
   content         = talos_cluster_kubeconfig.cluster[0].kubeconfig_raw
-  filename        = "${path.cwd}/configs/kubeconfig-${var.cluster_name}"
+  filename        = "${var.config_output_dir != "" ? var.config_output_dir : path.cwd}/configs/kubeconfig-${var.cluster_name}"
   file_permission = "0600"
 }
 
 resource "local_sensitive_file" "talosconfig" {
   content         = data.talos_client_configuration.talosconfig.talos_config
-  filename        = "${path.cwd}/configs/talosconfig-${var.cluster_name}"
+  filename        = "${var.config_output_dir != "" ? var.config_output_dir : path.cwd}/configs/talosconfig-${var.cluster_name}"
   file_permission = "0600"
 }

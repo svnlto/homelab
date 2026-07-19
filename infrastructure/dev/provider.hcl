@@ -32,7 +32,7 @@ provider "proxmox" {
     username = "root"
     node {
       name    = "${local.proxmox.nodes.primary}"
-      address = "${local.global_vars.locals.infrastructure_ips.din_mgmt}"
+      address = "${local.global_vars.locals.infrastructure_ips.grogu_mgmt}"
     }
   }
 }

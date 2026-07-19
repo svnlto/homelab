@@ -1,5 +1,5 @@
 module "truenas_iso" {
-  source = "../../modules/proxmox-image"
+  source = "../proxmox-image"
 
   download_url       = var.truenas_url
   image_name         = var.truenas_filename
@@ -13,7 +13,7 @@ module "truenas_iso" {
 }
 
 module "nixos_iso" {
-  source = "../../modules/proxmox-image"
+  source = "../proxmox-image"
 
   download_url       = var.nixos_url
   image_name         = var.nixos_filename
@@ -27,7 +27,7 @@ module "nixos_iso" {
 }
 
 module "talos_image_grogu" {
-  source = "../../modules/proxmox-image"
+  source = "../proxmox-image"
 
   download_url       = "https://factory.talos.dev/image/${var.talos_schematic_id}/${var.talos_version}/nocloud-amd64.raw.xz"
   image_name         = "talos-${var.talos_schematic_id}-${var.talos_version}-nocloud-amd64.raw"
@@ -40,7 +40,7 @@ module "talos_image_grogu" {
 }
 
 module "talos_image_gpu_grogu" {
-  source = "../../modules/proxmox-image"
+  source = "../proxmox-image"
 
   download_url       = "https://factory.talos.dev/image/${var.talos_gpu_schematic_id}/${var.talos_version}/nocloud-amd64.raw.xz"
   image_name         = "talos-${var.talos_gpu_schematic_id}-${var.talos_version}-nocloud-amd64.raw"

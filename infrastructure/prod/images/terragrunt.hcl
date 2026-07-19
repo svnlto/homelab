@@ -1,7 +1,7 @@
 # ISO and disk image management for production VMs.
 
 terraform {
-  source = "${get_terragrunt_dir()}//"
+  source = "${get_repo_root()}/infrastructure/modules//images"
 }
 
 include "root" {

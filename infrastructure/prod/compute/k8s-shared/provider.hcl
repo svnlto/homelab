@@ -4,45 +4,15 @@
 # Custom provider config for Talos clusters (requires multiple providers)
 
 locals {
-  global_vars = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
-  proxmox     = local.global_vars.locals.proxmox
+  global_vars     = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
+  proxmox         = local.global_vars.locals.proxmox
+  kubeconfig_path = "${get_terragrunt_dir()}/configs/kubeconfig-shared"
 }
 
 generate "provider" {
   path      = "provider.tf"
   if_exists = "overwrite_terragrunt"
   contents  = <<EOF
-terraform {
-  required_version = ">= 1.5.0"
-
-  required_providers {
-    proxmox = {
-      source  = "bpg/proxmox"
-      version = "0.97.1"
-    }
-    talos = {
-      source  = "siderolabs/talos"
-      version = "0.10.1"
-    }
-    local = {
-      source  = "hashicorp/local"
-      version = "2.7.0"
-    }
-    helm = {
-      source  = "hashicorp/helm"
-      version = "3.1.1"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "3.0.1"
-    }
-    kubectl = {
-      source  = "alekc/kubectl"
-      version = "2.1.3"
-    }
-  }
-}
-
 provider "proxmox" {
   endpoint  = var.proxmox_api_url
   api_token = "$${var.proxmox_api_token_id}=$${var.proxmox_api_token_secret}"
@@ -58,16 +28,16 @@ provider "talos" {}
 
 provider "helm" {
   kubernetes = {
-    config_path = "$${path.module}/configs/kubeconfig-shared"
+    config_path = "${local.kubeconfig_path}"
   }
 }
 
 provider "kubernetes" {
-  config_path = "$${path.module}/configs/kubeconfig-shared"
+  config_path = "${local.kubeconfig_path}"
 }
 
 provider "kubectl" {
-  config_path = "$${path.module}/configs/kubeconfig-shared"
+  config_path = "${local.kubeconfig_path}"
 }
 EOF
 }
