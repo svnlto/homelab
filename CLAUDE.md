@@ -87,21 +87,21 @@ infrastructure/
 ├── modules/
 │   ├── vm/                  # Generic Proxmox VM (UEFI, cloud-init, PCI passthrough)
 │   ├── truenas-vm/          # TrueNAS VM with HBA passthrough
-│   ├── proxmox-image/       # ISO download/upload to Proxmox
+│   ├── proxmox-image/       # ISO/disk download/upload to Proxmox
+│   ├── images/              # Bundles TrueNAS/NixOS/Talos images for a host
 │   ├── talos-cluster/       # Talos K8s (Cilium, MetalLB, Traefik, Tailscale, ESO, democratic-csi)
 │   └── argocd/              # Argo CD deployment
 ├── prod/
 │   ├── provider.hcl         # Proxmox provider (credentials from 1Password)
-│   ├── images/              # Centralized ISO downloads (TrueNAS, NixOS)
+│   ├── images/              # Centralized image downloads (TrueNAS, NixOS, Talos)
 │   ├── compute/k8s-shared/  # Talos K8s cluster (VLAN 30)
 │   ├── compute/argocd/      # ArgoCD on k8s-shared
 │   ├── storage/
 │   │   └── truenas-primary/ # VMID 300 on grogu (bulk + ssd + scratch + 21×900GB MD1220)
 │   ├── mikrotik/            # Router: base, dhcp, firewall, dns, qos
 │   ├── tailscale/acl/       # Tailscale ACL policy (Mullvad exit node, K8s tags)
-│   └── dns/cloudns/         # ClouDNS wildcard records (*.shared.h.svenlito.com)
-└── dev/
-    └── images/
+│   ├── dns/cloudns/         # ClouDNS wildcard records (*.shared.h.svenlito.com)
+│   └── cloud/photo-relay/   # Linode photo relay
 ```
 
 **Terragrunt module pattern** — every deployment has:
@@ -119,25 +119,27 @@ infrastructure/
 
 ```text
 nix/
-├── flake.nix                # Active configs: rpi-pihole (aarch64), arr-stack (x86_64)
+├── flake.nix                # Active configs: rpi-pihole, rpi-devbox (aarch64)
 ├── common/constants.nix     # Shared values (IPs, image versions)
 ├── rpi-pihole/              # Pi-hole: pihole.nix, configuration.nix, tailscale.nix
-└── arr-stack/               # Media stack: arr.nix, configuration.nix, disk-config.nix
+└── rpi-devbox/              # Repurposed Pi dev/build box
 ```
 
 - `constants.nix` is passed via `specialArgs` to all configs
 - Pi-hole uses Docker containers (pihole + unbound) managed by NixOS
 - Unbound forwards DNS-over-TLS to Mullvad (`194.242.2.2@853`)
-- Arr stack uses disko for declarative disk partitioning, deployed via nixos-anywhere
+- Media, photos and music now run on the K8s cluster (see `charts/`), not NixOS VMs
 
 ### Kubernetes (ArgoCD GitOps)
 
 ```text
 charts/                      # Local Helm charts (one per app)
 ├── arr-stack/               # Media automation (Sonarr, Radarr, Prowlarr, etc.)
-├── jellyfin/                # Media server + Seerr
+├── aurral/                  # Music discovery/request manager for Lidarr
+├── dragonfly/               # Redis-compatible shared cache (iSCSI persistence)
+├── immich/                  # Self-hosted photo management
 ├── infrastructure/          # democratic-csi StorageClasses
-├── dumper/                  # Photo dump CronJob
+├── jellyfin/                # Media server + Seerr
 ├── navidrome/               # Music server
 ├── osxphotos-export/        # macOS photo export CronJob
 └── postgresql/              # CloudNativePG shared PostgreSQL cluster
