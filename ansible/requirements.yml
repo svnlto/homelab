@@ -4,6 +4,6 @@
 
 collections:
   - name: ansible.posix
-    version: "2.1.0"
+    version: "2.2.2"
   - name: arensb.truenas
     version: "1.14.4"
