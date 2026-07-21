@@ -137,9 +137,10 @@ locals {
     }
 
     access_ports = {
-      pihole    = { interface = "ether2", pvid = 20, comment = "Pi-hole DNS" }
-      beryl_ap  = { interface = "ether3", pvid = 20, comment = "Beryl AX WiFi AP" }
-      grogu_amt = { interface = "ether4", pvid = 1, comment = "grogu AMT" }
+      pihole     = { interface = "ether2", pvid = 20, comment = "Pi-hole DNS" }
+      beryl_ap   = { interface = "ether3", pvid = 20, comment = "Beryl AX WiFi AP" }
+      grogu_amt  = { interface = "ether4", pvid = 1, comment = "grogu AMT" }
+      rpi_devbox = { interface = "ether6", pvid = 20, comment = "rpi-devbox" }
     }
 
     trunk_ports = {
