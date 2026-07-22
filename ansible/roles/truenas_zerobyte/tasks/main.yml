@@ -1,0 +1,177 @@
+---
+# Deploy ZeroByte (restic backup GUI) as a native TrueNAS catalog app.
+# Repositories + volumes are declarative via a provisioning.json that
+# ZeroByte syncs on startup. Jobs/schedules/retention are UI-only (a
+# ZeroByte limitation) — see docs/zerobyte-backup.md.
+
+- name: Create ZeroByte parent dataset
+  arensb.truenas.filesystem:
+    name: "{{ zerobyte_parent_dataset }}"
+    state: present
+    compression: "LZ4"
+  tags: [zerobyte, datasets]
+
+- name: Create ZeroByte dataset
+  arensb.truenas.filesystem:
+    name: "{{ zerobyte_dataset }}"
+    state: present
+    compression: "LZ4"
+  tags: [zerobyte, datasets]
+
+- name: Create ZeroByte data + config subdirectories
+  ansible.builtin.command:
+    cmd: >
+      midclt call filesystem.mkdir '{"path": "/mnt/{{ zerobyte_dataset }}/{{ item }}"}'
+  loop:
+    - data
+    - config
+    - config/rclone
+  register: zb_dirs
+  changed_when: zb_dirs.rc == 0
+  failed_when: >
+    zb_dirs.rc != 0
+    and 'already exists' not in (zb_dirs.stderr | default(''))
+    and 'exists' not in (zb_dirs.stderr | default(''))
+  tags: [zerobyte, datasets]
+
+# midclt mkdir creates dirs as root; hand the config subtree to the SSH
+# user so templated files land without sudo. The app runs as root (0/0),
+# so it still reads/writes /config regardless of host ownership.
+- name: Give SSH user ownership of the config subtree
+  ansible.builtin.command:
+    cmd: >
+      midclt call filesystem.chown
+      '{"path": "/mnt/{{ zerobyte_dataset }}/config",
+        "uid": {{ ansible_user_uid | default(950) }},
+        "gid": {{ ansible_user_gid | default(950) }},
+        "options": {"recursive": true}}'
+  changed_when: true
+  tags: [zerobyte, datasets]
+
+- name: Template rclone.conf (B2 remote)
+  ansible.builtin.template:
+    src: rclone.conf.j2
+    dest: "/mnt/{{ zerobyte_dataset }}/config/rclone/rclone.conf"
+    # 0644: ZeroByte runs the rclone/restic worker as a non-root uid, so the
+    # config must be world-readable. B2 creds are already host-local here.
+    mode: "0644"
+  no_log: true
+  tags: [zerobyte, provisioning]
+
+- name: Template provisioning.json (repo + volumes)
+  ansible.builtin.template:
+    src: provisioning.json.j2
+    dest: "/mnt/{{ zerobyte_dataset }}/config/provisioning.json"
+    mode: "0644"
+  when: zerobyte_org_id | length > 0
+  tags: [zerobyte, provisioning]
+
+- name: Assemble app values
+  ansible.builtin.set_fact:
+    zerobyte_values:
+      TZ: "{{ zerobyte_tz }}"
+      zerobyte:
+        base_url: "{{ zerobyte_base_url }}"
+        app_secret: "{{ zerobyte_app_secret }}"
+        mount_fuse: "{{ zerobyte_mount_fuse }}"
+        additional_envs: "{{ zerobyte_org_id | length > 0 | ternary(zerobyte_provisioned_envs, []) }}"
+      run_as:
+        user: "{{ zerobyte_run_as_user }}"
+        group: "{{ zerobyte_run_as_group }}"
+      network:
+        web_port:
+          bind_mode: published
+          port_number: "{{ zerobyte_port }}"
+          host_ips: []
+        networks: []
+        host_network: false
+      storage:
+        config:
+          type: host_path
+          host_path_config:
+            acl_enable: false
+            path: "{{ zerobyte_data_path }}"
+        additional_storage: "{{ [config_mount] + source_mounts }}"
+      labels: []
+      resources:
+        limits:
+          cpus: "{{ zerobyte_cpus }}"
+          memory: "{{ zerobyte_memory }}"
+  vars:
+    zerobyte_provisioned_envs:
+      - {name: PROVISIONING_PATH, value: /config/provisioning.json}
+      - {name: RCLONE_CONFIG_DIR, value: /config/rclone}
+      - {name: RESTIC_PASSWORD, value: "{{ restic_password }}"}
+    config_mount:
+      type: host_path
+      read_only: false
+      mount_path: /config
+      host_path_config: {acl_enable: false, path: "{{ zerobyte_config_path }}"}
+    source_mounts: >-
+      {{ zerobyte_sources | map('combine', {}) | list
+         | zip(zerobyte_sources) | map('first') | list }}
+  no_log: true
+  tags: [zerobyte]
+
+# Build the read-only source mounts explicitly (map form above kept simple).
+- name: Build source mount list
+  ansible.builtin.set_fact:
+    zerobyte_source_mounts: >-
+      {{ zerobyte_source_mounts | default([]) + [{
+        'type': 'host_path',
+        'read_only': true,
+        'mount_path': item.mount,
+        'host_path_config': {'acl_enable': false, 'path': item.host}
+      }] }}
+  loop: "{{ zerobyte_sources }}"
+  loop_control:
+    label: "{{ item.id }}"
+  tags: [zerobyte]
+
+- name: Inject source mounts into values
+  ansible.builtin.set_fact:
+    zerobyte_values: >-
+      {{ zerobyte_values | combine({'storage':
+         {'additional_storage': [config_mount] + zerobyte_source_mounts}}, recursive=true) }}
+  vars:
+    config_mount:
+      type: host_path
+      read_only: false
+      mount_path: /config
+      host_path_config: {acl_enable: false, path: "{{ zerobyte_config_path }}"}
+  no_log: true
+  tags: [zerobyte]
+
+- name: Query existing apps
+  ansible.builtin.command:
+    cmd: midclt call app.query
+  register: zb_existing_raw
+  changed_when: false
+  tags: [zerobyte]
+
+- name: Parse existing app names
+  ansible.builtin.set_fact:
+    zb_existing: "{{ zb_existing_raw.stdout | from_json | map(attribute='name') | list }}"
+  tags: [zerobyte]
+
+- name: Create ZeroByte app
+  ansible.builtin.command:
+    cmd: >
+      midclt call app.create
+      '{{ {"app_name": zerobyte_app_name, "catalog_app": "zerobyte",
+           "train": zerobyte_train, "version": zerobyte_version,
+           "custom_app": false, "values": zerobyte_values} | to_json }}'
+  when: zerobyte_app_name not in zb_existing
+  changed_when: true
+  no_log: true
+  tags: [zerobyte]
+
+- name: Update ZeroByte app
+  ansible.builtin.command:
+    cmd: >
+      midclt call app.update {{ zerobyte_app_name }}
+      '{{ {"values": zerobyte_values} | to_json }}'
+  when: zerobyte_app_name in zb_existing
+  changed_when: true
+  no_log: true
+  tags: [zerobyte]

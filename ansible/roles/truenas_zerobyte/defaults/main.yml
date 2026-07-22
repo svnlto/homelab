@@ -1,0 +1,33 @@
+---
+zerobyte_app_name: zerobyte
+zerobyte_train: community
+zerobyte_version: "1.1.31" # app v0.41.0
+
+# Storage: dedicated dataset on the apps pool (bulk/ix-apps lives here too).
+zerobyte_parent_dataset: bulk/apps
+zerobyte_dataset: bulk/apps/zerobyte
+zerobyte_data_path: /mnt/bulk/apps/zerobyte/data # -> /var/lib/zerobyte (app state, SQLite, keys)
+zerobyte_config_path: /mnt/bulk/apps/zerobyte/config # -> /config (provisioning.json + rclone.conf)
+
+zerobyte_tz: Europe/Berlin
+zerobyte_port: 30314
+zerobyte_base_url: "http://192.168.0.13:{{ zerobyte_port }}"
+
+# Runs as root: SYS_ADMIN is already granted via mount_fuse, and restic must
+# read heterogeneous source data (root-owned 0700 datasets, mixed-uid PVCs).
+zerobyte_run_as_user: 0
+zerobyte_run_as_group: 0
+zerobyte_mount_fuse: true
+
+zerobyte_cpus: 2
+zerobyte_memory: 4096
+
+# B2 offsite repo (adopts the existing restic repo created by
+# truenas_restic_backup — same bucket, same password, no re-upload).
+zerobyte_repo_id: b2-offsite
+zerobyte_repo_name: "B2 Offsite"
+zerobyte_b2_bucket: svnlto-offsite-backup
+
+# Set to the organization id created on first-run signup to enable
+# declarative provisioning of the repo + volumes. Empty = bootstrap only.
+zerobyte_org_id: ""

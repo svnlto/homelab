@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "repositories": [
+    {
+      "id": "{{ zerobyte_repo_id }}",
+      "organizationId": "{{ zerobyte_org_id }}",
+      "name": "{{ zerobyte_repo_name }}",
+      "backend": "rclone",
+      "compressionMode": "auto",
+      "config": {
+        "backend": "rclone",
+        "remote": "b2",
+        "path": "{{ zerobyte_b2_bucket }}",
+        "isExistingRepository": true,
+        "customPassword": "env://RESTIC_PASSWORD"
+      }
+    }
+  ],
+  "volumes": [
+{% for s in zerobyte_sources %}
+    {
+      "id": "{{ s.id }}",
+      "organizationId": "{{ zerobyte_org_id }}",
+      "name": "{{ s.id }}",
+      "backend": "directory",
+      "autoRemount": true,
+      "config": { "backend": "directory", "path": "{{ s.mount }}" }
+    }{{ "," if not loop.last else "" }}
+{% endfor %}
+  ]
+}

@@ -211,6 +211,10 @@ truenas-registry-cache:
 restic-setup:
     cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-restic-backup.yml
 
+# Deploy ZeroByte backup app (restic GUI) on TrueNAS
+zerobyte-setup:
+    cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-zerobyte.yml
+
 # --- Terragrunt ---
 
 tg-init:

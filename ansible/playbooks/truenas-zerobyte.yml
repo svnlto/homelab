@@ -1,0 +1,28 @@
+---
+# Deploy ZeroByte (restic backup GUI) as a native TrueNAS catalog app.
+# Secrets from 1Password via .envrc / op (B2_KEY_ID, B2_APPLICATION_KEY,
+# RESTIC_PASSWORD, ZEROBYTE_APP_SECRET, ZEROBYTE_ORG_ID).
+#
+# First run: leave ZEROBYTE_ORG_ID empty to bootstrap the app, sign up in
+# the web UI to create the organization, then set ZEROBYTE_ORG_ID and re-run
+# to sync the B2 repository + volumes via provisioning.json.
+#
+# Backup jobs/schedules/retention are UI-only in ZeroByte's provisioning and
+# are managed out-of-band (see docs/zerobyte-backup.md).
+
+- name: Deploy ZeroByte backup app
+  hosts: truenas_primary
+  gather_facts: false
+
+  vars:
+    zerobyte_app_secret: "{{ lookup('env', 'ZEROBYTE_APP_SECRET') }}"
+    zerobyte_org_id: "{{ lookup('env', 'ZEROBYTE_ORG_ID') | default('', true) }}"
+    b2_account_id: "{{ lookup('env', 'B2_KEY_ID') }}"
+    b2_account_key: "{{ lookup('env', 'B2_APPLICATION_KEY') }}"
+    restic_password: "{{ lookup('env', 'RESTIC_PASSWORD') }}"
+
+  vars_files:
+    - ../vars/zerobyte.yml
+
+  roles:
+    - role: truenas_zerobyte

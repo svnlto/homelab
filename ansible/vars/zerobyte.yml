@@ -1,0 +1,13 @@
+---
+# ZeroByte backup sources -> read-only bind mounts inside the container.
+# `id` becomes the ZeroByte volume id (must match provisioning + jobs).
+# Paths are the real on-disk locations verified on din (not the stale
+# restic_backups.yml paths — music lives under bulk/media, backups under
+# bulk/backups with a root-only 0700 parent).
+zerobyte_sources:
+  - {id: kubernetes, host: /mnt/ssd/kubernetes, mount: /data/kubernetes}
+  - {id: photos, host: /mnt/bulk/photos, mount: /data/photos}
+  - {id: music, host: /mnt/bulk/media/music, mount: /data/music}
+  - {id: proxmox, host: /mnt/bulk/backups/proxmox, mount: /data/proxmox}
+  - {id: timemachine, host: /mnt/bulk/backups/timemachine, mount: /data/timemachine}
+  - {id: archive, host: /mnt/bulk/archive, mount: /data/archive}
