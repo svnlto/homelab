@@ -160,7 +160,7 @@ lidarr:
       memory: 1Gi
 
 bazarr:
-  image: lscr.io/linuxserver/bazarr:v1.5.6-ls339@sha256:b0bc617664dbca25845ac3b1bb6411b145b6a44a6d173071c9d2f426524fdd9f
+  image: lscr.io/linuxserver/bazarr:v1.6.0-ls356@sha256:ab401a0f361cfad328e444838b13d5b334b189d0f556fc91a3623eb581df36df
   port: 6767
   probePath: /
   startupInitialDelay: 30
