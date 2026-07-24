@@ -1,0 +1,5 @@
+# Root Flux sync target. Per-app Kustomizations added here during cutover.
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []
