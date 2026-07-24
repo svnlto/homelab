@@ -8,11 +8,11 @@ OSXPhotos export service for syncing Apple Photos to NFS storage
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| csi | object | `{"basePath":"/mnt/fast/kubernetes/nfs-dynamic","driver":"org.democratic-csi.nfs-fast","mountOptions":["nfsvers=4.2","nconnect=8","hard","noatime","nodiratime"],"server":"","storageClassName":"truenas-nfs-fast","volumes":[]}` | CSI storage for cache volume |
+| csi | object | `{"basePath":"/mnt/ssd/kubernetes/nfs-dynamic","driver":"org.democratic-csi.nfs-fast","mountOptions":["nfsvers=4.2","nconnect=8","hard","noatime","nodiratime"],"server":"","storageClassName":"truenas-nfs-fast","volumes":[]}` | CSI storage for cache volume |
 | env | object | `{"EXPORT_DB_PATH":"/cache/osxphotos_export.db","OTEL_SERVICE_NAME":"osxphotos-export","RETRY_INTERVAL":"300","SYNC_INTERVAL":"3600"}` | Environment variables |
 | externalSecret | object | `{"keys":["EXPORT_DEST","LIBRARY_PATH"],"onePasswordItem":"osxphotos-config","refreshInterval":"1h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"osxphotos-config"}` | External secrets configuration |
 | global.annotations | object | `{}` |  |
-| image | object | `{"repository":"ghcr.io/svnlto/osxphotos-export","tag":"latest@sha256:0818642a16b1fae19a23c625f4d4bf4b93cf996681eea41abeecb69963248ff7"}` | Container image |
+| image | object | `{"repository":"ghcr.io/svnlto/osxphotos-export","tag":"latest@sha256:0775cf6274814ba9d9860622d35408355c23897edeaf1acc706cec068a4d2fa9"}` | Container image |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=1048576","wsize=1048576","hard","noatime","nconnect=8"],"server":"","volumes":[]}` | NFS storage for source and export |
 | resources | object | `{"limits":{"cpu":"2","memory":"4Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Container resources |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1003,"seccompProfile":{"type":"RuntimeDefault"}}` | Security context for the container |

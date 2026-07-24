@@ -109,8 +109,6 @@ spec:
           volumeMounts:
             - name: qbittorrent-config
               mountPath: /config
-            - name: downloads
-              mountPath: /data/downloads
             {{- include "arr-stack.mediaVolumeMounts" . | nindent 12 }}
 
         - name: sabnzbd
@@ -127,8 +125,6 @@ spec:
           volumeMounts:
             - name: sabnzbd-config
               mountPath: /config
-            - name: downloads
-              mountPath: /data/downloads
             {{- include "arr-stack.mediaVolumeMounts" . | nindent 12 }}
 
         - name: slskd
@@ -196,7 +192,4 @@ spec:
         - name: prowlarr-config
           persistentVolumeClaim:
             claimName: prowlarr-config
-        - name: downloads
-          persistentVolumeClaim:
-            claimName: nfs-downloads
         {{- include "arr-stack.mediaVolumes" . | nindent 8 }}

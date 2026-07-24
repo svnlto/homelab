@@ -1,0 +1,24 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: infrastructure
+  namespace: infrastructure
+spec:
+  interval: 10m
+  releaseName: infrastructure
+  chart:
+    spec:
+      chart: ./charts/infrastructure
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      interval: 5m
+  valuesFrom:
+    - kind: ConfigMap
+      name: infrastructure-values
+  upgrade:
+    remediation:
+      retries: 3
+      strategy: rollback

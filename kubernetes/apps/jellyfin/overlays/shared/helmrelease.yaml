@@ -1,0 +1,24 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyfin
+  namespace: jellyfin
+spec:
+  interval: 10m
+  releaseName: jellyfin
+  chart:
+    spec:
+      chart: ./charts/jellyfin
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      interval: 5m
+  valuesFrom:
+    - kind: ConfigMap
+      name: jellyfin-values
+  upgrade:
+    remediation:
+      retries: 3
+      strategy: rollback

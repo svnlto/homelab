@@ -1,0 +1,15 @@
+# Root Flux sync target. Per-app Kustomizations added here during cutover.
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - navidrome.yaml
+  - osxphotos-export.yaml
+  - aurral.yaml
+  - arr-stack.yaml
+  - jellyfin.yaml
+  - dragonfly.yaml
+  - cnpg-operator.yaml
+  - postgresql.yaml
+  - immich.yaml
+  - infrastructure.yaml
