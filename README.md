@@ -11,7 +11,7 @@ Infrastructure as Code for a homelab running NixOS, Terragrunt, and Ansible.
 | **Storage** | Ansible | TrueNAS SCALE datasets, shares, snapshots |
 | **Network** | Terragrunt | MikroTik VLANs, firewall, DHCP, DNS, QoS |
 | **Backup** | Ansible | Restic to Backblaze B2 (offsite) |
-| **K8s** | Terragrunt + ArgoCD | Talos cluster; media (Arr, Jellyfin), photos (Immich), music (Navidrome) via Helm/GitOps |
+| **K8s** | Terragrunt + Flux | Talos cluster; media (Arr, Jellyfin), photos (Immich), music (Navidrome) via Helm/GitOps (Flux Operator) |
 
 ## Hardware
 
@@ -47,11 +47,11 @@ infrastructure/              Terragrunt deployments
     proxmox-image/           ISO/disk download + upload with checksum verification
     images/                  Bundles the TrueNAS/NixOS/Talos images for a host
     talos-cluster/           Talos Kubernetes cluster
-    argocd/                  ArgoCD deployment
+    flux-operator/           Flux Operator (declarative FluxCD lifecycle)
   prod/
     provider.hcl             Proxmox provider + generated credential variables
     images/                  Centralized image downloads (TrueNAS, NixOS, Talos)
-    compute/                 k8s-shared (Talos cluster), argocd
+    compute/                 k8s-shared (Talos cluster), flux
     storage/                 truenas-primary (VMID 300)
     mikrotik/                base, dhcp, dns, firewall, qos
     dns/                     ClouDNS wildcard records
@@ -63,7 +63,7 @@ nix/                         NixOS configurations
   osxphotos-export/          macOS photo export image
   common/constants.nix       Shared config (versions, IPs)
 charts/                      Helm charts (arr-stack, jellyfin, immich, navidrome, ...)
-kubernetes/                  ArgoCD Application manifests + per-cluster values
+kubernetes/apps/             Flux Kustomizations (_flux/) + per-app HelmRelease overlays
 ansible/                     Playbooks for TrueNAS, Proxmox, Restic backup
 docs/                        Setup guides (TrueNAS, networking, 1Password)
 ```

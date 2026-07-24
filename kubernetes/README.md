@@ -1,299 +1,67 @@
-# Kubernetes GitOps - ArgoCD Hub-and-Spoke
+# Kubernetes GitOps — Flux
 
-This directory contains Kubernetes manifests managed by ArgoCD using the hub-and-spoke architecture with Kustomize overlays.
+Kubernetes workloads for the `k8s-shared` Talos cluster, delivered by
+[Flux](https://fluxcd.io) via the [Flux Operator](https://fluxoperator.dev).
+The Flux install itself is deployed by Terragrunt
+(`infrastructure/prod/compute/flux/`); everything below is reconciled from Git.
 
-## Directory Structure
+## Directory structure
 
 ```text
 kubernetes/
-├── argocd-apps/              # ArgoCD Application definitions (watched by root app)
-│   └── whoami-test.yaml      # Deploy whoami to test cluster
-├── apps/                     # Kustomize application manifests
-│   └── whoami/
-│       ├── base/             # Common manifests (all clusters)
-│       │   ├── deployment.yaml
-│       │   ├── service.yaml
-│       │   └── kustomization.yaml
-│       └── overlays/         # Cluster-specific customizations
-│           └── test/         # Test cluster overlay
-│               └── kustomization.yaml
-└── README.md                 # This file
+└── apps/
+    ├── _flux/                       # Root Flux Kustomization set (synced by the FluxInstance)
+    │   ├── kustomization.yaml        # Lists the per-app Kustomizations to apply
+    │   └── <app>.yaml                # One Flux Kustomization per app (path + dependsOn + prune/wait)
+    └── <app>/overlays/<cluster>/     # Per-app overlay
+        ├── kustomization.yaml        # configMapGenerator (<app>-values) + resources
+        ├── helmrelease.yaml          # HelmRelease -> charts/<app> (or upstream via HelmRepository)
+        ├── values.yaml               # Helm values (materialised into a ConfigMap)
+        └── external-secret.yaml      # optional, when the chart doesn't template it
 ```
 
-## How It Works
+## How it works
 
-### 1. ArgoCD Root App (App of Apps)
+1. The `FluxInstance` (`infrastructure/prod/compute/flux/`) syncs `kubernetes/apps/_flux/`
+   from `main` and installs the Flux controllers.
+2. The root Kustomization applies each per-app Flux `Kustomization` in `_flux/`.
+3. Each app Kustomization applies its overlay: a `HelmRelease`, a values `ConfigMap`
+   (generated from `values.yaml`), and any `ExternalSecret`.
+4. `helm-controller` renders the chart (`charts/<app>` or an upstream chart via
+   `HelmRepository`) with the ConfigMap values and reconciles a real Helm release.
 
-ArgoCD's root Application watches `kubernetes/argocd-apps/` directory.
-Any Application manifests added here are automatically deployed.
+## Conventions
 
-### 2. Application Definitions
+- **Values** go into a ConfigMap (`configMapGenerator`, `disableNameSuffixHash: true`)
+  referenced by `HelmRelease.valuesFrom` — Flux has no direct cross-source `ref: values`.
+- **Namespace ownership**: if a chart templates its own `Namespace`, the overlay must NOT
+  also declare `namespace.yaml` (double-ownership breaks Helm). Charts that don't template
+  one keep `namespace.yaml` in the overlay.
+- **`dependsOn`**: postgresql → cnpg-operator, immich → postgresql.
+- **No `install.remediation`** on HelmReleases — a failed install must never uninstall
+  (helm-controller uses server-side apply, stricter than ArgoCD).
+- **Storage**: democratic-csi (NFS + iSCSI from TrueNAS); keep PV `reclaimPolicy: Retain`.
 
-Each file in `argocd-apps/` defines:
+## Adding an app
 
-- **Source**: Where to find manifests (Git repo + path)
-- **Destination**: Which cluster + namespace to deploy to
-- **Sync Policy**: How to keep cluster in sync with Git
+1. Create the chart in `charts/<app>/` (or use an upstream chart via `HelmRepository`).
+2. Add the overlay under `kubernetes/apps/<app>/overlays/<cluster>/` (helmrelease + values + kustomization).
+3. Add `kubernetes/apps/_flux/<app>.yaml` (a Flux `Kustomization`) and list it in `_flux/kustomization.yaml`.
+4. Validate: `helm template <app> charts/<app> -f overlays/<cluster>/values.yaml | kubectl apply --dry-run=server -f -`.
+5. Commit + push to `main`.
 
-### 3. Kustomize Overlays
-
-Applications use Kustomize to share common manifests while customizing per cluster:
-
-- `base/` - Common manifests shared by all clusters
-- `overlays/<cluster>/` - Cluster-specific customizations (replicas, ingress, etc.)
-
-## GitOps Workflow
-
-```text
-┌─────────────────────────────────────────────────────┐
-│ 1. Developer: git commit + push                    │
-│    - Add/modify manifests in kubernetes/apps/      │
-│    - Add/modify Application in argocd-apps/        │
-└──────────────────┬──────────────────────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────────────────────┐
-│ 2. ArgoCD: Detects Git changes (every 3 min)       │
-│    - Root app watches argocd-apps/                 │
-└──────────────────┬──────────────────────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────────────────────┐
-│ 3. ArgoCD: Syncs Application                       │
-│    - Runs: kustomize build apps/whoami/overlays/test│
-│    - Applies generated YAML to cluster              │
-└──────────────────┬──────────────────────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────────────────────┐
-│ 4. Kubernetes: Deploys/Updates resources           │
-│    - Creates/updates Deployment, Service, etc.     │
-└─────────────────────────────────────────────────────┘
-```
-
-## Example: Deploy whoami App
-
-### Current Setup
-
-**whoami-test** is deployed to the test cluster (hub).
-
-**To verify:**
+## Operations (no `flux` CLI in the devshell — use kubectl)
 
 ```bash
-# Check ArgoCD Application status
-kubectl --kubeconfig ../infrastructure/dev/compute/test-cluster/configs/kubeconfig-test \
-  get application -n argocd whoami-test
+export KUBECONFIG=../infrastructure/prod/compute/k8s-shared/configs/kubeconfig-shared
 
-# Check deployed resources
-kubectl --kubeconfig ../infrastructure/dev/compute/test-cluster/configs/kubeconfig-test \
-  get all -n whoami-test
-
-# Test the app
-kubectl --kubeconfig ../infrastructure/dev/compute/test-cluster/configs/kubeconfig-test \
-  port-forward -n whoami-test svc/whoami 8081:80
-
-# Then: curl http://localhost:8081
-```
-
-## Adding a New Application
-
-### Step 1: Create Base Manifests
-
-```bash
-mkdir -p kubernetes/apps/myapp/base
-cd kubernetes/apps/myapp/base
-```
-
-Create:
-
-- `deployment.yaml`
-- `service.yaml`
-- `kustomization.yaml`
-
-### Step 2: Create Overlay
-
-```bash
-mkdir -p kubernetes/apps/myapp/overlays/test
-cd kubernetes/apps/myapp/overlays/test
-```
-
-Create `kustomization.yaml`:
-
-```yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-bases:
-  - ../../base
-
-namespace: myapp-test
-
-commonLabels:
-  environment: test
-```
-
-### Step 3: Create ArgoCD Application
-
-```bash
-cat > kubernetes/argocd-apps/myapp-test.yaml <<EOF
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: myapp-test
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/svnlto/homelab
-    targetRevision: HEAD
-    path: kubernetes/apps/myapp/overlays/test
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: myapp-test
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-EOF
-```
-
-### Step 4: Commit and Push
-
-```bash
-git add kubernetes/
-git commit -m "Add myapp to test cluster"
-git push
-```
-
-ArgoCD will automatically detect and deploy within 3 minutes!
-
-## Multi-Cluster Deployment
-
-### Deploy to Multiple Clusters
-
-To deploy the same app to different clusters, create multiple Application manifests:
-
-**Test cluster** (`argocd-apps/myapp-test.yaml`):
-
-```yaml
-destination:
-  server: https://kubernetes.default.svc  # Hub (test) cluster
-  namespace: myapp-test
-source:
-  path: kubernetes/apps/myapp/overlays/test
-```
-
-**Prod cluster** (`argocd-apps/myapp-prod.yaml`):
-
-```yaml
-destination:
-  name: prod  # Spoke cluster (registered with ArgoCD)
-  namespace: myapp-prod
-source:
-  path: kubernetes/apps/myapp/overlays/prod
-```
-
-### Register Spoke Clusters
-
-Update `infrastructure/dev/compute/argocd/terragrunt.hcl`:
-
-```hcl
-spoke_clusters = {
-  prod = {
-    server      = "https://prod-api:6443"
-    ca_data     = dependency.prod_cluster.outputs.cluster_ca_certificate
-    cert_data   = dependency.prod_cluster.outputs.client_certificate
-    key_data    = dependency.prod_cluster.outputs.client_key
-    description = "Production cluster"
-  }
-}
-```
-
-Run `terragrunt apply` to register the cluster.
-
-## Kustomize Tips
-
-### Common Patterns
-
-**1. Different replicas per cluster:**
-
-```yaml
-# overlays/test/kustomization.yaml
-patches:
-  - target:
-      kind: Deployment
-      name: myapp
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 1  # Test: 1 replica
-```
-
-**2. Different resource limits:**
-
-```yaml
-patches:
-  - target:
-      kind: Deployment
-      name: myapp
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/memory
-        value: 256Mi  # Test: smaller limits
-```
-
-**3. Cluster-specific ConfigMap:**
-
-```yaml
-# overlays/test/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: myapp-config
-data:
-  environment: test
-  debug: "true"
-```
-
-```yaml
-# overlays/test/kustomization.yaml
-resources:
-  - config.yaml  # Add to resources
-```
-
-## Troubleshooting
-
-### ArgoCD not syncing
-
-```bash
-# Check Application status
-kubectl get application -n argocd whoami-test -o yaml
-
-# Force sync
-kubectl patch application whoami-test -n argocd \
-  --type merge -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}'
-```
-
-### Kustomize build errors
-
-```bash
-# Test Kustomize locally
-cd kubernetes/apps/whoami/overlays/test
-kustomize build .
-```
-
-### View generated manifests
-
-```bash
-# See what ArgoCD will deploy
-kubectl --kubeconfig ../infrastructure/dev/compute/test-cluster/configs/kubeconfig-test \
-  get application whoami-test -n argocd -o jsonpath='{.status.sync.comparedTo.source}' | jq
+kubectl get kustomizations,helmreleases -A         # state of everything
+kubectl -n flux-system annotate gitrepository/flux-system \
+  reconcile.fluxcd.io/requestedAt="$(date -u +%FT%TZ)" --overwrite   # force sync
+kubectl -n <ns> describe helmrelease <app>          # why an app is failing
 ```
 
 ## Resources
 
-- [ArgoCD Documentation](https://argo-cd.readthedocs.io/)
-- [Kustomize Documentation](https://kustomize.io/)
-- [App of Apps Pattern](https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/)
+- [Flux Operator](https://fluxoperator.dev) · [Flux CD](https://fluxcd.io/flux/)
+- [HelmRelease](https://fluxcd.io/flux/components/helm/helmreleases/) · [Kustomization](https://fluxcd.io/flux/components/kustomize/kustomizations/)

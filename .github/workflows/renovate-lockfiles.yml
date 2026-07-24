@@ -21,7 +21,7 @@ jobs:
       matrix:
         dir:
           - infrastructure/modules/talos-cluster
-          - infrastructure/modules/argocd
+          - infrastructure/modules/flux-operator
           - infrastructure/modules/proxmox-image
           - infrastructure/modules/truenas-vm
           - infrastructure/modules/vm

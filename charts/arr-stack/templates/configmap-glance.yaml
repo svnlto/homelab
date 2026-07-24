@@ -46,9 +46,6 @@ data:
                       - title: TrueNAS
                         url: https://truenas.{{ .Values.ingress.domain }}
                         icon: si:truenas
-                      - title: ArgoCD
-                        url: https://argocd.{{ .Values.ingress.domain }}
-                        icon: si:argo
               - type: releases
                 cache: 1d
                 repositories:
