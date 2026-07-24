@@ -26,7 +26,7 @@ inputs = {
   multitenant            = false
 
   repo_url = "https://github.com/svnlto/homelab"
-  # Migration branch until cutover done, then refs/heads/main.
-  repo_ref  = "refs/heads/flux-migration"
+  # Tracks main (migration complete).
+  repo_ref  = "refs/heads/main"
   sync_path = "kubernetes/apps/_flux"
 }
