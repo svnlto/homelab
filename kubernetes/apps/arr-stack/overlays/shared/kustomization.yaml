@@ -1,0 +1,13 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: arr-stack
+resources:
+  - namespace.yaml
+  - helmrelease.yaml
+configMapGenerator:
+  - name: arr-stack-values
+    files:
+      - values.yaml
+    options:
+      disableNameSuffixHash: true

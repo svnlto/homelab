@@ -1,0 +1,27 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: dragonfly
+  namespace: cache
+spec:
+  interval: 10m
+  releaseName: dragonfly
+  chart:
+    spec:
+      chart: ./charts/dragonfly
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      interval: 5m
+  valuesFrom:
+    - kind: ConfigMap
+      name: dragonfly-values
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      strategy: rollback
