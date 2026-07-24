@@ -10,3 +10,4 @@ resources:
   - jellyfin.yaml
   - dragonfly.yaml
   - cnpg-operator.yaml
+  - postgresql.yaml
