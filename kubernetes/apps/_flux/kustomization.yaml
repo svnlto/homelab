@@ -9,3 +9,4 @@ resources:
   - arr-stack.yaml
   - jellyfin.yaml
   - dragonfly.yaml
+  - cnpg-operator.yaml
