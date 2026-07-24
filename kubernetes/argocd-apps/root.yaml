@@ -20,9 +20,8 @@ spec:
     server: https://kubernetes.default.svc
     namespace: argocd
 
+  # Auto-sync frozen during ArgoCD -> Flux migration (see migration plan Phase 3.0).
+  # Prevents root recreating/pruning children mid-cutover. Restore at Phase 4 cleanup.
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
       - CreateNamespace=true
