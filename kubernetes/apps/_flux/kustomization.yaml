@@ -12,3 +12,4 @@ resources:
   - cnpg-operator.yaml
   - postgresql.yaml
   - immich.yaml
+  - infrastructure.yaml
