@@ -1078,51 +1078,41 @@
         }
       }
     },
-    "vcluster@0.31.0": {
-      "last_modified": "2026-04-23T13:07:47Z",
-      "resolved": "github:NixOS/nixpkgs/01fbdeef22b76df85ea168fbfe1bfd9e63681b30#vcluster",
+    "vcluster@0.35.1": {
+      "last_modified": "2026-07-11T07:21:12Z",
+      "resolved": "github:NixOS/nixpkgs/770b9bbb84018993c8f009d437fff6c2e3077037#vcluster",
       "source": "devbox-search",
-      "version": "0.31.0",
+      "version": "0.35.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/b6zivbg9pckdz0iyl26ags6am6n4yslw-vcluster-0.31.0",
+              "path": "/nix/store/6y9842xjn08zyx457i4ww3414k2bmdif-vcluster-0.35.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/b6zivbg9pckdz0iyl26ags6am6n4yslw-vcluster-0.31.0"
+          "store_path": "/nix/store/6y9842xjn08zyx457i4ww3414k2bmdif-vcluster-0.35.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/vmy95ccgp8p2bh680531jpy7drp0xvvs-vcluster-0.31.0",
+              "path": "/nix/store/0fsibc8abdbr8pgi8kpghdrwjqivsiv2-vcluster-0.35.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/vmy95ccgp8p2bh680531jpy7drp0xvvs-vcluster-0.31.0"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/b5dwygfa1dl0d2mz6lfqffv0asrr903c-vcluster-0.31.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/b5dwygfa1dl0d2mz6lfqffv0asrr903c-vcluster-0.31.0"
+          "store_path": "/nix/store/0fsibc8abdbr8pgi8kpghdrwjqivsiv2-vcluster-0.35.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/960injhhhmxi1p77q1y8p3v3yfxyr1nb-vcluster-0.31.0",
+              "path": "/nix/store/kq66k16yf8wlmfgicj6yyk3bns49c75n-vcluster-0.35.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/960injhhhmxi1p77q1y8p3v3yfxyr1nb-vcluster-0.31.0"
+          "store_path": "/nix/store/kq66k16yf8wlmfgicj6yyk3bns49c75n-vcluster-0.35.1"
         }
       }
     }
