@@ -9,7 +9,7 @@
     "jq@1.8.2",
     "just@1.56.0",
     "terragrunt@1.0.4",
-    "opentofu@1.11.6",
+    "opentofu@1.12.4",
     "kubernetes-helm@3.20.2",
     "kubectl@1.35.3",
     "talosctl@1.12.6",
