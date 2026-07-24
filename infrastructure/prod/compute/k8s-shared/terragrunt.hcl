@@ -113,7 +113,7 @@ inputs = {
   deploy_bootstrap = true
 
   # Write kubeconfig/talosconfig to the live dir, not the .terragrunt-cache dir
-  # (path.cwd). provider.hcl, argocd, and the dev-shell KUBECONFIG all read here.
+  # (path.cwd). provider.hcl, flux, and the dev-shell KUBECONFIG all read here.
   config_output_dir = get_terragrunt_dir()
 
   # Democratic-CSI — TrueNAS primary (storage VLAN)

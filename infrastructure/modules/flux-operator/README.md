@@ -5,9 +5,9 @@ via its OCI Helm chart, then applies a single `FluxInstance` that installs,
 configures, and upgrades the Flux distribution and bootstraps the fleet sync
 from Git.
 
-Deployed side-by-side with ArgoCD during the ArgoCD → Flux migration. The
-operator manages nothing app-side until per-app Flux `Kustomization`s are added
-under `spec.sync.path` (`kubernetes/apps/_flux`), one at a time, during cutover.
+The sole GitOps engine for `k8s-shared` (migrated from ArgoCD). The operator
+reconciles the per-app Flux `Kustomization`s under `spec.sync.path`
+(`kubernetes/apps/_flux`), which deliver each app's HelmRelease.
 
 ## What it creates
 

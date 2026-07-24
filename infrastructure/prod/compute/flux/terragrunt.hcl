@@ -1,4 +1,4 @@
-# Flux Operator on shared cluster. Side-by-side with ArgoCD during migration.
+# Flux Operator on shared cluster — manages the Flux distribution (FluxInstance).
 
 terraform {
   source = "${get_repo_root()}/infrastructure/modules//flux-operator"
