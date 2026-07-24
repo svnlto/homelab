@@ -6,3 +6,4 @@ resources:
   - navidrome.yaml
   - osxphotos-export.yaml
   - aurral.yaml
+  - arr-stack.yaml
