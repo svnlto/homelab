@@ -3,7 +3,7 @@
 
 global:
   annotations:
-    deployed-by: argocd
+    deployed-by: flux
     cluster: shared
 
 ingress:

@@ -5,7 +5,6 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ .pvcName }}
   annotations:
-    argocd.argoproj.io/sync-options: Delete=false
   {{- range $key, $val := $.Values.global.annotations }}
     {{ $key }}: {{ $val | quote }}
   {{- end }}
