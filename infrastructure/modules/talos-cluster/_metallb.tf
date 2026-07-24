@@ -21,7 +21,7 @@ resource "helm_release" "metallb" {
   name             = "metallb"
   repository       = "https://metallb.github.io/metallb"
   chart            = "metallb"
-  version          = "0.15.3"
+  version          = "0.16.1"
   namespace        = kubernetes_namespace_v1.metallb_system[0].metadata[0].name
   create_namespace = false
   wait             = true
