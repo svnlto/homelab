@@ -11,3 +11,4 @@ resources:
   - dragonfly.yaml
   - cnpg-operator.yaml
   - postgresql.yaml
+  - immich.yaml
