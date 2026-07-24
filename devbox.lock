@@ -999,51 +999,51 @@
         }
       }
     },
-    "terragrunt@1.0.1": {
-      "last_modified": "2026-04-16T08:46:55Z",
-      "resolved": "github:NixOS/nixpkgs/b86751bc4085f48661017fa226dee99fab6c651b#terragrunt",
+    "terragrunt@1.0.4": {
+      "last_modified": "2026-07-08T21:13:06Z",
+      "resolved": "github:NixOS/nixpkgs/389ed85304b281ca7f306cf8a1eb4378651ca44e#terragrunt",
       "source": "devbox-search",
-      "version": "1.0.1",
+      "version": "1.0.4",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/1gmdarsg2s93mny9m71bzmhjr44mqn9i-terragrunt-1.0.1",
+              "path": "/nix/store/ifsp76f4dx2nhbml4j5jadc2v332kvhr-terragrunt-1.0.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/1gmdarsg2s93mny9m71bzmhjr44mqn9i-terragrunt-1.0.1"
+          "store_path": "/nix/store/ifsp76f4dx2nhbml4j5jadc2v332kvhr-terragrunt-1.0.4"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/b97mvm9iqhk2131yw6jqx67d2parjb5k-terragrunt-1.0.1",
+              "path": "/nix/store/zjmsfycb8zjfql5sbhdm8jpjb521gr76-terragrunt-1.0.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/b97mvm9iqhk2131yw6jqx67d2parjb5k-terragrunt-1.0.1"
+          "store_path": "/nix/store/zjmsfycb8zjfql5sbhdm8jpjb521gr76-terragrunt-1.0.4"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/amhgx894h565ilq1himgbyzk0d0dwk0a-terragrunt-1.0.1",
+              "path": "/nix/store/gb3h2zgni0gw2612ssjlw4d80k2xjfg3-terragrunt-1.0.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/amhgx894h565ilq1himgbyzk0d0dwk0a-terragrunt-1.0.1"
+          "store_path": "/nix/store/gb3h2zgni0gw2612ssjlw4d80k2xjfg3-terragrunt-1.0.4"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/srd83h6hkl2kn5j5j1m6i69hfdbg1j0r-terragrunt-1.0.1",
+              "path": "/nix/store/wl5b8yg95gf8xrzdq7m1ablnkjvz0vw1-terragrunt-1.0.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/srd83h6hkl2kn5j5j1m6i69hfdbg1j0r-terragrunt-1.0.1"
+          "store_path": "/nix/store/wl5b8yg95gf8xrzdq7m1ablnkjvz0vw1-terragrunt-1.0.4"
         }
       }
     },
