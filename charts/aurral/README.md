@@ -16,7 +16,7 @@ Music discovery and request manager for Lidarr with Weekly Flow playlists
 | aurral.env[2].value | string | `"1"` |  |
 | aurral.env[3].name | string | `"NODE_OPTIONS"` |  |
 | aurral.env[3].value | string | `"--dns-result-order=ipv4first"` |  |
-| aurral.image | string | `"ghcr.io/lklynet/aurral:1.36.3@sha256:c4019ca1a14b7efb23039b70cc4c966de981784e3a89504967da72cf7bff4160"` |  |
+| aurral.image | string | `"ghcr.io/lklynet/aurral:1.76.51@sha256:cf04da830f6965d9bd27d533eddddb0b3430390efe7b4f6f4338e486d4e3ec94"` |  |
 | aurral.port | int | `3001` |  |
 | aurral.resources.limits.cpu | string | `"1"` |  |
 | aurral.resources.limits.memory | string | `"1Gi"` |  |

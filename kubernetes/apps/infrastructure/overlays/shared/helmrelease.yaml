@@ -18,9 +18,6 @@ spec:
   valuesFrom:
     - kind: ConfigMap
       name: infrastructure-values
-  install:
-    remediation:
-      retries: 3
   upgrade:
     remediation:
       retries: 3
