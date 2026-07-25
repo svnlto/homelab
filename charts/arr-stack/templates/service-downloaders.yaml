@@ -7,10 +7,6 @@ metadata:
     {{- include "arr-stack.annotations" . | nindent 4 }}
 spec:
   ports:
-    - port: {{ .Values.downloaders.qbittorrent.port }}
-      targetPort: {{ .Values.downloaders.qbittorrent.port }}
-      protocol: TCP
-      name: qbittorrent
     - port: {{ .Values.downloaders.sabnzbd.port }}
       targetPort: {{ .Values.downloaders.sabnzbd.port }}
       protocol: TCP

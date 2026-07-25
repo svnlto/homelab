@@ -78,9 +78,6 @@ data:
                   - title: Prowlarr
                     url: https://prowlarr.{{ .Values.ingress.domain }}
                     icon: si:prowlarr
-                  - title: qBittorrent
-                    url: https://qbittorrent.{{ .Values.ingress.domain }}
-                    icon: si:qbittorrent
                   - title: SABnzbd
                     url: https://sabnzbd.{{ .Values.ingress.domain }}
                     icon: si:sabnzbd

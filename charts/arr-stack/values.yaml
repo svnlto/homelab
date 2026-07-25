@@ -62,7 +62,7 @@ downloaders:
     image: qmcgaw/gluetun:v3.41.1@sha256:1a5bf4b4820a879cdf8d93d7ef0d2d963af56670c9ebff8981860b6804ebc8ab
     vpnProvider: protonvpn
     serverCountries: Sweden
-    firewallInputPorts: "8701,8080,9696,8191,5030"
+    firewallInputPorts: "8080,9696,8191,5030"
     firewallOutboundSubnets: "10.96.0.0/12,10.244.0.0/16"
     resources:
       requests:
@@ -71,16 +71,6 @@ downloaders:
       limits:
         cpu: 500m
         memory: 256Mi
-  qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:5.1.4-r1-ls431@sha256:043498de39c3dd63eec94360c5ad966a51271d1581070f42cb73ab0cf4776f29
-    port: 8701
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 1000m
-        memory: 768Mi
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:4.5.5-ls244@sha256:1a26f56dfc047b62d5ddc20bc92bdebfbe7c3cb58d2d3523958838a09182d77a
     port: 8080

@@ -82,11 +82,6 @@ csi:
       pvcName: gluetun-config
       volumeHandle: pvc-8b8d1026-1229-41c3-80f2-5bffe3d1b214
       capacity: 1Gi
-    - name: qbittorrent
-      pvName: arr-qbittorrent-config
-      pvcName: qbittorrent-config
-      volumeHandle: pvc-a342a73f-ea33-493e-908b-6735cdd09eac
-      capacity: 2Gi
     - name: sabnzbd
       pvName: arr-sabnzbd-config
       pvcName: sabnzbd-config
@@ -112,9 +107,6 @@ ingress:
   annotations:
     traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
   hosts:
-    - name: qbittorrent
-      service: downloaders
-      portName: qbittorrent
     - name: sabnzbd
       service: downloaders
       portName: sabnzbd
