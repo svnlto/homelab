@@ -150,7 +150,7 @@ resource "helm_release" "traefik" {
       ]
       persistence = {
         enabled      = true
-        storageClass = "truenas-nfs-bulk"
+        storageClass = "truenas-nfs-fast"
         accessMode   = "ReadWriteOnce"
         size         = "128Mi"
       }
