@@ -70,7 +70,7 @@ downloaders:
         memory: 128Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 256Mi
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:5.1.4-r1-ls431@sha256:043498de39c3dd63eec94360c5ad966a51271d1581070f42cb73ab0cf4776f29
     port: 8701
@@ -80,17 +80,17 @@ downloaders:
         memory: 256Mi
       limits:
         cpu: 1000m
-        memory: 1Gi
+        memory: 768Mi
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:4.5.5-ls244@sha256:1a26f56dfc047b62d5ddc20bc92bdebfbe7c3cb58d2d3523958838a09182d77a
     port: 8080
     resources:
       requests:
         cpu: 100m
-        memory: 1Gi
+        memory: 512Mi
       limits:
         cpu: 1000m
-        memory: 2Gi
+        memory: 1536Mi
   slskd:
     image: slskd/slskd:0.25.1@sha256:ab9ed50e028b524cefdb7c1dd8ebca368a076e18441ee8ac2326473eb850b4c3
     port: 5030
@@ -100,7 +100,7 @@ downloaders:
         memory: 128Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 256Mi
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:2.3.0.5236-ls139@sha256:9ef5d8bf832edcacb6082f9262cb36087854e78eb7b1c3e1d4375056055b2d82
     port: 9696
@@ -110,7 +110,7 @@ downloaders:
         memory: 128Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 256Mi
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:v3.4.6@sha256:7962759d99d7e125e108e0f5e7f3cdbcd36161776d058d1d9b7153b92ef1af9e
     port: 8191

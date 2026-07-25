@@ -14,10 +14,10 @@ server:
   resources:
     requests:
       cpu: 500m
-      memory: 2Gi
+      memory: 512Mi
     limits:
       cpu: 8000m
-      memory: 12Gi
+      memory: 2Gi
 
 workers:
   replicas: 1
