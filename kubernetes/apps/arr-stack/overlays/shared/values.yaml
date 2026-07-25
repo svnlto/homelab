@@ -68,11 +68,6 @@ iscsi:
       pvcName: lidarr-config
       volumeHandle: pvc-3b768fb5-66b5-4720-925d-572f30608808
       capacity: 5Gi
-    - name: bazarr
-      pvName: arr-bazarr-config
-      pvcName: bazarr-config
-      volumeHandle: pvc-9e5c5fb5-17c9-40f8-829f-398ab823c991
-      capacity: 1Gi
 
 csi:
   server: 10.10.10.13
@@ -124,9 +119,6 @@ ingress:
       portName: http
     - name: lidarr
       service: lidarr
-      portName: http
-    - name: bazarr
-      service: bazarr
       portName: http
     - name: glance
       service: glance

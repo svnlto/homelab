@@ -72,9 +72,6 @@ data:
                   - title: Lidarr
                     url: https://lidarr.{{ .Values.ingress.domain }}
                     icon: si:lidarr
-                  - title: Bazarr
-                    url: https://bazarr.{{ .Values.ingress.domain }}
-                    icon: si:bazarr
                   - title: Prowlarr
                     url: https://prowlarr.{{ .Values.ingress.domain }}
                     icon: si:prowlarr

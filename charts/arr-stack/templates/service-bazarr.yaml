@@ -1,2 +1,0 @@
----
-{{ include "arr-stack.arrService" (dict "name" "bazarr" "app" .Values.bazarr "Values" .Values) }}

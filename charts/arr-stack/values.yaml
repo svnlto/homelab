@@ -53,7 +53,6 @@ externalSecret:
     - SONARR_API_KEY
     - PROWLARR_API_KEY
     - LIDARR_API_KEY
-    - BAZARR_API_KEY
     - JELLYFIN_API_KEY
 
 # -- Downloaders pod (gluetun VPN + download clients)
@@ -74,6 +73,13 @@ downloaders:
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:4.5.5-ls244@sha256:1a26f56dfc047b62d5ddc20bc92bdebfbe7c3cb58d2d3523958838a09182d77a
     port: 8080
+    # Incomplete (temporary) downloads on the ssd pool, off bulk, so active
+    # Usenet writes don't starve Jellyfin reads. Completed files still land on bulk.
+    incomplete:
+      enabled: true
+      storageClassName: truenas-nfs-fast
+      size: 100Gi
+      mountPath: /incomplete
     resources:
       requests:
         cpu: 100m
@@ -112,7 +118,7 @@ downloaders:
         cpu: 500m
         memory: 512Mi
 
-# -- Arr apps (radarr, sonarr, lidarr, bazarr)
+# -- Arr apps (radarr, sonarr, lidarr)
 radarr:
   image: lscr.io/linuxserver/radarr:6.0.4.10291-ls295@sha256:ca43905eaf2dd11425efdcfe184892e43806b1ae0a830440c825cecbc2629cfb
   port: 7878
@@ -148,20 +154,6 @@ lidarr:
     limits:
       cpu: 1000m
       memory: 1Gi
-
-bazarr:
-  image: lscr.io/linuxserver/bazarr:v1.5.6-ls339@sha256:b0bc617664dbca25845ac3b1bb6411b145b6a44a6d173071c9d2f426524fdd9f
-  port: 6767
-  probePath: /
-  startupInitialDelay: 30
-  startupFailureThreshold: 24
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
 
 # -- Recyclarr CronJob
 recyclarr:

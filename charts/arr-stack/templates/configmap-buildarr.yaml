@@ -67,12 +67,6 @@ data:
           enable_completed_download_handling: true
           redownload_failed: true
 
-    bazarr:
-      hostname: bazarr.{{ .Release.Namespace }}.svc
-      port: {{ .Values.bazarr.port }}
-      protocol: http
-      api_key: __BAZARR_API_KEY__
-
     prowlarr:
       hostname: downloaders.{{ .Release.Namespace }}.svc
       port: {{ .Values.downloaders.prowlarr.port }}
@@ -87,5 +81,4 @@ data:
     sed -i "s/__SONARR_API_KEY__/$SONARR_API_KEY/g" /config/buildarr.yml
     sed -i "s/__PROWLARR_API_KEY__/$PROWLARR_API_KEY/g" /config/buildarr.yml
     sed -i "s/__LIDARR_API_KEY__/$LIDARR_API_KEY/g" /config/buildarr.yml
-    sed -i "s/__BAZARR_API_KEY__/$BAZARR_API_KEY/g" /config/buildarr.yml
     exec buildarr "$@"

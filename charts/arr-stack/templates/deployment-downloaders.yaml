@@ -105,6 +105,10 @@ spec:
           volumeMounts:
             - name: sabnzbd-config
               mountPath: /config
+{{- if .Values.downloaders.sabnzbd.incomplete.enabled }}
+            - name: sabnzbd-incomplete
+              mountPath: {{ .Values.downloaders.sabnzbd.incomplete.mountPath }}
+{{- end }}
             {{- include "arr-stack.mediaVolumeMounts" . | nindent 12 }}
 
         - name: slskd
@@ -163,6 +167,11 @@ spec:
         - name: sabnzbd-config
           persistentVolumeClaim:
             claimName: sabnzbd-config
+{{- if .Values.downloaders.sabnzbd.incomplete.enabled }}
+        - name: sabnzbd-incomplete
+          persistentVolumeClaim:
+            claimName: sabnzbd-incomplete
+{{- end }}
         - name: slskd-config
           persistentVolumeClaim:
             claimName: slskd-config

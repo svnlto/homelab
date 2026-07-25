@@ -51,11 +51,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.externalSecret.targetSecretName }}
                   key: LIDARR_API_KEY
-            - name: BAZARR_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.externalSecret.targetSecretName }}
-                  key: BAZARR_API_KEY
           resources:
             {{- toYaml .Values.buildarr.resources | nindent 12 }}
           volumeMounts:

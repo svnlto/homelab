@@ -1,0 +1,16 @@
+{{- if .Values.downloaders.sabnzbd.incomplete.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sabnzbd-incomplete
+  annotations:
+    {{- include "arr-stack.annotations" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.downloaders.sabnzbd.incomplete.storageClassName }}
+  resources:
+    requests:
+      storage: {{ .Values.downloaders.sabnzbd.incomplete.size }}
+{{- end }}
