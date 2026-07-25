@@ -40,6 +40,11 @@ kubernetes/
 - **`dependsOn`**: postgresql → cnpg-operator, immich → postgresql.
 - **No `install.remediation`** on HelmReleases — a failed install must never uninstall
   (helm-controller uses server-side apply, stricter than ArgoCD).
+- **Bump `charts/<app>/Chart.yaml` `version:` on every template or `charts/<app>/values.yaml` change.**
+  helm-controller only upgrades a HelmRelease on a chart-**version** change or a **values**
+  (`valuesFrom`) change. A local-chart template edit without a version bump is silently skipped
+  (source repackages, but helm-controller sees the same version and reports in-sync).
+  Overlay values (`kubernetes/apps/<app>/overlays/*/values.yaml`) *are* picked up without a bump.
 - **Storage**: democratic-csi (NFS + iSCSI from TrueNAS); keep PV `reclaimPolicy: Retain`.
 
 ## Adding an app
