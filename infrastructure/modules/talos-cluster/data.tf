@@ -35,6 +35,16 @@ data "talos_machine_configuration" "control_plane" {
               vip = {
                 ip = var.vip_ip
               }
+            },
+            {
+              # Selected by MAC, not "eth1": kernel naming follows PCI probe
+              # order and is not guaranteed stable. No routes/gateway — the /24
+              # auto-creates the connected route for 10.10.10.0/24 and the
+              # default must stay on eth0.
+              deviceSelector = {
+                hardwareAddr = each.value.storage_mac
+              }
+              addresses = [each.value.storage_ip]
             }
           ]
           nameservers = var.dns_servers
@@ -146,6 +156,12 @@ data "talos_machine_configuration" "worker" {
                   gateway = var.network_gateway
                 }
               ]
+            },
+            {
+              deviceSelector = {
+                hardwareAddr = each.value.storage_mac
+              }
+              addresses = [each.value.storage_ip]
             }
           ]
           nameservers = var.dns_servers

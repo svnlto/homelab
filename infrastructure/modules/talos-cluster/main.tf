@@ -70,6 +70,14 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
     model  = "virtio"
   }
 
+  # net1: VLAN 10 storage. Puts the node on vmbr10 alongside TrueNAS VM 300 so
+  # storage traffic stays inside grogu's bridge and never reaches the router CPU.
+  network_device {
+    bridge      = var.storage_bridge
+    model       = "virtio"
+    mac_address = each.value.storage_mac
+  }
+
   lifecycle {
     # file_id references the source image used at VM creation; after the disk
     # is cloned it has no meaning and is null on import. Ignore to prevent
@@ -146,6 +154,14 @@ resource "proxmox_virtual_environment_vm" "worker" {
   network_device {
     bridge = var.network_bridge
     model  = "virtio"
+  }
+
+  # net1: VLAN 10 storage. Puts the node on vmbr10 alongside TrueNAS VM 300 so
+  # storage traffic stays inside grogu's bridge and never reaches the router CPU.
+  network_device {
+    bridge      = var.storage_bridge
+    model       = "virtio"
+    mac_address = each.value.storage_mac
   }
 
   dynamic "hostpci" {

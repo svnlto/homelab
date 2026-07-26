@@ -41,6 +41,11 @@ variable "network_bridge" {
   type        = string
 }
 
+variable "storage_bridge" {
+  description = "Proxmox bridge for the VLAN 10 storage NIC (vmbr10)"
+  type        = string
+}
+
 variable "network_gateway" {
   description = "Gateway IP for cluster network"
   type        = string
@@ -81,6 +86,8 @@ variable "control_plane_nodes" {
     cpu_cores    = number
     memory_mb    = number
     disk_size_gb = number
+    storage_ip   = string # CIDR on VLAN 10, e.g. "10.10.10.31/24"
+    storage_mac  = string # pinned MAC, e.g. "BC:24:11:10:00:1F"
   }))
 
   validation {
@@ -100,6 +107,8 @@ variable "worker_nodes" {
     cpu_cores           = number
     memory_mb           = number
     disk_size_gb        = number
+    storage_ip          = string # CIDR on VLAN 10, e.g. "10.10.10.31/24"
+    storage_mac         = string # pinned MAC, e.g. "BC:24:11:10:00:1F"
     gpu_passthrough     = optional(bool, false)
     gpu_mapping_id      = optional(string, "")
     hook_script_file_id = optional(string, "")

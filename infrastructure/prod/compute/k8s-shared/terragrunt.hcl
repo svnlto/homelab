@@ -48,6 +48,7 @@ inputs = {
   talos_gpu_schematic_id = local.talos.gpu_schematic_id
 
   network_bridge  = local.proxmox.bridges.k8s_shared
+  storage_bridge  = local.proxmox.bridges.storage
   network_gateway = local.vlans.k8s_shared.gateway
   dns_servers     = [local.ips.pihole]
   ntp_servers     = [local.ips.pihole]
@@ -64,6 +65,8 @@ inputs = {
       cpu_cores    = 4
       memory_mb    = 4096
       disk_size_gb = 15
+      storage_ip   = "10.10.10.31/24"
+      storage_mac  = "BC:24:11:10:00:1F"
     }
     cp2 = {
       node_name    = "grogu"
@@ -73,6 +76,8 @@ inputs = {
       cpu_cores    = 4
       memory_mb    = 4096
       disk_size_gb = 15
+      storage_ip   = "10.10.10.32/24"
+      storage_mac  = "BC:24:11:10:00:20"
     }
     cp3 = {
       node_name    = "grogu"
@@ -82,6 +87,8 @@ inputs = {
       cpu_cores    = 4
       memory_mb    = 4096
       disk_size_gb = 15
+      storage_ip   = "10.10.10.33/24"
+      storage_mac  = "BC:24:11:10:00:21"
     }
   }
 
@@ -95,6 +102,8 @@ inputs = {
       memory_mb       = 16384
       disk_size_gb    = 50
       gpu_passthrough = false
+      storage_ip      = "10.10.10.41/24"
+      storage_mac     = "BC:24:11:10:00:29"
     }
     worker2 = {
       node_name       = "grogu"
@@ -106,6 +115,8 @@ inputs = {
       disk_size_gb    = 50
       gpu_passthrough = true
       gpu_mapping_id  = local.proxmox.resource_mappings.arc_a310
+      storage_ip      = "10.10.10.42/24"
+      storage_mac     = "BC:24:11:10:00:2A"
     }
   }
 
