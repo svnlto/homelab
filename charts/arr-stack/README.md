@@ -1,6 +1,6 @@
 # arr-stack
 
-![Version: 0.1.3](https://img.shields.io/badge/Version-0.1.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.1.4](https://img.shields.io/badge/Version-0.1.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 Media automation stack (Sonarr, Radarr, Lidarr, SABnzbd, and more)
 
@@ -32,7 +32,7 @@ Media automation stack (Sonarr, Radarr, Lidarr, SABnzbd, and more)
 | lidarr.resources.requests.cpu | string | `"100m"` |  |
 | lidarr.resources.requests.memory | string | `"256Mi"` |  |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=1048576","wsize=1048576","hard","noatime","nconnect=8"],"server":"","volumes":[]}` | NFS storage for media |
-| radarr | object | `{"image":"lscr.io/linuxserver/radarr:6.0.4.10291-ls295@sha256:ca43905eaf2dd11425efdcfe184892e43806b1ae0a830440c825cecbc2629cfb","port":7878,"probePath":"/ping","resources":{"limits":{"cpu":"1000m","memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}}` | Arr apps (radarr, sonarr, lidarr) |
+| radarr | object | `{"image":"lscr.io/linuxserver/radarr:6.3.0.10514-ls312@sha256:e35056574cdc695a9ee745aa1ecda9eab3842450bf4b7b8471b023790fa3861d","port":7878,"probePath":"/ping","resources":{"limits":{"cpu":"1000m","memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}}` | Arr apps (radarr, sonarr, lidarr) |
 | recyclarr | object | `{"image":"ghcr.io/recyclarr/recyclarr:8.7.0@sha256:2d6107f758d882a59fe9d646aa54fa8a5a4fb7a40995125fade575652a3f7871","resources":{"limits":{"cpu":"200m","memory":"256Mi"},"requests":{"cpu":"25m","memory":"64Mi"}},"schedule":"0 4 * * 1"}` | Recyclarr CronJob |
 | sonarr.image | string | `"lscr.io/linuxserver/sonarr:4.0.19.2979-ls320@sha256:24acea2956a0ccb11f103877d9f4f8576600fb34bff34820ed749c2256dab89f"` |  |
 | sonarr.port | int | `8989` |  |
