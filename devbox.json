@@ -14,16 +14,13 @@
     "kubectl@1.36.2",
     "talosctl@1.13.5",
     "k9s@0.51.0",
-    "argocd@3.4.4",
-    "vcluster@0.31.0",
     "helm-docs@1.14.2",
     "kubeconform@0.7.0",
     "nodejs@25.9.0",
-    "deno@2.9.2",
     "terraform@1.14.9"
   ],
   "env": {
-    "K9S_CONFIG_DIR": "$HOME/.config/k9s",
+    "K9S_CONFIG_DIR":    "$HOME/.config/k9s",
     "TERRAGRUNT_TFPATH": "terraform"
   },
   "shell": {

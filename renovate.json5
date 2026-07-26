@@ -46,6 +46,13 @@
     ]
   },
 
+  // Flux manager for HelmRelease/HelmRepository chart versions in app overlays
+  "flux": {
+    "fileMatch": [
+      "^kubernetes/apps/.+\\.yaml$"
+    ]
+  },
+
   // Custom regex managers for Nix files with Docker image references
   "customManagers": [
     {
@@ -87,6 +94,7 @@
       "matchDatasources": ["docker"],
       "pinDigests": false
     },
+
 
     // Label major updates for careful review
     {
