@@ -28,7 +28,7 @@ prometheus:
     # outage. At the default 0s those samples are rejected as out of bounds.
     enableRemoteWriteReceiver: true
     tsdb:
-      outOfOrderTimeWindow: 12h
+      outOfOrderTimeWindow: 72h
     resources:
       requests:
         cpu: 500m
