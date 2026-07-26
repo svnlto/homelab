@@ -6,6 +6,7 @@ resources:
   - namespace.yaml
   - helmrepository.yaml
   - helmrelease.yaml
+  - prometheusrule-wan.yaml
   - ingress-grafana.yaml
   - external-secret-remotewrite.yaml
   - middleware-basicauth.yaml

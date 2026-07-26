@@ -1,0 +1,95 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: wan-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: wan_ladder_state
+      interval: 30s
+      rules:
+        # `> bool 0` (not `== 1`) so a down rung emits 0 rather than no series.
+        # A filtered-away series makes avg_over_time() skip the outage entirely
+        # and report ~100% uptime — wrong in the ISP's favour.
+        # `or vector(0)` floors the aggregates: when the underlying series has
+        # no samples, max() returns EMPTY and Prometheus stale-marks the output,
+        # which again excludes the gap. A dead Pi would otherwise score BETTER
+        # uptime than a flaky one.
+        # The floor goes ONLY on {}-labelled aggregates — on a labelled series
+        # vector(0)'s bare {} never matches and would be appended every eval.
+        - record: wan:rung0_mikrotik:up:raw
+          expr: max(increase(smokeping_response_duration_seconds_count{host="192.168.0.1"}[2m]) > bool 0)
+        - record: wan:rung0_mikrotik:up
+          expr: wan:rung0_mikrotik:up:raw or vector(0)
+        - record: wan:rung1_cpe:up:raw
+          expr: max(increase(smokeping_response_duration_seconds_count{host="192.168.8.1"}[2m]) > bool 0)
+        - record: wan:rung1_cpe:up
+          expr: wan:rung1_cpe:up:raw or vector(0)
+        # Keeps its host label on purpose — one series per resolver, no floor.
+        - record: wan:rung3_resolver:up
+          expr: (increase(smokeping_response_duration_seconds_count{rung="3"}[2m]) > bool 0)
+        - record: wan:rung3:up_count
+          expr: sum(wan:rung3_resolver:up) or vector(0)
+        # From `up`, not from the resolver series: `up` exists for every
+        # CONFIGURED target regardless of scrape success, so the denominator
+        # cannot silently shrink 3 -> 2 if a target drops out.
+        - record: wan:rung3:total_count
+          expr: count(up{rung="3"}) or vector(0)
+        - record: wan:rung4_site:up
+          expr: min(probe_success{rung="4"}) or vector(0)
+        - record: wan:up
+          expr: (wan:rung1_cpe:up > bool 0) * (wan:rung3:up_count > bool 0)
+        - record: wan:fault:local
+          expr: (wan:rung0_mikrotik:up < bool 1)
+        - record: wan:fault:cpe_or_radio
+          expr: (wan:rung0_mikrotik:up > bool 0) * (wan:rung1_cpe:up < bool 1)
+        - record: wan:fault:carrier_or_core
+          expr: (wan:rung1_cpe:up > bool 0) * (wan:rung3:up_count < bool 1)
+        - record: wan:fault:single_resolver_incident
+          expr: (wan:rung1_cpe:up > bool 0) * (wan:rung3:up_count > bool 0) * (wan:rung3:up_count < bool wan:rung3:total_count)
+        - record: wan:fault:cdn_or_http_specific
+          expr: (wan:rung3:up_count >= bool wan:rung3:total_count) * (wan:rung4_site:up < bool 1)
+
+    - name: wan_latency_5m
+      interval: 1m
+      rules:
+        - record: instance:smokeping_response_duration_seconds:p50_5m
+          expr: histogram_quantile(0.50, sum(rate(smokeping_response_duration_seconds_bucket[5m])) by (le, host))
+        - record: instance:smokeping_response_duration_seconds:p95_5m
+          expr: histogram_quantile(0.95, sum(rate(smokeping_response_duration_seconds_bucket[5m])) by (le, host))
+        - record: instance:smokeping_response_duration_seconds:p99_5m
+          expr: histogram_quantile(0.99, sum(rate(smokeping_response_duration_seconds_bucket[5m])) by (le, host))
+        # The `and on (host) (sends > 0)` guard is NOT optional. During a total
+        # pipeline outage both counters increase by 0, giving 1 - (0/0) = NaN.
+        # NaN is a real stored sample and avg_over_time() has no NaN filter, so
+        # ONE bad window silently turns a 90-day average-loss panel into NaN.
+        # Note this is the OPPOSITE fix from the booleans above: an up/down state
+        # has a safe default (unknown -> down); a loss ratio does not, so unknown
+        # must become an ABSENCE rather than a number.
+        - record: instance:smokeping_loss:ratio5m
+          expr: |
+            (1 - (sum(increase(smokeping_response_duration_seconds_count[5m])) by (host)
+                / sum(increase(smokeping_requests_total[5m])) by (host)))
+            and on (host)
+            (sum(increase(smokeping_requests_total[5m])) by (host) > 0)
+
+    - name: wan_rollups_90d
+      interval: 1h
+      rules:
+        - record: instance:wan_uptime:ratio1h
+          expr: avg_over_time(wan:up[1h])
+        - record: instance:smokeping_loss:ratio1h
+          expr: |
+            (1 - (sum(increase(smokeping_response_duration_seconds_count[1h])) by (host)
+                / sum(increase(smokeping_requests_total[1h])) by (host)))
+            and on (host)
+            (sum(increase(smokeping_requests_total[1h])) by (host) > 0)
+        - record: instance:smokeping_response_duration_seconds:p95_1h
+          expr: histogram_quantile(0.95, sum(increase(smokeping_response_duration_seconds_bucket[1h])) by (le, host))
+        # Displayed NEXT TO every uptime/loss figure so a buffering gap reads as
+        # "we don't know" instead of being folded into the numerator or denominator.
+        - record: instance:wan_coverage:ratio1h
+          expr: (count_over_time(wan:rung1_cpe:up:raw[1h]) / 120) or vector(0)
