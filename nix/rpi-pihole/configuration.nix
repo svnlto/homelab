@@ -11,13 +11,17 @@
   networking = {
     hostName = "rpi-pihole";
     useDHCP = false;
-    interfaces.eth0.ipv4.addresses = [{
-      address = "192.168.0.53";
-      prefixLength = 24;
-    }];
+    interfaces.eth0.ipv4.addresses = [
+      {
+        address = "192.168.0.53";
+        prefixLength = 24;
+      }
+    ];
     defaultGateway = "192.168.0.1";
-    nameservers =
-      [ "1.1.1.1" "8.8.8.8" ]; # Bootstrap DNS (before Pi-hole is running)
+    nameservers = [
+      "1.1.1.1"
+      "8.8.8.8"
+    ]; # Bootstrap DNS (before Pi-hole is running)
 
     firewall = {
       enable = true;
@@ -48,7 +52,10 @@
   # User configuration
   users.users.${constants.username} = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "docker" ];
+    extraGroups = [
+      "wheel"
+      "docker"
+    ];
     openssh.authorizedKeys.keys = [
       # SSH public key from 1Password (same as Proxmox VMs)
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGAfz+KUctvSo0azvIQhHY2eBvKhT3pHRE0vpNtvpjMY"
@@ -70,7 +77,10 @@
 
   # Nix settings
   nix.settings = {
-    experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
     auto-optimise-store = true;
   };
 
@@ -78,12 +88,20 @@
   fileSystems."/var/log" = {
     device = "tmpfs";
     fsType = "tmpfs";
-    options = [ "size=50M" "nodev" "nosuid" ];
+    options = [
+      "size=50M"
+      "nodev"
+      "nosuid"
+    ];
   };
   fileSystems."/tmp" = {
     device = "tmpfs";
     fsType = "tmpfs";
-    options = [ "size=100M" "nodev" "nosuid" ];
+    options = [
+      "size=100M"
+      "nodev"
+      "nosuid"
+    ];
   };
 
   # Cap journal size (persisted journals would go to tmpfs /var/log)
@@ -95,7 +113,10 @@
   # NTP server for the network (K8s nodes use this to avoid DNS-dependent NTP)
   services.chrony = {
     enable = true;
-    servers = [ "time.cloudflare.com" "time.google.com" ];
+    servers = [
+      "time.cloudflare.com"
+      "time.google.com"
+    ];
     extraConfig = ''
       # Allow NTP clients from all local subnets
       allow 192.168.0.0/24

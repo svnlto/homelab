@@ -6,7 +6,10 @@ _: {
 
     # Prevent Tailscale from overriding DNS settings
     # --advertise-routes: subnet router for VLAN 20 (LAN)
-    extraUpFlags = [ "--accept-dns=false" "--advertise-routes=192.168.0.0/24" ];
+    extraUpFlags = [
+      "--accept-dns=false"
+      "--advertise-routes=192.168.0.0/24"
+    ];
 
     # Peer relay uses `tailscale set`, not `tailscale up`
     extraSetFlags = [ "--relay-server-port=41642" ];
@@ -16,7 +19,10 @@ _: {
   networking.firewall = {
     # Allow Tailscale's UDP port
     # 41641: Tailscale WireGuard, 41642: Tailscale peer relay
-    allowedUDPPorts = [ 41641 41642 ];
+    allowedUDPPorts = [
+      41641
+      41642
+    ];
 
     # Required for Tailscale's NAT traversal
     checkReversePath = "loose";

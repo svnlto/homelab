@@ -3,7 +3,10 @@
   fileSystems."/mnt/dump" = {
     device = "/dev/disk/by-label/dump";
     fsType = "ext4";
-    options = [ "nofail" "noatime" ];
+    options = [
+      "nofail"
+      "noatime"
+    ];
   };
 
   # Ensure mount point ownership
@@ -12,12 +15,23 @@
   # Dumper systemd service (long-running, loops internally)
   systemd.services.dumper = {
     description = "Photo sync from Mac to SanDisk via Tailscale";
-    after = [ "network-online.target" "tailscaled.service" "mnt-dump.mount" ];
-    wants = [ "network-online.target" "tailscaled.service" ];
+    after = [
+      "network-online.target"
+      "tailscaled.service"
+      "mnt-dump.mount"
+    ];
+    wants = [
+      "network-online.target"
+      "tailscaled.service"
+    ];
     requires = [ "mnt-dump.mount" ];
     wantedBy = [ "multi-user.target" ];
 
-    path = with pkgs; [ rsync openssh tailscale ];
+    path = with pkgs; [
+      rsync
+      openssh
+      tailscale
+    ];
 
     serviceConfig = {
       Type = "simple";
@@ -31,7 +45,10 @@
       # Hardening
       NoNewPrivileges = true;
       ProtectSystem = "strict";
-      ReadWritePaths = [ "/mnt/dump" "/var/lib/dumper" ];
+      ReadWritePaths = [
+        "/mnt/dump"
+        "/var/lib/dumper"
+      ];
       PrivateTmp = true;
     };
   };
