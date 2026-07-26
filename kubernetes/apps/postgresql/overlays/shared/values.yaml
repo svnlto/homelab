@@ -30,5 +30,3 @@ databases:
       - name: vector
       - name: cube
       - name: earthdistance
-  - name: n8n
-    owner: n8n
