@@ -10,3 +10,20 @@
   failed_when: "storage_iface.rc != 0 and 'does not exist' not in storage_iface.stderr"
   notify: Commit network changes
   tags: [network]
+
+- name: Disable ARP flux on the multi-homed storage host
+  ansible.builtin.command:
+    cmd: >
+      midclt call tunable.create
+      '{"type": "SYSCTL", "var": "{{ item.var }}", "value": "{{ item.value }}",
+        "enabled": true,
+        "comment": "Stop answering ARP for storage IP on the LAN VLAN"}'
+  loop:
+    - {var: "net.ipv4.conf.all.arp_ignore", value: "1"}
+    - {var: "net.ipv4.conf.all.arp_announce", value: "2"}
+  register: arp_tunables
+  changed_when: arp_tunables.rc == 0
+  failed_when: >
+    arp_tunables.rc != 0 and
+    'already exists' not in arp_tunables.stderr
+  tags: [network]
