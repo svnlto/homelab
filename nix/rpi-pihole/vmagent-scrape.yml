@@ -1,0 +1,45 @@
+---
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: smokeping
+    static_configs:
+      - targets: ["127.0.0.1:9374"]
+
+  - job_name: node
+    static_configs:
+      - targets: ["127.0.0.1:9100"]
+
+  # blackbox uses the relabel dance: the probe target travels as __param_target.
+  - job_name: blackbox-dns
+    metrics_path: /probe
+    params:
+      module: [dns_udp]
+    static_configs:
+      - targets: ["1.1.1.1:53", "8.8.8.8:53", "9.9.9.9:53"]
+        labels:
+          rung: "3"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 127.0.0.1:9115
+
+  - job_name: blackbox-http
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ["https://www.cloudflare.com"]
+        labels:
+          rung: "4"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 127.0.0.1:9115

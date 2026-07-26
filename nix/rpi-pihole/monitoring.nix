@@ -61,4 +61,39 @@ _: {
       "--web.listen-address=:9374"
     ];
   };
+
+  environment.etc."vmagent/scrape.yml".source = ./vmagent-scrape.yml;
+
+  # MagicDNS resolves this hostname to a tailnet address the ACL denies, while the
+  # LAN LoadBalancer is directly reachable. /etc/hosts beats MagicDNS via nsswitch,
+  # so this pins vmagent to VLAN 20 -> MikroTik -> VLAN 30. TLS still validates
+  # because the hostname is unchanged — only the address it resolves to.
+  networking.hosts = {
+    "10.0.1.101" = [ "prom-write.shared.h.svenlito.com" ];
+  };
+
+  # vmagent buffers to disk and remote-writes to the cluster Prometheus.
+  # Chosen over Prometheus agent mode because maxDiskUsagePerURL bounds
+  # worst-case SD usage during a long outage; Prometheus agent's own docs
+  # contradict themselves on whether its buffer is 2h or 4h.
+  #
+  # services.vmagent.prometheusConfig takes a Nix attrset (rendered to YAML
+  # by the module), not a file path, so the scrape config is passed via
+  # -promscrape.config instead of that option. remoteWrite.basicAuthUsername/
+  # basicAuthPasswordFile already generate the -remoteWrite.basicAuth.* flags
+  # and wire the password through systemd's LoadCredential (readable by root,
+  # staged for the DynamicUser service) — passing them again via extraArgs
+  # would duplicate the flags.
+  services.vmagent = {
+    enable = true;
+    remoteWrite = {
+      url = "https://prom-write.shared.h.svenlito.com/api/v1/write";
+      basicAuthUsername = "promwrite";
+      basicAuthPasswordFile = "/etc/vmagent-password";
+    };
+    extraArgs = [
+      "-promscrape.config=/etc/vmagent/scrape.yml"
+      "-remoteWrite.maxDiskUsagePerURL=4GB"
+    ];
+  };
 }
