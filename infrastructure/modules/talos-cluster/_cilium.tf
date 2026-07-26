@@ -56,6 +56,12 @@ data "helm_template" "cilium" {
     {
       name  = "socketLB.enabled"
       value = "true"
+    },
+    # Hubble mTLS is unused (relay/UI not enabled) and its helm-auto certs
+    # regenerate every `helm template`, causing perpetual CP config drift.
+    {
+      name  = "hubble.tls.enabled"
+      value = "false"
     }
   ]
 }
