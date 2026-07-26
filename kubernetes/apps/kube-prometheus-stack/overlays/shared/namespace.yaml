@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    # node-exporter needs hostNetwork/hostPID and host mounts. Same treatment
+    # as the traefik and metallb-system namespaces.
+    pod-security.kubernetes.io/enforce: privileged

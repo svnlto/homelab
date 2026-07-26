@@ -1,0 +1,101 @@
+---
+# Cilium runs kubeProxyReplacement=true, so there is no kube-proxy DaemonSet.
+# Leaving this enabled produces permanent "target down" noise.
+kubeProxy:
+  enabled: false
+
+# Talos binds etcd, scheduler and controller-manager to localhost by design.
+# Exposing them needs a machine-config patch, and etcd's listen-metrics-urls
+# additionally needs a control-plane reboot. None of it tells you anything about
+# the internet connection, so it is deliberately out of scope here — see
+# "Deferred: control-plane metrics" below. Left enabled, these produce permanent
+# "target down" noise that would drown the WAN targets.
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+
+prometheus:
+  prometheusSpec:
+    retention: 90d
+    # ~80% of the PV. Whichever limit trips first wins, so a cardinality spike
+    # evicts old blocks instead of filling the PVC and crash-looping Prometheus.
+    retentionSize: 40GB
+    walCompression: true
+    # Accepts backfill from a Pi agent that has been buffering through an
+    # outage. At the default 0s those samples are rejected as out of bounds.
+    enableRemoteWriteReceiver: true
+    tsdb:
+      outOfOrderTimeWindow: 12h
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: "2"
+        memory: 3Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: truenas-iscsi-rwo-retain
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+grafana:
+  # Dashboards live in git and are loaded by the sidecar, so no PVC is needed.
+  # Lost: UI-authored edits, annotations, API keys, favourites.
+  persistence:
+    enabled: false
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      searchNamespace: ALL
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
