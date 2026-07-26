@@ -15,12 +15,19 @@
   # Pi-hole systemd service
   systemd.services.pihole = {
     description = "Pi-hole DNS Server";
-    after = [ "docker.service" "network-online.target" "chronyd.service" ];
+    after = [
+      "docker.service"
+      "network-online.target"
+      "chronyd.service"
+    ];
     wants = [ "network-online.target" ];
     requires = [ "docker.service" ];
     wantedBy = [ "multi-user.target" ];
 
-    path = [ pkgs.docker pkgs.docker-compose ];
+    path = [
+      pkgs.docker
+      pkgs.docker-compose
+    ];
 
     serviceConfig = {
       Type = "oneshot";
@@ -28,8 +35,7 @@
       WorkingDirectory = "/opt/pihole";
       # Copy dnsmasq configs with --dereference to resolve NixOS /etc/static/ symlinks.
       # Docker containers can't follow symlinks outside the volume mount.
-      ExecStartPre =
-        "${pkgs.coreutils}/bin/cp --dereference --update /etc/pihole/05-homelab.conf /opt/pihole/etc-dnsmasq.d/05-homelab.conf";
+      ExecStartPre = "${pkgs.coreutils}/bin/cp --dereference --update /etc/pihole/05-homelab.conf /opt/pihole/etc-dnsmasq.d/05-homelab.conf";
       ExecStart = "${pkgs.docker-compose}/bin/docker-compose up -d";
       ExecStop = "${pkgs.docker-compose}/bin/docker-compose down";
       Restart = "on-failure";
@@ -152,7 +158,10 @@
   # Prometheus node exporter for monitoring
   services.prometheus.exporters.node = {
     enable = true;
-    enabledCollectors = [ "systemd" "textfile" ];
+    enabledCollectors = [
+      "systemd"
+      "textfile"
+    ];
     port = 9100;
     openFirewall = true;
   };

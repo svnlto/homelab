@@ -54,9 +54,9 @@ primary_interface: "nic2"
 # primary_interface reference nicX names; kernel predictable names (ens3f0, etc.)
 # shift when cards change PCIe slots. nic2 = the 10GbE Emulex trunk uplink.
 nic_link_map:
-  nic0: "6c:0b:84:67:10:9e"   # Intel I218-LM (onboard 1GbE)
-  nic1: "6c:0b:84:67:10:9f"   # Intel I210 (1GbE)
-  nic2: "00:fd:45:4b:a8:b8"   # Emulex OneConnect 10GbE port 0 — VLAN trunk uplink
+  nic0: "6c:0b:84:67:10:9e" # Intel I218-LM (onboard 1GbE)
+  nic1: "6c:0b:84:67:10:9f" # Intel I210 (1GbE)
+  nic2: "00:fd:45:4b:a8:b8" # Emulex OneConnect 10GbE port 0 — VLAN trunk uplink
 
 # MD1220 enclosure fan control (MN657 cable to EMM debug serial port → motherboard COM1).
 # Default fan speed of 5% silences the shelf; restore 25% on service stop.

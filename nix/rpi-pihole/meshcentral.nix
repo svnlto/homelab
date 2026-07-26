@@ -2,12 +2,18 @@
   # MeshCentral systemd service (Intel AMT web management — KVM, SOL, IDER, Power)
   systemd.services.meshcentral = {
     description = "MeshCentral Intel AMT Management Console";
-    after = [ "docker.service" "network-online.target" ];
+    after = [
+      "docker.service"
+      "network-online.target"
+    ];
     wants = [ "network-online.target" ];
     requires = [ "docker.service" ];
     wantedBy = [ "multi-user.target" ];
 
-    path = [ pkgs.docker pkgs.docker-compose ];
+    path = [
+      pkgs.docker
+      pkgs.docker-compose
+    ];
 
     serviceConfig = {
       Type = "oneshot";
