@@ -15,7 +15,7 @@
     home: /var/empty
     shell: /usr/sbin/nologin
     comment: "Media Service Account"
-    password: "*"
+    password_disabled: true
     smb: false
   tags: [users]
 
@@ -33,7 +33,7 @@
     home: /var/empty
     shell: /usr/sbin/nologin
     comment: "Immich Service Account"
-    password: "*"
+    password_disabled: true
     smb: false
   tags: [users, photos]
 
