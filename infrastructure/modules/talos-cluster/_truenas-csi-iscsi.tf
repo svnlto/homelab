@@ -41,6 +41,23 @@ resource "helm_release" "truenas_iscsi_csi" {
           node-publish-secret       = {}
           controller-expand-secret  = {}
         }
+      },
+      {
+        name                 = "truenas-iscsi-rwo-retain"
+        defaultClass         = false
+        reclaimPolicy        = "Retain"
+        volumeBindingMode    = "Immediate"
+        allowVolumeExpansion = true
+        parameters = {
+          fsType = "ext4"
+        }
+        secrets = {
+          provisioner-secret        = {}
+          controller-publish-secret = {}
+          node-stage-secret         = {}
+          node-publish-secret       = {}
+          controller-expand-secret  = {}
+        }
       }
     ]
     volumeSnapshotClasses = []
