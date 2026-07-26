@@ -35,7 +35,7 @@ resource "helm_release" "traefik" {
   name             = "traefik"
   repository       = "https://traefik.github.io/charts"
   chart            = "traefik"
-  version          = "39.0.9"
+  version          = "41.0.2"
   namespace        = kubernetes_namespace_v1.traefik[0].metadata[0].name
   create_namespace = false
   wait             = true
@@ -47,13 +47,16 @@ resource "helm_release" "traefik" {
       deployment = {
         strategy = "Recreate"
       }
+      # chart v40+ reads Service fields from service.spec, not top-level
       service = merge(
-        { type = "LoadBalancer" },
+        { spec = { type = "LoadBalancer" } },
         var.tailscale_enabled ? {
           additionalServices = {
             tailscale = {
-              type              = "LoadBalancer"
-              loadBalancerClass = "tailscale"
+              spec = {
+                type              = "LoadBalancer"
+                loadBalancerClass = "tailscale"
+              }
               annotations = {
                 "tailscale.com/hostname" = var.tailscale_hostname
               }
