@@ -3,4 +3,4 @@ apiVersion: v2
 name: arr-stack
 description: Media automation stack (Sonarr, Radarr, Lidarr, SABnzbd, and more)
 type: application
-version: 0.1.5
+version: 0.1.6
