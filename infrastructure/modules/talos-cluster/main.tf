@@ -17,7 +17,7 @@ resource "proxmox_virtual_environment_vm" "control_plane" {
   node_name   = each.value.node_name
   vm_id       = each.value.vm_id
   description = "Talos Control Plane - ${each.value.hostname} (${var.cluster_name})"
-  tags        = concat(["talos", "kubernetes", "control-plane", var.cluster_name, "terraform"], var.tags)
+  tags        = sort(distinct(concat(["talos", "kubernetes", "control-plane", var.cluster_name, "terraform"], var.tags)))
   on_boot     = true
 
   bios            = "ovmf"
@@ -92,8 +92,8 @@ resource "proxmox_virtual_environment_vm" "worker" {
   node_name   = each.value.node_name
   vm_id       = each.value.vm_id
   description = "Talos Worker - ${each.value.hostname}${each.value.gpu_passthrough ? " (GPU)" : ""} (${var.cluster_name})"
-  tags = concat(["talos", "kubernetes", "worker", var.cluster_name, "terraform"],
-  each.value.gpu_passthrough ? ["gpu"] : [], var.tags)
+  tags = sort(distinct(concat(["talos", "kubernetes", "worker", var.cluster_name, "terraform"],
+  each.value.gpu_passthrough ? ["gpu"] : [], var.tags)))
   on_boot = true
   started = true
 

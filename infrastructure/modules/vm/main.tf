@@ -8,11 +8,12 @@ locals {
 resource "proxmox_virtual_environment_vm" "vm" {
   name        = var.vm_name
   description = var.vm_description
-  tags        = var.tags
-  node_name   = var.node_name
-  vm_id       = var.vm_id
-  on_boot     = var.start_on_boot
-  bios        = local.is_uefi ? "ovmf" : "seabios"
+  # Proxmox stores tags sorted + deduped; match that to avoid a perpetual diff
+  tags      = sort(distinct(var.tags))
+  node_name = var.node_name
+  vm_id     = var.vm_id
+  on_boot   = var.start_on_boot
+  bios      = local.is_uefi ? "ovmf" : "seabios"
 
   startup {
     order      = var.startup_order
