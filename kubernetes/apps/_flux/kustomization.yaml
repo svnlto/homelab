@@ -13,3 +13,4 @@ resources:
   - postgresql.yaml
   - immich.yaml
   - infrastructure.yaml
+  - flux-ui.yaml

@@ -17,6 +17,7 @@ spec:
       labels:
         {{- include "arr-stack.selectorLabels" (dict "name" "glance") | nindent 8 }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-glance.yaml") . | sha256sum }}
         {{- include "arr-stack.annotations" . | nindent 8 }}
     spec:
       containers:

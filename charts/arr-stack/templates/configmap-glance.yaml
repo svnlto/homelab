@@ -46,6 +46,9 @@ data:
                       - title: TrueNAS
                         url: https://truenas.{{ .Values.ingress.domain }}
                         icon: si:truenas
+                      - title: Flux
+                        url: https://flux.{{ .Values.ingress.domain }}
+                        icon: si:flux
               - type: releases
                 cache: 1d
                 repositories:
@@ -93,6 +96,9 @@ data:
                   - title: Immich
                     url: https://immich.{{ .Values.ingress.domain }}
                     icon: si:immich
+                  - title: Flux
+                    url: https://flux.{{ .Values.ingress.domain }}
+                    icon: si:flux
 {{- range .Values.glance.jellyfinLibraries }}
               - type: custom-api
                 title: Recently Added {{ . }}
