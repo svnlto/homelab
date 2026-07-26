@@ -1020,51 +1020,41 @@
         }
       }
     },
-    "tflint@0.61.0": {
-      "last_modified": "2026-07-08T21:13:06Z",
-      "resolved": "github:NixOS/nixpkgs/389ed85304b281ca7f306cf8a1eb4378651ca44e#tflint",
+    "tflint@0.63.1": {
+      "last_modified": "2026-07-23T05:10:05Z",
+      "resolved": "github:NixOS/nixpkgs/7525d999cd850b9a488817abc89c75dc733acf17#tflint",
       "source": "devbox-search",
-      "version": "0.61.0",
+      "version": "0.63.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/68yyfk8kwwgsgavkpcadscszf9r0c9b7-tflint-0.61.0",
+              "path": "/nix/store/1hh847vpaxbh9jciqkbw4kfirsbjhqpi-tflint-0.63.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/68yyfk8kwwgsgavkpcadscszf9r0c9b7-tflint-0.61.0"
+          "store_path": "/nix/store/1hh847vpaxbh9jciqkbw4kfirsbjhqpi-tflint-0.63.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/0rnnf3n7h7lisvdqiz9mi8scqmmka22y-tflint-0.61.0",
+              "path": "/nix/store/jsw25ll4glcrqnfikgj7hdp959byqhxi-tflint-0.63.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/0rnnf3n7h7lisvdqiz9mi8scqmmka22y-tflint-0.61.0"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/7649dm04np2k4x54pazq3nrhdn1j6626-tflint-0.61.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/7649dm04np2k4x54pazq3nrhdn1j6626-tflint-0.61.0"
+          "store_path": "/nix/store/jsw25ll4glcrqnfikgj7hdp959byqhxi-tflint-0.63.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/sizsp4v5jzkzlia1g205r0z0yn89r43i-tflint-0.61.0",
+              "path": "/nix/store/jgqkjwgvaa3kjkcv8dv8pfhdnv0pjyqr-tflint-0.63.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/sizsp4v5jzkzlia1g205r0z0yn89r43i-tflint-0.61.0"
+          "store_path": "/nix/store/jgqkjwgvaa3kjkcv8dv8pfhdnv0pjyqr-tflint-0.63.1"
         }
       }
     },
