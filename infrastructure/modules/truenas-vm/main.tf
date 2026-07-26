@@ -9,6 +9,12 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   on_boot     = true
   bios        = "ovmf"
 
+  # HBA passthrough: NEVER let a provider-driven config change restart this VM.
+  # On restart the SAS passthrough hits a PCI IRQ assertion (pci_irq_handler)
+  # that QEMU can't recover from — only a full grogu host reboot clears it.
+  # Any change that needs a restart stays pending until a manual/maintenance one.
+  reboot_after_update = false
+
   startup {
     order      = 1
     up_delay   = 180
@@ -138,6 +144,9 @@ resource "proxmox_virtual_environment_vm" "truenas" {
       disk,
       hostpci,
       initialization,
+      # keyboard_layout: proxmox >=0.111 defaults it to en-us; changing it is a
+      # QEMU -k hardware arg that forces a restart — see the PCI-assertion above.
+      keyboard_layout,
       network_device,
       tags,
       usb,
