@@ -42,7 +42,7 @@ data "talos_machine_configuration" "control_plane" {
               # auto-creates the connected route for 10.10.10.0/24 and the
               # default must stay on eth0.
               deviceSelector = {
-                hardwareAddr = each.value.storage_mac
+                hardwareAddr = lower(each.value.storage_mac)
               }
               addresses = [each.value.storage_ip]
             }
@@ -159,7 +159,7 @@ data "talos_machine_configuration" "worker" {
             },
             {
               deviceSelector = {
-                hardwareAddr = each.value.storage_mac
+                hardwareAddr = lower(each.value.storage_mac)
               }
               addresses = [each.value.storage_ip]
             }
