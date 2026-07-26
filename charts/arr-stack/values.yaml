@@ -73,7 +73,7 @@ downloaders:
         cpu: 500m
         memory: 256Mi
   sabnzbd:
-    image: lscr.io/linuxserver/sabnzbd:4.5.5-ls244@sha256:1a26f56dfc047b62d5ddc20bc92bdebfbe7c3cb58d2d3523958838a09182d77a
+    image: lscr.io/linuxserver/sabnzbd:5.0.4-ls263@sha256:f12cb77b4e16d2d60fc8226e433daf69884e83874d90447c6ff1d57ef4247d6f
     port: 8080
     # Incomplete (temporary) downloads on the ssd pool, off bulk, so active
     # Usenet writes don't starve Jellyfin reads. Completed files still land on bulk.
