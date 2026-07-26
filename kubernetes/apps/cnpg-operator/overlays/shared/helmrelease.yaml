@@ -21,5 +21,4 @@ spec:
       name: cnpg-operator-values
   upgrade:
     remediation:
-      retries: 3
-      strategy: rollback
+      retries: 0
