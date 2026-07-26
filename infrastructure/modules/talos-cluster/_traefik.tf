@@ -44,8 +44,10 @@ resource "helm_release" "traefik" {
   # Base values
   values = [
     yamlencode({
-      deployment = {
-        strategy = "Recreate"
+      # Recreate, not RollingUpdate: the RWO acme.json PVC cannot be attached
+      # to the surge pod and the old pod at once, which deadlocks the rollout
+      updateStrategy = {
+        type = "Recreate"
       }
       # chart v40+ reads Service fields from service.spec, not top-level
       service = merge(
