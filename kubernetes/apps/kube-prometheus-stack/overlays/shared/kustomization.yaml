@@ -18,3 +18,10 @@ configMapGenerator:
       - values.yaml
     options:
       disableNameSuffixHash: true
+  - name: grafana-dashboard-wan-health
+    files:
+      - dashboards/wan-health.json
+    options:
+      disableNameSuffixHash: true
+      labels:
+        grafana_dashboard: "1"
