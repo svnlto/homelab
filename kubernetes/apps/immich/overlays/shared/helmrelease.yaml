@@ -19,6 +19,6 @@ spec:
     - kind: ConfigMap
       name: immich-values
   upgrade:
+    # one-way DB migrations: a rolled-back pod cannot read the migrated schema
     remediation:
-      retries: 3
-      strategy: rollback
+      retries: 0
