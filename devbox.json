@@ -17,7 +17,8 @@
     "helm-docs@1.14.2",
     "kubeconform@0.7.0",
     "nodejs@25.9.0",
-    "terraform@1.14.9"
+    "terraform@1.14.9",
+    "renovate@latest"
   ],
   "env": {
     "K9S_CONFIG_DIR":    "$HOME/.config/k9s",
