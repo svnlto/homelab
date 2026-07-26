@@ -6,6 +6,7 @@ resources:
   - namespace.yaml
   - helmrepository.yaml
   - helmrelease.yaml
+  - ingress-grafana.yaml
 configMapGenerator:
   - name: kube-prometheus-stack-values
     files:
