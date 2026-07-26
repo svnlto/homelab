@@ -3,7 +3,7 @@ global:
   annotations: {}
 
 server:
-  image: ghcr.io/immich-app/immich-server:v2.7.4@sha256:040b2fed8f7f6b7405f9b4b26348b4656355e4d4ed0852b8e966d453dd6635cc
+  image: ghcr.io/immich-app/immich-server:v3.0.3@sha256:c716dc20f957aafd89fa9d284a2ec63e25c9e2d8d8e87c6197d540a3dce237db
   port: 2283
   securityContext:
     runAsUser: 1001
@@ -32,7 +32,7 @@ workers:
       memory: 6Gi
 
 machineLearning:
-  image: ghcr.io/immich-app/immich-machine-learning:v2.7.4@sha256:e25a410b99567c369da14508c7e874dfbeee1bcf06adda2c4148ab2f32f9463d
+  image: ghcr.io/immich-app/immich-machine-learning:v3.0.3@sha256:d76fe88b69282c09a97eac4f82dafa82cfd77bce274bc742591cde974f87dacb
   port: 3003
   gpu:
     enabled: false
