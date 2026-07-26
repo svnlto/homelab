@@ -3,7 +3,7 @@
   "packages": [
     "ansible@2.21.1",
     "ansible-lint@25.8.2",
-    "molecule@25.12.0",
+    "molecule@26.6.0",
     "pre-commit@4.5.1",
     "tflint@0.63.1",
     "jq@1.8.2",
