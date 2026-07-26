@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/svnlto/homelab/compare/osxphotos-export-v0.3.0...osxphotos-export-v0.4.0) (2026-07-26)
+
+
+### Features
+
+* **direnv:** load 1Password credentials; apply drifted formatters ([#166](https://github.com/svnlto/homelab/issues/166)) ([076a1f0](https://github.com/svnlto/homelab/commit/076a1f02b7930a6797dd931cf3d83cb7b7ee4d3e))
+
 ## [0.3.0](https://github.com/svnlto/homelab/compare/osxphotos-export-v0.2.0...osxphotos-export-v0.3.0) (2026-05-01)
 
 ### Features
