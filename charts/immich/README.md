@@ -1,6 +1,6 @@
 # immich
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.5.6](https://img.shields.io/badge/AppVersion-2.5.6-informational?style=flat-square)
+![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.0.3](https://img.shields.io/badge/AppVersion-3.0.3-informational?style=flat-square)
 
 Immich self-hosted photo management with external library support
 
@@ -14,7 +14,7 @@ Immich self-hosted photo management with external library support
 | ingress | object | `{"annotations":{},"domain":"","enabled":false}` | Ingress configuration |
 | machineLearning.gpu.enabled | bool | `false` |  |
 | machineLearning.gpu.renderNode | string | `"/dev/dri/renderD128"` |  |
-| machineLearning.image | string | `"ghcr.io/immich-app/immich-machine-learning:v2.7.4@sha256:e25a410b99567c369da14508c7e874dfbeee1bcf06adda2c4148ab2f32f9463d"` |  |
+| machineLearning.image | string | `"ghcr.io/immich-app/immich-machine-learning:v3.0.3@sha256:d76fe88b69282c09a97eac4f82dafa82cfd77bce274bc742591cde974f87dacb"` |  |
 | machineLearning.nodeSelector | object | `{}` |  |
 | machineLearning.port | int | `3003` |  |
 | machineLearning.resources.limits.cpu | string | `"4000m"` |  |
@@ -24,7 +24,7 @@ Immich self-hosted photo management with external library support
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=1048576","wsize=1048576","hard","noatime","nconnect=8"],"server":"","volumes":[]}` | NFS storage for external photo libraries |
 | server.gpu.enabled | bool | `false` |  |
 | server.gpu.renderNode | string | `"/dev/dri/renderD128"` |  |
-| server.image | string | `"ghcr.io/immich-app/immich-server:v2.7.4@sha256:040b2fed8f7f6b7405f9b4b26348b4656355e4d4ed0852b8e966d453dd6635cc"` |  |
+| server.image | string | `"ghcr.io/immich-app/immich-server:v3.0.3@sha256:c716dc20f957aafd89fa9d284a2ec63e25c9e2d8d8e87c6197d540a3dce237db"` |  |
 | server.nodeSelector | object | `{}` |  |
 | server.port | int | `2283` |  |
 | server.resources.limits.cpu | string | `"8000m"` |  |
