@@ -38,6 +38,18 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.externalSecret.targetSecretName }}
                   key: JELLYFIN_API_KEY
+            - name: NAVIDROME_URL
+              value: http://navidrome.navidrome.svc.cluster.local:4533
+            - name: NAVIDROME_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: NAVIDROME_USER
+            - name: NAVIDROME_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalSecret.targetSecretName }}
+                  key: NAVIDROME_PASSWORD
           livenessProbe:
             httpGet:
               path: /

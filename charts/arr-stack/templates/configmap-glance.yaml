@@ -255,6 +255,28 @@ data:
                   {{ `{{ end }}` }}
 {{- end }}
 
+              - type: custom-api
+                title: Recently Added Music
+                cache: 15m
+                url: ${NAVIDROME_URL}/rest/getAlbumList2.view?type=newest&size=10&u=${NAVIDROME_USER}&p=${NAVIDROME_PASSWORD}&v=1.16.1&c=glance&f=json
+                template: |
+                  {{ `{{ $albums := .JSON.Array "subsonic-response.albumList2.album" }}` }}
+                  {{ `{{ if eq (len $albums) 0 }}` }}
+                    <p>No albums found.</p>
+                  {{ `{{ else }}` }}
+                  <ul class="list list-gap-10 collapsible-container" data-collapse-after="5">
+                    {{ `{{ range $albums }}` }}
+                    <li>
+                      <a class="size-h4 color-highlight block text-truncate" href="https://navidrome.{{ .Values.ingress.domain }}/app/#/album/{{ `{{ .String "id" }}` }}/show" target="_blank" rel="noreferrer">{{ `{{ .String "name" }}` }}</a>
+                      <ul class="list-horizontal-text">
+                        {{ `<li class="color-primary text-truncate">{{ .String "artist" }}</li>` }}
+                        {{ `{{ $y := .Int "year" }}{{ if $y }}<li>{{ $y }}</li>{{ end }}` }}
+                      </ul>
+                    </li>
+                    {{ `{{ end }}` }}
+                  </ul>
+                  {{ `{{ end }}` }}
+
               - type: group
                 widgets:
                   - type: rss

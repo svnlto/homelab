@@ -54,6 +54,8 @@ externalSecret:
     - PROWLARR_API_KEY
     - LIDARR_API_KEY
     - JELLYFIN_API_KEY
+    - NAVIDROME_USER
+    - NAVIDROME_PASSWORD
 
 # -- Downloaders pod (gluetun VPN + download clients)
 downloaders:
