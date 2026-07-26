@@ -120,7 +120,7 @@ downloaders:
 
 # -- Arr apps (radarr, sonarr, lidarr)
 radarr:
-  image: lscr.io/linuxserver/radarr:6.0.4.10291-ls295@sha256:ca43905eaf2dd11425efdcfe184892e43806b1ae0a830440c825cecbc2629cfb
+  image: lscr.io/linuxserver/radarr:6.3.0.10514-ls312@sha256:e35056574cdc695a9ee745aa1ecda9eab3842450bf4b7b8471b023790fa3861d
   port: 7878
   probePath: /ping
   resources:
