@@ -10,6 +10,7 @@ resources:
   - external-secret-remotewrite.yaml
   - middleware-basicauth.yaml
   - ingress-remotewrite.yaml
+  - external-secret-grafana.yaml
 configMapGenerator:
   - name: kube-prometheus-stack-values
     files:
