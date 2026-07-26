@@ -162,7 +162,9 @@ resource "proxmox_virtual_environment_vm" "worker" {
 
   lifecycle {
     # See control_plane: ignore disk file_id and size to prevent spurious replacements.
-    ignore_changes = [disk[0].file_id, disk[0].size]
+    # hook_script_file_id: GPU reset hook is managed manually on Proxmox (no tf
+    # upload resource); provider >=0.111 would otherwise reconcile it away.
+    ignore_changes = [disk[0].file_id, disk[0].size, hook_script_file_id]
   }
 
 }
