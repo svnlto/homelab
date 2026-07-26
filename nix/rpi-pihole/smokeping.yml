@@ -1,0 +1,21 @@
+---
+targets:
+  - hosts:
+      - 192.168.0.1
+    interval: 1s
+    labels:
+      rung: "0"
+      name: mikrotik
+  - hosts:
+      - 192.168.8.1
+    interval: 1s
+    labels:
+      rung: "1"
+      name: homespot
+  - hosts:
+      - 1.1.1.1
+      - 8.8.8.8
+      - 9.9.9.9
+    interval: 1s
+    labels:
+      rung: "3"

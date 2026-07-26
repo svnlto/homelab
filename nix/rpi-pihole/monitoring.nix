@@ -42,4 +42,23 @@ _: {
       }
     );
   };
+
+  environment.etc."smokeping/smokeping.yml".source = ./smokeping.yml;
+
+  # smokeping_prober — real ICMP histograms. Not in nixpkgs, so it runs as a
+  # container alongside the existing pihole/unbound ones. NET_RAW is required
+  # for raw ICMP sockets; host networking so probes leave the real interface.
+  virtualisation.oci-containers.backend = "docker";
+  virtualisation.oci-containers.containers.smokeping-prober = {
+    image = "quay.io/superq/smokeping-prober:v0.12.0";
+    extraOptions = [
+      "--network=host"
+      "--cap-add=NET_RAW"
+    ];
+    volumes = [ "/etc/smokeping/smokeping.yml:/config/smokeping.yml:ro" ];
+    cmd = [
+      "--config.file=/config/smokeping.yml"
+      "--web.listen-address=:9374"
+    ];
+  };
 }

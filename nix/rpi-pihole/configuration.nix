@@ -33,6 +33,7 @@
         8443 # MeshCentral Intel AMT console (HTTPS, KVM via WebRTC)
         9100 # Prometheus node exporter
         9115 # Prometheus blackbox exporter
+        9374 # smokeping_prober
       ];
       allowedUDPPorts = [
         53 # DNS
