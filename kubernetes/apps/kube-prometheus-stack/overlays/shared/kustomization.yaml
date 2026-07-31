@@ -26,3 +26,10 @@ configMapGenerator:
       disableNameSuffixHash: true
       labels:
         grafana_dashboard: "1"
+  - name: grafana-dashboard-photo-pipeline
+    files:
+      - dashboards/photo-pipeline.json
+    options:
+      disableNameSuffixHash: true
+      labels:
+        grafana_dashboard: "1"
