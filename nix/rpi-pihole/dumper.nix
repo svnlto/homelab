@@ -8,9 +8,7 @@ let
   rsyncFlags = [
     "-rlt"
     "--info=progress2"
-    # Never leave a half-written file at the destination path: an interrupted
-    # --partial transfer once shipped a truncated Photos.sqlite that osxphotos
-    # then rejected as "database disk image is malformed" for 19 days.
+    # Keeps an interrupted transfer out of the destination path entirely.
     "--partial-dir=.rsync-partial"
     "--omit-dir-times"
     "--no-perms"
@@ -23,8 +21,7 @@ let
     "--exclude=*.sqlite-shm"
   ];
 
-  # A SQLite header declares its page count; a truncated file holds fewer pages
-  # than it claims. Cheap to check and catches exactly the torn-transfer case.
+  # A truncated DB holds fewer pages than its header declares.
   pageCheckBody = ''
     f=$1
     if [ ! -f "$f" ]; then
