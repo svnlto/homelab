@@ -5,7 +5,7 @@ global:
 # -- Container image
 image:
   repository: ghcr.io/svnlto/osxphotos-export
-  tag: latest@sha256:41c308ea3c71b6b03c4d9dfaae062954b5d423a37e95b041127785f5972b035c
+  tag: latest@sha256:a54e6c67ad798e3145d6b489ca956fd271019f6030ef51871b44ee7f9feb163d
 
 # -- Container resources
 resources:
