@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/svnlto/homelab/compare/osxphotos-export-v0.5.0...osxphotos-export-v0.5.1) (2026-07-31)
+
+
+### Bug Fixes
+
+* **osxphotos-export:** serve metrics as text/plain, add source freshness ([d2dd520](https://github.com/svnlto/homelab/commit/d2dd520055a78fbbf0a61beb82bb00b43fca22d0))
+
 ## [0.5.0](https://github.com/svnlto/homelab/compare/osxphotos-export-v0.4.0...osxphotos-export-v0.5.0) (2026-07-31)
 
 
