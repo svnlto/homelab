@@ -1,6 +1,6 @@
 # immich
 
-![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.0.3](https://img.shields.io/badge/AppVersion-3.0.3-informational?style=flat-square)
+![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.0.3](https://img.shields.io/badge/AppVersion-3.0.3-informational?style=flat-square)
 
 Immich self-hosted photo management with external library support
 
@@ -13,7 +13,7 @@ Immich self-hosted photo management with external library support
 | global.annotations | object | `{}` |  |
 | ingress | object | `{"annotations":{},"domain":"","enabled":false}` | Ingress configuration |
 | machineLearning.gpu.enabled | bool | `false` |  |
-| machineLearning.gpu.renderNode | string | `"/dev/dri/renderD128"` |  |
+| machineLearning.gpu.renderNode | string | `"/dev/dri/by-path/pci-0000:01:00.0-render"` |  |
 | machineLearning.image | string | `"ghcr.io/immich-app/immich-machine-learning:v3.0.3@sha256:d76fe88b69282c09a97eac4f82dafa82cfd77bce274bc742591cde974f87dacb"` |  |
 | machineLearning.nodeSelector | object | `{}` |  |
 | machineLearning.port | int | `3003` |  |
@@ -23,7 +23,7 @@ Immich self-hosted photo management with external library support
 | machineLearning.resources.requests.memory | string | `"512Mi"` |  |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=1048576","wsize=1048576","hard","noatime","nconnect=8"],"server":"","volumes":[]}` | NFS storage for external photo libraries |
 | server.gpu.enabled | bool | `false` |  |
-| server.gpu.renderNode | string | `"/dev/dri/renderD128"` |  |
+| server.gpu.renderNode | string | `"/dev/dri/by-path/pci-0000:01:00.0-render"` |  |
 | server.image | string | `"ghcr.io/immich-app/immich-server:v3.0.3@sha256:c716dc20f957aafd89fa9d284a2ec63e25c9e2d8d8e87c6197d540a3dce237db"` |  |
 | server.nodeSelector | object | `{}` |  |
 | server.port | int | `2283` |  |

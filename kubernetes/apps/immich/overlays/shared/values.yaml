@@ -9,7 +9,7 @@ global:
 server:
   gpu:
     enabled: true
-    renderNode: /dev/dri/renderD128
+    renderNode: /dev/dri/by-path/pci-0000:01:00.0-render
   nodeSelector: {}
   resources:
     requests:

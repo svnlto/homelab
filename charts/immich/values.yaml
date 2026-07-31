@@ -11,7 +11,8 @@ server:
     fsGroup: 1001
   gpu:
     enabled: false
-    renderNode: /dev/dri/renderD128
+    # renderD128 is the virtio console adapter; numeric nodes are not stable.
+    renderNode: /dev/dri/by-path/pci-0000:01:00.0-render
   nodeSelector: {}
   resources:
     requests:
@@ -36,7 +37,8 @@ machineLearning:
   port: 3003
   gpu:
     enabled: false
-    renderNode: /dev/dri/renderD128
+    # renderD128 is the virtio console adapter; numeric nodes are not stable.
+    renderNode: /dev/dri/by-path/pci-0000:01:00.0-render
   nodeSelector: {}
   resources:
     requests:
