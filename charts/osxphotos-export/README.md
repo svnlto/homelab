@@ -1,6 +1,6 @@
 # osxphotos-export
 
-![Version: 0.2.0](https://img.shields.io/badge/Version-0.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.2.1](https://img.shields.io/badge/Version-0.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 OSXPhotos export service for syncing Apple Photos to NFS storage
 
@@ -12,7 +12,7 @@ OSXPhotos export service for syncing Apple Photos to NFS storage
 | env | object | `{"EXPORT_DB_PATH":"/cache/osxphotos_export.db","OTEL_SERVICE_NAME":"osxphotos-export","RETRY_INTERVAL":"300","SYNC_INTERVAL":"3600"}` | Environment variables |
 | externalSecret | object | `{"keys":["EXPORT_DEST","LIBRARY_PATH"],"onePasswordItem":"osxphotos-config","refreshInterval":"1h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"osxphotos-config"}` | External secrets configuration |
 | global.annotations | object | `{}` |  |
-| image | object | `{"repository":"ghcr.io/svnlto/osxphotos-export","tag":"latest@sha256:0775cf6274814ba9d9860622d35408355c23897edeaf1acc706cec068a4d2fa9"}` | Container image |
+| image | object | `{"repository":"ghcr.io/svnlto/osxphotos-export","tag":"latest@sha256:41c308ea3c71b6b03c4d9dfaae062954b5d423a37e95b041127785f5972b035c"}` | Container image |
 | metrics | object | `{"enabled":true,"port":9184,"scrapeInterval":"5m","selectorLabels":{"release":"kube-prometheus-stack"},"staleAfterSeconds":21600}` | Prometheus metrics endpoint and staleness alerting |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=1048576","wsize=1048576","hard","noatime","nconnect=8"],"server":"","volumes":[]}` | NFS storage for source and export |
 | resources | object | `{"limits":{"cpu":"2","memory":"4Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Container resources |

@@ -3,4 +3,4 @@ apiVersion: v2
 name: osxphotos-export
 description: OSXPhotos export service for syncing Apple Photos to NFS storage
 type: application
-version: 0.2.0
+version: 0.2.1
