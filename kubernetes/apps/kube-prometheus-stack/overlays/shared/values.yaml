@@ -47,6 +47,9 @@ prometheus:
 
 alertmanager:
   alertmanagerSpec:
+    # Mounted by the operator at /etc/alertmanager/secrets/<name>/<key>.
+    secrets:
+      - alertmanager-telegram
     resources:
       requests:
         cpu: 50m
@@ -54,6 +57,34 @@ alertmanager:
       limits:
         cpu: 200m
         memory: 128Mi
+  config:
+    route:
+      group_by:
+        - namespace
+        - alertname
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      receiver: telegram
+      routes:
+        - matchers:
+            - alertname = "Watchdog"
+          receiver: "null"
+        - matchers:
+            - alertname = "InfoInhibitor"
+          receiver: "null"
+    receivers:
+      - name: "null"
+      - name: telegram
+        telegram_configs:
+          # Both values come from 1Password via ESO — this repo is public, so
+          # neither the token nor the chat ID may appear in git.
+          - bot_token_file: /etc/alertmanager/secrets/alertmanager-telegram/BOT_TOKEN
+            chat_id_file: /etc/alertmanager/secrets/alertmanager-telegram/CHAT_ID
+            # Plain text: alert annotations contain PromQL, and an unescaped
+            # "<" makes Telegram reject an HTML-parsed message outright.
+            parse_mode: ""
+            send_resolved: true
 
 grafana:
   # Dashboards live in git and are loaded by the sidecar, so no PVC is needed.
