@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/svnlto/homelab/compare/osxphotos-export-v0.4.0...osxphotos-export-v0.5.0) (2026-07-31)
+
+
+### Features
+
+* **osxphotos-export:** expose export metrics and alert on staleness ([2152b41](https://github.com/svnlto/homelab/commit/2152b41600511adc58daea76be81f78336183bef))
+
 ## [0.4.0](https://github.com/svnlto/homelab/compare/osxphotos-export-v0.3.0...osxphotos-export-v0.4.0) (2026-07-26)
 
 
