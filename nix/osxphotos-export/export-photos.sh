@@ -32,8 +32,11 @@ LAST_SUCCESS=$(cat "${LAST_SUCCESS_FILE}" 2>/dev/null || echo 0)
 # Written via rename so a scrape never reads a partial file.
 write_metrics() {
   local ok="$1" duration="$2" exported="$3" skipped="$4" errors="$5"
-  local now tmp
+  local now tmp src_mtime
   now=$(date +%s)
+  # Catches a stale source: dump-to-truenas is manual, and osxphotos exits 0
+  # on an unchanged library, so last_success alone cannot see photos stop.
+  src_mtime=$(stat -c %Y "${LIBRARY_PATH}/database/Photos.sqlite" 2>/dev/null || echo 0)
 
   if [ "$ok" -eq 1 ]; then
     LAST_SUCCESS="$now"
@@ -63,6 +66,9 @@ osxphotos_export_photos_skipped ${skipped}
 # HELP osxphotos_export_photos_errors Errors reported by osxphotos in the last attempt.
 # TYPE osxphotos_export_photos_errors gauge
 osxphotos_export_photos_errors ${errors}
+# HELP osxphotos_source_library_mtime_seconds Modification time of the source Photos library database.
+# TYPE osxphotos_source_library_mtime_seconds gauge
+osxphotos_source_library_mtime_seconds ${src_mtime}
 EOF
   mv -f "$tmp" "${METRICS_DIR}/metrics"
 }
@@ -139,7 +145,10 @@ otel_log INFO "osxphotos-export starting" \
 
 mkdir -p "${METRICS_DIR}"
 if [ "${METRICS_PORT}" != "0" ]; then
-  darkhttpd "${METRICS_DIR}" --port "${METRICS_PORT}" --daemon --no-listing
+  # Without this darkhttpd serves the extensionless file as octet-stream,
+  # which Prometheus 3.x rejects outright.
+  darkhttpd "${METRICS_DIR}" --port "${METRICS_PORT}" --daemon --no-listing \
+    --default-mimetype text/plain
   echo "  Metrics:  :${METRICS_PORT}/metrics"
 fi
 # Answer scrapes before the first export finishes.
