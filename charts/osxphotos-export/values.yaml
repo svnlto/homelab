@@ -23,6 +23,16 @@ env:
   RETRY_INTERVAL: "300"
   OTEL_SERVICE_NAME: osxphotos-export
 
+# -- Prometheus metrics endpoint and staleness alerting
+metrics:
+  enabled: true
+  port: 9184
+  scrapeInterval: 5m
+  # Without this label the operator silently ignores both objects.
+  selectorLabels:
+    release: kube-prometheus-stack
+  staleAfterSeconds: 21600
+
 # -- Security context for the container
 securityContext:
   runAsUser: 1003

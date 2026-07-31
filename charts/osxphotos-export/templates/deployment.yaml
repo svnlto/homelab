@@ -36,6 +36,13 @@ spec:
             - name: {{ $key }}
               value: {{ $val | quote }}
 {{- end }}
+{{- if .Values.metrics.enabled }}
+            - name: METRICS_PORT
+              value: {{ .Values.metrics.port | quote }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.metrics.port }}
+{{- end }}
           envFrom:
             - secretRef:
                 name: {{ .Values.externalSecret.targetSecretName }}

@@ -50,6 +50,7 @@
             bash
             curl
             jq
+            darkhttpd
           ];
           config = {
             Cmd = [

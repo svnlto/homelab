@@ -1,0 +1,71 @@
+{{- if .Values.metrics.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: osxphotos-export-metrics
+  labels:
+    {{- include "osxphotos-export.labels" . | nindent 4 }}
+  annotations:
+    {{- include "osxphotos-export.annotations" . | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "osxphotos-export.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: metrics
+      port: {{ .Values.metrics.port }}
+      targetPort: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: osxphotos-export
+  labels:
+    {{- include "osxphotos-export.labels" . | nindent 4 }}
+    {{- toYaml .Values.metrics.selectorLabels | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "osxphotos-export.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: {{ .Values.metrics.scrapeInterval }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: osxphotos-export
+  labels:
+    {{- include "osxphotos-export.labels" . | nindent 4 }}
+    {{- toYaml .Values.metrics.selectorLabels | nindent 4 }}
+spec:
+  groups:
+    - name: osxphotos-export
+      rules:
+        # The retry loop is internal, so no built-in Kubernetes alert ever fires.
+        - alert: OsxphotosExportStale
+          expr: >-
+            time() - osxphotos_export_last_success_timestamp_seconds
+            > {{ .Values.metrics.staleAfterSeconds }}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: osxphotos has not completed an export in over {{ div .Values.metrics.staleAfterSeconds 3600 }}h
+            description: >-
+              No successful osxphotos export since
+              {{ "{{" }} $value | humanizeDuration {{ "}}" }} ago.
+              New photos are not reaching Immich. Check the container logs.
+        - alert: OsxphotosExportFailing
+          expr: osxphotos_export_last_run_success == 0
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: osxphotos export attempts are failing
+            description: >-
+              The most recent osxphotos export attempt exited non-zero and has
+              been failing for at least an hour.
+{{- end }}
