@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: otel-collector
+  labels:
+    # A node log collector needs hostPath (/var/log/pods), which baseline forbids.
+    # Same opt-out every other workload namespace in this repo uses.
+    pod-security.kubernetes.io/enforce: privileged

@@ -6,6 +6,23 @@ image:
 tolerations:
   - operator: Exists
 
+# This collector only tails files — it receives nothing. Every default receiver
+# port the chart opens as a hostPort (OTLP, Jaeger, Zipkin) is both unused and a
+# PodSecurity hostPort violation, so disable them all.
+ports:
+  otlp:
+    enabled: false
+  otlp-http:
+    enabled: false
+  jaeger-compact:
+    enabled: false
+  jaeger-thrift:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  zipkin:
+    enabled: false
+
 presets:
   logsCollection:
     enabled: false
@@ -71,7 +88,11 @@ config:
   receivers:
     filelog:
       include: [/var/log/pods/*/*/*.log]
-      exclude: [/var/log/pods/clickstack_*/*/*.log]
+      # Skip the ClickStack backend and this collector's own pods — otherwise the
+      # collector tails its own output and every forwarded line generates another.
+      exclude:
+        - /var/log/pods/clickstack_*/*/*.log
+        - /var/log/pods/otel-collector_*/*/*.log
       start_at: end
       operators:
         - type: container
