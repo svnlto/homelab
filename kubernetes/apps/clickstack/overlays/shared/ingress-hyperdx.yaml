@@ -6,7 +6,6 @@ metadata:
   namespace: clickstack
   annotations:
     traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
-    traefik.ingress.kubernetes.io/router.middlewares: clickstack-clickstack-basicauth@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
