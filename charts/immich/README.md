@@ -1,6 +1,6 @@
 # immich
 
-![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.0.3](https://img.shields.io/badge/AppVersion-3.0.3-informational?style=flat-square)
+![Version: 0.1.3](https://img.shields.io/badge/Version-0.1.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.0.3](https://img.shields.io/badge/AppVersion-3.0.3-informational?style=flat-square)
 
 Immich self-hosted photo management with external library support
 
@@ -9,7 +9,7 @@ Immich self-hosted photo management with external library support
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | csi | object | `{"basePath":"/mnt/ssd/kubernetes/nfs-dynamic","driver":"org.democratic-csi.nfs-fast","mountOptions":["nfsvers=4.2","nconnect=8","hard","noatime","nodiratime"],"server":"","storageClassName":"truenas-nfs-fast","volumes":[]}` | CSI NFS storage for upload and ml-cache |
-| externalSecret | object | `{"keys":["DB_PASSWORD","REDIS_PASSWORD","IMMICH_SECRET_KEY"],"onePasswordItem":"immich-secrets","refreshInterval":"1h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"immich-secrets"}` | External secrets configuration |
+| externalSecret | object | `{"keys":["DB_PASSWORD","REDIS_PASSWORD","IMMICH_SECRET_KEY"],"onePasswordItem":"immich-secrets","refreshInterval":"12h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"immich-secrets"}` | External secrets configuration |
 | global.annotations | object | `{}` |  |
 | ingress | object | `{"annotations":{},"domain":"","enabled":false}` | Ingress configuration |
 | machineLearning.gpu.enabled | bool | `false` |  |

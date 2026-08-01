@@ -1,6 +1,6 @@
 # osxphotos-export
 
-![Version: 0.2.2](https://img.shields.io/badge/Version-0.2.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.2.3](https://img.shields.io/badge/Version-0.2.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 OSXPhotos export service for syncing Apple Photos to NFS storage
 
@@ -10,7 +10,7 @@ OSXPhotos export service for syncing Apple Photos to NFS storage
 |-----|------|---------|-------------|
 | csi | object | `{"basePath":"/mnt/ssd/kubernetes/nfs-dynamic","driver":"org.democratic-csi.nfs-fast","mountOptions":["nfsvers=4.2","nconnect=8","hard","noatime","nodiratime"],"server":"","storageClassName":"truenas-nfs-fast","volumes":[]}` | CSI storage for cache volume |
 | env | object | `{"EXPORT_DB_PATH":"/cache/osxphotos_export.db","OTEL_SERVICE_NAME":"osxphotos-export","RETRY_INTERVAL":"300","SYNC_INTERVAL":"3600"}` | Environment variables |
-| externalSecret | object | `{"keys":["EXPORT_DEST","LIBRARY_PATH"],"onePasswordItem":"osxphotos-config","refreshInterval":"1h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"osxphotos-config"}` | External secrets configuration |
+| externalSecret | object | `{"keys":["EXPORT_DEST","LIBRARY_PATH"],"onePasswordItem":"osxphotos-config","refreshInterval":"12h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"osxphotos-config"}` | External secrets configuration |
 | global.annotations | object | `{}` |  |
 | image | object | `{"repository":"ghcr.io/svnlto/osxphotos-export","tag":"latest@sha256:a54e6c67ad798e3145d6b489ca956fd271019f6030ef51871b44ee7f9feb163d"}` | Container image |
 | metrics | object | `{"enabled":true,"port":9184,"scrapeInterval":"5m","selectorLabels":{"release":"kube-prometheus-stack"},"staleAfterSeconds":21600}` | Prometheus metrics endpoint and staleness alerting |

@@ -1,6 +1,6 @@
 # aurral
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 Music discovery and request manager for Lidarr with Weekly Flow playlists
 
@@ -23,7 +23,7 @@ Music discovery and request manager for Lidarr with Weekly Flow playlists
 | aurral.resources.requests.cpu | string | `"50m"` |  |
 | aurral.resources.requests.memory | string | `"128Mi"` |  |
 | aurral.securityContext.fsGroup | int | `1000` |  |
-| externalSecret | object | `{"keys":["LASTFM_API_KEY","SOULSEEK_USERNAME","SOULSEEK_PASSWORD"],"onePasswordItem":"aurral-secrets","refreshInterval":"1h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"aurral-secrets"}` | External secrets configuration |
+| externalSecret | object | `{"keys":["LASTFM_API_KEY","SOULSEEK_USERNAME","SOULSEEK_PASSWORD"],"onePasswordItem":"aurral-secrets","refreshInterval":"12h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"aurral-secrets"}` | External secrets configuration |
 | global.annotations | object | `{}` |  |
 | ingress | object | `{"annotations":{},"domain":"","enabled":false}` | Ingress configuration |
 | iscsi | object | `{"driver":"org.democratic-csi.iscsi","iqnPrefix":"iqn.2005-10.org.freenas.ctl:csi-","iqnSuffix":"-shared","portal":"","storageClassName":"truenas-iscsi-rwo","volumes":[]}` | iSCSI storage for SQLite data persistence |

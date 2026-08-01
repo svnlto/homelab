@@ -24,7 +24,7 @@ iscsi:
 
 # -- External secrets configuration
 externalSecret:
-  refreshInterval: 1h
+  refreshInterval: 12h
   secretStoreName: onepassword
   secretStoreKind: ClusterSecretStore
   targetSecretName: dragonfly-secrets
