@@ -112,6 +112,11 @@ variable "worker_nodes" {
     gpu_passthrough     = optional(bool, false)
     gpu_mapping_id      = optional(string, "")
     hook_script_file_id = optional(string, "")
+    taints = optional(list(object({
+      key    = string
+      value  = string
+      effect = string
+    })), [])
   }))
 
   default = {}

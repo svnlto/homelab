@@ -181,7 +181,11 @@ data "talos_machine_configuration" "worker" {
             }
           ]
         } : {}
-        kubelet = {}
+        kubelet = length(each.value.taints) > 0 ? {
+          extraConfig = {
+            registerWithTaints = each.value.taints
+          }
+        } : {}
         nodeLabels = each.value.gpu_passthrough ? {
           "gpu" = "intel-arc"
         } : {}
