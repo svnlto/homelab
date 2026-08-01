@@ -23,6 +23,11 @@ resource "helm_release" "truenas_iscsi_csi" {
       driver = {
         iscsiDirHostPathType = ""
       }
+      tolerations = [
+        {
+          operator = "Exists"
+        }
+      ]
     }
     storageClasses = [
       {

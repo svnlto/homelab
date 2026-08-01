@@ -76,6 +76,13 @@ resource "helm_release" "truenas_nfs_csi" {
     csiDriver = {
       name = "org.democratic-csi.nfs"
     }
+    node = {
+      tolerations = [
+        {
+          operator = "Exists"
+        }
+      ]
+    }
     storageClasses = [
       {
         name                 = "truenas-nfs-bulk"
@@ -126,6 +133,13 @@ resource "helm_release" "truenas_nfs_fast_csi" {
   values = [yamlencode({
     csiDriver = {
       name = "org.democratic-csi.nfs-fast"
+    }
+    node = {
+      tolerations = [
+        {
+          operator = "Exists"
+        }
+      ]
     }
     storageClasses = [
       {
