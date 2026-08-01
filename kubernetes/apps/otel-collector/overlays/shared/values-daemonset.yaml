@@ -120,6 +120,13 @@ config:
       compression: gzip
       headers:
         authorization: ${env:HYPERDX_API_KEY}
+      # Persist the send queue to the hostPath-backed file_storage the
+      # storeCheckpoints preset already provides, so a ClickStack outage queues
+      # to disk and drains on recovery instead of dropping. The default
+      # in-memory queue lost 134/600 records in the chaos test.
+      sending_queue:
+        enabled: true
+        storage: file_storage
   service:
     pipelines:
       logs:
