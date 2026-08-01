@@ -8,6 +8,10 @@ resources:
   - external-secret.yaml
   - helmrelease.yaml
   - clickhouse-config-overrides.yaml
+  - external-secret-basicauth.yaml
+  - middleware-basicauth.yaml
+  - ingress-hyperdx.yaml
+  - ingress-otlp.yaml
 configMapGenerator:
   - name: clickstack-values
     files:
