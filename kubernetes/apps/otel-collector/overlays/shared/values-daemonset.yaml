@@ -74,7 +74,9 @@ config:
     kubeletstats:
       collection_interval: 20s
       auth_type: serviceAccount
-      endpoint: ${env:K8S_NODE_NAME}:10250
+      # Talos node names are not resolvable in cluster DNS, so the reference's
+      # ${env:K8S_NODE_NAME} fails with "no such host". Use the node IP instead.
+      endpoint: ${env:K8S_NODE_IP}:10250
       insecure_skip_verify: true
       metrics:
         k8s.pod.cpu_limit_utilization:
