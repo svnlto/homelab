@@ -1,0 +1,76 @@
+---
+# Chart-wide storage class: the chart applies this to every PVC it renders
+# (clickhouse data, clickhouse logs, mongodb) — there is no per-component
+# persistence.storageClass key, unlike persistence.dataSize/logSize.
+global:
+  storageClassName: truenas-iscsi-rwo-retain
+
+clickhouse:
+  persistence:
+    enabled: true
+    dataSize: 80Gi
+    logSize: 10Gi
+  tolerations:
+    - key: observability
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+  nodeSelector:
+    kubernetes.io/hostname: shared-worker3
+  resources:
+    requests:
+      cpu: "2"
+      memory: 8Gi
+    limits:
+      memory: 16Gi
+# max_server_memory_usage (must sit BELOW the 16Gi cgroup limit above, or the
+# kernel OOM-kills ClickHouse before its own limiter engages) is not a
+# values-driven setting in this chart's config.xml — it's injected via the
+# HelmRelease postRenderers config.d mount, see clickhouse-config-overrides.yaml.
+
+mongodb:
+  persistence:
+    enabled: true
+    dataSize: 10Gi
+  tolerations:
+    - key: observability
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+  nodeSelector:
+    kubernetes.io/hostname: shared-worker3
+# resources: the chart's mongodb-deployment.yaml has no resources field on the
+# container, so limits can't be set from values — see the HelmRelease
+# postRenderers patch instead.
+
+hyperdx:
+  tolerations:
+    - key: observability
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+  nodeSelector:
+    kubernetes.io/hostname: shared-worker3
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+
+otel:
+  tolerations:
+    - key: observability
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+  nodeSelector:
+    kubernetes.io/hostname: shared-worker3
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi

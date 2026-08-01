@@ -15,3 +15,4 @@ resources:
   - infrastructure.yaml
   - flux-ui.yaml
   - kube-prometheus-stack.yaml
+  - clickstack.yaml

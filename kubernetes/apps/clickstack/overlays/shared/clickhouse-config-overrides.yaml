@@ -1,0 +1,17 @@
+---
+# Mounted into the chart's clickhouse container at /etc/clickhouse-server/config.d/
+# via the HelmRelease postRenderers patch in helmrelease.yaml. ClickHouse merges
+# config.d/*.xml into config.xml automatically at startup, so this survives chart
+# upgrades without having to fork the chart's own config.xml.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickstack-clickhouse-config-overrides
+  namespace: clickstack
+data:
+  memory-limit.xml: |
+    <clickhouse>
+        <!-- Must sit BELOW clickhouse.resources.limits.memory (16Gi) in values.yaml,
+             or the kernel OOM-kills ClickHouse before this limiter engages. -->
+        <max_server_memory_usage>12884901888</max_server_memory_usage>
+    </clickhouse>

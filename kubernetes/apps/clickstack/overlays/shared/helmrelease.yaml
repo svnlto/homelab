@@ -1,0 +1,72 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: clickstack
+  namespace: clickstack
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: hdx-oss-v2
+      sourceRef:
+        kind: HelmRepository
+        name: hyperdx
+      interval: 1h
+  upgrade:
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: ConfigMap
+      name: clickstack-values
+    - kind: Secret
+      name: clickstack-credentials
+      valuesKey: appUserPassword
+      targetPath: clickhouse.config.users.appUserPassword
+    - kind: Secret
+      name: clickstack-credentials
+      valuesKey: otelUserPassword
+      targetPath: clickhouse.config.users.otelUserPassword
+    - kind: Secret
+      name: clickstack-credentials
+      valuesKey: apiKey
+      targetPath: hyperdx.apiKey
+  # The chart exposes no values for either gap below, so both are patched into
+  # the rendered manifests post-Helm instead:
+  postRenderers:
+    - kustomize:
+        patches:
+          # Mounts clickhouse-config-overrides.yaml's ConfigMap onto
+          # /etc/clickhouse-server/config.d/, which ClickHouse auto-merges into
+          # config.xml — the only way to set max_server_memory_usage, since the
+          # chart's config.xml template has no hook for it.
+          - target:
+              kind: Deployment
+              name: clickstack-hdx-oss-v2-clickhouse
+            patch: |
+              - op: add
+                path: /spec/template/spec/volumes/-
+                value:
+                  name: clickhouse-config-overrides
+                  configMap:
+                    name: clickstack-clickhouse-config-overrides
+              - op: add
+                path: /spec/template/spec/containers/0/volumeMounts/-
+                value:
+                  name: clickhouse-config-overrides
+                  mountPath: /etc/clickhouse-server/config.d/
+          # The chart's mongodb-deployment.yaml container has no resources
+          # field at all, so it can't be set via values.
+          - target:
+              kind: Deployment
+              name: clickstack-hdx-oss-v2-mongodb
+            patch: |
+              - op: add
+                path: /spec/template/spec/containers/0/resources
+                value:
+                  requests:
+                    cpu: 200m
+                    memory: 512Mi
+                  limits:
+                    cpu: 500m
+                    memory: 2Gi
