@@ -44,6 +44,9 @@ mongodb:
 # postRenderers patch instead.
 
 hyperdx:
+  # Without this the app defaults to http://localhost:3000 and redirects there
+  # after login, which breaks every browser that is not on the cluster node.
+  frontendUrl: https://logs.shared.h.svenlito.com
   tolerations:
     - key: observability
       operator: Equal
