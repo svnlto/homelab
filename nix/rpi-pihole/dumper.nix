@@ -11,7 +11,8 @@ let
     # Keeps an interrupted transfer out of the destination path entirely.
     "--partial-dir=.rsync-partial"
     "--omit-dir-times"
-    "--no-perms"
+    # readable regardless of remote umask (--no-perms let it land 0600)
+    "--chmod=D0755,F0644"
     "--no-owner"
     "--no-group"
     "--exclude=lost+found"
@@ -69,7 +70,8 @@ let
         "/mnt/dump/$P" "${truenasHost}:${truenasBase}/$P"
 
       echo "==> verifying database on TrueNAS"
-      ssh ${truenasHost} bash -s -- "${truenasBase}/$P/database/Photos.sqlite" <<'PAGECHECK'
+      # single-quote survives ssh's remote re-parse; path has a space
+      ssh ${truenasHost} bash -s -- "'${truenasBase}/$P/database/Photos.sqlite'" <<'PAGECHECK'
       ${pageCheckBody}
       PAGECHECK
 
