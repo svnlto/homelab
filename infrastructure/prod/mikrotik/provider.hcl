@@ -49,6 +49,6 @@ EOF
 
 inputs = {
   mikrotik_api_url  = local.mikrotik.api_url
-  mikrotik_username = get_env("MIKROTIK_USERNAME", "")
-  mikrotik_password = get_env("MIKROTIK_PASSWORD", "")
+  mikrotik_username = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/MikroTik Terraform API/username")
+  mikrotik_password = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/MikroTik Terraform API/credential")
 }

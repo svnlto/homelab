@@ -1,0 +1,2 @@
+AWS_ACCESS_KEY_ID="op://Homelab/Backblaze B2/key_id"
+AWS_SECRET_ACCESS_KEY="op://Homelab/Backblaze B2/application_key"

@@ -23,7 +23,7 @@ dependency "tailscale" {
     k8s_oauth_client_id     = "mock-client-id"
     k8s_oauth_client_secret = "mock-client-secret"
   }
-  mock_outputs_merge_strategy_with_state = "shallow"
+  mock_outputs_merge_strategy_with_state  = "shallow"
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 }
 
@@ -147,8 +147,8 @@ inputs = {
   config_output_dir = get_terragrunt_dir()
 
   # Democratic-CSI — TrueNAS primary (storage VLAN)
-  truenas_api_url             = "https://${local.ips.truenas_primary_storage}"
-  truenas_api_key             = get_env("TF_VAR_truenas_api_key", "")
+  truenas_api_url          = "https://${local.ips.truenas_primary_storage}"
+  truenas_api_key          = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/TrueNAS API Key/credential")
   truenas_nfs_dataset      = "bulk/kubernetes/nfs-dynamic"
   truenas_nfs_fast_dataset = "ssd/kubernetes/nfs-dynamic"
 
@@ -179,7 +179,7 @@ inputs = {
 
   # External Secrets Operator (1Password)
   external_secrets_enabled = true
-  op_service_account_token = get_env("TF_VAR_op_service_account_token", "")
+  op_service_account_token = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/ESO Service Account/credential")
   op_vault_name            = "Homelab"
 
   # Metrics Server
@@ -187,8 +187,8 @@ inputs = {
 
   # Traefik ACME (production Let's Encrypt)
   traefik_acme_enabled  = true
-  traefik_acme_email    = get_env("TF_VAR_acme_email", "")
+  traefik_acme_email    = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/ACME Email/email")
   traefik_acme_server   = "https://acme-v02.api.letsencrypt.org/directory"
-  cloudns_auth_id       = get_env("TF_VAR_cloudns_auth_id", "")
-  cloudns_auth_password = get_env("TF_VAR_cloudns_auth_password", "")
+  cloudns_auth_id       = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/ClouDNS API/auth_id")
+  cloudns_auth_password = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/ClouDNS API/password")
 }

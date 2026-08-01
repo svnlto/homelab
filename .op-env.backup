@@ -1,0 +1,5 @@
+B2_KEY_ID="op://Homelab/Backblaze B2/key_id"
+B2_APPLICATION_KEY="op://Homelab/Backblaze B2/application_key"
+RESTIC_PASSWORD="op://Homelab/Restic Backup/password"
+ZEROBYTE_APP_SECRET="op://Homelab/Zerobyte/app_secret"
+ZEROBYTE_ORG_ID="op://Homelab/Zerobyte/org_id"

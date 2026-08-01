@@ -40,6 +40,6 @@ EOF
 }
 
 inputs = {
-  tailscale_api_key = get_env("TF_VAR_tailscale_api_key", "")
-  tailscale_tailnet = get_env("TF_VAR_tailscale_tailnet", "")
+  tailscale_api_key = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/Tailscale API Key/credential")
+  tailscale_tailnet = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/Tailscale API Key/tailnet")
 }

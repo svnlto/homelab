@@ -177,7 +177,8 @@ truenas-ping:
 
 # Configure primary TrueNAS (datasets, shares, snapshots)
 truenas-setup:
-    cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-setup.yml
+    op run --no-masking --env-file=.op-env.ansible -- \
+      sh -c 'cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-setup.yml'
 
 # --- Molecule Tests ---
 
@@ -209,43 +210,55 @@ truenas-registry-cache:
 # --- Restic Backup (B2) ---
 
 restic-setup:
-    cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-restic-backup.yml
+    op run --no-masking --env-file=.op-env.backup -- \
+      sh -c 'cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-restic-backup.yml'
 
 # Deploy ZeroByte backup app (restic GUI) on TrueNAS
 zerobyte-setup:
-    cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-zerobyte.yml
+    op run --no-masking --env-file=.op-env.backup -- \
+      sh -c 'cd ansible && ansible-playbook -i inventory.ini playbooks/truenas-zerobyte.yml'
 
 # --- Terragrunt ---
 
 tg-init:
-    cd infrastructure && terragrunt run --all init
+    op run --no-masking --env-file=.op-env.backend -- \
+      sh -c 'cd infrastructure && terragrunt run --all init'
 
 tg-plan:
-    cd infrastructure && terragrunt run --all plan
+    op run --no-masking --env-file=.op-env.backend -- \
+      sh -c 'cd infrastructure && terragrunt run --all plan'
 
 tg-apply:
-    cd infrastructure && terragrunt run --all apply
+    op run --no-masking --env-file=.op-env.backend -- \
+      sh -c 'cd infrastructure && terragrunt run --all apply'
 
 tg-destroy:
-    cd infrastructure && terragrunt run --all destroy
+    op run --no-masking --env-file=.op-env.backend -- \
+      sh -c 'cd infrastructure && terragrunt run --all destroy'
 
 tg-validate:
-    cd infrastructure && terragrunt run --all validate
+    op run --no-masking --env-file=.op-env.backend -- \
+      sh -c 'cd infrastructure && terragrunt run --all validate'
 
 tg-fmt:
-    cd infrastructure && terragrunt run --all fmt
+    op run --no-masking --env-file=.op-env.backend -- \
+      sh -c 'cd infrastructure && terragrunt run --all fmt'
 
 tg-apply-module MODULE *ARGS:
-    cd infrastructure/{{MODULE}} && terragrunt apply -auto-approve {{ARGS}}
+    op run --no-masking --env-file=.op-env.backend -- \
+      sh -c 'cd infrastructure/{{MODULE}} && terragrunt apply -auto-approve {{ARGS}}'
 
 tg-plan-module MODULE *ARGS:
-    cd infrastructure/{{MODULE}} && terragrunt plan {{ARGS}}
+    op run --no-masking --env-file=.op-env.backend -- \
+      sh -c 'cd infrastructure/{{MODULE}} && terragrunt plan {{ARGS}}'
 
 tg-destroy-module MODULE *ARGS:
-    cd infrastructure/{{MODULE}} && terragrunt destroy {{ARGS}}
+    op run --no-masking --env-file=.op-env.backend -- \
+      sh -c 'cd infrastructure/{{MODULE}} && terragrunt destroy {{ARGS}}'
 
 tg-graph:
-    cd infrastructure && terragrunt dag graph
+    op run --no-masking --env-file=.op-env.backend -- \
+      sh -c 'cd infrastructure && terragrunt dag graph'
 
 tg-list:
     @find infrastructure -name "terragrunt.hcl" -not -path "*/.terragrunt-cache/*" | sed 's|infrastructure/||g' | sed 's|/terragrunt.hcl||g' | sort

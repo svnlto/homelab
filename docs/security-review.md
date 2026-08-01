@@ -53,7 +53,8 @@ device access + capabilities instead of full privileged mode.
 
 ## What's Done Well
 
-- **1Password integration** — credentials never stored in git, loaded via `op run` + `.op-env.tpl`
+- **1Password integration** — credentials never stored in git, loaded via
+  `op run --env-file` and terragrunt `run_cmd` at point of use
 - **ExternalSecrets operator** — K8s secrets pulled from 1Password at runtime
 - **Terraform sensitive vars** — all provider credentials marked `sensitive = true`
 - **MikroTik firewall** — comprehensive stateful rules with default-deny, good VLAN segmentation

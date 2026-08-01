@@ -1,0 +1,2 @@
+MIKROTIK_USERNAME="op://Homelab/MikroTik Terraform API/username"
+MIKROTIK_PASSWORD="op://Homelab/MikroTik Terraform API/credential"

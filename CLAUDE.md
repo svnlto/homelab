@@ -73,7 +73,9 @@ direnv + Nix flake auto-activates the dev shell. Key auto-configuration:
 
 - `KUBECONFIG` → `infrastructure/prod/compute/k8s-shared/configs/kubeconfig-shared` (if exists)
 - `TALOSCONFIG` → `infrastructure/prod/compute/k8s-shared/configs/talosconfig-shared` (if exists)
-- Credentials loaded from 1Password via `.op-env.tpl` template (re-exported as `TF_VAR_*` for Terraform)
+- Credentials are NOT loaded on shell entry. Terragrunt fetches them per-module
+  via `run_cmd("op", "read", ...)`; the justfile wraps `tg-*` and ansible
+  recipes in `op run --env-file=.op-env.<scope>`
 - `SSH_AUTH_SOCK` points to 1Password SSH agent
 
 ## Architecture

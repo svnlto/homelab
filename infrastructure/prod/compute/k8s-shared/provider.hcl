@@ -63,6 +63,6 @@ EOF
 
 inputs = {
   proxmox_api_url          = local.proxmox.api_url
-  proxmox_api_token_id     = get_env("TF_VAR_proxmox_api_token_id", "")
-  proxmox_api_token_secret = get_env("TF_VAR_proxmox_api_token_secret", "")
+  proxmox_api_token_id     = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/Proxmox API Token/token_id")
+  proxmox_api_token_secret = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/Proxmox API Token/token_secret")
 }

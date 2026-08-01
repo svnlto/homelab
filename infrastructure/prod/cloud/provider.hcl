@@ -36,5 +36,5 @@ EOF
 }
 
 inputs = {
-  linode_api_token = get_env("TF_VAR_linode_api_token", "")
+  linode_api_token = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/Linode API Token/credential")
 }

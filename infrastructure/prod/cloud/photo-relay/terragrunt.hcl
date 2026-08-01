@@ -10,6 +10,6 @@ include "provider" {
 }
 
 inputs = {
-  tailscale_auth_key = get_env("TF_VAR_tailscale_auth_key", "")
-  ssh_public_key     = get_env("TF_VAR_ssh_public_key", "")
+  tailscale_auth_key = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/Tailscale Photo Relay Auth Key/credential")
+  ssh_public_key     = run_cmd("--terragrunt-quiet", "--terragrunt-global-cache", "op", "read", "op://Homelab/proxmox/public key")
 }
