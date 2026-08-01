@@ -118,6 +118,25 @@ inputs = {
       storage_ip      = "10.10.10.42/24"
       storage_mac     = "BC:24:11:10:00:2A"
     }
+    worker3 = {
+      node_name       = "grogu"
+      vm_id           = 412
+      hostname        = "shared-worker3"
+      ip_address      = "10.0.1.23/24"
+      cpu_cores       = 8
+      memory_mb       = 32768
+      disk_size_gb    = 50
+      gpu_passthrough = false
+      storage_ip      = "10.10.10.43/24"
+      storage_mac     = "BC:24:11:10:00:2B"
+      taints = [
+        {
+          key    = "observability"
+          value  = "true"
+          effect = "NoSchedule"
+        }
+      ]
+    }
   }
 
   tags             = ["production", "k8s", "shared"]
