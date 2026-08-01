@@ -6,6 +6,13 @@ image:
 tolerations:
   - operator: Exists
 
+# Both /var/log/pods and the hostPath queue dir are root-owned, and the contrib
+# image otherwise runs as non-root. The logsCollection preset would set this;
+# hand-rolling the filelog receiver means setting it explicitly.
+securityContext:
+  runAsUser: 0
+  runAsGroup: 0
+
 # This collector only tails files — it receives nothing. Every default receiver
 # port the chart opens as a hostPort (OTLP, Jaeger, Zipkin) is both unused and a
 # PodSecurity hostPort violation, so disable them all.
