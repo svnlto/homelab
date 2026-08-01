@@ -123,33 +123,34 @@
         # The receiver emits the whole journal entry as a body map, which the
         # ClickStack exporter flattens into attributes — leaving the log Body
         # empty and unreadable in HyperDX. Promote the fields worth filtering on
-        # to attributes, then collapse the body to the MESSAGE string.
-        # on_error=send keeps entries that lack a field (e.g. CONTAINER_NAME on
-        # non-container units) flowing instead of being dropped.
+        # to attributes, then collapse the body to the MESSAGE string. Each move
+        # is guarded by an existence check: a bare move errors on every entry
+        # missing that field (CONTAINER_NAME is absent on all non-container
+        # units, _SYSTEMD_UNIT on kernel messages).
         operators = [
           {
             type = "move";
+            "if" = "'_SYSTEMD_UNIT' in body";
             from = "body._SYSTEMD_UNIT";
             to = "attributes[\"systemd.unit\"]";
-            on_error = "send";
           }
           {
             type = "move";
+            "if" = "'CONTAINER_NAME' in body";
             from = "body.CONTAINER_NAME";
             to = "attributes[\"container.name\"]";
-            on_error = "send";
           }
           {
             type = "move";
+            "if" = "'PRIORITY' in body";
             from = "body.PRIORITY";
             to = "attributes[\"priority\"]";
-            on_error = "send";
           }
           {
             type = "move";
+            "if" = "'MESSAGE' in body";
             from = "body.MESSAGE";
             to = "body";
-            on_error = "send";
           }
         ];
       };
