@@ -31,8 +31,9 @@ ports:
   metrics:
     enabled: true
 
-# Expose the collector's own metrics to the existing kube-prometheus-stack.
-serviceMonitor:
+# A daemonset has no Service, so scrape each agent pod directly via a PodMonitor
+# (a ServiceMonitor would round-robin one random pod per scrape).
+podMonitor:
   enabled: true
   metricsEndpoints:
     - port: metrics
