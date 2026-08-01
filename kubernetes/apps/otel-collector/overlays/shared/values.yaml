@@ -101,6 +101,11 @@ config:
         - /var/log/pods/clickstack_*/*/*.log
         - /var/log/pods/otel-collector_*/*/*.log
       start_at: end
+      # The container operator derives k8s.* from the file path via
+      # add_metadata_from_filepath, which needs the full path attribute — filelog
+      # sets only log.file.name unless include_file_path is on. Without it every
+      # k8s attribute is empty and logs are unfilterable in HyperDX.
+      include_file_path: true
       operators:
         - type: container
           id: container-parser
