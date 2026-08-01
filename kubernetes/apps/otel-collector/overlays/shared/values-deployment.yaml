@@ -1,0 +1,54 @@
+---
+# Cluster-level agent: Kubernetes events + cluster metrics. Exactly one replica —
+# more would duplicate every event and metric. Based on ClickStack's official
+# k8s_deployment.yaml reference.
+mode: deployment
+replicaCount: 1
+image:
+  repository: otel/opentelemetry-collector-contrib
+
+# May land on the observability node; tolerate its taint.
+tolerations:
+  - key: observability
+    operator: Equal
+    value: "true"
+    effect: NoSchedule
+
+presets:
+  kubernetesAttributes:
+    enabled: true
+    extractAllPodLabels: true
+    extractAllPodAnnotations: true
+  kubernetesEvents:
+    enabled: true
+  clusterMetrics:
+    enabled: true
+
+extraEnvs:
+  - name: HYPERDX_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: otel-hyperdx-apikey
+        key: HYPERDX_API_KEY
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 300m
+    memory: 512Mi
+
+config:
+  exporters:
+    otlphttp:
+      endpoint: http://clickstack-hdx-oss-v2-otel-collector.clickstack.svc:4318
+      compression: gzip
+      headers:
+        authorization: ${env:HYPERDX_API_KEY}
+  service:
+    pipelines:
+      logs:
+        exporters: [otlphttp]
+      metrics:
+        exporters: [otlphttp]

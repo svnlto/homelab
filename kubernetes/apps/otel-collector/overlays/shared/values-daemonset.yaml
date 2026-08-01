@@ -1,0 +1,113 @@
+---
+# Node-level agent: pod logs + host metrics + kubelet metrics, one per node.
+# Based on ClickStack's official k8s_daemonset.yaml reference — the presets do
+# the log collection, root securityContext, file-path metadata, pod association
+# and RBAC that must otherwise be hand-rolled (and get subtly wrong).
+mode: daemonset
+image:
+  repository: otel/opentelemetry-collector-contrib
+
+# Runs on every node, including the tainted observability node.
+tolerations:
+  - operator: Exists
+
+# These collectors only scrape and tail — nothing sends to them. Disable every
+# default receiver port so no unused hostPort is opened on each node.
+ports:
+  otlp:
+    enabled: false
+  otlp-http:
+    enabled: false
+  jaeger-compact:
+    enabled: false
+  jaeger-thrift:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  zipkin:
+    enabled: false
+
+# kubeletstats needs nodes/proxy on top of the preset RBAC.
+clusterRole:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: [nodes/proxy]
+      verbs: [get]
+
+presets:
+  logsCollection:
+    enabled: true
+    # Persist file positions so a restart does not re-read or drop logs. Also
+    # switches the collector to root, which it needs to read /var/log/pods.
+    storeCheckpoints: true
+    # Never tail the collector's own output — avoids a log feedback loop.
+    includeCollectorLogs: false
+  hostMetrics:
+    enabled: true
+  kubernetesAttributes:
+    enabled: true
+    extractAllPodLabels: true
+    extractAllPodAnnotations: true
+  kubeletMetrics:
+    enabled: true
+
+extraEnvs:
+  # The team ingestion key the ClickStack collector requires on every OTLP
+  # request. Delivered by ESO; see external-secret.yaml.
+  - name: HYPERDX_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: otel-hyperdx-apikey
+        key: HYPERDX_API_KEY
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+config:
+  receivers:
+    kubeletstats:
+      collection_interval: 20s
+      auth_type: serviceAccount
+      endpoint: ${env:K8S_NODE_NAME}:10250
+      insecure_skip_verify: true
+      metrics:
+        k8s.pod.cpu_limit_utilization:
+          enabled: true
+        k8s.pod.cpu_request_utilization:
+          enabled: true
+        k8s.pod.memory_limit_utilization:
+          enabled: true
+        k8s.pod.memory_request_utilization:
+          enabled: true
+        k8s.pod.uptime:
+          enabled: true
+        k8s.node.uptime:
+          enabled: true
+        k8s.container.cpu_limit_utilization:
+          enabled: true
+        k8s.container.cpu_request_utilization:
+          enabled: true
+        k8s.container.memory_limit_utilization:
+          enabled: true
+        k8s.container.memory_request_utilization:
+          enabled: true
+        container.uptime:
+          enabled: true
+  exporters:
+    otlphttp:
+      endpoint: http://clickstack-hdx-oss-v2-otel-collector.clickstack.svc:4318
+      compression: gzip
+      headers:
+        authorization: ${env:HYPERDX_API_KEY}
+  service:
+    pipelines:
+      logs:
+        exporters: [otlphttp]
+      metrics:
+        exporters: [otlphttp]

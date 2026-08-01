@@ -2,10 +2,11 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: otel-collector
+  name: otel-cluster
   namespace: otel-collector
 spec:
   interval: 30m
+  releaseName: otel-cluster
   chart:
     spec:
       chart: opentelemetry-collector
@@ -15,4 +16,4 @@ spec:
       interval: 1h
   valuesFrom:
     - kind: ConfigMap
-      name: otel-collector-values
+      name: otel-cluster-values

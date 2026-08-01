@@ -6,10 +6,16 @@ resources:
   - namespace.yaml
   - helmrepository.yaml
   - external-secret.yaml
-  - helmrelease.yaml
+  - helmrelease-daemonset.yaml
+  - helmrelease-deployment.yaml
 configMapGenerator:
-  - name: otel-collector-values
+  - name: otel-agent-values
     files:
-      - values.yaml
+      - values.yaml=values-daemonset.yaml
+    options:
+      disableNameSuffixHash: true
+  - name: otel-cluster-values
+    files:
+      - values.yaml=values-deployment.yaml
     options:
       disableNameSuffixHash: true
