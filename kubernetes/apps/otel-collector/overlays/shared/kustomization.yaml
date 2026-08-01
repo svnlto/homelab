@@ -8,6 +8,7 @@ resources:
   - external-secret.yaml
   - helmrelease-daemonset.yaml
   - helmrelease-deployment.yaml
+  - prometheusrule.yaml
 configMapGenerator:
   - name: otel-agent-values
     files:

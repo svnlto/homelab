@@ -1,0 +1,33 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: otel-collector
+  namespace: otel-collector
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: otel-collector
+      rules:
+        - alert: OtelCollectorNotShipping
+          expr: >-
+            sum(rate(otelcol_exporter_sent_log_records_total[15m])) == 0
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: OTel collectors have shipped no log records for 30 minutes
+            description: >-
+              The log pipeline has stalled. Logs are not reaching ClickStack.
+        - alert: OtelCollectorQueueGrowing
+          expr: >-
+            sum(otelcol_exporter_queue_size) > 1000
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: OTel collector send queue is backing up
+            description: >-
+              The exporter queue is draining slower than it fills, which
+              usually means ClickStack is down or throttling.

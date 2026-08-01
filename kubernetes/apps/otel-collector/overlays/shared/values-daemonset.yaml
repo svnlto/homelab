@@ -26,6 +26,18 @@ ports:
     enabled: false
   zipkin:
     enabled: false
+  # Self-telemetry port, scraped by the cluster Prometheus (see serviceMonitor)
+  # so a stalled pipeline raises an alert.
+  metrics:
+    enabled: true
+
+# Expose the collector's own metrics to the existing kube-prometheus-stack.
+serviceMonitor:
+  enabled: true
+  metricsEndpoints:
+    - port: metrics
+  extraLabels:
+    release: kube-prometheus-stack
 
 # kubeletstats needs nodes/proxy on top of the preset RBAC.
 clusterRole:

@@ -14,6 +14,19 @@ tolerations:
     value: "true"
     effect: NoSchedule
 
+ports:
+  # Self-telemetry port, scraped by the cluster Prometheus (see serviceMonitor).
+  metrics:
+    enabled: true
+
+# Expose the collector's own metrics to the existing kube-prometheus-stack.
+serviceMonitor:
+  enabled: true
+  metricsEndpoints:
+    - port: metrics
+  extraLabels:
+    release: kube-prometheus-stack
+
 presets:
   kubernetesAttributes:
     enabled: true
