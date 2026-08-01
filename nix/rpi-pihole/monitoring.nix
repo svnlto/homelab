@@ -1,4 +1,4 @@
-_: {
+{ pkgs, ... }: {
   # blackbox_exporter — DNS resolution timing and HTTP TTFB for the WAN
   # diagnostic ladder. The NixOS module grants CAP_NET_RAW unconditionally,
   # so ICMP probes work without extra configuration.
@@ -69,7 +69,10 @@ _: {
   # so this pins vmagent to VLAN 20 -> MikroTik -> VLAN 30. TLS still validates
   # because the hostname is unchanged — only the address it resolves to.
   networking.hosts = {
-    "10.0.1.101" = [ "prom-write.shared.h.svenlito.com" ];
+    "10.0.1.101" = [
+      "prom-write.shared.h.svenlito.com"
+      "otlp.shared.h.svenlito.com"
+    ];
   };
 
   # vmagent buffers to disk and remote-writes to the cluster Prometheus.
@@ -96,4 +99,148 @@ _: {
       "-remoteWrite.maxDiskUsagePerURL=4GB"
     ];
   };
+
+  # Ship the Pi's journald (dumper + the pihole/unbound containers, which now
+  # log to journald) AND its Prometheus metrics to ClickStack over OTLP. vmagent
+  # keeps remote-writing the same metrics to Prometheus in parallel — it holds
+  # the existing 90-day WAN/ISP evidence, so it is retired only once ClickStack
+  # has accumulated equivalent history (Plan B). The ingestion key arrives
+  # out-of-band via an EnvironmentFile because the NixOS config is in Git.
+  systemd.tmpfiles.rules = [ "d /var/lib/otelcol 0700 root root -" ];
+
+  services.opentelemetry-collector = {
+    enable = true;
+    # journald receiver is a contrib component; the default package lacks it.
+    package = pkgs.opentelemetry-collector-contrib;
+    settings = {
+      extensions.file_storage.directory = "/var/lib/opentelemetry-collector";
+      receivers.journald = {
+        directory = "/var/log/journal";
+        # Resume from the persisted cursor; only ship new entries on first start
+        # so the existing journal history is not replayed into ClickStack.
+        start_at = "end";
+        storage = "file_storage";
+      };
+      # Scrape the same local exporters vmagent does, so ClickStack gets the Pi's
+      # metrics too. Duplicated from vmagent-scrape.yml rather than shared: the
+      # plan forbids touching vmagent, and this scrape list collapses to the sole
+      # copy once vmagent retires in Plan B.
+      receivers.prometheus.config.scrape_configs = [
+        {
+          job_name = "smokeping";
+          static_configs = [ { targets = [ "127.0.0.1:9374" ]; } ];
+        }
+        {
+          job_name = "node";
+          static_configs = [ { targets = [ "127.0.0.1:9100" ]; } ];
+        }
+        {
+          job_name = "blackbox-dns";
+          metrics_path = "/probe";
+          params.module = [ "dns_udp" ];
+          static_configs = [
+            {
+              targets = [
+                "1.1.1.1:53"
+                "8.8.8.8:53"
+                "9.9.9.9:53"
+              ];
+              labels.rung = "3";
+            }
+          ];
+          relabel_configs = [
+            {
+              source_labels = [ "__address__" ];
+              target_label = "__param_target";
+            }
+            {
+              source_labels = [ "__param_target" ];
+              target_label = "instance";
+            }
+            {
+              target_label = "__address__";
+              replacement = "127.0.0.1:9115";
+            }
+          ];
+        }
+        {
+          job_name = "blackbox-http";
+          metrics_path = "/probe";
+          params.module = [ "http_2xx" ];
+          static_configs = [
+            {
+              targets = [ "https://www.cloudflare.com" ];
+              labels.rung = "4";
+            }
+          ];
+          relabel_configs = [
+            {
+              source_labels = [ "__address__" ];
+              target_label = "__param_target";
+            }
+            {
+              source_labels = [ "__param_target" ];
+              target_label = "instance";
+            }
+            {
+              target_label = "__address__";
+              replacement = "127.0.0.1:9115";
+            }
+          ];
+        }
+      ];
+      processors = {
+        memory_limiter = {
+          check_interval = "1s";
+          limit_mib = 200;
+          spike_limit_mib = 50;
+        };
+        resource.attributes = [
+          {
+            key = "host.name";
+            value = "rpi-pihole";
+            action = "upsert";
+          }
+          {
+            key = "service.name";
+            value = "rpi-pihole";
+            action = "upsert";
+          }
+        ];
+        batch = { };
+      };
+      exporters.otlphttp = {
+        endpoint = "https://otlp.shared.h.svenlito.com";
+        compression = "gzip";
+        headers.authorization = "\${env:CLICKSTACK_API_KEY}";
+        sending_queue = {
+          enabled = true;
+          storage = "file_storage";
+        };
+      };
+      service = {
+        extensions = [ "file_storage" ];
+        pipelines.logs = {
+          receivers = [ "journald" ];
+          processors = [
+            "memory_limiter"
+            "resource"
+            "batch"
+          ];
+          exporters = [ "otlphttp" ];
+        };
+        pipelines.metrics = {
+          receivers = [ "prometheus" ];
+          processors = [
+            "memory_limiter"
+            "resource"
+            "batch"
+          ];
+          exporters = [ "otlphttp" ];
+        };
+      };
+    };
+  };
+
+  systemd.services.opentelemetry-collector.serviceConfig.EnvironmentFile = "/var/lib/otelcol/env";
 }

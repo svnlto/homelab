@@ -107,10 +107,13 @@
     ];
   };
 
-  # Cap journal size (persisted journals would go to tmpfs /var/log)
+  # Cap journal size (persisted journals would go to tmpfs /var/log).
+  # Raised from 30M once container logs (pihole/unbound/etc.) began flowing
+  # through journald — journald is now the buffer the OTel collector ships from,
+  # so it needs enough headroom to cover collector downtime without dropping.
   services.journald.extraConfig = ''
-    SystemMaxUse=30M
-    RuntimeMaxUse=30M
+    SystemMaxUse=150M
+    RuntimeMaxUse=150M
   '';
 
   # NTP server for the network (K8s nodes use this to avoid DNS-dependent NTP)

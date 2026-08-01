@@ -2,12 +2,14 @@
   # Enable Docker for Pi-hole containers
   virtualisation.docker = {
     enable = true;
-    # Log rotation to prevent SD card fill
+    # Containers log to journald so the OTel collector ships them (with
+    # CONTAINER_NAME) to ClickStack in one pipeline. journald enforces its own
+    # size cap (services.journald SystemMaxUse), so the json-file max-size/
+    # max-file opts no longer apply; tag each entry with the container name.
     daemon.settings = {
-      log-driver = "json-file";
+      log-driver = "journald";
       log-opts = {
-        max-size = "10m";
-        max-file = "3";
+        tag = "{{.Name}}";
       };
     };
   };
