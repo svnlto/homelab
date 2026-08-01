@@ -115,6 +115,14 @@ config:
       limit_mib: 400
       spike_limit_mib: 100
     k8sattributes:
+      # filelog records have no source IP, so k8sattributes cannot associate them
+      # by the default connection method — it would enrich nothing and k8s.node.name
+      # and k8s.deployment.name would stay empty. Associate on the pod UID the
+      # container operator parsed from the log path instead.
+      pod_association:
+        - sources:
+            - from: resource_attribute
+              name: k8s.pod.uid
       extract:
         metadata:
           - k8s.namespace.name
