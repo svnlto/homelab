@@ -1,0 +1,18 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: otel-collector
+  namespace: clickstack
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: opentelemetry-collector
+      sourceRef:
+        kind: HelmRepository
+        name: opentelemetry
+      interval: 1h
+  valuesFrom:
+    - kind: ConfigMap
+      name: otel-collector-values

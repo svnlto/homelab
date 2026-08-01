@@ -16,3 +16,4 @@ resources:
   - flux-ui.yaml
   - kube-prometheus-stack.yaml
   - clickstack.yaml
+  - otel-collector.yaml
