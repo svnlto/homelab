@@ -128,16 +128,18 @@ config:
         enabled: true
         storage: file_storage
   processors:
-    # Drop untagged per-item log spam that no --log-level can suppress:
+    # Everything to warn: drop k8s-pod logs below WARN. Apps whose own level knob
+    # can't reach warn (Servarr's config.xml floors at info, metallb, etc.) are
+    # caught here by severity; untagged records (severity 0) are kept so nothing
+    # is silently lost. Plus untagged per-item spam no level can suppress:
     #  - democratic-csi NodeGetVolumeStats shell-exec (lsblk/findmnt/realpath).
     #  - csi-proxy (csi-grpc-proxy) sidecar: every proxied gRPC call, Go stdlib log.
-    #  - osxphotos-export progress: "Exporting/Skipped/Processing <file>" printed
-    #    per photo (~58k/run) by the osxphotos CLI; its Python logger is already
-    #    at WARNING, but these prints are not level-tagged.
+    #  - osxphotos-export CLI progress prints (per photo, not level-tagged).
     filter/csi_noise:
       error_mode: ignore
       logs:
         log_record:
+          - 'severity_number >= SEVERITY_NUMBER_TRACE and severity_number < SEVERITY_NUMBER_WARN'
           - 'resource.attributes["k8s.namespace.name"] == "democratic-csi" and IsMatch(body, "executing (filesystem|mount)
             command")'
           - 'resource.attributes["k8s.container.name"] == "csi-proxy"'
