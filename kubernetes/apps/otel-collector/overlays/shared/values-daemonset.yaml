@@ -128,23 +128,26 @@ config:
         enabled: true
         storage: file_storage
   processors:
-    # Everything to warn: drop k8s-pod logs below WARN. Apps whose own level knob
-    # can't reach warn (Servarr's config.xml floors at info, metallb, etc.) are
-    # caught here by severity; untagged records (severity 0) are kept so nothing
-    # is silently lost. Plus untagged per-item spam no level can suppress:
+    # Drop k8s-pod noise at ingest. Severity can't be gated here (it is parsed
+    # downstream), so match by source/body:
+    #  - arr-stack: Servarr (|Info|/|Debug|/|Trace|) + sabnzbd (::INFO::/::DEBUG::)
+    #    info — their own level knobs floor at info, so this is the only lever.
     #  - democratic-csi NodeGetVolumeStats shell-exec (lsblk/findmnt/realpath).
     #  - csi-proxy (csi-grpc-proxy) sidecar: every proxied gRPC call, Go stdlib log.
-    #  - osxphotos-export CLI progress prints (per photo, not level-tagged).
+    #  - osxphotos-export: CLI progress prints (per photo) + the per-photo
+    #    "no such table: Results" WARNING (a missing media-analysis table in the
+    #    synced Photos DB — non-actionable spam until the export is fixed).
     filter/csi_noise:
       error_mode: ignore
       logs:
         log_record:
-          - 'severity_number >= SEVERITY_NUMBER_TRACE and severity_number < SEVERITY_NUMBER_WARN'
+          - 'resource.attributes["k8s.namespace.name"] == "arr-stack" and IsMatch(body, "\|(Info|Debug|Trace)\||::(INFO|DEBUG)::")'
           - 'resource.attributes["k8s.namespace.name"] == "democratic-csi" and IsMatch(body, "executing (filesystem|mount)
             command")'
           - 'resource.attributes["k8s.container.name"] == "csi-proxy"'
           - 'resource.attributes["k8s.namespace.name"] == "osxphotos-export" and IsMatch(body, "^(Exporting|Exported|Skipped|Skipping|Processing|Copied|Copying|Cleaning|Deleting|Writing|Missing)
             ")'
+          - 'resource.attributes["k8s.namespace.name"] == "osxphotos-export" and IsMatch(body, "no such table: Results")'
   service:
     pipelines:
       logs:

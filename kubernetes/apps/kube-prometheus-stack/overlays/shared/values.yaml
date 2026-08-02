@@ -19,6 +19,7 @@ kubeControllerManager:
 
 prometheus:
   prometheusSpec:
+    logLevel: warn
     retention: 90d
     # ~80% of the PV. Whichever limit trips first wins, so a cardinality spike
     # evicts old blocks instead of filling the PVC and crash-looping Prometheus.
