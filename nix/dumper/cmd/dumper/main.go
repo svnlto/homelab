@@ -10,12 +10,18 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/svnlto/dumper/internal/config"
 	"github.com/svnlto/dumper/internal/diff"
 	"github.com/svnlto/dumper/internal/photos"
 	"github.com/svnlto/dumper/internal/sync"
 	"github.com/svnlto/dumper/internal/tailscale"
+	"github.com/svnlto/dumper/internal/telemetry"
 )
+
+var tracer = otel.Tracer("github.com/svnlto/dumper")
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -34,6 +40,18 @@ func main() {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
+
+	// Tracing is best-effort: a failed/unreachable collector must not stop the sync loop.
+	shutdownTracer, err := telemetry.InitTracer(ctx)
+	if err != nil {
+		slog.Warn("tracing disabled: failed to init tracer", "error", err)
+	} else {
+		defer func() {
+			if err := shutdownTracer(context.Background()); err != nil {
+				slog.Warn("tracer shutdown failed", "error", err)
+			}
+		}()
+	}
 
 	slog.Info("dumper starting",
 		"remote_host", cfg.RemoteHost,
@@ -79,10 +97,17 @@ func sleep(ctx context.Context, d time.Duration) bool {
 	}
 }
 
-func runSync(ctx context.Context, cfg config.Config) error {
+func runSync(ctx context.Context, cfg config.Config) (err error) {
+	ctx, span := tracer.Start(ctx, "dumper.sync")
+	defer func() { telemetry.End(span, err) }()
+
 	// Phase 1: Tailscale connectivity
 	slog.Info("phase 1: checking tailscale connectivity")
-	if err := tailscale.CheckConnected(ctx, cfg.RemoteHost); err != nil {
+	if err := func() (err error) {
+		ctx, span := tracer.Start(ctx, "tailscale.check")
+		defer func() { telemetry.End(span, err) }()
+		return tailscale.CheckConnected(ctx, cfg.RemoteHost)
+	}(); err != nil {
 		return fmt.Errorf("tailscale check: %w", err)
 	}
 
@@ -101,31 +126,58 @@ func runSync(ctx context.Context, cfg config.Config) error {
 	// Phase 2: Database sync
 	slog.Info("phase 2: syncing database")
 	dbArgs := sync.BuildDatabaseRsyncArgs(rsyncOpts)
-	output, err := sync.RunRsyncSimple(ctx, dbArgs)
-	if err != nil {
+	var output string
+	if err := func() (err error) {
+		ctx, span := tracer.Start(ctx, "db.sync")
+		span.SetAttributes(attribute.Int("rsync.args", len(dbArgs)))
+		defer func() { telemetry.End(span, err) }()
+		output, err = sync.RunRsyncSimple(ctx, dbArgs)
+		return err
+	}(); err != nil {
 		return fmt.Errorf("database sync failed: %w\noutput: %s", err, output)
 	}
 	slog.Info("database sync complete")
 
 	// SQLite integrity check + WAL checkpoint
 	dbPath := filepath.Join(localLib, "database", "Photos.sqlite")
-	if err := photos.CheckIntegrity(dbPath); err != nil {
+	if err := func() (err error) {
+		_, span := tracer.Start(ctx, "db.integrity")
+		defer func() { telemetry.End(span, err) }()
+		if err := photos.CheckIntegrity(dbPath); err != nil {
+			return err
+		}
+		if err := photos.CheckpointWAL(dbPath); err != nil {
+			slog.Warn("WAL checkpoint failed", "error", err)
+		}
+		return nil
+	}(); err != nil {
 		return fmt.Errorf("database integrity check: %w", err)
-	}
-	if err := photos.CheckpointWAL(dbPath); err != nil {
-		slog.Warn("WAL checkpoint failed", "error", err)
 	}
 
 	// Phase 3: Diff computation
 	slog.Info("phase 3: computing diff")
-	originals, err := photos.QueryOriginals(dbPath)
-	if err != nil {
-		return fmt.Errorf("query originals: %w", err)
-	}
+	var originals, missing []string
+	if err := func() (err error) {
+		_, span := tracer.Start(ctx, "diff.compute")
+		defer func() { telemetry.End(span, err) }()
 
-	missing, err := diff.ComputeMissing(originals, localLib)
-	if err != nil {
-		return fmt.Errorf("compute missing: %w", err)
+		originals, err = photos.QueryOriginals(dbPath)
+		if err != nil {
+			return fmt.Errorf("query originals: %w", err)
+		}
+
+		missing, err = diff.ComputeMissing(originals, localLib)
+		if err != nil {
+			return fmt.Errorf("compute missing: %w", err)
+		}
+
+		span.SetAttributes(
+			attribute.Int("originals.count", len(originals)),
+			attribute.Int("missing.count", len(missing)),
+		)
+		return nil
+	}(); err != nil {
+		return err
 	}
 
 	if len(missing) == 0 {
@@ -139,7 +191,12 @@ func runSync(ctx context.Context, cfg config.Config) error {
 	)
 
 	// Phase 4: Parallel rsync
-	return runParallelSync(ctx, cfg, rsyncOpts, missing)
+	return func() (err error) {
+		ctx, span := tracer.Start(ctx, "originals.sync")
+		span.SetAttributes(attribute.Int("missing.count", len(missing)))
+		defer func() { telemetry.End(span, err) }()
+		return runParallelSync(ctx, cfg, rsyncOpts, missing)
+	}()
 }
 
 func runParallelSync(ctx context.Context, cfg config.Config, opts sync.RsyncOpts, missing []string) error {

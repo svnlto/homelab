@@ -222,6 +222,8 @@
           ];
         }
       ];
+      # Receive OTLP traces from the local dumper (service.name=dumper).
+      receivers.otlp.protocols.http.endpoint = "127.0.0.1:4318";
       processors = {
         memory_limiter = {
           check_interval = "1s";
@@ -267,6 +269,16 @@
           processors = [
             "memory_limiter"
             "resource"
+            "batch"
+          ];
+          exporters = [ "otlphttp" ];
+        };
+        # No resource processor here: it force-upserts service.name=rpi-pihole,
+        # which would clobber the dumper's own service.name on its spans.
+        pipelines.traces = {
+          receivers = [ "otlp" ];
+          processors = [
+            "memory_limiter"
             "batch"
           ];
           exporters = [ "otlphttp" ];
