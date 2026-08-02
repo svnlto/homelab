@@ -102,6 +102,8 @@ spec:
               value: "1000"
             - name: TZ
               value: {{ .Values.timezone }}
+            - name: {{ .name | upper }}__LOG__LEVEL
+              value: {{ .app.logLevel | default "warn" | quote }}
           startupProbe:
             httpGet:
               path: {{ .app.probePath }}

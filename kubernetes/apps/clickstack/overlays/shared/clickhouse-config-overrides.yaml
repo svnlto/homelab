@@ -15,3 +15,10 @@ data:
              or the kernel OOM-kills ClickHouse before this limiter engages. -->
         <max_server_memory_usage>12884901888</max_server_memory_usage>
     </clickhouse>
+  logger-level.xml: |
+    <clickhouse>
+        <!-- Chart default is trace/information; raise to warning to cut INFO log noise. -->
+        <logger>
+            <level>warning</level>
+        </logger>
+    </clickhouse>

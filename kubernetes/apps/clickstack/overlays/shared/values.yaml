@@ -44,6 +44,8 @@ mongodb:
 # postRenderers patch instead.
 
 hyperdx:
+  # Chart maps this to the HYPERDX_LOG_LEVEL env var (pino level); "warn" cuts INFO noise.
+  logLevel: "warn"
   # Without this the app defaults to http://localhost:3000 and redirects there
   # after login, which breaks every browser that is not on the cluster node.
   frontendUrl: https://logs.shared.h.svenlito.com

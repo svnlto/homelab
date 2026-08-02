@@ -131,12 +131,16 @@ config:
     # Drop democratic-csi's per-NodeGetVolumeStats shell-exec spam
     # (executing filesystem/mount command: lsblk/findmnt/realpath, ~300/min).
     # Not level-tagged, so --log-level=warn can't suppress it — drop at ingest.
+    # The csi-proxy (csi-grpc-proxy) sidecar logs every proxied gRPC call
+    # ("request ...") with Go's stdlib log — no flag or env can quiet it, so it
+    # is dropped here too (top INFO emitter, ~1400/20min).
     filter/csi_noise:
       error_mode: ignore
       logs:
         log_record:
           - 'resource.attributes["k8s.namespace.name"] == "democratic-csi" and IsMatch(body, "executing (filesystem|mount)
             command")'
+          - 'resource.attributes["k8s.container.name"] == "csi-proxy" and IsMatch(body, "^request")'
   service:
     pipelines:
       logs:

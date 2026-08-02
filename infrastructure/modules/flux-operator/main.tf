@@ -57,6 +57,22 @@ locals {
         ref  = var.repo_ref
         path = var.sync_path
       }
+      # error is Flux's least-verbose log level; drops routine reconcile INFO noise.
+      kustomize = {
+        patches = [
+          {
+            target = {
+              kind = "Deployment"
+              name = "(source-controller|kustomize-controller|helm-controller|notification-controller)"
+            }
+            patch = <<-EOT
+              - op: add
+                path: /spec/template/spec/containers/0/args/-
+                value: --log-level=error
+            EOT
+          }
+        ]
+      }
     }
   })
 }

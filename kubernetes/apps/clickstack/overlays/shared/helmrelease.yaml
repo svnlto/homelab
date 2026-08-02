@@ -55,8 +55,8 @@ spec:
                 value:
                   name: clickhouse-config-overrides
                   mountPath: /etc/clickhouse-server/config.d/
-          # The chart's mongodb-deployment.yaml container has no resources
-          # field at all, so it can't be set via values.
+          # The chart's mongodb-deployment.yaml container sets no resources and no
+          # args, so neither can be set via values.
           - target:
               kind: Deployment
               name: clickstack-hdx-oss-v2-mongodb
@@ -70,3 +70,8 @@ spec:
                   limits:
                     cpu: 500m
                     memory: 2Gi
+              # --quiet cuts mongod's INFO chatter; the image entrypoint still
+              # auto-adds --bind_ip_all since no bind arg is given, so connectivity holds.
+              - op: add
+                path: /spec/template/spec/containers/0/args
+                value: ["mongod", "--quiet"]

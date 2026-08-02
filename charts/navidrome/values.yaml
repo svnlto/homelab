@@ -14,7 +14,7 @@ navidrome:
     - name: ND_SCANNER_SCHEDULE
       value: "@every 1h"
     - name: ND_LOGLEVEL
-      value: info
+      value: warn
     - name: ND_ENABLETRANSCODINGCONFIG
       value: "false"
     - name: ND_SESSIONTIMEOUT

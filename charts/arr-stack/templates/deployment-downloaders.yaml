@@ -142,6 +142,8 @@ spec:
               value: "1000"
             - name: TZ
               value: {{ .Values.timezone }}
+            - name: PROWLARR__LOG__LEVEL
+              value: {{ .Values.downloaders.prowlarr.logLevel | default "warn" | quote }}
           volumeMounts:
             - name: prowlarr-config
               mountPath: /config
