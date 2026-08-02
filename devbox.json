@@ -19,7 +19,7 @@
     "nodejs@25.9.0",
     "terraform@1.14.9",
     "renovate@43.214.1",
-    "uv@0.9.9"
+    "uv@0.11.28"
   ],
   "env": {
     "K9S_CONFIG_DIR": "$HOME/.config/k9s",
