@@ -24,6 +24,12 @@ ports:
     containerPort: 5044
     servicePort: 5044
     protocol: TCP
+  # TrueNAS ships syslog (RFC5424 over TCP) here.
+  truenas:
+    enabled: true
+    containerPort: 5514
+    servicePort: 5514
+    protocol: TCP
 
 # Expose the collector's own metrics to the existing kube-prometheus-stack.
 serviceMonitor:
@@ -86,6 +92,24 @@ config:
           if: 'attributes.msg != nil'
           from: attributes.msg
           to: body
+    # TrueNAS (192.168.0.13) forwards its syslog-ng output as RFC5424 over TCP.
+    syslog/truenas:
+      tcp:
+        listen_address: 0.0.0.0:5514
+      protocol: rfc5424
+      operators:
+        - type: move
+          if: 'attributes.hostname != nil'
+          from: attributes.hostname
+          to: resource["host.name"]
+        - type: move
+          if: 'attributes.appname != nil'
+          from: attributes.appname
+          to: resource["service.name"]
+        - type: move
+          if: 'attributes.message != nil'
+          from: attributes.message
+          to: body
   exporters:
     otlphttp:
       endpoint: http://clickstack-hdx-oss-v2-otel-collector.clickstack.svc:4318
@@ -100,6 +124,9 @@ config:
       # preset's own logs pipeline receivers.
       logs/talos:
         receivers: [tcplog/talos]
+        exporters: [otlphttp]
+      logs/truenas:
+        receivers: [syslog/truenas]
         exporters: [otlphttp]
       metrics:
         exporters: [otlphttp]

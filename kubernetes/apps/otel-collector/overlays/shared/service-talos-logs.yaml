@@ -20,3 +20,7 @@ spec:
       port: 5044
       targetPort: 5044
       protocol: TCP
+    - name: truenas-syslog
+      port: 5514
+      targetPort: 5514
+      protocol: TCP
