@@ -127,9 +127,22 @@ config:
       sending_queue:
         enabled: true
         storage: file_storage
+  processors:
+    # Drop democratic-csi's per-NodeGetVolumeStats shell-exec spam
+    # (executing filesystem/mount command: lsblk/findmnt/realpath, ~300/min).
+    # Not level-tagged, so --log-level=warn can't suppress it — drop at ingest.
+    filter/csi_noise:
+      error_mode: ignore
+      logs:
+        log_record:
+          - 'resource.attributes["k8s.namespace.name"] == "democratic-csi" and IsMatch(body, "executing (filesystem|mount)
+            command")'
   service:
     pipelines:
       logs:
+        # Explicit list to insert filter after k8s_attributes (which sets the
+        # namespace attr the filter matches on). Mirrors the preset defaults.
+        processors: [memory_limiter, k8s_attributes, filter/csi_noise, batch]
         exporters: [otlphttp]
       metrics:
         exporters: [otlphttp]
