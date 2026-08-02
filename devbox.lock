@@ -997,6 +997,54 @@
           "store_path": "/nix/store/jgqkjwgvaa3kjkcv8dv8pfhdnv0pjyqr-tflint-0.63.1"
         }
       }
+    },
+    "uv@0.9.9": {
+      "last_modified": "2025-11-23T21:50:36Z",
+      "resolved": "github:NixOS/nixpkgs/ee09932cedcef15aaf476f9343d1dea2cb77e261#uv",
+      "source": "devbox-search",
+      "version": "0.9.9",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/nq7ylsdliifrbr5qvi741n5bi8scm1gb-uv-0.9.9",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/nq7ylsdliifrbr5qvi741n5bi8scm1gb-uv-0.9.9"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/3pviz6gpdk0llvy59qjxg8hr95yn76nz-uv-0.9.9",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/3pviz6gpdk0llvy59qjxg8hr95yn76nz-uv-0.9.9"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/xmmdhdlc44wsij6nx4j6b50khx6slnfw-uv-0.9.9",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/xmmdhdlc44wsij6nx4j6b50khx6slnfw-uv-0.9.9"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/0mn8ygv4y08ija7q02cik2vl5bpjdx8a-uv-0.9.9",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/0mn8ygv4y08ija7q02cik2vl5bpjdx8a-uv-0.9.9"
+        }
+      }
     }
   }
 }
