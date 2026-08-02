@@ -1,0 +1,13 @@
+---
+# VolumeSnapshot CRDs + snapshot-controller, vendored from
+# kubernetes-csi/external-snapshotter v8.2.0. Installs the CRDs the
+# democratic-csi external-snapshotter sidecar watches — without them its
+# reflector spammed "failed to list *v1.VolumeSnapshotContent" continuously.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - crd-volumesnapshotclasses.yaml
+  - crd-volumesnapshotcontents.yaml
+  - crd-volumesnapshots.yaml
+  - rbac.yaml
+  - controller.yaml

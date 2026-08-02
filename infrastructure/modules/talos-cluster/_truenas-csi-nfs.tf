@@ -78,14 +78,17 @@ resource "helm_release" "truenas_nfs_csi" {
     }
     # logLevel warn: info logs every mount/stat/API call (noise reduction).
     controller = {
-      driver = {
-        logLevel = "warn"
-      }
+      driver              = { logLevel = "warn" }
+      externalProvisioner = { verbosityLevel = 2 }
+      externalResizer     = { verbosityLevel = 2 }
+      externalAttacher    = { verbosityLevel = 2 }
+      externalSnapshotter = { verbosityLevel = 2 }
     }
     node = {
       driver = {
         logLevel = "warn"
       }
+      driverRegistrar = { verbosityLevel = 2 }
       tolerations = [
         {
           operator = "Exists"
@@ -145,14 +148,17 @@ resource "helm_release" "truenas_nfs_fast_csi" {
     }
     # logLevel warn: info logs every mount/stat/API call (noise reduction).
     controller = {
-      driver = {
-        logLevel = "warn"
-      }
+      driver              = { logLevel = "warn" }
+      externalProvisioner = { verbosityLevel = 2 }
+      externalResizer     = { verbosityLevel = 2 }
+      externalAttacher    = { verbosityLevel = 2 }
+      externalSnapshotter = { verbosityLevel = 2 }
     }
     node = {
       driver = {
         logLevel = "warn"
       }
+      driverRegistrar = { verbosityLevel = 2 }
       tolerations = [
         {
           operator = "Exists"

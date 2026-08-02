@@ -22,15 +22,18 @@ resource "helm_release" "truenas_iscsi_csi" {
     # logLevel warn on node + controller drivers: info logged every mount/stat/
     # API call, ~390k lines/12h of noise.
     controller = {
-      driver = {
-        logLevel = "warn"
-      }
+      driver              = { logLevel = "warn" }
+      externalProvisioner = { verbosityLevel = 2 }
+      externalResizer     = { verbosityLevel = 2 }
+      externalAttacher    = { verbosityLevel = 2 }
+      externalSnapshotter = { verbosityLevel = 2 }
     }
     node = {
       driver = {
         iscsiDirHostPathType = ""
         logLevel             = "warn"
       }
+      driverRegistrar = { verbosityLevel = 2 }
       tolerations = [
         {
           operator = "Exists"

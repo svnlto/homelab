@@ -17,3 +17,4 @@ resources:
   - kube-prometheus-stack.yaml
   - clickstack.yaml
   - otel-collector.yaml
+  - snapshot-controller.yaml
