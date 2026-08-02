@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/svnlto/homelab/compare/osxphotos-export-v0.5.1...osxphotos-export-v0.6.0) (2026-08-02)
+
+
+### Features
+
+* **observability:** ship Talos node logs to ClickStack + cut log noise ([f00b83c](https://github.com/svnlto/homelab/commit/f00b83c56c4d7b920d1254ad50ebe99f89730799))
+
 ## [0.5.1](https://github.com/svnlto/homelab/compare/osxphotos-export-v0.5.0...osxphotos-export-v0.5.1) (2026-07-31)
 
 
