@@ -102,7 +102,7 @@ spec:
               value: "1000"
             - name: TZ
               value: {{ .Values.timezone }}
-            - name: {{ .name | upper }}__LOG__LEVEL
+            - name: {{ .name | upper }}__LOGLEVEL
               value: {{ .app.logLevel | default "warn" | quote }}
           startupProbe:
             httpGet:
