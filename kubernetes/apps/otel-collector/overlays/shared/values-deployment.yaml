@@ -97,6 +97,10 @@ config:
       tcp:
         listen_address: 0.0.0.0:5514
       protocol: rfc5424
+      # TrueNAS syslog-ng's syslog() driver frames RFC5424 with octet-counting
+      # (RFC6587): "<len> <msg>". Without this the parser reads the length as
+      # the message and fails "expecting a priority value within angle brackets".
+      enable_octet_counting: true
       operators:
         - type: move
           if: 'attributes.hostname != nil'
