@@ -19,9 +19,17 @@ resource "helm_release" "truenas_iscsi_csi" {
       name = "org.democratic-csi.iscsi"
     }
     # Talos has /etc as read-only with bind mounts; default "Directory" type check fails
+    # logLevel warn on node + controller drivers: info logged every mount/stat/
+    # API call, ~390k lines/12h of noise.
+    controller = {
+      driver = {
+        logLevel = "warn"
+      }
+    }
     node = {
       driver = {
         iscsiDirHostPathType = ""
+        logLevel             = "warn"
       }
       tolerations = [
         {
@@ -68,9 +76,7 @@ resource "helm_release" "truenas_iscsi_csi" {
     volumeSnapshotClasses = []
     driver = {
       config = {
-        # info logs every mount/stat/API call — ~390k lines/12h of noise
-        logLevel = "warn"
-        driver   = "freenas-api-iscsi"
+        driver = "freenas-api-iscsi"
         httpConnection = {
           protocol      = split("://", var.truenas_api_url)[0]
           host          = split("/", split("://", var.truenas_api_url)[1])[0]

@@ -76,7 +76,16 @@ resource "helm_release" "truenas_nfs_csi" {
     csiDriver = {
       name = "org.democratic-csi.nfs"
     }
+    # logLevel warn: info logs every mount/stat/API call (noise reduction).
+    controller = {
+      driver = {
+        logLevel = "warn"
+      }
+    }
     node = {
+      driver = {
+        logLevel = "warn"
+      }
       tolerations = [
         {
           operator = "Exists"
@@ -100,7 +109,6 @@ resource "helm_release" "truenas_nfs_csi" {
     volumeSnapshotClasses = []
     driver = {
       config = {
-        logLevel       = "warn"
         driver         = "freenas-api-nfs"
         httpConnection = local.truenas_http_connection
         zfs = {
@@ -135,7 +143,16 @@ resource "helm_release" "truenas_nfs_fast_csi" {
     csiDriver = {
       name = "org.democratic-csi.nfs-fast"
     }
+    # logLevel warn: info logs every mount/stat/API call (noise reduction).
+    controller = {
+      driver = {
+        logLevel = "warn"
+      }
+    }
     node = {
+      driver = {
+        logLevel = "warn"
+      }
       tolerations = [
         {
           operator = "Exists"
@@ -159,7 +176,6 @@ resource "helm_release" "truenas_nfs_fast_csi" {
     volumeSnapshotClasses = []
     driver = {
       config = {
-        logLevel       = "warn"
         driver         = "freenas-api-nfs"
         httpConnection = local.truenas_http_connection
         zfs = {
