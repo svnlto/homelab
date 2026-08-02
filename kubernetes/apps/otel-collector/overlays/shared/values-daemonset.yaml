@@ -128,19 +128,21 @@ config:
         enabled: true
         storage: file_storage
   processors:
-    # Drop democratic-csi's per-NodeGetVolumeStats shell-exec spam
-    # (executing filesystem/mount command: lsblk/findmnt/realpath, ~300/min).
-    # Not level-tagged, so --log-level=warn can't suppress it — drop at ingest.
-    # The csi-proxy (csi-grpc-proxy) sidecar logs every proxied gRPC call
-    # ("request ...") with Go's stdlib log — no flag or env can quiet it, so it
-    # is dropped here too (top INFO emitter, ~1400/20min).
+    # Drop untagged per-item log spam that no --log-level can suppress:
+    #  - democratic-csi NodeGetVolumeStats shell-exec (lsblk/findmnt/realpath).
+    #  - csi-proxy (csi-grpc-proxy) sidecar: every proxied gRPC call, Go stdlib log.
+    #  - osxphotos-export progress: "Exporting/Skipped/Processing <file>" printed
+    #    per photo (~58k/run) by the osxphotos CLI; its Python logger is already
+    #    at WARNING, but these prints are not level-tagged.
     filter/csi_noise:
       error_mode: ignore
       logs:
         log_record:
           - 'resource.attributes["k8s.namespace.name"] == "democratic-csi" and IsMatch(body, "executing (filesystem|mount)
             command")'
-          - 'resource.attributes["k8s.container.name"] == "csi-proxy" and IsMatch(body, "^request")'
+          - 'resource.attributes["k8s.container.name"] == "csi-proxy"'
+          - 'resource.attributes["k8s.namespace.name"] == "osxphotos-export" and IsMatch(body, "^(Exporting|Skipped|Processing)
+            ")'
   service:
     pipelines:
       logs:

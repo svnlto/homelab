@@ -116,14 +116,17 @@ config:
           from: attributes.message
           to: body
   processors:
-    # Talos kernel-audit (service.name=auditd) is non-actionable noise here:
-    # kube-proxy nftables reprogramming (type=NETFILTER_CFG) + permissive-mode
-    # AVC denials (SELinux not enforcing), ~6k records/30min across the nodes.
+    # Talos node-log noise, dropped at ingest:
+    #  - auditd: kube-proxy nftables reprogramming (type=NETFILTER_CFG) +
+    #    permissive-mode AVC denials (SELinux not enforcing), ~6k records/30min.
+    #  - machined authz: an "authorizer authorized (...)" line on every Talos API
+    #    call (kubelet/health/talosctl), ~480/min — pure access chatter.
     filter/talos_noise:
       error_mode: ignore
       logs:
         log_record:
           - 'resource.attributes["service.name"] == "auditd"'
+          - 'resource.attributes["service.name"] == "machined" and IsMatch(body, "authz/authorizer authorized")'
   exporters:
     otlphttp:
       endpoint: http://clickstack-hdx-oss-v2-otel-collector.clickstack.svc:4318
