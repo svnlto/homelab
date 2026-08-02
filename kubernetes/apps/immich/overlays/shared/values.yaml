@@ -30,7 +30,7 @@ workers:
       memory: 8Gi
 
 machineLearning:
-  image: ghcr.io/immich-app/immich-machine-learning:v3.0.3-openvino
+  image: ghcr.io/immich-app/immich-machine-learning:v3.1.0-openvino
   gpu:
     enabled: true
   nodeSelector: {}
