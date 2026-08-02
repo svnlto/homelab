@@ -14,7 +14,7 @@ Immich self-hosted photo management with external library support
 | ingress | object | `{"annotations":{},"domain":"","enabled":false}` | Ingress configuration |
 | machineLearning.gpu.enabled | bool | `false` |  |
 | machineLearning.gpu.renderNode | string | `"/dev/dri/by-path/pci-0000:01:00.0-render"` |  |
-| machineLearning.image | string | `"ghcr.io/immich-app/immich-machine-learning:v3.0.3@sha256:d76fe88b69282c09a97eac4f82dafa82cfd77bce274bc742591cde974f87dacb"` |  |
+| machineLearning.image | string | `"ghcr.io/immich-app/immich-machine-learning:v3.1.0@sha256:5a0839dc5303cd7215bcd2180a26aed3af41675aefb3e75e5157e9f10ad16e6e"` |  |
 | machineLearning.nodeSelector | object | `{}` |  |
 | machineLearning.port | int | `3003` |  |
 | machineLearning.resources.limits.cpu | string | `"4000m"` |  |
@@ -24,7 +24,7 @@ Immich self-hosted photo management with external library support
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=1048576","wsize=1048576","hard","noatime","nconnect=8"],"server":"","volumes":[]}` | NFS storage for external photo libraries |
 | server.gpu.enabled | bool | `false` |  |
 | server.gpu.renderNode | string | `"/dev/dri/by-path/pci-0000:01:00.0-render"` |  |
-| server.image | string | `"ghcr.io/immich-app/immich-server:v3.0.3@sha256:c716dc20f957aafd89fa9d284a2ec63e25c9e2d8d8e87c6197d540a3dce237db"` |  |
+| server.image | string | `"ghcr.io/immich-app/immich-server:v3.1.0@sha256:b434cb9287eea1471c9974845914d4dd328c9c2d652e446ed4930f99944f0ceb"` |  |
 | server.nodeSelector | object | `{}` |  |
 | server.port | int | `2283` |  |
 | server.resources.limits.cpu | string | `"8000m"` |  |

@@ -47,6 +47,8 @@ spec:
           env:
             - name: TZ
               value: {{ .Values.timezone }}
+            - name: LOG_LEVEL
+              value: {{ .Values.seerr.logLevel | default "warn" | quote }}
 {{- if .Values.seerr.database.host }}
             - name: DB_TYPE
               value: postgres

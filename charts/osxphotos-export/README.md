@@ -12,7 +12,7 @@ OSXPhotos export service for syncing Apple Photos to NFS storage
 | env | object | `{"EXPORT_DB_PATH":"/cache/osxphotos_export.db","OTEL_SERVICE_NAME":"osxphotos-export","RETRY_INTERVAL":"300","SYNC_INTERVAL":"3600"}` | Environment variables |
 | externalSecret | object | `{"keys":["EXPORT_DEST","LIBRARY_PATH"],"onePasswordItem":"osxphotos-config","refreshInterval":"12h","secretStoreKind":"ClusterSecretStore","secretStoreName":"onepassword","targetSecretName":"osxphotos-config"}` | External secrets configuration |
 | global.annotations | object | `{}` |  |
-| image | object | `{"repository":"ghcr.io/svnlto/osxphotos-export","tag":"latest@sha256:a54e6c67ad798e3145d6b489ca956fd271019f6030ef51871b44ee7f9feb163d"}` | Container image |
+| image | object | `{"repository":"ghcr.io/svnlto/osxphotos-export","tag":"latest@sha256:e1dc09cb258667460a6d5f18d46ddaf387bfdf94ac364324794226fd13d5269f"}` | Container image |
 | metrics | object | `{"enabled":true,"port":9184,"scrapeInterval":"5m","selectorLabels":{"release":"kube-prometheus-stack"},"staleAfterSeconds":21600}` | Prometheus metrics endpoint and staleness alerting |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=1048576","wsize=1048576","hard","noatime","nconnect=8"],"server":"","volumes":[]}` | NFS storage for source and export |
 | resources | object | `{"limits":{"cpu":"2","memory":"4Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Container resources |
