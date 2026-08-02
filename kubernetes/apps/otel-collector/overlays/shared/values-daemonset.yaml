@@ -141,7 +141,7 @@ config:
       error_mode: ignore
       logs:
         log_record:
-          - 'resource.attributes["k8s.namespace.name"] == "arr-stack" and IsMatch(body, "\|(Info|Debug|Trace)\||::(INFO|DEBUG)::")'
+          - 'resource.attributes["k8s.namespace.name"] == "arr-stack" and IsMatch(body, "[|](Info|Debug|Trace)[|]|::(INFO|DEBUG)::")'
           - 'resource.attributes["k8s.namespace.name"] == "democratic-csi" and IsMatch(body, "executing (filesystem|mount)
             command")'
           - 'resource.attributes["k8s.container.name"] == "csi-proxy"'
