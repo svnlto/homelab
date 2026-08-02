@@ -24,12 +24,12 @@ ports:
     containerPort: 5044
     servicePort: 5044
     protocol: TCP
-  # TrueNAS ships syslog (RFC5424 over TCP) here.
+  # TrueNAS ships syslog (RFC5424 over UDP) here.
   truenas:
     enabled: true
     containerPort: 5514
     servicePort: 5514
-    protocol: TCP
+    protocol: UDP
 
 # Expose the collector's own metrics to the existing kube-prometheus-stack.
 serviceMonitor:
@@ -92,15 +92,16 @@ config:
           if: 'attributes.msg != nil'
           from: attributes.msg
           to: body
-    # TrueNAS (192.168.0.13) forwards its syslog-ng output as RFC5424 over TCP.
+    # TrueNAS (192.168.0.13) forwards its syslog-ng output as RFC5424 over UDP.
+    # Over TCP, syslog-ng's syslog() driver uses octet-counted framing (RFC6587)
+    # that desynced against this receiver's octet parser: the stream got stuck in
+    # a connect -> send -> EOF -> reopen(60s) loop and no message reached the
+    # pipeline. UDP is one datagram per message — no framing to desync, each
+    # record parses cleanly.
     syslog/truenas:
-      tcp:
+      udp:
         listen_address: 0.0.0.0:5514
       protocol: rfc5424
-      # TrueNAS syslog-ng's syslog() driver frames RFC5424 with octet-counting
-      # (RFC6587): "<len> <msg>". Without this the parser reads the length as
-      # the message and fails "expecting a priority value within angle brackets".
-      enable_octet_counting: true
       operators:
         - type: move
           if: 'attributes.hostname != nil'

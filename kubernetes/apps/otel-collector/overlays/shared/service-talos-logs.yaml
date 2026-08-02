@@ -23,4 +23,4 @@ spec:
     - name: truenas-syslog
       port: 5514
       targetPort: 5514
-      protocol: TCP
+      protocol: UDP
