@@ -100,6 +100,10 @@ nixos-deploy-pihole: dumper-build
       nix/ "$PI":/tmp/nix-config/
     echo "Rebuilding NixOS on rpi-pihole..."
     ssh "$PI" "sudo nixos-rebuild switch --flake /tmp/nix-config#rpi-pihole --accept-flake-config"
+    # The dumper binary is scp'd outside the Nix store, so nixos-rebuild never
+    # restarts dumper.service on a binary-only change — restart it explicitly.
+    echo "Restarting dumper with the new binary..."
+    ssh "$PI" "sudo systemctl restart dumper"
     echo "Deploy complete"
 
 # Update flake lock in VM
