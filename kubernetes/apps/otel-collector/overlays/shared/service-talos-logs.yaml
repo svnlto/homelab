@@ -12,7 +12,6 @@ metadata:
     metallb.universe.tf/loadBalancerIPs: 10.0.1.102
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.0.1.102
   selector:
     app.kubernetes.io/name: opentelemetry-collector
     app.kubernetes.io/instance: otel-cluster
