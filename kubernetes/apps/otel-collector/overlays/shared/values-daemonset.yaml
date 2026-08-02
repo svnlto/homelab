@@ -141,7 +141,7 @@ config:
           - 'resource.attributes["k8s.namespace.name"] == "democratic-csi" and IsMatch(body, "executing (filesystem|mount)
             command")'
           - 'resource.attributes["k8s.container.name"] == "csi-proxy"'
-          - 'resource.attributes["k8s.namespace.name"] == "osxphotos-export" and IsMatch(body, "^(Exporting|Skipped|Processing)
+          - 'resource.attributes["k8s.namespace.name"] == "osxphotos-export" and IsMatch(body, "^(Exporting|Exported|Skipped|Skipping|Processing|Copied|Copying|Cleaning|Deleting|Writing|Missing)
             ")'
   service:
     pipelines:

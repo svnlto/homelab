@@ -116,17 +116,17 @@ config:
           from: attributes.message
           to: body
   processors:
-    # Talos node-log noise, dropped at ingest:
-    #  - auditd: kube-proxy nftables reprogramming (type=NETFILTER_CFG) +
-    #    permissive-mode AVC denials (SELinux not enforcing), ~6k records/30min.
-    #  - machined authz: an "authorizer authorized (...)" line on every Talos API
-    #    call (kubelet/health/talosctl), ~480/min — pure access chatter.
+    # Talos node logs to warn: drop everything below WARN (machined/kubelet/cri/
+    # etcd emit constant info-level API-access + reconcile chatter; the collector
+    # sets severity from talos-level, so a severity gate is exact). Keep unset
+    # (severity_number == 0) so nothing untagged is silently lost. auditd carries
+    # no level, so it is dropped by name (kube-proxy NETFILTER_CFG + permissive AVC).
     filter/talos_noise:
       error_mode: ignore
       logs:
         log_record:
           - 'resource.attributes["service.name"] == "auditd"'
-          - 'resource.attributes["service.name"] == "machined" and IsMatch(body, "authz/authorizer authorized")'
+          - 'severity_number >= SEVERITY_NUMBER_TRACE and severity_number < SEVERITY_NUMBER_WARN'
   exporters:
     otlphttp:
       endpoint: http://clickstack-hdx-oss-v2-otel-collector.clickstack.svc:4318
