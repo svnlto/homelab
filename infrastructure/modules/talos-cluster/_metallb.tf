@@ -27,8 +27,13 @@ resource "helm_release" "metallb" {
   wait             = true
   timeout          = 300
 
-  # L2 mode: chart >=0.16 enables the frr-k8s BGP backend by default; not needed
-  values = [yamlencode({ frrk8s = { enabled = false } })]
+  # L2 mode: chart >=0.16 enables the frr-k8s BGP backend by default; not needed.
+  # logLevel warn: speaker/controller log every member/announcement at info.
+  values = [yamlencode({
+    frrk8s     = { enabled = false }
+    speaker    = { logLevel = "warn" }
+    controller = { logLevel = "warn" }
+  })]
 
   depends_on = [data.talos_cluster_health.cluster]
 }
