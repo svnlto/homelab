@@ -18,6 +18,12 @@ ports:
   # Self-telemetry port, scraped by the cluster Prometheus (see serviceMonitor).
   metrics:
     enabled: true
+  # Talos nodes ship service + kernel logs here as json_lines over TCP.
+  talos:
+    enabled: true
+    containerPort: 5044
+    servicePort: 5044
+    protocol: TCP
 
 # Expose the collector's own metrics to the existing kube-prometheus-stack.
 serviceMonitor:
@@ -53,6 +59,33 @@ resources:
     memory: 512Mi
 
 config:
+  receivers:
+    # Talos node logs (machined, kubelet, etcd, containerd + kernel via
+    # KmsgLogConfig) arrive as newline-delimited json_lines. Each line has
+    # msg, talos-level, talos-service, talos-time, plus the node extraTag.
+    tcplog/talos:
+      listen_address: 0.0.0.0:5044
+      operators:
+        - type: json_parser
+          parse_from: body
+          timestamp:
+            parse_from: attributes["talos-time"]
+            layout_type: gotime
+            layout: "2006-01-02T15:04:05.999999999Z07:00"
+          severity:
+            parse_from: attributes["talos-level"]
+        - type: move
+          if: 'attributes["talos-service"] != nil'
+          from: attributes["talos-service"]
+          to: resource["service.name"]
+        - type: move
+          if: 'attributes.node != nil'
+          from: attributes.node
+          to: resource["host.name"]
+        - type: move
+          if: 'attributes.msg != nil'
+          from: attributes.msg
+          to: body
   exporters:
     otlphttp:
       endpoint: http://clickstack-hdx-oss-v2-otel-collector.clickstack.svc:4318
@@ -62,6 +95,11 @@ config:
   service:
     pipelines:
       logs:
+        exporters: [otlphttp]
+      # Separate pipeline so it does not collide with the kubernetesEvents
+      # preset's own logs pipeline receivers.
+      logs/talos:
+        receivers: [tcplog/talos]
         exporters: [otlphttp]
       metrics:
         exporters: [otlphttp]

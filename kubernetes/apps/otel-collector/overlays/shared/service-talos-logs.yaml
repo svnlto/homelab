@@ -1,0 +1,23 @@
+---
+# Fixed-IP LoadBalancer so Talos `machined` (running on the node OS, outside the
+# pod network) can ship logs to the otel-cluster collector. The IP is pinned so
+# the Talos machineconfig endpoint can reference it without a chicken-and-egg
+# allocation. 10.0.1.101 is Traefik; .102 is the next free MetalLB address.
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-talos-logs
+  namespace: otel-collector
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 10.0.1.102
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.0.1.102
+  selector:
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/instance: otel-cluster
+  ports:
+    - name: talos
+      port: 5044
+      targetPort: 5044
+      protocol: TCP

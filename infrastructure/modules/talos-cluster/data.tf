@@ -18,7 +18,7 @@ data "talos_machine_configuration" "control_plane" {
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
 
-  config_patches = [
+  config_patches = concat([
     yamlencode({
       machine = {
         network = {
@@ -128,7 +128,27 @@ data "talos_machine_configuration" "control_plane" {
       apiVersion = "v1alpha1"
       kind       = "HostnameConfig"
     })
-  ]
+    ], var.talos_log_endpoint != "" ? [
+    # Ship Talos service logs (machined, kubelet, etcd, containerd) to ClickStack.
+    yamlencode({
+      machine = {
+        logging = {
+          destinations = [{
+            endpoint  = var.talos_log_endpoint
+            format    = "json_lines"
+            extraTags = { node = each.value.hostname }
+          }]
+        }
+      }
+    }),
+    # Kernel/dmesg logs to the same endpoint (runtime config, no reboot).
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "KmsgLogConfig"
+      name       = "clickstack"
+      url        = var.talos_log_endpoint
+    })
+  ] : [])
 }
 
 
@@ -142,7 +162,7 @@ data "talos_machine_configuration" "worker" {
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
 
-  config_patches = [
+  config_patches = concat([
     yamlencode({
       machine = {
         network = {
@@ -210,5 +230,25 @@ data "talos_machine_configuration" "worker" {
       apiVersion = "v1alpha1"
       kind       = "HostnameConfig"
     })
-  ]
+    ], var.talos_log_endpoint != "" ? [
+    # Ship Talos service logs (machined, kubelet, etcd, containerd) to ClickStack.
+    yamlencode({
+      machine = {
+        logging = {
+          destinations = [{
+            endpoint  = var.talos_log_endpoint
+            format    = "json_lines"
+            extraTags = { node = each.value.hostname }
+          }]
+        }
+      }
+    }),
+    # Kernel/dmesg logs to the same endpoint (runtime config, no reboot).
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "KmsgLogConfig"
+      name       = "clickstack"
+      url        = var.talos_log_endpoint
+    })
+  ] : [])
 }

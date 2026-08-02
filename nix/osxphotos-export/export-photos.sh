@@ -169,7 +169,6 @@ while true; do
     --exiftool \
     --exportdb "${EXPORT_DB_PATH}" \
     --ramdb \
-    --verbose \
     2>&1 | tee "$EXPORT_LOG" || EXPORT_EXIT=$?
 
   DURATION=$((SECONDS - EXPORT_START))

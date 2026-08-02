@@ -9,6 +9,7 @@ resources:
   - helmrelease-daemonset.yaml
   - helmrelease-deployment.yaml
   - prometheusrule.yaml
+  - service-talos-logs.yaml
 configMapGenerator:
   - name: otel-agent-values
     files:

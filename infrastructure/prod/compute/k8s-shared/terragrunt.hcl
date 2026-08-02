@@ -142,6 +142,9 @@ inputs = {
   tags             = ["production", "k8s", "shared"]
   deploy_bootstrap = true
 
+  # Ship Talos node logs (service + kernel) to the otel-cluster collector LB.
+  talos_log_endpoint = "tcp://10.0.1.102:5044/"
+
   # Write kubeconfig/talosconfig to the live dir, not the .terragrunt-cache dir
   # (path.cwd). provider.hcl, flux, and the dev-shell KUBECONFIG all read here.
   config_output_dir = get_terragrunt_dir()

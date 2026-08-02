@@ -68,7 +68,9 @@ resource "helm_release" "truenas_iscsi_csi" {
     volumeSnapshotClasses = []
     driver = {
       config = {
-        driver = "freenas-api-iscsi"
+        # info logs every mount/stat/API call — ~390k lines/12h of noise
+        logLevel = "warn"
+        driver   = "freenas-api-iscsi"
         httpConnection = {
           protocol      = split("://", var.truenas_api_url)[0]
           host          = split("/", split("://", var.truenas_api_url)[1])[0]

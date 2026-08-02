@@ -100,6 +100,7 @@ resource "helm_release" "truenas_nfs_csi" {
     volumeSnapshotClasses = []
     driver = {
       config = {
+        logLevel       = "warn"
         driver         = "freenas-api-nfs"
         httpConnection = local.truenas_http_connection
         zfs = {
@@ -158,6 +159,7 @@ resource "helm_release" "truenas_nfs_fast_csi" {
     volumeSnapshotClasses = []
     driver = {
       config = {
+        logLevel       = "warn"
         driver         = "freenas-api-nfs"
         httpConnection = local.truenas_http_connection
         zfs = {

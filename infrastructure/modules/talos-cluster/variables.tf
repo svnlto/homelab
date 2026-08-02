@@ -307,3 +307,10 @@ variable "registry_mirrors" {
   }))
   default = {}
 }
+
+# Node log shipping (Talos machine.logging + KmsgLogConfig -> ClickStack)
+variable "talos_log_endpoint" {
+  description = "TCP endpoint for Talos node service + kernel logs (json_lines). Empty disables."
+  type        = string
+  default     = ""
+}
