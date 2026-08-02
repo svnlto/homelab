@@ -10,6 +10,7 @@ resources:
   - clickhouse-config-overrides.yaml
   - ingress-hyperdx.yaml
   - ingress-otlp.yaml
+  - ingress-clickhouse.yaml
 configMapGenerator:
   - name: clickstack-values
     files:

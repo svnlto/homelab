@@ -1,0 +1,27 @@
+---
+# Exposes ClickHouse's HTTP interface (read-only via the SELECT-only `app`
+# user) so the ClickHouse MCP server can query otel_logs/metrics/traces from
+# outside the cluster. Internal-only host; auth is ClickHouse's own user/password.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: clickhouse
+  namespace: clickstack
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: clickhouse.shared.h.svenlito.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: clickstack-hdx-oss-v2-clickhouse
+                port:
+                  number: 8123
+  tls:
+    - hosts:
+        - clickhouse.shared.h.svenlito.com

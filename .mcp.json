@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "clickstack": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "mcp-clickhouse",
+        "--python",
+        "3.10",
+        "mcp-clickhouse"
+      ],
+      "env": {
+        "CLICKHOUSE_HOST": "clickhouse.shared.h.svenlito.com",
+        "CLICKHOUSE_PORT": "443",
+        "CLICKHOUSE_SECURE": "true",
+        "CLICKHOUSE_VERIFY": "true",
+        "CLICKHOUSE_USER": "app",
+        "CLICKHOUSE_PASSWORD": "${CLICKHOUSE_MCP_PASSWORD}",
+        "CLICKHOUSE_DATABASE": "default"
+      }
+    }
+  }
+}
