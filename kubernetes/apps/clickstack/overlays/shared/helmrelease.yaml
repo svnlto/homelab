@@ -75,3 +75,9 @@ spec:
               - op: add
                 path: /spec/template/spec/containers/0/args
                 value: ["mongod", "--quiet"]
+              # RWO PVC singleton: rolling-update deadlocks (new pod can't lock
+              # /data/db while the old holds it). Recreate stops the old first.
+              - op: add
+                path: /spec/strategy
+                value:
+                  type: Recreate
