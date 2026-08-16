@@ -20,6 +20,10 @@ kubeControllerManager:
 prometheus:
   prometheusSpec:
     logLevel: warn
+    # 60s (default 30s) halves TSDB write volume — eases the shared ssd pool.
+    # WAN probe resolution is unaffected (it arrives via Pi remote-write).
+    scrapeInterval: 60s
+    evaluationInterval: 60s
     retention: 90d
     # ~80% of the PV. Whichever limit trips first wins, so a cardinality spike
     # evicts old blocks instead of filling the PVC and crash-looping Prometheus.
