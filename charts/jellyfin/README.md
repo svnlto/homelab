@@ -1,6 +1,6 @@
 # jellyfin
 
-![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.1.3](https://img.shields.io/badge/Version-0.1.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 Jellyfin media server with Seerr request management
 
@@ -12,7 +12,7 @@ Jellyfin media server with Seerr request management
 | global.annotations | object | `{}` |  |
 | ingress | object | `{"annotations":{},"domain":"","enabled":false,"hosts":[]}` | Ingress configuration |
 | iscsi | object | `{"driver":"org.democratic-csi.iscsi","iqnPrefix":"iqn.2005-10.org.freenas.ctl:csi-","iqnSuffix":"-shared","portal":"","storageClassName":"truenas-iscsi-rwo","volumes":[]}` | iSCSI storage for app config volumes (SQLite-safe) |
-| jellyfin | object | `{"image":"jellyfin/jellyfin:10.11.11@sha256:aefb67e6a7ff1debdd154a78a7bbb780fd0c873d8639210a7f6a2016ad2b35db","nodeSelector":{},"port":8096,"resources":{"limits":{"cpu":"4000m","memory":"8Gi"},"requests":{"cpu":"500m","memory":"2Gi"}}}` | Jellyfin media server |
+| jellyfin | object | `{"image":"jellyfin/jellyfin:10.11.11@sha256:aefb67e6a7ff1debdd154a78a7bbb780fd0c873d8639210a7f6a2016ad2b35db","nodeSelector":{},"port":8096,"resources":{"limits":{"cpu":"4000m","memory":"16Gi"},"requests":{"cpu":"500m","memory":"2Gi"}}}` | Jellyfin media server |
 | nfs | object | `{"mountOptions":["nfsvers=4.2","rsize=1048576","wsize=1048576","hard","noatime","nconnect=8"],"server":"","volumes":[]}` | NFS storage for media (read-only) |
 | seerr | object | `{"database":{"host":"","name":"","passwordSecret":{"key":"password","name":""},"port":"5432","user":""},"image":"ghcr.io/seerr-team/seerr:v3.4.1@sha256:f4768de5f616248d723e05891f3345a1402123775d03bf0890dbfedc0831bda1","logLevel":"warn","port":5055,"resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}}` | Seerr request management (successor to Jellyseerr) |
 | seerr.logLevel | string | `"warn"` | winston log level (error|warn|info|debug); default trims seerr's noisy debug output |

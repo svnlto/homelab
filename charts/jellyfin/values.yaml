@@ -50,7 +50,8 @@ jellyfin:
       memory: 2Gi
     limits:
       cpu: 4000m
-      memory: 8Gi
+      # 16Gi = jellyfin (~2-4Gi) + the 12Gi tmpfs transcode cache (counts as pod RAM)
+      memory: 16Gi
 
 # -- Seerr request management (successor to Jellyseerr)
 seerr:

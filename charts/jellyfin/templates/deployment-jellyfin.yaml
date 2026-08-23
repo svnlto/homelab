@@ -65,6 +65,10 @@ spec:
               mountPath: /config
             - name: cache
               mountPath: /cache
+            # tmpfs (RAM) for throwaway HLS segments — keeps transcode I/O off
+            # the write-saturated ssd pool (was causing playback buffering).
+            - name: transcode-tmp
+              mountPath: /cache/transcodes
             - name: media-movies
               mountPath: /data/media/movies
               readOnly: true
@@ -86,6 +90,10 @@ spec:
         - name: cache
           persistentVolumeClaim:
             claimName: jellyfin-cache
+        - name: transcode-tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 12Gi
         - name: media-movies
           persistentVolumeClaim:
             claimName: nfs-media-movies

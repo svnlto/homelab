@@ -3,4 +3,4 @@ apiVersion: v2
 name: jellyfin
 description: Jellyfin media server with Seerr request management
 type: application
-version: 0.1.2
+version: 0.1.3
