@@ -3,7 +3,7 @@ global:
   annotations: {}
 
 aurral:
-  image: ghcr.io/lklynet/aurral:1.76.51@sha256:cf04da830f6965d9bd27d533eddddb0b3430390efe7b4f6f4338e486d4e3ec94
+  image: ghcr.io/lklynet/aurral:2.9.0@sha256:17534a73d5d03e892e2ac9d06ac8e543b61a13f0f28861d0ce1c48deb92ee00e
   port: 3001
   env:
     - name: PUID
