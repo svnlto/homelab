@@ -515,41 +515,41 @@
         }
       }
     },
-    "kubernetes-helm@4.2.3": {
-      "last_modified": "2026-07-23T05:10:05Z",
-      "resolved": "github:NixOS/nixpkgs/7525d999cd850b9a488817abc89c75dc733acf17#kubernetes-helm",
+    "kubernetes-helm@4.3.1": {
+      "last_modified": "2026-10-16T02:15:57Z",
+      "resolved": "github:NixOS/nixpkgs/f20cd90e28fe0403873f473b29e42662cd86e8c4#kubernetes-helm",
       "source": "devbox-search",
-      "version": "4.2.3",
+      "version": "4.3.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/pskv3khyizrc09rnqrp6d0wn5pllripx-kubernetes-helm-4.2.3",
+              "path": "/nix/store/pcdq1h4qxrydi2y4iplv2rnv2gkrx4h9-kubernetes-helm-4.3.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/pskv3khyizrc09rnqrp6d0wn5pllripx-kubernetes-helm-4.2.3"
+          "store_path": "/nix/store/pcdq1h4qxrydi2y4iplv2rnv2gkrx4h9-kubernetes-helm-4.3.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/k99lgyz9k814kr389jirpim37nqpi7qp-kubernetes-helm-4.2.3",
+              "path": "/nix/store/0qxr09jh3jq3s8csazawrvk2zkd7gxd7-kubernetes-helm-4.3.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/k99lgyz9k814kr389jirpim37nqpi7qp-kubernetes-helm-4.2.3"
+          "store_path": "/nix/store/0qxr09jh3jq3s8csazawrvk2zkd7gxd7-kubernetes-helm-4.3.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/n1rbyfp9sn0r0gzx4z9lniisiad9h5yq-kubernetes-helm-4.2.3",
+              "path": "/nix/store/lmnrbkk3hnqwh8qmsb3nfiq95bssc3rg-kubernetes-helm-4.3.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/n1rbyfp9sn0r0gzx4z9lniisiad9h5yq-kubernetes-helm-4.2.3"
+          "store_path": "/nix/store/lmnrbkk3hnqwh8qmsb3nfiq95bssc3rg-kubernetes-helm-4.3.1"
         }
       }
     },
@@ -619,7 +619,7 @@
     },
     "nodejs@25.9.0": {
       "last_modified": "2026-04-23T13:07:47Z",
-      "plugin_version": "0.0.4",
+      "plugin_version": "0.0.5",
       "resolved": "github:NixOS/nixpkgs/01fbdeef22b76df85ea168fbfe1bfd9e63681b30#nodejs_25",
       "source": "devbox-search",
       "version": "25.9.0",
